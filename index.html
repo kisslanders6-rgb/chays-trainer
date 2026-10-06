@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chays Trainer</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app" id="app">
+
+    <!-- ─── TOPNAV UNIVERSELLE (sticky, pleine largeur) ─────────────────── -->
+    <nav class="topnav" id="topnav">
+        <div class="topnav-inner">
+            <!-- Logo unique avec filtre CSS adaptatif -->
+            <div class="topnav-brand" onclick="goHome()" title="Accueil">
+                <img id="logo-nav" src="assets/chlogo.png" alt="Chays Trainer" />
+                <img src="assets/chaysTrainerlogo.png" alt="Chays Trainer" class="topnav-brand-logo-img" />
+            </div>
+
+            <!-- Tabs écran d'accueil -->
+            <div class="topnav-tabs" id="topnav-tabs-setup">
+                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')">Jouer</div>
+                <div class="topnav-sep"></div>
+                <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')">Statistiques</div>
+                <div class="topnav-sep"></div>
+                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')">Entraînement</div>
+                <div class="topnav-sep"></div>
+                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')">Finales</div>
+            </div>
+
+            <!-- Meta dans l'écran de jeu -->
+            <div class="topnav-tabs" id="topnav-tabs-game" style="display:none;">
+                <div class="topnav-meta">
+                    <span class="repertoire-pill" id="repertoire-pill" onclick="goHome()" title="Changer de répertoire"></span>
+                    <span class="color-badge" id="color-badge"></span>
+                </div>
+            </div>
+
+            <!-- Bouton thème -->
+            <div class="topnav-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ─── ÉCRAN D'ACCUEIL ──────────────────────────────────────────────── -->
+    <div id="setup-screen" class="setup-screen">
+        <div class="home-content">
+
+            <!-- Onglet Jouer -->
+            <div id="home-tab-play" class="home-tab">
+                <div class="setup-logo">
+                    <img src="assets/chaysTrainerAndLogo.png" alt="Chays Trainer" class="setup-logo-combined" />
+                </div>
+
+                <div class="repertoire-select">
+                    <div class="repertoire-select-label">Répertoire de travail</div>
+                    <div class="repertoire-list" id="repertoire-list"></div>
+                </div>
+
+                <div class="color-choice">
+                    <div class="color-btn color-btn-w" onclick="startGame('w')">
+                        ♔
+                        <div class="color-label">BLANCS</div>
+                    </div>
+                    <div class="color-btn color-btn-b" onclick="startGame('b')">
+                        ♚
+                        <div class="color-label">NOIRS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Statistiques -->
+            <div id="home-tab-stats" class="home-tab hidden">
+                <div class="tab-title">📊 Statistiques</div>
+                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer ». Cliquez sur une pastille pour revoir la position.</div>
+                <div class="repertoire-list"></div>
+                <div class="seg">
+                    <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')">♔ Blancs</button>
+                    <button class="seg-btn" id="stats-seg-b" onclick="setStatsColor('b')">♚ Noirs</button>
+                </div>
+                <div id="stats-body" class="stats-body"></div>
+            </div>
+
+            <!-- Onglet Entraînement ciblé -->
+            <div id="home-tab-training" class="home-tab hidden">
+                <div class="tab-title">🎯 Entraînement ciblé</div>
+                <div class="tab-sub">Rejouez en boucle les positions où vous vous trompez le plus. L'échiquier rejoue les deux derniers coups pour vous remettre dans le contexte.</div>
+                <div class="repertoire-list"></div>
+                <div id="training-panel"></div>
+            </div>
+
+            <!-- Onglet Finales -->
+            <div id="home-tab-endgame" class="home-tab hidden">
+                <div class="empty-tab">
+                    <div class="empty-tab-icon">♟</div>
+                    <div>Finales</div>
+                    <div class="empty-tab-sub">Le module d'entraînement aux finales sera disponible prochainement.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ─── ÉCRAN DE JEU ─────────────────────────────────────────────────── -->
+    <div id="game-screen" class="hidden" style="display:none; flex-direction:column; align-items:center; width:100%;">
+        <div class="game-screen-inner">
+            <div class="game-main">
+
+                <div class="board-col">
+                    <div class="board-wrap">
+                        <div class="coords-col" id="coords-col"></div>
+                        <div id="board"></div>
+                        <div class="coords-row" id="coords-row"></div>
+                    </div>
+
+                    <div class="controls" data-modes="play">
+                        <button class="btn" onclick="showHint()">💡 Indice</button>
+                        <button class="btn" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">✏️ Modifier coup enregistré</button>
+                        <button class="btn" onclick="resetGame()">↺ Rejouer</button>
+                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
+                        <button class="btn btn-primary" onclick="showAdmin()">🗄 Base</button>
+                    </div>
+                    <div class="controls" data-modes="training" style="grid-template-columns:repeat(4,1fr);">
+                        <button class="btn" onclick="showHint()">💡 Indice</button>
+                        <button class="btn" onclick="nextDrill()">⏭ Passer</button>
+                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
+                        <button class="btn btn-primary" onclick="goHome('training')">✕ Quitter</button>
+                    </div>
+                    <div class="controls" data-modes="preview" style="grid-template-columns:1fr 2fr;">
+                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
+                        <button class="btn btn-primary" onclick="goHome('stats')">← Retour aux statistiques</button>
+                    </div>
+                    <div class="controls" data-modes="play,preview" style="grid-template-columns:1fr 1fr; margin-top:-6px;">
+                        <button class="btn" id="btn-prev" onclick="navPrev()" title="Reculer dans l'historique">◀ Précédent</button>
+                        <button class="btn" id="btn-next" onclick="navNext()" title="Avancer dans l'historique">Suivant ▶</button>
+                    </div>
+                </div>
+
+                <div class="side-panel">
+                    <div class="status-bar" id="status-bar">
+                        <div class="status-dot dot-info" id="status-dot"></div>
+                        <div class="status-text" id="status-text">Initialisation...</div>
+                    </div>
+                    <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── OVERLAY BASE DE DONNÉES ──────────────────────────────────────── -->
+    <div id="admin-overlay" class="overlay hidden">
+        <div class="panel">
+            <div class="panel-title">🗄 Base de données d'ouvertures</div>
+            <div class="admin-tabs" id="admin-tabs"></div>
+            <div id="admin-entries"></div>
+            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()">+ Ajouter une entrée manuelle</button>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()">⬇ Exporter (JSON)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()">⬆ Importer (JSON)</button>
+            </div>
+            <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
+            <button class="panel-close" onclick="closeAdmin()">Fermer</button>
+        </div>
+    </div>
+
+    <!-- ─── OVERLAY CONFIRMATION ─────────────────────────────────────────── -->
+    <div id="confirm-overlay" class="overlay hidden">
+        <div class="panel confirm-box">
+            <div class="confirm-text" id="confirm-text"></div>
+            <div class="confirm-actions">
+                <button class="btn" id="confirm-cancel-btn">Annuler</button>
+                <button class="btn btn-danger" id="confirm-ok-btn">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── OVERLAY PROMOTION ─────────────────────────────────────────────── -->
+    <div id="promo-overlay" class="overlay hidden">
+        <div class="panel" style="width:auto; max-width:none; display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div class="promo-title">PROMOTION — Choisir une pièce</div>
+            <div class="promo-pieces" id="promo-pieces"></div>
+        </div>
+    </div>
+
+</div><!-- /.app -->
+
+<!-- ─── SCRIPTS (ordre de dépendance) ─────────────────────────────────── -->
+<script src="js/storage.js"></script>
+<script src="js/core/chessEngine.js"></script>
+<script src="js/modules/openings/openingsLogic.js"></script>
+<script src="js/modules/openings/openingsUI.js"></script>
+<script src="js/modules/stats/stats.js"></script>
+<script src="js/modules/training/training.js"></script>
+<script src="js/modules/endgame/endgame.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

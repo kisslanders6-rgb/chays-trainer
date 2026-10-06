@@ -1,0 +1,134 @@
+/**
+ * app.js
+ * ──────────────────────────────────────────────────────────────────────────
+ * Point d'entrée de l'application :
+ *   - Initialisation au chargement
+ *   - Navigation (accueil ↔ jeu, onglets)
+ *   - Gestion du thème (dark / light)
+ *   - Rendu de la liste des répertoires
+ *   - Démarrage et retour à l'accueil
+ */
+
+'use strict';
+
+// ─── ÉTAT GLOBAL DE LA SESSION ────────────────────────────────────────────────
+
+let playerColor = 'w';
+let gameMode    = 'play';   // 'play' | 'preview' | 'training'
+
+// ─── THÈME ────────────────────────────────────────────────────────────────────
+
+function loadTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem(THEME_STORAGE_KEY); } catch (e) {}
+    const theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next    = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (e) {}
+}
+
+// ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
+
+function switchHomeTab(tab) {
+    ['play', 'stats', 'training', 'endgame'].forEach(t => {
+        const tabEl = document.getElementById('home-tab-' + t);
+        const navEl = document.getElementById('nav-tab-' + t);
+        if (tabEl) tabEl.classList.toggle('hidden', t !== tab);
+        if (navEl) navEl.classList.toggle('active', t === tab);
+    });
+    if (tab === 'stats')    initStats();
+    if (tab === 'training') initTraining();
+}
+
+// ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────
+
+function renderRepertoireList() {
+    const list = loadRepertoireList();
+    const html = list.map(name => `
+    <div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}"
+         onclick="selectRepertoire('${name.replace(/'/g, "\\'")}')">
+      ${name}
+    </div>
+  `).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
+    document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
+}
+
+function selectRepertoire(name) {
+    currentRepertoire = name;
+    renderRepertoireList();
+    const pill = document.getElementById('repertoire-pill');
+    if (pill) pill.textContent = currentRepertoire;
+    initStats();
+    initTraining();
+}
+
+// ─── DÉMARRAGE D'UNE PARTIE ───────────────────────────────────────────────────
+
+function applyModeUI() {
+    document.querySelectorAll('[data-modes]').forEach(el => {
+        el.style.display = el.dataset.modes.split(',').includes(gameMode) ? '' : 'none';
+    });
+}
+
+// Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
+function showGameScreen(color) {
+    boardFlipped = color === 'b';
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('topnav-tabs-setup').style.display = 'none';
+    document.getElementById('topnav-tabs-game').style.display  = '';
+
+    const gs = document.getElementById('game-screen');
+    gs.style.display = 'flex';
+    gs.classList.remove('hidden');
+
+    const badge = document.getElementById('color-badge');
+    badge.textContent = color === 'w' ? '♔ BLANCS' : '♚ NOIRS';
+    badge.className   = 'color-badge ' + (color === 'w' ? 'badge-white' : 'badge-black');
+
+    const pill = document.getElementById('repertoire-pill');
+    if (pill) pill.textContent = currentRepertoire;
+
+    applyModeUI();
+}
+
+function startGame(color) {
+    playerColor = color;
+    gameMode    = 'play';
+    loadDB();
+    showGameScreen(color);
+    resetGame();
+}
+
+// ─── RETOUR À L'ACCUEIL ───────────────────────────────────────────────────────
+
+function goHome(tab) {
+    if (typeof stopTraining === 'function') stopTraining();
+    gameMode = 'play';
+    applyModeUI();
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('admin-overlay').classList.add('hidden');
+    document.getElementById('promo-overlay').classList.add('hidden');
+    document.getElementById('confirm-overlay').classList.add('hidden');
+    document.getElementById('setup-screen').style.display = '';
+    document.getElementById('setup-screen').classList.remove('hidden');
+    document.getElementById('topnav-tabs-setup').style.display = '';
+    document.getElementById('topnav-tabs-game').style.display  = 'none';
+    switchHomeTab(typeof tab === 'string' ? tab : 'play');
+    renderRepertoireList();
+}
+
+// ─── INITIALISATION ───────────────────────────────────────────────────────────
+
+(function init() {
+    document.getElementById('game-screen').style.display = 'none';
+    loadTheme();
+    renderRepertoireList();
+})();
