@@ -93,46 +93,63 @@ function setStatus(msg, type = 'info') {
 // ─── NAVIGATION VISUELLE (Précédent / Suivant) ────────────────────────────────
 // Ces boutons n'affectent jamais la base ni l'état de jeu réel.
 
+// navCursor : -1 = position actuelle · 0..n-2 = après le coup i · NAV_START = position initiale.
+const NAV_START = -2;
+
+// Index (dans moveHistory) du dernier coup joué dans la position AFFICHÉE ; -1 = position initiale.
+function _navPos() {
+    if (navCursor === -1)         return moveHistory.length - 1;
+    if (navCursor === NAV_START)  return -1;
+    return navCursor;
+}
+
+function _navSide() {                       // camp au trait dans la position affichée
+    if (navCursor === -1)         return turn;
+    if (navCursor === NAV_START)  return moveHistory[0].turnBefore;
+    return moveHistory[navCursor].turnBefore === 'w' ? 'b' : 'w';
+}
+
 function updateNavButtons() {
-    const prevBtn   = document.getElementById('btn-prev');
-    const nextBtn   = document.getElementById('btn-next');
+    const prevBtn = document.getElementById('btn-prev');
+    const nextBtn = document.getElementById('btn-next');
     if (!prevBtn || !nextBtn) return;
-    const len        = moveHistory.length;
-    const cursorPos  = navCursor === -1 ? len : navCursor;
-    prevBtn.disabled = (cursorPos === 0);
+    prevBtn.disabled = (moveHistory.length === 0 || _navPos() <= -1);
     prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '';
     nextBtn.disabled = (navCursor === -1);
     nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '';
 }
 
-function navPrev() {
+// Affiche la position après le coup d'indice p (p = -1 : position initiale).
+function navGo(p) {
     const len = moveHistory.length;
-    if (len === 0) return;
-    if (navCursor === -1) navCursor = len - 1;
-    else if (navCursor > 0) navCursor--;
-    else return;
-    renderNavBoard();
-    updateNavButtons();
-}
-
-function navNext() {
-    if (navCursor === -1) return;
-    const len = moveHistory.length;
-    if (navCursor < len - 1) {
-        navCursor++;
-        renderNavBoard();
-    } else {
+    if (p >= len - 1) {
         navCursor = -1;
         renderBoard();
         renderMoves();
         setStatus('Retour à la position actuelle.', 'info');
+    } else {
+        navCursor = (p < 0) ? NAV_START : p;
+        renderNavBoard();
     }
     updateNavButtons();
 }
 
+function navPrev() {
+    if (moveHistory.length === 0) return;
+    const p = _navPos();
+    if (p <= -1) return;
+    navGo(p - 1);
+}
+
+function navNext() {
+    if (navCursor === -1) return;
+    navGo(_navPos() + 1);
+}
+
 function renderNavBoard() {
     if (navCursor === -1) { renderBoard(); return; }
-    const snap = moveHistory[navCursor];
+    const atStart = navCursor === NAV_START;
+    const snap    = atStart ? null : moveHistory[navCursor];
 
     // Sauvegarde des globaux pour restauration après rendu
     const savedBoard    = board;
@@ -143,28 +160,33 @@ function renderNavBoard() {
     const savedLegal    = legalMoves;
 
     // Reconstruction du plateau après ce coup à partir du snapshot boardBefore
-    const tempBoard = snap.boardBefore.slice();
-    const from = snap.from, to = snap.to, promo = snap.promo;
-    const p = tempBoard[from];
-    tempBoard[to]   = p;
-    tempBoard[from] = '';
+    // (ou position initiale : boardBefore du tout premier coup)
+    let tempBoard, from = -1, to = -1;
+    if (atStart) {
+        tempBoard = moveHistory[0].boardBefore.slice();
+    } else {
+        tempBoard = snap.boardBefore.slice();
+        from = snap.from; to = snap.to;
+        const promo = snap.promo;
+        const p = tempBoard[from];
+        tempBoard[to]   = p;
+        tempBoard[from] = '';
 
-    if (promo) {
-        tempBoard[to] = snap.turnBefore === 'w' ? promo.toUpperCase() : promo.toLowerCase();
-    }
-    // En passant
-    if (p && p.toUpperCase() === 'P' && to === snap.epBefore) {
-        const epRow = Math.floor(from / 8);
-        const epCol = to % 8;
-        tempBoard[epRow * 8 + epCol] = '';
-    }
-    // Roque : déplacement de la tour
-    if (p && p.toUpperCase() === 'K') {
-        const dc = (to % 8) - (from % 8);
-        if (Math.abs(dc) === 2) {
-            const rr = Math.floor(from / 8);
-            if (dc > 0) { tempBoard[rr*8+5] = tempBoard[rr*8+7]; tempBoard[rr*8+7] = ''; }
-            else        { tempBoard[rr*8+3] = tempBoard[rr*8+0]; tempBoard[rr*8+0] = ''; }
+        if (promo) {
+            tempBoard[to] = snap.turnBefore === 'w' ? promo.toUpperCase() : promo.toLowerCase();
+        }
+        // En passant
+        if (p && p.toUpperCase() === 'P' && to === snap.epBefore) {
+            tempBoard[Math.floor(from / 8) * 8 + (to % 8)] = '';
+        }
+        // Roque : déplacement de la tour
+        if (p && p.toUpperCase() === 'K') {
+            const dc = (to % 8) - (from % 8);
+            if (Math.abs(dc) === 2) {
+                const rr = Math.floor(from / 8);
+                if (dc > 0) { tempBoard[rr*8+5] = tempBoard[rr*8+7]; tempBoard[rr*8+7] = ''; }
+                else        { tempBoard[rr*8+3] = tempBoard[rr*8+0]; tempBoard[rr*8+0] = ''; }
+            }
         }
     }
 
@@ -187,7 +209,8 @@ function renderNavBoard() {
 
     // Barre de coups avec surbrillance du coup courant
     _paintMovesBar(navCursor);
-    setStatus(`Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${snap.san}`, 'info');
+    setStatus(atStart ? 'Navigation — position initiale.'
+                      : `Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${snap.san}`, 'info');
 }
 
 function resetNavCursor() {
@@ -292,7 +315,7 @@ function _setOver(idx, on) {
 
 function _beginDrag(d) {
     // Seules les pièces du camp au trait sont déplaçables (jamais de capture « par accident »).
-    const side = navCursor === -1 ? turn : (moveHistory[navCursor].turnBefore === 'w' ? 'b' : 'w');
+    const side = _navSide();
     if ((d.cls.includes('piece-w') ? 'w' : 'b') !== side) return false;
 
     if (navCursor !== -1) _syncEngineToNavCursor();      // glisser depuis une position passée = nouvelle variante
@@ -378,7 +401,7 @@ function _keyboardAllowed(e) {
     if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return false;
     const gs = document.getElementById('game-screen');
     if (!gs || gs.style.display === 'none' || gs.classList.contains('hidden')) return false;
-    return ['admin-overlay', 'confirm-overlay', 'promo-overlay']
+    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay']
         .every(id => document.getElementById(id).classList.contains('hidden'));
 }
 
