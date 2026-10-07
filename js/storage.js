@@ -60,7 +60,7 @@ function createRepertoirePrompt() {
 // ─── BASE DE DONNÉES (ouvertures) ─────────────────────────────────────────────
 
 // Modèle d'une entrée (une seule réponse par position de MON camp) :
-//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply? }
+//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply?, lastReviewed? }
 //   - path : coups UCI depuis la position initiale, mon coup inclus (sert aux stats
 //            et à la cinématique de l'entraînement) ; ply = path.length.
 // Les coups adverses ne sont jamais stockés : ils sont implicites dans les clés.
@@ -79,6 +79,10 @@ function normalizeEntry(e) {
     const failures = Number.isFinite(e.failures) ? Math.min(Math.max(0, e.failures), attempts) : 0;
     const out = { move: e.move, san: e.san || e.move, attempts, failures };
     if (Array.isArray(e.path) && e.path.length) { out.path = e.path.slice(); out.ply = e.path.length; }
+    // lastReviewed : timestamp (ms) du dernier passage. Absent sur les anciennes entrées
+    // → traité comme « non revu depuis longtemps » par l'entraînement.
+    const lr = typeof e.lastReviewed === 'string' ? Date.parse(e.lastReviewed) : e.lastReviewed;
+    if (Number.isFinite(lr) && lr > 0) out.lastReviewed = lr;
     return out;   // l'ancien champ `alt` est volontairement abandonné
 }
 
