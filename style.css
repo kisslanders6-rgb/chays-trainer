@@ -559,3 +559,17 @@ body { font-family: var(--font-sans); background: var(--bg); color: var(--text);
 @keyframes boardShake { 10%,90% { transform: translateX(-2px); } 20%,80% { transform: translateX(4px); } 30%,50%,70% { transform: translateX(-6px); } 40%,60% { transform: translateX(6px); } }
 .sq.hl-wrong { animation: wrongFlash .7s ease-out; }
 @keyframes wrongFlash { 0% { box-shadow: inset 0 0 0 100px rgba(226,92,92,.7); } 100% { box-shadow: inset 0 0 0 100px rgba(226,92,92,0); } }
+
+/* ─── GLISSER-DÉPOSER / BARRE DE COUPS CLIQUABLE ─────────────────────────── */
+#board { touch-action: none; }
+.piece { cursor: grab; }
+body.dragging, body.dragging * { cursor: grabbing !important; }
+.sq.drag-source .piece { opacity: .25; }
+.sq.hl-drop { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .55); }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; line-height: 1; will-change: transform; }
+.move-token { border-radius: 4px; padding: 0 3px; cursor: pointer; transition: background .12s, color .12s; }
+.move-token:hover { background: var(--accent-soft, rgba(0, 0, 0, .08)); }
+.move-token.active { background: var(--accent); color: var(--accent-text); }
+.moves-bar.locked .move-token { cursor: default; }
+.moves-bar.locked .move-token:hover { background: none; }
+.moves-bar.locked .move-token.active:hover { background: var(--accent); }
