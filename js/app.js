@@ -32,6 +32,19 @@ function toggleTheme() {
     try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (e) {}
 }
 
+// ─── AIDE (« Comment ça marche ? ») ───────────────────────────────────────────
+
+function showHelp()  { document.getElementById('help-overlay').classList.remove('hidden'); }
+function closeHelp() { document.getElementById('help-overlay').classList.add('hidden'); }
+
+(function initHelpDismiss() {
+    const overlay = document.getElementById('help-overlay');
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeHelp(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeHelp();
+    });
+})();
+
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
 function switchHomeTab(tab) {
