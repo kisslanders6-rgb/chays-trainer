@@ -231,6 +231,13 @@ function _commitMove(from, to, promo, newDbKey, statusMsg, statusType) {
 
 // ─── COUP DE L'ADVERSAIRE ─────────────────────────────────────────────────────
 
+// Transposition : la position (clé FEN) est déjà connue, mais atteinte par un autre ordre de coups.
+function _isTransposition(entry) {
+    if (!entry || !entry.path) return false;
+    const now = moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
+    return entry.path.slice(0, -1).join(' ') !== now.join(' ');
+}
+
 function executeOpponentMove(from, to, promo) {
     if (promo === undefined) {
         if (isPromotion(from, to)) {
@@ -242,6 +249,10 @@ function executeOpponentMove(from, to, promo) {
     }
     const san = toAlgebraic(from, to, promo);
     _commitMove(from, to, promo, null, `Adversaire : ${san} — à vous de répondre.`, 'info');
+    // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
+    if (turn === playerColor && _isTransposition(openingDB[positionKey()])) {
+        setStatus(`Adversaire : ${san} · ℹ️ Transposition détectée — position connue.`, 'info');
+    }
 }
 
 // ─── COUP DU JOUEUR ───────────────────────────────────────────────────────────
@@ -280,11 +291,12 @@ function executePlayerMove(from, to, promo) {
         _commitMove(from, to, promo, key, `📝 Nouveau coup enregistré : ${san}`, 'new');
 
     } else if (movStr === entry.move) {
-        // Bon coup.
+        // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
+        const transp = _isTransposition(entry);
         entry.attempts++;
         if (!entry.path) { entry.path = pathNow.concat(movStr); entry.ply = entry.path.length; }
         saveDB();
-        _commitMove(from, to, promo, null, '✓ Correct !', 'ok');
+        _commitMove(from, to, promo, null, transp ? '✓ Correct ! (transposition)' : '✓ Correct !', 'ok');
 
     } else {
         // Mauvais coup : refusé, la bonne réponse n'est pas dévoilée.
@@ -330,6 +342,136 @@ function askConfirm(message, onConfirm) {
     cancelBtn.onclick = () => { cleanup(); };
 }
 
+// ─── ANALYSE DE L'ARBRE : COUPS ORPHELINS ─────────────────────────────────────
+// Graphe des positions de MON camp : de l'entrée K, on joue sa réponse, puis
+// TOUTES les réponses légales de l'adversaire ; chaque position (à mon trait)
+// déjà en base est un enfant. Un coup est « orphelin » s'il n'est plus atteignable
+// depuis la position initiale une fois K supprimé (ou modifié) — les transpositions
+// vers d'autres lignes encore valides l'empêchent donc d'être orphelin.
+
+function _loadEngineAt(key) {
+    const e = openingDB[key];
+    if (e && e.path) {                                   // état exact (roque, en passant) via la ligne
+        parseFEN(INIT_FEN);
+        e.path.slice(0, -1).forEach(_applyUciRaw);
+        if (positionKey() === key) return;
+    }
+    parseFEN(key);                                       // repli : droits de roque déduits des pièces
+    castlingRights = {
+        K: board[4] === 'K' && board[7] === 'R',  Q: board[4] === 'K' && board[0] === 'R',
+        k: board[60] === 'k' && board[63] === 'r', q: board[60] === 'k' && board[56] === 'r'
+    };
+    enPassant = -1;
+}
+
+// Appelle cb() après chaque coup légal du camp au trait (état restauré entre deux appels).
+function _forEachChild(cb) {
+    const sb = board.slice(), st = turn, sc = { ...castlingRights }, se = enPassant;
+    const moves = [];
+    for (let from = 0; from < 64; from++) {
+        const p = board[from];
+        if (!p || isWhite(p) !== (turn === 'w')) continue;
+        for (const to of getLegalMoves(from)) {
+            const promos = isPromotion(from, to) ? ['q', 'r', 'b', 'n'] : [''];
+            promos.forEach(pr => moves.push(moveToStr(from, to, pr)));
+        }
+    }
+    moves.forEach(u => {
+        _applyUciRaw(u);
+        cb();
+        board = sb.slice(); turn = st; castlingRights = { ...sc }; enPassant = se;
+    });
+}
+
+function _childKeys(ctx, key, move) {
+    const ck = key + '|' + move;
+    if (ctx.cache.has(ck)) return ctx.cache.get(ck);
+    const out = [];
+    _withEngineSnapshot(() => {
+        _loadEngineAt(key);
+        if (!board[_parseUci(move).from]) return;
+        _applyUciRaw(move);
+        _forEachChild(() => out.push(positionKey()));
+    });
+    ctx.cache.set(ck, out);
+    return out;
+}
+
+function _reachableKeys(ctx, db) {
+    if (!ctx.roots) {
+        ctx.roots = [];
+        _withEngineSnapshot(() => {
+            parseFEN(INIT_FEN);
+            if (playerColor === 'w') ctx.roots.push(positionKey());
+            else _forEachChild(() => ctx.roots.push(positionKey()));
+        });
+    }
+    const seen  = new Set();
+    const stack = ctx.roots.filter(k => db[k]);
+    while (stack.length) {
+        const k = stack.pop();
+        if (seen.has(k)) continue;
+        seen.add(k);
+        _childKeys(ctx, k, db[k].move).forEach(c => { if (db[c] && !seen.has(c)) stack.push(c); });
+    }
+    return seen;
+}
+
+// Clés des coups en aval qui deviendraient inaccessibles si `key` est supprimé
+// (newMove = null) ou si sa réponse est remplacée par `newMove`.
+function findOrphans(key, newMove) {
+    const ctx    = { cache: new Map(), roots: null };
+    const before = _reachableKeys(ctx, openingDB);
+    if (!before.has(key)) return [];
+    const hypo = Object.assign({}, openingDB);
+    if (newMove) hypo[key] = Object.assign({}, openingDB[key], { move: newMove });
+    else         delete hypo[key];
+    const after = _reachableKeys(ctx, hypo);
+    return [...before].filter(k => k !== key && !after.has(k));
+}
+
+function _orphanMessage(verb, n) {
+    return `Attention : la ${verb} de ce coup rendra ${n} coup(s) en aval inaccessible(s). Voulez-vous également nettoyer ces branches orphelines ?`;
+}
+
+function _deleteEntries(keys) {
+    keys.forEach(k => { delete openingDB[k]; });
+    saveDB();
+}
+
+// Confirmation à trois issues : cascade / ce coup seulement / annuler.
+function askConfirmChoice(message, labels, onCascade, onSolo) {
+    const overlay = document.getElementById('confirm-overlay');
+    const actions = overlay.querySelector('.confirm-actions');
+    const okBtn   = document.getElementById('confirm-ok-btn');
+    const cancel  = document.getElementById('confirm-cancel-btn');
+    let alt = document.getElementById('confirm-alt-btn');
+    if (!alt) {
+        alt = document.createElement('button');
+        alt.id = 'confirm-alt-btn';
+        alt.className = 'btn';
+        actions.insertBefore(alt, okBtn);
+    }
+    document.getElementById('confirm-text').textContent = message;
+    actions.style.flexDirection = 'column';
+    okBtn.textContent = labels.cascade;  okBtn.style.order  = 0;
+    alt.textContent   = labels.solo;     alt.style.order    = 1;  alt.style.display = '';
+    cancel.style.order = 2;
+    overlay.classList.remove('hidden');
+
+    const cleanup = () => {
+        overlay.classList.add('hidden');
+        actions.style.flexDirection = '';
+        okBtn.textContent = 'Confirmer';
+        okBtn.style.order = cancel.style.order = '';
+        alt.style.display = 'none';
+        okBtn.onclick = alt.onclick = cancel.onclick = null;
+    };
+    okBtn.onclick  = () => { cleanup(); onCascade(); };
+    alt.onclick    = () => { cleanup(); onSolo(); };
+    cancel.onclick = cleanup;
+}
+
 // ─── ANNULATION / MODIFICATION D'UN COUP ENREGISTRÉ ──────────────────────────
 // - Dernier coup = coup adverse : simple retour arrière, la base n'est pas touchée.
 // - Dernier coup = mon coup     : après confirmation, l'entrée de la position
@@ -360,15 +502,21 @@ function undoMove() {
         return;
     }
 
-    askConfirm(
-        'Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ?',
-        () => {
-            delete openingDB[key];
-            saveDB();
-            performUndo();
-            setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.', 'new');
-        }
-    );
+    const orphans = findOrphans(key, null);
+    const finish  = extra => {
+        _deleteEntries([key].concat(extra));
+        performUndo();
+        setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.'
+            + (extra.length ? ` (${extra.length} branche(s) orpheline(s) nettoyée(s).)` : ''), 'new');
+    };
+
+    if (!orphans.length) {
+        askConfirm('Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ?', () => finish([]));
+    } else {
+        askConfirmChoice(_orphanMessage('suppression', orphans.length),
+            { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
+            () => finish(orphans), () => finish([]));
+    }
 }
 
 function performUndo() {
@@ -496,21 +644,35 @@ function saveEntry(key, newMoveStr) {
     if (newMoveStr !== old.move) {
         const san = _sanForKeyMove(key, newMoveStr);
         if (!san) { alert('Ce coup est impossible depuis cette position.'); return; }
-        // Nouvelle réponse = nouvelles statistiques.
-        const upd = { move: newMoveStr, san, attempts: 1, failures: 0 };
-        if (old.path) { upd.path = old.path.slice(0, -1).concat(newMoveStr); upd.ply = upd.path.length; }
-        openingDB[key] = upd;
-        saveDB();
+        const apply = extra => {
+            extra.forEach(k => { delete openingDB[k]; });
+            // Nouvelle réponse = nouvelles statistiques.
+            const upd = { move: newMoveStr, san, attempts: 1, failures: 0 };
+            if (old.path) { upd.path = old.path.slice(0, -1).concat(newMoveStr); upd.ply = upd.path.length; }
+            openingDB[key] = upd;
+            saveDB();
+            renderAdminEntries();
+        };
+        const orphans = findOrphans(key, newMoveStr);
+        if (!orphans.length) { apply([]); return; }
+        askConfirmChoice(_orphanMessage('modification', orphans.length),
+            { cascade: `Modifier et nettoyer les ${orphans.length} coup(s) orphelin(s)`, solo: 'Modifier ce coup seulement' },
+            () => apply(orphans), () => apply([]));
+        return;
     }
     renderAdminEntries();
 }
 
 function deleteEntry(key) {
-    askConfirm('Supprimer définitivement cette entrée de la base ?', () => {
-        delete openingDB[key];
-        saveDB();
-        renderAdminEntries();
-    });
+    const orphans = findOrphans(key, null);
+    const done    = extra => { _deleteEntries([key].concat(extra)); renderAdminEntries(); };
+    if (!orphans.length) {
+        askConfirm('Supprimer définitivement cette entrée de la base ?', () => done([]));
+    } else {
+        askConfirmChoice(_orphanMessage('suppression', orphans.length),
+            { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
+            () => done(orphans), () => done([]));
+    }
 }
 
 function addManualEntry() {
