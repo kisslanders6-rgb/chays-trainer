@@ -173,6 +173,21 @@ function handleClick(idx) {
 
 function _syncEngineToNavCursor() {
     if (navCursor === -1) return;
+
+    // Position initiale : on repart de zéro (toute l'ancienne ligne est écartée).
+    if (navCursor === NAV_START) {
+        const first    = moveHistory[0];
+        board          = first.boardBefore.slice();
+        castlingRights = { ...first.castlingBefore };
+        enPassant      = first.epBefore;
+        turn           = first.turnBefore;
+        lastFrom = -1; lastTo = -1;
+        moveHistory = [];
+        selected = null; legalMoves = []; hintPiece = null;
+        resetNavCursor();
+        renderMoves();
+        return;
+    }
     const snap = moveHistory[navCursor];
 
     board          = snap.boardBefore.slice();
@@ -521,3 +536,18 @@ function addManualEntry() {
 function closeAdmin() {
     document.getElementById('admin-overlay').classList.add('hidden');
 }
+
+// ─── OVERLAY BASE : fermeture par clic extérieur et touche Échap ──────────────
+
+(function initOverlayDismiss() {
+    const overlay = document.getElementById('admin-overlay');
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeAdmin(); });
+
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const hidden = id => document.getElementById(id).classList.contains('hidden');
+        if (!hidden('help-overlay')) return;                       // l'aide gère son propre Échap
+        if (!hidden('confirm-overlay')) { document.getElementById('confirm-cancel-btn').click(); return; }
+        if (!hidden('admin-overlay')) closeAdmin();
+    });
+})();
