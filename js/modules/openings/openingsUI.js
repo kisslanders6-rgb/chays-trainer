@@ -54,7 +54,7 @@ function renderBoard() {
                 sq.appendChild(pc);
             }
 
-            sq.addEventListener('click', () => handleClick(idx));
+            sq.addEventListener('click', () => { if (_dragJustEnded()) return; handleClick(idx); });
             el.appendChild(sq);
         });
     });
@@ -62,8 +62,9 @@ function renderBoard() {
 
 // ─── BARRE DE COUPS ───────────────────────────────────────────────────────────
 
-function renderMoves() {
+function _paintMovesBar(active) {
     const bar = document.getElementById('moves-bar');
+    bar.classList.toggle('locked', gameMode === 'training');   // non cliquable en entraînement
     if (!moveHistory.length) {
         bar.innerHTML = '<span style="color:#5a4020">Aucun coup joué</span>';
         return;
@@ -71,9 +72,13 @@ function renderMoves() {
     let html = '';
     moveHistory.forEach((m, i) => {
         if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
-        html += `<span class="move-token">${m.san}</span> `;
+        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${m.san}</span> `;
     });
     bar.innerHTML = html;
+}
+
+function renderMoves() {
+    _paintMovesBar(navCursor === -1 ? moveHistory.length - 1 : navCursor);
 }
 
 // ─── BARRE DE STATUT ──────────────────────────────────────────────────────────
@@ -181,14 +186,7 @@ function renderNavBoard() {
     legalMoves = savedLegal;
 
     // Barre de coups avec surbrillance du coup courant
-    const bar = document.getElementById('moves-bar');
-    let html  = '';
-    moveHistory.forEach((m, i) => {
-        if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
-        const isActive = (i === navCursor);
-        html += `<span class="move-token" style="${isActive ? 'background:var(--accent);color:var(--accent-text);border-radius:4px;padding:0 3px;' : ''}">${m.san}</span> `;
-    });
-    bar.innerHTML = html || '<span style="color:#5a4020">Aucun coup joué</span>';
+    _paintMovesBar(navCursor);
     setStatus(`Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${snap.san}`, 'info');
 }
 
@@ -239,5 +237,167 @@ function flashWrong(toIdx) {
 
 function flipBoard() {
     boardFlipped = !boardFlipped;
-    renderBoard();
+    if (navCursor === -1) renderBoard(); else renderNavBoard();
 }
+
+// ─── BARRE DE COUPS CLIQUABLE ─────────────────────────────────────────────────
+// Un clic sur le coup i affiche la position exacte après ce coup
+// (même mécanisme que Précédent / Suivant ; désactivé en entraînement).
+
+function goToMove(i) {
+    if (gameMode === 'training') return;
+    const len = moveHistory.length;
+    if (i < 0 || i >= len) return;
+    if (i === len - 1) {
+        navCursor = -1;
+        renderBoard();
+        renderMoves();
+        setStatus('Retour à la position actuelle.', 'info');
+    } else {
+        navCursor = i;
+        renderNavBoard();
+    }
+    updateNavButtons();
+}
+
+// ─── GLISSER-DÉPOSER ──────────────────────────────────────────────────────────
+// Le glisser s'appuie sur handleClick() : le début du glisser sélectionne la
+// pièce (cases légales affichées), le dépôt joue ou refuse le coup exactement
+// comme le ferait un second clic. Un simple clic reste géré par le système actuel.
+
+const _boardEl       = document.getElementById('board');
+const DRAG_THRESHOLD = 6;      // px avant de considérer un glisser
+let _drag            = null;
+let _lastDragEnd     = 0;
+
+function _dragJustEnded() { return performance.now() - _lastDragEnd < 60; }
+
+function _canInteract() {
+    if (gameMode === 'preview') return false;
+    if (gameMode === 'training' && trainingState.busy) return false;
+    return document.getElementById('promo-overlay').classList.contains('hidden');
+}
+
+function _squareAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const sq = el && el.closest ? el.closest('#board .sq') : null;
+    return sq ? Number(sq.dataset.idx) : null;
+}
+
+function _setOver(idx, on) {
+    if (idx === null) return;
+    const sq = document.querySelector(`#board .sq[data-idx="${idx}"]`);
+    if (sq) sq.classList.toggle('hl-drop', on);
+}
+
+function _beginDrag(d) {
+    // Seules les pièces du camp au trait sont déplaçables (jamais de capture « par accident »).
+    const side = navCursor === -1 ? turn : (moveHistory[navCursor].turnBefore === 'w' ? 'b' : 'w');
+    if ((d.cls.includes('piece-w') ? 'w' : 'b') !== side) return false;
+
+    if (navCursor !== -1) _syncEngineToNavCursor();      // glisser depuis une position passée = nouvelle variante
+    if (selected !== d.from) handleClick(d.from);
+    if (selected !== d.from) return false;
+
+    const src = document.querySelector(`#board .sq[data-idx="${d.from}"]`);
+    if (src) src.classList.add('drag-source');
+
+    const g = document.createElement('div');
+    g.className = 'drag-ghost ' + d.cls;
+    g.textContent = d.txt;
+    g.style.cssText = `width:${d.size}px;height:${d.size}px;font-size:${d.font};`;
+    document.body.appendChild(g);
+    document.body.classList.add('dragging');
+    try { _boardEl.setPointerCapture(d.pid); } catch (e) {}
+
+    d.ghost  = g;
+    d.active = true;
+    return true;
+}
+
+function _endDrag(e, cancelled) {
+    const d = _drag;
+    _drag = null;
+    if (!d || !d.active) return;
+
+    if (d.ghost) d.ghost.remove();
+    document.body.classList.remove('dragging');
+    try { _boardEl.releasePointerCapture(d.pid); } catch (err) {}
+    document.querySelectorAll('#board .drag-source, #board .hl-drop')
+        .forEach(el => el.classList.remove('drag-source', 'hl-drop'));
+    _lastDragEnd = performance.now();
+    if (cancelled) return;
+
+    const to = _squareAt(e.clientX, e.clientY);
+    if (to === null)         handleClick(d.from);   // relâché hors de l'échiquier : désélection
+    else if (to !== d.from)  handleClick(to);       // joue / refuse / change de pièce (comme un clic)
+    // relâché sur sa propre case : la pièce reste sélectionnée
+}
+
+_boardEl.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !e.isPrimary || !_canInteract()) return;
+    const pieceEl = e.target.closest('.piece');
+    if (!pieceEl) return;
+    const sq = pieceEl.closest('.sq');
+    _drag = {
+        from: Number(sq.dataset.idx), x: e.clientX, y: e.clientY, pid: e.pointerId,
+        active: false, ghost: null, over: null,
+        cls: pieceEl.className, txt: pieceEl.textContent,
+        size: sq.getBoundingClientRect().width, font: getComputedStyle(sq).fontSize
+    };
+});
+
+_boardEl.addEventListener('pointermove', e => {
+    const d = _drag;
+    if (!d || e.pointerId !== d.pid) return;
+    if (!d.active) {
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return;
+        if (!_beginDrag(d)) { _drag = null; return; }
+    }
+    d.ghost.style.transform = `translate(${e.clientX - d.size / 2}px, ${e.clientY - d.size / 2}px) scale(1.12)`;
+    const over = _squareAt(e.clientX, e.clientY);
+    if (over !== d.over) { _setOver(d.over, false); _setOver(over, true); d.over = over; }
+});
+
+_boardEl.addEventListener('pointerup',     e => _endDrag(e, false));
+_boardEl.addEventListener('pointercancel', e => _endDrag(e, true));
+
+// ─── CLIC SUR LA BARRE DE COUPS ───────────────────────────────────────────────
+
+document.getElementById('moves-bar').addEventListener('click', e => {
+    const tok = e.target.closest('[data-i]');
+    if (tok) goToMove(Number(tok.dataset.i));
+});
+
+// ─── RACCOURCIS CLAVIER ───────────────────────────────────────────────────────
+//   ←  navPrev   →  navNext   Espace  indice   F  retourner l'échiquier
+
+function _keyboardAllowed(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    const t = e.target;
+    if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return false;
+    const gs = document.getElementById('game-screen');
+    if (!gs || gs.style.display === 'none' || gs.classList.contains('hidden')) return false;
+    return ['admin-overlay', 'confirm-overlay', 'promo-overlay']
+        .every(id => document.getElementById(id).classList.contains('hidden'));
+}
+
+document.addEventListener('keydown', e => {
+    if (!_keyboardAllowed(e)) return;
+    switch (e.key) {
+        case 'ArrowLeft':
+            if (gameMode === 'training') return;
+            e.preventDefault(); navPrev(); break;
+        case 'ArrowRight':
+            if (gameMode === 'training') return;
+            e.preventDefault(); navNext(); break;
+        case ' ':
+            if (e.repeat) return;
+            e.preventDefault();
+            if (e.target && e.target.tagName === 'BUTTON') e.target.blur();   // évite le clic fantôme au keyup
+            showHint(); break;
+        case 'f': case 'F':
+            if (e.repeat) return;
+            flipBoard(); break;
+    }
+});
