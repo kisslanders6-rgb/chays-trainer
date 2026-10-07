@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html data-theme="dark" lang="fr">
 <head>
-    <link rel="manifest" href="manifest.json" />
-    
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chays Trainer</title>
@@ -42,6 +40,11 @@
 
             <!-- Bouton thème -->
             <div class="topnav-right">
+                <button class="theme-toggle" onclick="showHelp()" title="Comment ça marche ?" aria-label="Aide">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                </button>
                 <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -160,7 +163,10 @@
     <!-- ─── OVERLAY BASE DE DONNÉES ──────────────────────────────────────── -->
     <div id="admin-overlay" class="overlay hidden">
         <div class="panel">
-            <div class="panel-title">🗄 Base de données d'ouvertures</div>
+            <div class="panel-head">
+                <div class="panel-title">🗄 Base de données d'ouvertures</div>
+                <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+            </div>
             <div class="admin-tabs" id="admin-tabs"></div>
             <div id="admin-entries"></div>
             <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()">+ Ajouter une entrée manuelle</button>
@@ -170,6 +176,32 @@
             </div>
             <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
             <button class="panel-close" onclick="closeAdmin()">Fermer</button>
+        </div>
+    </div>
+
+    <!-- ─── OVERLAY AIDE ──────────────────────────────────────────────────── -->
+    <div id="help-overlay" class="overlay hidden">
+        <div class="panel help-panel">
+            <div class="panel-head">
+                <div class="panel-title">ℹ️ Comment ça marche ?</div>
+                <button class="panel-x" onclick="closeHelp()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">♟</div>
+                <div><div class="help-title">Jouer</div>
+                    <div class="help-text">Vous jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur (💡 l'indice donne le type de pièce).</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">📊</div>
+                <div><div class="help-title">Statistiques</div>
+                    <div class="help-text">Chaque coup de votre répertoire reçoit un <strong>taux d'erreur</strong> (erreurs ÷ essais) calculé depuis le mode Jouer. Cliquez sur une pastille pour revoir la position correspondante.</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">🎯</div>
+                <div><div class="help-title">Entraînement</div>
+                    <div class="help-text">Révision ciblée de vos <strong>points faibles</strong> : l'échiquier rejoue les deux derniers coups pour remettre la position en contexte, puis vous cherchez la bonne réponse. Chaque réussite fait baisser le taux d'erreur.</div></div>
+            </div>
+            <div class="help-tips">Astuces : glissez-déposez ou cliquez les pièces · cliquez un coup de la barre pour y revenir · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>Espace</kbd> indice · <kbd>F</kbd> retourner · <kbd>Échap</kbd> fermer</div>
         </div>
     </div>
 
