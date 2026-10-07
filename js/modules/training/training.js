@@ -34,10 +34,11 @@ function initTraining() {
     panel.innerHTML = '<div class="train-cards">' + ['w', 'b'].map(c => {
         const db    = readDBFor(currentRepertoire, c);
         const total = Object.keys(db).length;
-        const n     = Object.values(db).filter(e => e.failures > 0 && e.attempts > 0).length;
-        const sub   = n ? `${n} position${n > 1 ? 's' : ''} à retravailler`
-                        : (total ? 'Aucune erreur enregistrée' : 'Répertoire vide');
-        return `<div class="train-card ${n ? '' : 'disabled'}" ${n ? `onclick="startTraining('${c}')"` : ''}>
+        const n     = Object.values(db).filter(e => e.failures > 0).length;
+        const sub   = !total ? 'Répertoire vide'
+                    : n      ? `${n} position${n > 1 ? 's' : ''} à retravailler · ${total} au total`
+                             : `Tout est maîtrisé · révision libre (${total})`;
+        return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `onclick="startTraining('${c}')"` : ''}>
             <div class="train-card-icon">${c === 'w' ? '♔' : '♚'}</div>
             <div class="train-card-title">${c === 'w' ? 'BLANCS' : 'NOIRS'}</div>
             <div class="train-card-sub">${sub}</div></div>`;
@@ -46,8 +47,10 @@ function initTraining() {
 
 // ─── BOUCLE D'ENTRAÎNEMENT ────────────────────────────────────────────────────
 
+// Toutes les positions du répertoire sont éligibles ; celles sans erreur ont un score
+// très réduit (TRAIN_MASTERED_FACTOR) et n'apparaissent donc que rarement.
 function _trainingPool() {
-    return Object.keys(openingDB).filter(k => openingDB[k].failures > 0 && openingDB[k].attempts > 0);
+    return Object.keys(openingDB);
 }
 
 function startTraining(color) {
@@ -65,11 +68,13 @@ function startTraining(color) {
 //   score = (0,15 + erreur lissée) × (0,05 + fraîcheur)
 //   - erreur lissée : (échecs + 0,6) / (essais + 2). Le lissage donne plus de poids
 //     à 3 échecs sur 3 (≈ 0,72) qu'à 1 échec sur 1 (≈ 0,53).
+//   - positions sans aucune erreur : score × 0,15 (révision occasionnelle).
 //   - fraîcheur     : 1 − e^(−jours / 3). ≈ 0 juste après un passage, ≈ 0,63 à 3 jours,
 //     ≈ 0,9 à 7 jours. Sans lastReviewed (ancienne entrée) : traité comme 30 jours.
 
 const TRAIN_TAU_DAYS    = 3;
 const TRAIN_UNSEEN_DAYS = 30;
+const TRAIN_MASTERED_FACTOR = 0.15;   // positions à 0 erreur : score × 0,15 → poids ÷ ~45 (tirage au carré)
 const DAY_MS            = 86400000;
 
 function _ageDays(e, now) {
@@ -79,7 +84,8 @@ function _ageDays(e, now) {
 function _priorityScore(e, now) {
     const err   = (e.failures + 0.6) / (e.attempts + 2);
     const fresh = 1 - Math.exp(-_ageDays(e, now) / TRAIN_TAU_DAYS);
-    return (0.15 + err) * (0.05 + fresh);
+    const score = (0.15 + err) * (0.05 + fresh);
+    return e.failures === 0 ? score * TRAIN_MASTERED_FACTOR : score;
 }
 
 // Choix pondéré par score² : les positions prioritaires reviennent souvent,
@@ -107,6 +113,7 @@ function _ageLabel(e, now) {
 
 function _drillReason(e) {
     const now  = Date.now();
+    if (e.failures === 0)             return `Révision · 100% de réussite · ${_ageLabel(e, now)}`;
     const pct  = Math.round(100 * e.failures / e.attempts);
     if (pct >= 50)                    return `Position critique · ${pct}% d'erreur`;
     if (_ageDays(e, now) >= 2)        return `À réviser · ${_ageLabel(e, now)}`;
@@ -115,7 +122,7 @@ function _drillReason(e) {
 
 function nextDrill() {
     stopTraining();
-    if (!_trainingPool().length) { setStatus('Aucune position à retravailler.', 'info'); return; }
+    if (!_trainingPool().length) { setStatus('Aucune position dans ce répertoire.', 'info'); return; }
 
     const key   = _pickDrill();
     const entry = openingDB[key];
@@ -158,14 +165,16 @@ function _drillReady() {
 // Appelé par executePlayerMove() en mode entraînement.
 function answerTrainingMove(entry, from, to, promo, movStr) {
     if (entry && movStr === entry.move) {
-        const before = Math.round(100 * entry.failures / entry.attempts);
+        const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
         entry.attempts++;
         entry.lastReviewed = Date.now();
         saveDB();
         const after = Math.round(100 * entry.failures / entry.attempts);
+        const msg   = entry.failures === 0 ? '✓ Bien joué ! Toujours à 100% de réussite'
+                                            : `✓ Bien joué ! Taux d'erreur : ${before}% → ${after}%`;
         trainingState.busy = true;
         trainingState.ok++;
-        _commitMove(from, to, promo, null, `✓ Bien joué ! Taux d'erreur : ${before}% → ${after}%`, 'ok');
+        _commitMove(from, to, promo, null, msg, 'ok');
         _later(nextDrill, 1400);
     } else {
         _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
