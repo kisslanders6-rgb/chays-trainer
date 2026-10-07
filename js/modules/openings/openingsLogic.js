@@ -286,7 +286,7 @@ function executePlayerMove(from, to, promo) {
     if (!entry) {
         // Position inconnue → ce coup devient l'unique réponse de référence.
         const path = pathNow.concat(movStr);
-        openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length };
+        openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length, lastReviewed: Date.now() };
         saveDB();
         _commitMove(from, to, promo, key, `📝 Nouveau coup enregistré : ${san}`, 'new');
 
@@ -294,6 +294,7 @@ function executePlayerMove(from, to, promo) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
         const transp = _isTransposition(entry);
         entry.attempts++;
+        entry.lastReviewed = Date.now();
         if (!entry.path) { entry.path = pathNow.concat(movStr); entry.ply = entry.path.length; }
         saveDB();
         _commitMove(from, to, promo, null, transp ? '✓ Correct ! (transposition)' : '✓ Correct !', 'ok');
@@ -302,6 +303,7 @@ function executePlayerMove(from, to, promo) {
         // Mauvais coup : refusé, la bonne réponse n'est pas dévoilée.
         entry.attempts++;
         entry.failures++;
+        entry.lastReviewed = Date.now();
         saveDB();
         _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
     }
@@ -647,7 +649,7 @@ function saveEntry(key, newMoveStr) {
         const apply = extra => {
             extra.forEach(k => { delete openingDB[k]; });
             // Nouvelle réponse = nouvelles statistiques.
-            const upd = { move: newMoveStr, san, attempts: 1, failures: 0 };
+            const upd = { move: newMoveStr, san, attempts: 1, failures: 0, lastReviewed: Date.now() };
             if (old.path) { upd.path = old.path.slice(0, -1).concat(newMoveStr); upd.ply = upd.path.length; }
             openingDB[key] = upd;
             saveDB();
@@ -690,7 +692,7 @@ function addManualEntry() {
     if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(m)) { alert('Format de coup invalide.'); return; }
     const san = _sanForKeyMove(key, m);
     if (!san) { alert('Ce coup est impossible depuis cette position.'); return; }
-    openingDB[key] = { move: m, san, attempts: 1, failures: 0 };
+    openingDB[key] = { move: m, san, attempts: 1, failures: 0, lastReviewed: Date.now() };
     saveDB();
     renderAdminEntries();
 }
