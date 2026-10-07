@@ -6,7 +6,8 @@
  *
  * Pour chaque position : l'échiquier se place 2 demi-coups avant, rejoue
  * automatiquement ces deux coups (contexte), puis me rend la main.
- *   - succès : attempts + 1 (failures inchangé → le taux d'erreur baisse)
+ *   - sélection : score de priorité (taux d'erreur lissé × fraîcheur, cf. _priorityScore)
+ *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
  *   - erreur : coup refusé, on réessaie ; l'entraînement ne modifie pas les
  *     compteurs (les stats reflètent les erreurs du menu « Jouer »).
  */
@@ -15,7 +16,7 @@
 
 const TRAIN_STEP_MS = 750;
 
-const trainingState = { busy: false, timers: [], lastKey: null, current: null, ok: 0 };
+const trainingState = { busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '' };
 
 function _later(fn, ms) { trainingState.timers.push(setTimeout(fn, ms)); }
 
@@ -60,12 +61,56 @@ function startTraining(color) {
     nextDrill();
 }
 
+// ─── SCORE DE PRIORITÉ (répétition espacée) ──────────────────────────────────
+//   score = (0,15 + erreur lissée) × (0,05 + fraîcheur)
+//   - erreur lissée : (échecs + 0,6) / (essais + 2). Le lissage donne plus de poids
+//     à 3 échecs sur 3 (≈ 0,72) qu'à 1 échec sur 1 (≈ 0,53).
+//   - fraîcheur     : 1 − e^(−jours / 3). ≈ 0 juste après un passage, ≈ 0,63 à 3 jours,
+//     ≈ 0,9 à 7 jours. Sans lastReviewed (ancienne entrée) : traité comme 30 jours.
+
+const TRAIN_TAU_DAYS    = 3;
+const TRAIN_UNSEEN_DAYS = 30;
+const DAY_MS            = 86400000;
+
+function _ageDays(e, now) {
+    return e.lastReviewed ? Math.max(0, (now - e.lastReviewed) / DAY_MS) : TRAIN_UNSEEN_DAYS;
+}
+
+function _priorityScore(e, now) {
+    const err   = (e.failures + 0.6) / (e.attempts + 2);
+    const fresh = 1 - Math.exp(-_ageDays(e, now) / TRAIN_TAU_DAYS);
+    return (0.15 + err) * (0.05 + fresh);
+}
+
+// Choix pondéré par score² : les positions prioritaires reviennent souvent,
+// les autres restent possibles. Jamais deux fois de suite la même s'il y a le choix.
 function _pickDrill() {
-    const pool = _trainingPool().map(k => ({
-        k, r: openingDB[k].failures / openingDB[k].attempts, f: openingDB[k].failures, rnd: Math.random()
-    })).sort((a, b) => b.r - a.r || b.f - a.f || a.rnd - b.rnd);
-    // Évite de reposer deux fois de suite la même position quand il y a le choix.
-    return (pool.length > 1 && pool[0].k === trainingState.lastKey) ? pool[1].k : pool[0].k;
+    const now  = Date.now();
+    let pool   = _trainingPool().map(k => ({ k, w: Math.pow(_priorityScore(openingDB[k], now), 2) }));
+    if (pool.length > 1) pool = pool.filter(x => x.k !== trainingState.lastKey);
+    let r = Math.random() * pool.reduce((s, x) => s + x.w, 0);
+    for (const x of pool) { r -= x.w; if (r <= 0) return x.k; }
+    return pool[pool.length - 1].k;
+}
+
+// Raison affichée au début de l'exercice.
+function _ageLabel(e, now) {
+    if (!e.lastReviewed) return 'non revu depuis longtemps';
+    const min = (now - e.lastReviewed) / 60000;
+    if (min < 60)   return `revu il y a ${Math.max(1, Math.round(min))} min`;
+    if (min < 1440) return `revu il y a ${Math.round(min / 60)} h`;
+    const d = Math.floor(min / 1440);
+    if (d < 14)     return `non revu depuis ${d} jour${d > 1 ? 's' : ''}`;
+    const w = Math.floor(d / 7);
+    return `non revu depuis ${w} semaine${w > 1 ? 's' : ''}`;
+}
+
+function _drillReason(e) {
+    const now  = Date.now();
+    const pct  = Math.round(100 * e.failures / e.attempts);
+    if (pct >= 50)                    return `Position critique · ${pct}% d'erreur`;
+    if (_ageDays(e, now) >= 2)        return `À réviser · ${_ageLabel(e, now)}`;
+    return `À consolider · ${pct}% d'erreur · ${_ageLabel(e, now)}`;
 }
 
 function nextDrill() {
@@ -75,6 +120,7 @@ function nextDrill() {
     const key   = _pickDrill();
     const entry = openingDB[key];
     trainingState.current = key;
+    trainingState.reason  = _drillReason(entry);
     trainingState.lastKey = key;
     trainingState.busy    = true;
 
@@ -83,7 +129,7 @@ function nextDrill() {
         const start = Math.max(0, n - 2);
         const ctx   = entry.path.slice(start, n);
         loadPositionFromPath(entry.path.slice(0, start));
-        setStatus('Mise en situation…', 'info');
+        setStatus(`Mise en situation… · ${trainingState.reason}`, 'info');
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
             applyMove(m.from, m.to, m.promo);
@@ -106,7 +152,7 @@ function _drillReady() {
         renderBoard();
     }
     trainingState.busy = false;
-    setStatus(`Entraînement · à vous de jouer${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
+    setStatus(`À vous de jouer · ${trainingState.reason}${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
 }
 
 // Appelé par executePlayerMove() en mode entraînement.
@@ -114,6 +160,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
     if (entry && movStr === entry.move) {
         const before = Math.round(100 * entry.failures / entry.attempts);
         entry.attempts++;
+        entry.lastReviewed = Date.now();
         saveDB();
         const after = Math.round(100 * entry.failures / entry.attempts);
         trainingState.busy = true;
