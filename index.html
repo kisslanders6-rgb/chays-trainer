@@ -170,12 +170,32 @@
             <div class="admin-tabs" id="admin-tabs"></div>
             <div id="admin-entries"></div>
             <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()">+ Ajouter une entrée manuelle</button>
-            <div style="display:flex;gap:8px;margin-top:8px;">
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()">⬇ Exporter (JSON)</button>
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()">⬆ Importer (JSON)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()">⬆ Importer PGN</button>
             </div>
             <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
             <button class="panel-close" onclick="closeAdmin()">Fermer</button>
+        </div>
+    </div>
+
+    <!-- ─── OVERLAY IMPORT PGN ────────────────────────────────────────────── -->
+    <div id="pgn-overlay" class="overlay hidden">
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-title">⬆ Importer un PGN</div>
+                <button class="panel-x" onclick="closePgnImport()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+            </div>
+            <div class="panel-sub">Import dans : <strong id="pgn-target" style="color:var(--accent)"></strong>. Les variantes (parenthèses) sont importées. Vos coups déjà enregistrés ne sont jamais écrasés.</div>
+            <div class="pgn-file-row">
+                <button class="btn" onclick="document.getElementById('pgn-file-input').click()">📂 Choisir un fichier .pgn</button>
+                <span id="pgn-file-name" class="pgn-file-name"></span>
+                <input type="file" id="pgn-file-input" accept=".pgn,.txt" style="display:none;" onchange="onPgnFileChosen(event)" />
+            </div>
+            <textarea id="pgn-text" class="pgn-area" rows="9" spellcheck="false" placeholder="…ou collez ici le texte PGN&#10;1. e4 e5 2. Nf3 (2. f4 exf4) 2... Nc6 3. Bb5 *"></textarea>
+            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runPgnImport()">Analyser et importer</button>
+            <div id="pgn-result" class="pgn-result"></div>
         </div>
     </div>
 
