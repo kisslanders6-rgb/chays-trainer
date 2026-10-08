@@ -40,6 +40,12 @@
 
             <!-- Bouton thème -->
             <div class="topnav-right">
+                <button class="theme-toggle" onclick="showSettings()" title="Paramètres" aria-label="Paramètres">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
                 <button class="theme-toggle" onclick="showHelp()" title="Comment ça marche ?" aria-label="Aide">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
@@ -199,6 +205,45 @@
         </div>
     </div>
 
+    <!-- ─── OVERLAY PARAMÈTRES ────────────────────────────────────────────── -->
+    <div id="settings-overlay" class="overlay hidden">
+        <div class="panel settings-panel">
+            <div class="panel-head">
+                <div class="panel-title">⚙️ Paramètres</div>
+                <button class="panel-x" onclick="closeSettings()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+            </div>
+
+            <div class="set-section">
+                <div class="set-row">
+                    <div>
+                        <div class="set-label">Effets sonores</div>
+                        <div class="set-hint">Coups, captures et coups refusés</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-sound" onchange="onSoundToggle(this.checked)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="set-row">
+                    <div class="set-label">Volume</div>
+                    <div class="set-range">
+                        <input type="range" id="set-volume" min="0" max="100" step="5" oninput="onVolumeInput(this.value)" onchange="onVolumeCommit()">
+                        <span id="set-volume-val" class="set-hint"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="set-section">
+                <div class="set-label" style="margin-bottom:10px;">Thème de l'échiquier</div>
+                <div class="theme-options">
+                    <button class="theme-opt" data-board="classic" onclick="setBoardTheme('classic')"><span class="theme-swatch"></span>Vert classique</button>
+                    <button class="theme-opt" data-board="wood"    onclick="setBoardTheme('wood')"><span class="theme-swatch"></span>Bois chaud</button>
+                    <button class="theme-opt" data-board="night"   onclick="setBoardTheme('night')"><span class="theme-swatch"></span>Bleu nuit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ─── OVERLAY AIDE ──────────────────────────────────────────────────── -->
     <div id="help-overlay" class="overlay hidden">
         <div class="panel help-panel">
@@ -248,6 +293,9 @@
 
 <!-- ─── SCRIPTS (ordre de dépendance) ─────────────────────────────────── -->
 <script src="js/storage.js"></script>
+<script src="js/core/settings.js"></script>
+<script src="js/core/sound.js"></script>
+<script src="js/core/pieces.js"></script>
 <script src="js/core/chessEngine.js"></script>
 <script src="js/modules/openings/openingsLogic.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
