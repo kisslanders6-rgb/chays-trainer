@@ -50,7 +50,7 @@ function renderBoard() {
             if (p) {
                 const pc      = document.createElement('div');
                 pc.className  = 'piece ' + (isWhite(p) ? 'piece-w' : 'piece-b');
-                pc.textContent = PIECES[p];
+                pc.innerHTML   = pieceHTML(p);
                 sq.appendChild(pc);
             }
 
@@ -58,6 +58,38 @@ function renderBoard() {
             el.appendChild(sq);
         });
     });
+
+    if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
+}
+
+// ─── PIÈCES VECTORIELLES & ANIMATION DE DÉPLACEMENT ──────────────────────────
+
+function pieceHTML(p) {
+    return (typeof PIECE_SVG !== 'undefined' && PIECE_SVG[p]) || PIECES[p];   // repli Unicode
+}
+
+let moveAnim = null;
+
+// Demande une animation (case de départ → case d'arrivée) au prochain renderBoard().
+// Ignorée après un glisser-déposer (la pièce a déjà été déplacée à la main) et si
+// l'utilisateur préfère réduire les animations.
+function animateNextMove(from, to) {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    moveAnim = (reduce || _dragJustEnded()) ? null : { from, to };
+}
+
+function _runMoveAnim(a) {
+    const b  = document.getElementById('board');
+    const f  = b.querySelector(`.sq[data-idx="${a.from}"]`);
+    const t  = b.querySelector(`.sq[data-idx="${a.to}"]`);
+    const pc = t && t.querySelector('.piece');
+    if (!f || !pc || !pc.animate) return;
+    const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    t.style.zIndex = 5;                                   // la pièce passe au-dessus des autres cases
+    const anim = pc.animate(
+        [{ transform: `translate(${fr.left - tr.left}px, ${fr.top - tr.top}px)` }, { transform: 'translate(0, 0)' }],
+        { duration: 170, easing: 'cubic-bezier(.22,.8,.3,1)' });
+    anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; };
 }
 
 // ─── BARRE DE COUPS ───────────────────────────────────────────────────────────
@@ -230,7 +262,7 @@ function showPromotion() {
     pieces.forEach(pc => {
         const btn         = document.createElement('div');
         btn.className     = 'promo-piece';
-        btn.textContent   = PIECES[pc];
+        btn.innerHTML     = pieceHTML(pc);
         btn.onclick = () => {
             overlay.classList.add('hidden');
             if (awaitingPromotion) {
@@ -327,7 +359,7 @@ function _beginDrag(d) {
 
     const g = document.createElement('div');
     g.className = 'drag-ghost ' + d.cls;
-    g.textContent = d.txt;
+    g.innerHTML = d.html;
     g.style.cssText = `width:${d.size}px;height:${d.size}px;font-size:${d.font};`;
     document.body.appendChild(g);
     document.body.classList.add('dragging');
@@ -365,7 +397,7 @@ _boardEl.addEventListener('pointerdown', e => {
     _drag = {
         from: Number(sq.dataset.idx), x: e.clientX, y: e.clientY, pid: e.pointerId,
         active: false, ghost: null, over: null,
-        cls: pieceEl.className, txt: pieceEl.textContent,
+        cls: pieceEl.className, html: pieceEl.innerHTML,
         size: sq.getBoundingClientRect().width, font: getComputedStyle(sq).fontSize
     };
 });
@@ -401,7 +433,7 @@ function _keyboardAllowed(e) {
     if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return false;
     const gs = document.getElementById('game-screen');
     if (!gs || gs.style.display === 'none' || gs.classList.contains('hidden')) return false;
-    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay']
+    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay', 'settings-overlay']
         .every(id => document.getElementById(id).classList.contains('hidden'));
 }
 
