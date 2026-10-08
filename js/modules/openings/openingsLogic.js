@@ -222,6 +222,8 @@ function _syncEngineToNavCursor() {
 // ─── APPLICATION CENTRALISÉE D'UN COUP (état + rendu) ────────────────────────
 
 function _commitMove(from, to, promo, newDbKey, statusMsg, statusType) {
+    playMoveSound(from, to);                // avant applyMove : détecte la capture
+    animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
     selected = null; legalMoves = []; hintPiece = null;
     resetNavCursor();
@@ -261,6 +263,7 @@ function _rejectMove(toIdx, msg) {
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
     flashWrong(toIdx);
+    playSound('error');
     setStatus(msg, 'err');
 }
 
@@ -960,7 +963,7 @@ function runPgnImport() {
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
         const hidden = id => document.getElementById(id).classList.contains('hidden');
-        if (!hidden('help-overlay')) return;                       // l'aide gère son propre Échap
+        if (!hidden('help-overlay') || !hidden('settings-overlay')) return;   // aide / paramètres gèrent leur propre Échap
         if (!hidden('confirm-overlay')) { document.getElementById('confirm-cancel-btn').click(); return; }
         if (!hidden('pgn-overlay')) { closePgnImport(); return; }
         if (!hidden('admin-overlay')) closeAdmin();
