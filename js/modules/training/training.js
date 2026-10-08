@@ -139,6 +139,8 @@ function nextDrill() {
         setStatus(`Mise en situation… · ${trainingState.reason}`, 'info');
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
+            playMoveSound(m.from, m.to);
+            animateNextMove(m.from, m.to);
             applyMove(m.from, m.to, m.promo);
             renderBoard();
         }, TRAIN_STEP_MS * (i + 1)));
