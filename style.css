@@ -598,3 +598,18 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .help-text strong { color: var(--text); }
 .help-tips { margin-top: 16px; font-size: 12px; line-height: 1.9; color: var(--text-dim); }
 .help-tips kbd { padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; background: var(--bg-inset); font-family: var(--font-mono); font-size: 11px; color: var(--text); }
+
+/* ─── IMPORT PGN ─────────────────────────────────────────────────────────── */
+.pgn-file-row { display: flex; align-items: center; gap: 10px; margin: 12px 0 10px; }
+.pgn-file-name { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pgn-area { width: 100%; min-height: 150px; resize: vertical; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-inset); color: var(--text); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+.pgn-area:focus { outline: none; border-color: var(--accent); }
+.pgn-result { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.pgn-note { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; border: 1px solid var(--border); background: var(--bg-inset); }
+.pgn-note.ok   { border-color: var(--ok);  color: var(--ok);  font-weight: 700; }
+.pgn-note.warn { border-color: #d9a21b;    color: #d9a21b; }
+.pgn-note.err  { border-color: var(--err); color: var(--err); }
+.pgn-note.info { color: var(--text-muted); }
+.pgn-line { font-size: 12px; color: var(--text-dim); }
+.pgn-list { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+.pgn-list strong { color: var(--text); }
