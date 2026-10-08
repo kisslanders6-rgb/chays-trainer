@@ -45,6 +45,52 @@ function closeHelp() { document.getElementById('help-overlay').classList.add('hi
     });
 })();
 
+// ─── PARAMÈTRES (sons, volume, thème de l'échiquier) ──────────────────────────
+
+function syncSettingsUI() {
+    document.getElementById('set-sound').checked = appSettings.sound;
+    const slider = document.getElementById('set-volume');
+    slider.value    = Math.round(appSettings.volume * 100);
+    slider.disabled = !appSettings.sound;
+    document.getElementById('set-volume-val').textContent = slider.value + ' %';
+    document.querySelectorAll('.theme-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.board === appSettings.boardTheme));
+}
+
+function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
+function closeSettings() { document.getElementById('settings-overlay').classList.add('hidden'); }
+
+function onSoundToggle(on) {
+    appSettings.sound = on;
+    saveSettings();
+    syncSettingsUI();
+    if (on) playSound('move');                       // aperçu
+}
+
+function onVolumeInput(v) {
+    appSettings.volume = Number(v) / 100;
+    document.getElementById('set-volume-val').textContent = v + ' %';
+    saveSettings();
+}
+
+function onVolumeCommit() { playSound('move'); }     // aperçu au relâchement du curseur
+
+function setBoardTheme(theme) {
+    if (!BOARD_THEMES.includes(theme)) return;
+    appSettings.boardTheme = theme;
+    saveSettings();
+    applyBoardTheme();
+    syncSettingsUI();
+}
+
+(function initSettingsDismiss() {
+    const overlay = document.getElementById('settings-overlay');
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeSettings(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeSettings();
+    });
+})();
+
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
 function switchHomeTab(tab) {
