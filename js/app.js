@@ -70,8 +70,10 @@ function syncSettingsUI() {
     slider.value    = Math.round(appSettings.volume * 100);
     slider.disabled = !appSettings.sound;
     document.getElementById('set-volume-val').textContent = slider.value + ' %';
-    document.querySelectorAll('.theme-opt').forEach(b =>
+        document.querySelectorAll('.theme-opt[data-board]').forEach(b =>
         b.classList.toggle('active', b.dataset.board === appSettings.boardTheme));
+    document.querySelectorAll('.piece-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
 }
 
 function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
@@ -98,6 +100,26 @@ function setBoardTheme(theme) {
     saveSettings();
     applyBoardTheme();
     syncSettingsUI();
+}
+
+// Cartes de sélection du style de pièces (générées depuis le registre PIECE_SETS).
+function renderPieceOptions() {
+    const box = document.getElementById('piece-options');
+    if (!box) return;
+    box.innerHTML = PIECE_SET_IDS.map(id => {
+        const s = PIECE_SETS[id];
+        return `<button class="theme-opt piece-opt" data-piece="${id}" onclick="setPieceStyle('${id}')">` +
+               `<span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`;
+    }).join('');
+}
+
+function setPieceStyle(id) {
+    if (!PIECE_SET_IDS.includes(id)) return;
+    appSettings.pieceSet = id;
+    saveSettings();
+    applyPieceSet();
+    syncSettingsUI();
+    refreshPieces();                       // bascule instantanée sur le plateau
 }
 
 (function initSettingsDismiss() {
@@ -223,4 +245,6 @@ function goHome(tab) {
     purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
     updateTrashBadges();
+    loadTheme();
+    renderPieceOptions();
 })();
