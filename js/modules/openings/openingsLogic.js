@@ -439,13 +439,17 @@ function findOrphans(key, newMove) {
 }
 
 function _orphanMessage(verb, n) {
-    return `Attention : la ${verb} de ce coup rendra ${n} coup(s) en aval inaccessible(s). Voulez-vous également nettoyer ces branches orphelines ?`;
+    return `Attention : la ${verb} de ce coup rendra ${n} coup(s) en aval inaccessible(s). Voulez-vous également nettoyer ces branches orphelines ? (Tout est conservé 30 jours dans la corbeille.)`;
 }
 
+// Supprime des coups de la base active après les avoir placés dans la corbeille (30 jours).
+// Renvoie false (rien n'est supprimé) si la corbeille n'a pas pu les accueillir.
 function _deleteEntries(keys) {
+    if (!trashEntries(keys)) return false;
     keys.forEach(k => { delete openingDB[k]; });
     saveDB();
     noteChange(keys.length);
+    return true;
 }
 
 // Confirmation à trois issues : cascade / ce coup seulement / annuler.
@@ -518,7 +522,7 @@ function undoMove() {
 
     const orphans = findOrphans(key, null);
     const finish  = extra => {
-        _deleteEntries([key].concat(extra));
+        if (!_deleteEntries([key].concat(extra))) return;
         performUndo();
         if (typeof refreshTree === 'function') refreshTree();
         setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.'
@@ -526,7 +530,7 @@ function undoMove() {
     };
 
     if (!orphans.length) {
-        askConfirm('Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ?', () => finish([]));
+        askConfirm('Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ? (Il est conservé 30 jours dans la corbeille.)', () => finish([]));
     } else {
         askConfirmChoice(_orphanMessage('suppression', orphans.length),
             { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
@@ -660,6 +664,7 @@ function saveEntry(key, newMoveStr) {
         const san = _sanForKeyMove(key, newMoveStr);
         if (!san) { alert('Ce coup est impossible depuis cette position.'); return; }
         const apply = extra => {
+            if (!trashEntries([key].concat(extra), 'coup remplacé')) return;      // ancien coup + branches orphelines conservés 30 jours
             extra.forEach(k => { delete openingDB[k]; });
             // Nouvelle réponse = nouvelles statistiques.
             const upd = { move: newMoveStr, san, attempts: 1, failures: 0, lastReviewed: Date.now() };
@@ -681,9 +686,9 @@ function saveEntry(key, newMoveStr) {
 
 function deleteEntry(key) {
     const orphans = findOrphans(key, null);
-    const done    = extra => { _deleteEntries([key].concat(extra)); renderAdminEntries(); };
+    const done    = extra => { if (!_deleteEntries([key].concat(extra))) return; renderAdminEntries(); };
     if (!orphans.length) {
-        askConfirm('Supprimer définitivement cette entrée de la base ?', () => done([]));
+        askConfirm('Placer cette entrée dans la corbeille ? Elle restera restaurable pendant 30 jours.', () => done([]));
     } else {
         askConfirmChoice(_orphanMessage('suppression', orphans.length),
             { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
@@ -977,11 +982,11 @@ function runPgnImport() {
 // ─── OVERLAY BASE : fermeture par clic extérieur et touche Échap ──────────────
 
 (function initOverlayDismiss() {
-    ['admin-overlay', 'pgn-overlay'].forEach(id => {
+    ['admin-overlay', 'pgn-overlay', 'trash-overlay'].forEach(id => {
         const overlay = document.getElementById(id);
         overlay.addEventListener('mousedown', e => {
             if (e.target !== overlay) return;
-            if (id === 'pgn-overlay') closePgnImport(); else closeAdmin();
+            if (id === 'pgn-overlay') closePgnImport(); else if (id === 'trash-overlay') closeTrash(); else closeAdmin();
         });
     });
 
@@ -990,6 +995,7 @@ function runPgnImport() {
         const hidden = id => document.getElementById(id).classList.contains('hidden');
         if (!hidden('help-overlay') || !hidden('settings-overlay')) return;   // aide / paramètres gèrent leur propre Échap
         if (!hidden('confirm-overlay')) { document.getElementById('confirm-cancel-btn').click(); return; }
+        if (!hidden('trash-overlay')) { closeTrash(); return; }
         if (!hidden('pgn-overlay')) { closePgnImport(); return; }
         if (!hidden('admin-overlay')) closeAdmin();
     });
