@@ -159,7 +159,14 @@
                         <div class="status-dot dot-info" id="status-dot"></div>
                         <div class="status-text" id="status-text">Initialisation...</div>
                     </div>
-                    <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
+                    <div class="side-lower">
+                        <div class="side-tabs" data-modes="play">
+                            <button class="side-tab active" id="side-tab-moves" onclick="showSideTab('moves')">Coups</button>
+                            <button class="side-tab" id="side-tab-tree" onclick="showSideTab('tree')">🌳 Arbre</button>
+                        </div>
+                        <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
+                        <div class="tree-view hidden" id="tree-view"></div>
+                    </div>
                 </div>
 
             </div>
@@ -203,6 +210,13 @@
             <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runPgnImport()">Analyser et importer</button>
             <div id="pgn-result" class="pgn-result"></div>
         </div>
+    </div>
+
+    <!-- ─── RAPPEL DE SAUVEGARDE ──────────────────────────────────────────── -->
+    <div id="backup-toast" class="toast hidden" role="status">
+        <span>Pensez à exporter votre base pour sécuriser vos données</span>
+        <button class="toast-link" onclick="exportFromToast()">Exporter maintenant</button>
+        <button class="toast-x" onclick="hideBackupToast()" aria-label="Fermer">✕</button>
     </div>
 
     <!-- ─── OVERLAY PARAMÈTRES ────────────────────────────────────────────── -->
@@ -299,6 +313,7 @@
 <script src="js/core/chessEngine.js"></script>
 <script src="js/modules/openings/openingsLogic.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
+<script src="js/modules/openings/treeView.js"></script>
 <script src="js/modules/stats/stats.js"></script>
 <script src="js/modules/training/training.js"></script>
 <script src="js/modules/endgame/endgame.js"></script>
