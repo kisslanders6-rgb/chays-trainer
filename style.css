@@ -776,3 +776,75 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
 .trash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .trash-actions .btn { padding: 7px 12px; font-size: 12px; }
 #trash-msg:not(:empty) { margin: 10px 0 4px; }
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HARMONISATION DES COULEURS AVEC LE THÈME D'ÉCHIQUIER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Variables « côtés » dérivées de la palette de l'échiquier actif.
+      Tout est calculé à partir de --board-light / --board-dark : un nouveau
+      thème d'échiquier s'harmonise donc sans écrire une ligne de plus. */
+:root {
+    --side-w-bg:     var(--board-light);
+    --side-w-fg:     color-mix(in srgb, var(--board-dark) 22%, #120d04);
+    --side-w-border: color-mix(in srgb, var(--board-dark) 55%, var(--board-light));
+    --side-b-bg:     color-mix(in srgb, var(--board-dark) 62%, #0b0b0b);
+    --side-b-fg:     var(--board-light);
+    --side-b-border: var(--board-dark);
+    --side-glow:     color-mix(in srgb, var(--board-dark) 45%, transparent);
+    --side-sheen:    linear-gradient(145deg, rgba(255,255,255,.16), transparent 55%);
+}
+
+/* 2. Accents par thème d'échiquier — mode clair (data-theme="dark" dans ce projet)
+      puis mode sombre (data-theme="light"). Classique = valeurs d'origine. */
+html[data-board="wood"] {
+    --accent: #7a4e24;  --accent-bright: #94622f;  --accent-dim: #b0824f;  --info: #7a4e24;
+}
+html[data-board="night"] {
+    --accent: #34508a;  --accent-bright: #4064a8;  --accent-dim: #6d86b8;  --info: #34508a;
+}
+html[data-board="wood"][data-theme="light"] {
+    --accent: #9a6431;  --accent-bright: #b3763b;  --accent-dim: #7a4e24;  --info: #9a6431;
+}
+html[data-board="night"][data-theme="light"] {
+    --accent: #4a6fb5;  --accent-bright: #5c82cc;  --accent-dim: #3a5790;  --info: #4a6fb5;
+}
+
+/* 3. Boutons de choix de camp (écran d'accueil) */
+.color-btn {
+    background-image: var(--side-sheen);
+    transition: transform .2s, box-shadow .2s, border-color .2s, background-color .2s, color .2s;
+}
+.color-btn-w {
+    background-color: var(--side-w-bg);
+    color: var(--side-w-fg);
+    border-color: var(--side-w-border);
+}
+.color-btn-b {
+    background-color: var(--side-b-bg);
+    color: var(--side-b-fg);
+    border-color: var(--side-b-border);
+}
+.color-btn-w:hover, .color-btn-b:hover {
+    background-color: revert-layer;
+    border-color: var(--accent-bright);
+    box-shadow: 0 10px 26px var(--side-glow);
+}
+.color-btn-w:hover { background-color: color-mix(in srgb, var(--side-w-bg) 88%, #fff); }
+.color-btn-b:hover { background-color: color-mix(in srgb, var(--side-b-bg) 82%, var(--board-dark)); }
+
+/* 4. Badge de couleur (en partie) */
+.color-badge { border: 1px solid transparent; transition: background-color .2s, color .2s, border-color .2s; }
+.badge-white { background: var(--side-w-bg); color: var(--side-w-fg); border-color: var(--side-w-border); }
+.badge-black { background: var(--side-b-bg); color: var(--side-b-fg); border-color: var(--side-b-border); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SÉLECTEUR DE STYLE DE PIÈCES (Paramètres)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.piece-preview { display: flex; width: 84px; height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid var(--board-border); }
+.piece-preview > span { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.piece-preview > span:first-child { background: var(--board-light); }
+.piece-preview > span:last-child  { background: var(--board-dark); }
+.piece-preview svg { width: 88%; height: 88%; display: block; pointer-events: none; }
