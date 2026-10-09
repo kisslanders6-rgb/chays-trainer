@@ -72,7 +72,8 @@
 
                 <div class="repertoire-select">
                     <div class="repertoire-select-label">Répertoire de travail</div>
-                    <div class="repertoire-list" id="repertoire-list"></div>
+                    <div class="repertoire-list" id="repertoire-list" data-manage="1"></div>
+                    <div class="trash-link" onclick="showTrash()">🗑 Corbeille <span data-trash-count></span></div>
                 </div>
 
                 <div class="color-choice">
@@ -179,6 +180,7 @@
             <div class="panel-head">
                 <div class="panel-title">🗄 Base de données d'ouvertures</div>
                 <div class="panel-head-actions">
+                    <button class="panel-x" onclick="showTrash()" data-trash-dot title="Corbeille" aria-label="Corbeille">🗑</button>
                     <button class="panel-x" onclick="adminScroll('top')" title="Aller tout en haut" aria-label="Tout en haut">▲</button>
                     <button class="panel-x" onclick="adminScroll('bottom')" title="Aller tout en bas" aria-label="Tout en bas">▼</button>
                     <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
@@ -262,6 +264,20 @@
         </div>
     </div>
 
+    <!-- ─── OVERLAY CORBEILLE ─────────────────────────────────────────────── -->
+    <div id="trash-overlay" class="overlay hidden">
+        <div class="panel trash-panel">
+            <div class="panel-head">
+                <div class="panel-title">🗑 Corbeille</div>
+                <button class="panel-x" onclick="closeTrash()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+            </div>
+            <div class="panel-sub">Répertoires, coups et branches supprimés. Les éléments sont effacés définitivement après 30 jours.</div>
+            <div id="trash-msg"></div>
+            <div id="trash-list"></div>
+            <button id="trash-empty-btn" class="panel-close" style="border-color:var(--err);color:var(--err);" onclick="emptyTrash()">Vider la corbeille</button>
+        </div>
+    </div>
+
     <!-- ─── OVERLAY AIDE ──────────────────────────────────────────────────── -->
     <div id="help-overlay" class="overlay hidden">
         <div class="panel help-panel">
@@ -311,6 +327,7 @@
 
 <!-- ─── SCRIPTS (ordre de dépendance) ─────────────────────────────────── -->
 <script src="js/storage.js"></script>
+<script src="js/core/trash.js"></script>
 <script src="js/core/settings.js"></script>
 <script src="js/core/sound.js"></script>
 <script src="js/core/pieces.js"></script>
