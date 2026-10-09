@@ -712,6 +712,12 @@ function addManualEntry() {
     renderAdminEntries();
 }
 
+// Saut instantané en haut / en bas du panneau Base (l'en-tête reste visible).
+function adminScroll(where) {
+    const panel = document.querySelector('#admin-overlay .panel');
+    panel.scrollTop = where === 'top' ? 0 : panel.scrollHeight;
+}
+
 function closeAdmin() {
     document.getElementById('admin-overlay').classList.add('hidden');
     if (typeof refreshTree === 'function') refreshTree();
