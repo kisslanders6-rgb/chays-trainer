@@ -107,6 +107,7 @@ function _paintMovesBar(active) {
         html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${m.san}</span> `;
     });
     bar.innerHTML = html;
+    if (typeof syncTreeToPosition === 'function') syncTreeToPosition();     // l'arbre suit la position affichée
 }
 
 function renderMoves() {
@@ -413,6 +414,12 @@ _boardEl.addEventListener('pointermove', e => {
     const over = _squareAt(e.clientX, e.clientY);
     if (over !== d.over) { _setOver(d.over, false); _setOver(over, true); d.over = over; }
 });
+
+// Mobile : un toucher sur le plateau ne doit ni faire défiler la page, ni déclencher le
+// pull-to-refresh, ni ouvrir le menu contextuel (appui long). Complète `touch-action: none` (CSS)
+// pour les navigateurs qui l'appliquent mal (écouteur non passif obligatoire sur iOS).
+_boardEl.addEventListener('touchmove',   e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+_boardEl.addEventListener('contextmenu', e => e.preventDefault());
 
 _boardEl.addEventListener('pointerup',     e => _endDrag(e, false));
 _boardEl.addEventListener('pointercancel', e => _endDrag(e, true));
