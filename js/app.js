@@ -125,13 +125,26 @@ function switchHomeTab(tab) {
 
 function renderRepertoireList() {
     const list = loadRepertoireList();
-    const html = list.map(name => `
-    <div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}"
-         onclick="selectRepertoire('${name.replace(/'/g, "\\'")}')">
-      ${name}
-    </div>
-  `).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
-    document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
+    const build = manage => list.map(name => {
+        const esc = name.replace(/'/g, "\\'");
+        const del = (manage && name !== DEFAULT_REPERTOIRE)
+            ? `<button class="chip-del" title="Supprimer ce répertoire (corbeille 30 jours)" aria-label="Supprimer" onclick="event.stopPropagation(); deleteRepertoirePrompt('${esc}')">🗑</button>` : '';
+        return `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" onclick="selectRepertoire('${esc}')">${name}${del}</div>`;
+    }).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
+    const plain = build(false), managed = build(true);        // la corbeille n'apparaît que dans l'onglet « Jouer »
+    document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = c.dataset.manage ? managed : plain; });
+}
+
+// Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
+function deleteRepertoirePrompt(name) {
+    if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être supprimé.'); return; }
+    const nW = Object.keys(readDBFor(name, 'w')).length;
+    const nB = Object.keys(readDBFor(name, 'b')).length;
+    askConfirm(`Supprimer le répertoire « ${name} » (${nW} coup(s) Blancs, ${nB} coup(s) Noirs) ? Il sera placé dans la corbeille et restera restaurable pendant 30 jours.`, () => {
+        if (!deleteRepertoire(name)) return;
+        if (currentRepertoire === name) selectRepertoire(DEFAULT_REPERTOIRE);
+        else { renderRepertoireList(); initStats(); initTraining(); }
+    });
 }
 
 function selectRepertoire(name) {
@@ -207,5 +220,7 @@ function goHome(tab) {
 (function init() {
     document.getElementById('game-screen').style.display = 'none';
     loadTheme();
+    purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
+    updateTrashBadges();
 })();
