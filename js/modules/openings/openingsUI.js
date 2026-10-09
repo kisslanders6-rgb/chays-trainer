@@ -296,6 +296,18 @@ function flipBoard() {
     if (navCursor === -1) renderBoard(); else renderNavBoard();
 }
 
+// ─── CHANGEMENT DE STYLE DE PIÈCES ────────────────────────────────────────────
+// Redessine ce qui affiche des pièces, sans toucher à l'état de jeu.
+
+function refreshPieces() {
+    const gs = document.getElementById('game-screen');
+    if (gs && gs.style.display !== 'none' && !gs.classList.contains('hidden')) {
+        if (navCursor === -1) renderBoard(); else renderNavBoard();
+    }
+    const promo = document.getElementById('promo-overlay');
+    if (promo && !promo.classList.contains('hidden') && awaitingPromotion) showPromotion();
+}
+
 // ─── BARRE DE COUPS CLIQUABLE ─────────────────────────────────────────────────
 // Un clic sur le coup i affiche la position exacte après ce coup
 // (même mécanisme que Précédent / Suivant ; désactivé en entraînement).
