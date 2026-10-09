@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+<!-- Sprite d'icônes : doit être chargé en premier, avant tout contenu qui référence <use href="#i-…"> -->
+<script src="js/core/icons.js"></script>
+
 <div class="app" id="app">
 
     <!-- ─── TOPNAV UNIVERSELLE (sticky, pleine largeur) ─────────────────── -->
@@ -38,7 +41,7 @@
                 </div>
             </div>
 
-            <!-- Bouton thème -->
+            <!-- Boutons de la barre du haut -->
             <div class="topnav-right">
                 <button class="theme-toggle" onclick="showSettings()" title="Paramètres" aria-label="Paramètres">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -51,7 +54,7 @@
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                 </button>
-                <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème" aria-label="Changer de thème">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
@@ -73,16 +76,16 @@
                 <div class="repertoire-select">
                     <div class="repertoire-select-label">Répertoire de travail</div>
                     <div class="repertoire-list" id="repertoire-list" data-manage="1"></div>
-                    <div class="trash-link" onclick="showTrash()">🗑 Corbeille <span data-trash-count></span></div>
+                    <div class="trash-link" onclick="showTrash()"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></div>
                 </div>
 
                 <div class="color-choice">
                     <div class="color-btn color-btn-w" onclick="startGame('w')">
-                        ♔
+                        <span class="glyph" data-glyph="K"></span>
                         <div class="color-label">BLANCS</div>
                     </div>
                     <div class="color-btn color-btn-b" onclick="startGame('b')">
-                        ♚
+                        <span class="glyph" data-glyph="k"></span>
                         <div class="color-label">NOIRS</div>
                     </div>
                 </div>
@@ -90,19 +93,19 @@
 
             <!-- Onglet Statistiques -->
             <div id="home-tab-stats" class="home-tab hidden">
-                <div class="tab-title">📊 Statistiques</div>
+                <div class="tab-title"><svg class="ico"><use href="#i-bar-chart"/></svg> Statistiques</div>
                 <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer ». Cliquez sur une pastille pour revoir la position.</div>
                 <div class="repertoire-list"></div>
                 <div class="seg">
-                    <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')">♔ Blancs</button>
-                    <button class="seg-btn" id="stats-seg-b" onclick="setStatsColor('b')">♚ Noirs</button>
+                    <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
+                    <button class="seg-btn" id="stats-seg-b" onclick="setStatsColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
                 </div>
                 <div id="stats-body" class="stats-body"></div>
             </div>
 
             <!-- Onglet Entraînement ciblé -->
             <div id="home-tab-training" class="home-tab hidden">
-                <div class="tab-title">🎯 Entraînement</div>
+                <div class="tab-title"><svg class="ico"><use href="#i-target"/></svg> Entraînement</div>
                 <div class="tab-sub">Révision de tout votre répertoire : les positions fragiles ou oubliées reviennent souvent, les coups bien maîtrisés plus rarement. L'échiquier rejoue les deux derniers coups pour vous remettre dans le contexte.</div>
                 <div class="repertoire-list"></div>
                 <div id="training-panel"></div>
@@ -111,7 +114,7 @@
             <!-- Onglet Finales -->
             <div id="home-tab-endgame" class="home-tab hidden">
                 <div class="empty-tab">
-                    <div class="empty-tab-icon">♟</div>
+                    <div class="empty-tab-icon"><svg class="ico ico-xl"><use href="#i-pawn"/></svg></div>
                     <div>Finales</div>
                     <div class="empty-tab-sub">Le module d'entraînement aux finales sera disponible prochainement.</div>
                 </div>
@@ -132,26 +135,58 @@
                         <div class="coords-row" id="coords-row"></div>
                     </div>
 
-                    <div class="controls" data-modes="play">
-                        <button class="btn" onclick="showHint()">💡 Indice</button>
-                        <button class="btn" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">✏️ Modifier coup enregistré</button>
-                        <button class="btn" onclick="resetGame()">↺ Rejouer</button>
-                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
-                        <button class="btn btn-primary" onclick="showAdmin()">🗄 Base</button>
+                    <!--
+                        Rangée principale (commune aux trois modes) :
+                          Jouer        ‹  [ Indice ]  ›
+                          Entraînement    [ Indice ] [ Passer ]
+                          Aperçu       ‹  [ ← Statistiques ]  ›
+                        Chaque bouton choisit ses modes avec data-modes (cf. applyModeUI dans app.js).
+                    -->
+                    <div class="controls controls-main">
+                        <button class="btn btn-nav" id="btn-prev" data-modes="play,preview" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
+                            <svg class="ico"><use href="#i-chevron-left"/></svg>
+                        </button>
+                        <button class="btn btn-primary btn-grow" data-modes="play,training" onclick="showHint()" title="Indice (Espace)">
+                            <svg class="ico"><use href="#i-lightbulb"/></svg> Indice
+                        </button>
+                        <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante">
+                            <svg class="ico"><use href="#i-skip-forward"/></svg> Passer
+                        </button>
+                        <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
+                            <svg class="ico"><use href="#i-arrow-left"/></svg> Statistiques
+                        </button>
+                        <button class="btn btn-nav" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
+                            <svg class="ico"><use href="#i-chevron-right"/></svg>
+                        </button>
                     </div>
-                    <div class="controls" data-modes="training" style="grid-template-columns:repeat(4,1fr);">
-                        <button class="btn" onclick="showHint()">💡 Indice</button>
-                        <button class="btn" onclick="nextDrill()">⏭ Passer</button>
-                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
-                        <button class="btn btn-primary" onclick="goHome('training')">✕ Quitter</button>
+
+                    <!-- Actions secondaires : icône + libellé court, discrètes -->
+                    <div class="controls controls-tools" data-modes="play">
+                        <button class="btn btn-tool" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">
+                            <svg class="ico"><use href="#i-pencil"/></svg>Corriger
+                        </button>
+                        <button class="btn btn-tool" onclick="resetGame()" title="Recommencer depuis la position de départ">
+                            <svg class="ico"><use href="#i-rotate-ccw"/></svg>Rejouer
+                        </button>
+                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
+                        </button>
+                        <button class="btn btn-tool" onclick="showAdmin()" title="Base de données d'ouvertures">
+                            <svg class="ico"><use href="#i-database"/></svg>Base
+                        </button>
                     </div>
-                    <div class="controls" data-modes="preview" style="grid-template-columns:1fr 2fr;">
-                        <button class="btn" onclick="flipBoard()">⟳ Retourner</button>
-                        <button class="btn btn-primary" onclick="goHome('stats')">← Retour aux statistiques</button>
+                    <div class="controls controls-tools" data-modes="training">
+                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
+                        </button>
+                        <button class="btn btn-tool is-exit" onclick="goHome('training')" title="Quitter l'entraînement">
+                            <svg class="ico"><use href="#i-x"/></svg>Quitter
+                        </button>
                     </div>
-                    <div class="controls" data-modes="play,preview" style="grid-template-columns:1fr 1fr; margin-top:-6px;">
-                        <button class="btn" id="btn-prev" onclick="navPrev()" title="Reculer dans l'historique">◀ Précédent</button>
-                        <button class="btn" id="btn-next" onclick="navNext()" title="Avancer dans l'historique">Suivant ▶</button>
+                    <div class="controls controls-tools" data-modes="preview">
+                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
+                        </button>
                     </div>
                 </div>
 
@@ -163,7 +198,7 @@
                     <div class="side-lower">
                         <div class="side-tabs" data-modes="play">
                             <button class="side-tab active" id="side-tab-moves" onclick="showSideTab('moves')">Coups</button>
-                            <button class="side-tab" id="side-tab-tree" onclick="showSideTab('tree')">🌳 Arbre</button>
+                            <button class="side-tab" id="side-tab-tree" onclick="showSideTab('tree')"><svg class="ico"><use href="#i-git-branch"/></svg> Arbre</button>
                         </div>
                         <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
                         <div class="tree-view hidden" id="tree-view"></div>
@@ -178,21 +213,21 @@
     <div id="admin-overlay" class="overlay hidden">
         <div class="panel">
             <div class="panel-head">
-                <div class="panel-title">🗄 Base de données d'ouvertures</div>
+                <div class="panel-title"><svg class="ico"><use href="#i-database"/></svg> Base de données d'ouvertures</div>
                 <div class="panel-head-actions">
-                    <button class="panel-x" onclick="showTrash()" data-trash-dot title="Corbeille" aria-label="Corbeille">🗑</button>
-                    <button class="panel-x" onclick="adminScroll('top')" title="Aller tout en haut" aria-label="Tout en haut">▲</button>
-                    <button class="panel-x" onclick="adminScroll('bottom')" title="Aller tout en bas" aria-label="Tout en bas">▼</button>
-                    <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                    <button class="panel-x" onclick="showTrash()" data-trash-dot title="Corbeille" aria-label="Corbeille"><svg class="ico"><use href="#i-trash"/></svg></button>
+                    <button class="panel-x" onclick="adminScroll('top')" title="Aller tout en haut" aria-label="Tout en haut"><svg class="ico"><use href="#i-chevron-up"/></svg></button>
+                    <button class="panel-x" onclick="adminScroll('bottom')" title="Aller tout en bas" aria-label="Tout en bas"><svg class="ico"><use href="#i-chevron-down"/></svg></button>
+                    <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
                 </div>
             </div>
             <div class="admin-tabs" id="admin-tabs"></div>
             <div id="admin-entries"></div>
-            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()">+ Ajouter une entrée manuelle</button>
+            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()"><svg class="ico"><use href="#i-plus"/></svg> Ajouter une entrée manuelle</button>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()">⬇ Exporter (JSON)</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()">⬆ Importer (JSON)</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()">⬆ Importer PGN</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()"><svg class="ico"><use href="#i-download"/></svg> Exporter (JSON)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()"><svg class="ico"><use href="#i-upload"/></svg> Importer (JSON)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()"><svg class="ico"><use href="#i-upload"/></svg> Importer PGN</button>
             </div>
             <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
             <button class="panel-close" onclick="closeAdmin()">Fermer</button>
@@ -203,12 +238,12 @@
     <div id="pgn-overlay" class="overlay hidden">
         <div class="panel">
             <div class="panel-head">
-                <div class="panel-title">⬆ Importer un PGN</div>
-                <button class="panel-x" onclick="closePgnImport()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                <div class="panel-title"><svg class="ico"><use href="#i-upload"/></svg> Importer un PGN</div>
+                <button class="panel-x" onclick="closePgnImport()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
             <div class="panel-sub">Import dans : <strong id="pgn-target" style="color:var(--accent)"></strong>. Les variantes (parenthèses) sont importées. Vos coups déjà enregistrés ne sont jamais écrasés.</div>
             <div class="pgn-file-row">
-                <button class="btn" onclick="document.getElementById('pgn-file-input').click()">📂 Choisir un fichier .pgn</button>
+                <button class="btn" onclick="document.getElementById('pgn-file-input').click()"><svg class="ico"><use href="#i-folder-open"/></svg> Choisir un fichier .pgn</button>
                 <span id="pgn-file-name" class="pgn-file-name"></span>
                 <input type="file" id="pgn-file-input" accept=".pgn,.txt" style="display:none;" onchange="onPgnFileChosen(event)" />
             </div>
@@ -222,15 +257,15 @@
     <div id="backup-toast" class="toast hidden" role="status">
         <span>Pensez à exporter votre base pour sécuriser vos données</span>
         <button class="toast-link" onclick="exportFromToast()">Exporter maintenant</button>
-        <button class="toast-x" onclick="hideBackupToast()" aria-label="Fermer">✕</button>
+        <button class="toast-x" onclick="hideBackupToast()" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
     </div>
 
     <!-- ─── OVERLAY PARAMÈTRES ────────────────────────────────────────────── -->
     <div id="settings-overlay" class="overlay hidden">
         <div class="panel settings-panel">
             <div class="panel-head">
-                <div class="panel-title">⚙️ Paramètres</div>
-                <button class="panel-x" onclick="closeSettings()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                <div class="panel-title"><svg class="ico"><use href="#i-settings"/></svg> Paramètres</div>
+                <button class="panel-x" onclick="closeSettings()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
 
             <div class="set-section">
@@ -272,8 +307,8 @@
     <div id="trash-overlay" class="overlay hidden">
         <div class="panel trash-panel">
             <div class="panel-head">
-                <div class="panel-title">🗑 Corbeille</div>
-                <button class="panel-x" onclick="closeTrash()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                <div class="panel-title"><svg class="ico"><use href="#i-trash"/></svg> Corbeille</div>
+                <button class="panel-x" onclick="closeTrash()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
             <div class="panel-sub">Répertoires, coups et branches supprimés. Les éléments sont effacés définitivement après 30 jours.</div>
             <div id="trash-msg"></div>
@@ -286,21 +321,21 @@
     <div id="help-overlay" class="overlay hidden">
         <div class="panel help-panel">
             <div class="panel-head">
-                <div class="panel-title">ℹ️ Comment ça marche ?</div>
-                <button class="panel-x" onclick="closeHelp()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                <div class="panel-title"><svg class="ico"><use href="#i-info"/></svg> Comment ça marche ?</div>
+                <button class="panel-x" onclick="closeHelp()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
             <div class="help-item">
-                <div class="help-icon">♟</div>
+                <div class="help-icon"><svg class="ico"><use href="#i-pawn"/></svg></div>
                 <div><div class="help-title">Jouer</div>
-                    <div class="help-text">Vous jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur (💡 l'indice donne le type de pièce).</div></div>
+                    <div class="help-text">Vous jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur (le bouton <svg class="ico"><use href="#i-lightbulb"/></svg> Indice donne le type de pièce).</div></div>
             </div>
             <div class="help-item">
-                <div class="help-icon">📊</div>
+                <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
                 <div><div class="help-title">Statistiques</div>
                     <div class="help-text">Chaque coup de votre répertoire reçoit un <strong>taux d'erreur</strong> (erreurs ÷ essais) calculé depuis le mode Jouer. Cliquez sur une pastille pour revoir la position correspondante.</div></div>
             </div>
             <div class="help-item">
-                <div class="help-icon">🎯</div>
+                <div class="help-icon"><svg class="ico"><use href="#i-target"/></svg></div>
                 <div><div class="help-title">Entraînement</div>
                     <div class="help-text">Révision de <strong>tout votre répertoire</strong> : les positions fragiles ou longtemps oubliées reviennent plus souvent, les coups bien maîtrisés ou vus récemment plus rarement. L'échiquier rejoue les deux derniers coups pour remettre la position en contexte, puis vous cherchez la bonne réponse. Chaque réussite fait baisser le taux d'erreur.</div></div>
             </div>
@@ -329,7 +364,7 @@
 
 </div><!-- /.app -->
 
-<!-- ─── SCRIPTS (ordre de dépendance) ─────────────────────────────────── -->
+<!-- ─── SCRIPTS (ordre de dépendance ; icons.js est chargé en tête de <body>) ─── -->
 <script src="js/storage.js"></script>
 <script src="js/core/trash.js"></script>
 <script src="js/core/settings.js"></script>
