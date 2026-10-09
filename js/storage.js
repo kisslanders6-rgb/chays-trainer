@@ -101,6 +101,78 @@ function readDBFor(rep, color) {
     } catch (e) { return {}; }
 }
 
+// ─── RÉPONSES ADVERSES CONNUES (pour détecter les lignes « non couvertes ») ───
+// oppSeen[clé de position avec l'ADVERSAIRE au trait] = [coups UCI joués ou importés].
+// Stockage séparé de la base : n'affecte ni les stats, ni l'unicité des coups de mon camp.
+
+let oppSeen = {};
+
+function oppKeyFor(rep, color) { return `openingOpp_${rep}_${color}`; }
+
+function readOppFor(rep, color) {
+    const out = {};
+    try {
+        const o = JSON.parse(localStorage.getItem(oppKeyFor(rep, color)));
+        if (o && typeof o === 'object') {
+            Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(u => typeof u === 'string'); });
+        }
+    } catch (e) {}
+    return out;
+}
+
+function saveOpp() {
+    try { localStorage.setItem(oppKeyFor(currentRepertoire, playerColor), JSON.stringify(oppSeen)); } catch (e) {}
+}
+
+function recordOppReply(posKey, uci) {                 // renvoie true si nouveau (l'appelant appelle saveOpp)
+    const list = oppSeen[posKey] || (oppSeen[posKey] = []);
+    if (list.includes(uci)) return false;
+    list.push(uci);
+    return true;
+}
+
+function forgetOppReply(posKey, uci) {
+    const list = oppSeen[posKey];
+    const i = list ? list.indexOf(uci) : -1;
+    if (i < 0) return false;
+    list.splice(i, 1);
+    if (!list.length) delete oppSeen[posKey];
+    return true;
+}
+
+// ─── RAPPEL DE SAUVEGARDE ─────────────────────────────────────────────────────
+// Compte les ajouts / modifications / suppressions de coups depuis le dernier export JSON.
+// Au-delà de BACKUP_THRESHOLD, un rappel (toast) est affiché, puis tous les BACKUP_THRESHOLD changements.
+
+const BACKUP_STATE_KEY = 'chessTrainer_backupState';
+const BACKUP_THRESHOLD = 15;
+
+function _readBackupState() {
+    try {
+        const s = JSON.parse(localStorage.getItem(BACKUP_STATE_KEY)) || {};
+        return { changes: Number(s.changes) || 0, remindedAt: Number(s.remindedAt) || 0, lastExport: Number(s.lastExport) || 0 };
+    } catch (e) { return { changes: 0, remindedAt: 0, lastExport: 0 }; }
+}
+
+function _writeBackupState(s) {
+    try { localStorage.setItem(BACKUP_STATE_KEY, JSON.stringify(s)); } catch (e) {}
+}
+
+function noteChange(n) {
+    if (!(n > 0)) return;
+    const s = _readBackupState();
+    s.changes += n;
+    const remind = s.changes > BACKUP_THRESHOLD && (s.changes - s.remindedAt) > BACKUP_THRESHOLD;
+    if (remind) s.remindedAt = s.changes;
+    _writeBackupState(s);
+    if (remind && typeof showBackupToast === 'function') showBackupToast();
+}
+
+function markExported() {
+    _writeBackupState({ changes: 0, remindedAt: 0, lastExport: Date.now() });
+    if (typeof hideBackupToast === 'function') hideBackupToast();
+}
+
 const _legacyChecked = new Set();
 
 function loadDB() {
@@ -108,6 +180,7 @@ function loadDB() {
     let raw = null;
     try { raw = localStorage.getItem(key); } catch (e) {}
     openingDB = readDBFor(currentRepertoire, playerColor);
+    oppSeen   = readOppFor(currentRepertoire, playerColor);
     // Reconstruit (une fois par session) le chemin des anciennes entrées sans `path`.
     if (!_legacyChecked.has(key)) { _legacyChecked.add(key); migrateLegacyPaths(); }
     if (raw !== null && raw !== JSON.stringify(openingDB)) saveDB();
@@ -127,7 +200,8 @@ function exportDB() {
         version: 1,
         exportDate: new Date().toISOString(),
         repertoires: list,
-        databases: {}
+        databases: {},
+        opponents: {}          // réponses adverses connues (facultatif à l'import)
     };
     list.forEach(rep => {
         colors.forEach(col => {
@@ -137,6 +211,11 @@ function exportDB() {
             if (raw) {
                 try { exportData.databases[key] = JSON.parse(raw); } catch (e) {}
             }
+            const okey = oppKeyFor(rep, col);
+            try {
+                const oraw = localStorage.getItem(okey);
+                if (oraw) exportData.opponents[okey] = JSON.parse(oraw);
+            } catch (e) {}
         });
     });
 
@@ -151,6 +230,7 @@ function exportDB() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    markExported();
 }
 
 function importDBPrompt() {
@@ -198,6 +278,19 @@ function importDBFromFile(event) {
                         count += Object.keys(entries).length;
                     } catch (err) {}
                 });
+                // Réponses adverses connues : union avec l'existant
+                if (data.opponents && typeof data.opponents === 'object') {
+                    Object.entries(data.opponents).forEach(([okey, map]) => {
+                        if (!map || typeof map !== 'object') return;
+                        let cur = {};
+                        try { cur = JSON.parse(localStorage.getItem(okey)) || {}; } catch (err) {}
+                        Object.keys(map).forEach(pk => {
+                            if (!Array.isArray(map[pk])) return;
+                            cur[pk] = Array.from(new Set((cur[pk] || []).concat(map[pk])));
+                        });
+                        try { localStorage.setItem(okey, JSON.stringify(cur)); } catch (err) {}
+                    });
+                }
                 // Recharger la base active et l'UI
                 loadDB();
                 renderRepertoireList();
