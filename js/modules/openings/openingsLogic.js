@@ -225,6 +225,7 @@ function _commitMove(from, to, promo, newDbKey, statusMsg, statusType) {
     playMoveSound(from, to);                // avant applyMove : détecte la capture
     animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
+    if (typeof refreshTree === 'function') refreshTree();
     selected = null; legalMoves = []; hintPiece = null;
     resetNavCursor();
     if (statusMsg) setStatus(statusMsg, statusType || 'info');
@@ -250,6 +251,7 @@ function executeOpponentMove(from, to, promo) {
         promo = null;
     }
     const san = toAlgebraic(from, to, promo);
+    if (recordOppReply(positionKey(), moveToStr(from, to, promo))) saveOpp();   // réponse adverse connue
     _commitMove(from, to, promo, null, `Adversaire : ${san} — à vous de répondre.`, 'info');
     // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
     if (turn === playerColor && _isTransposition(openingDB[positionKey()])) {
@@ -291,6 +293,7 @@ function executePlayerMove(from, to, promo) {
         const path = pathNow.concat(movStr);
         openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length, lastReviewed: Date.now() };
         saveDB();
+        noteChange(1);
         _commitMove(from, to, promo, key, `📝 Nouveau coup enregistré : ${san}`, 'new');
 
     } else if (movStr === entry.move) {
@@ -382,8 +385,8 @@ function _forEachChild(cb) {
         }
     }
     moves.forEach(u => {
-        _applyUciRaw(u);
-        cb();
+        const san = _applyUciRaw(u);
+        cb(u, san);
         board = sb.slice(); turn = st; castlingRights = { ...sc }; enPassant = se;
     });
 }
@@ -442,6 +445,7 @@ function _orphanMessage(verb, n) {
 function _deleteEntries(keys) {
     keys.forEach(k => { delete openingDB[k]; });
     saveDB();
+    noteChange(keys.length);
 }
 
 // Confirmation à trois issues : cascade / ce coup seulement / annuler.
@@ -489,7 +493,12 @@ function undoMove() {
     const last = moveHistory[moveHistory.length - 1];
 
     if (last.turnBefore !== playerColor) {
+        // Réponse adverse annulée : on l'oublie si elle ne mène à rien dans le répertoire.
+        const childKey = positionKey();
+        const posKey   = _withEngineSnapshot(() => { board = last.boardBefore.slice(); turn = last.turnBefore; return positionKey(); });
+        if (!openingDB[childKey] && forgetOppReply(posKey, moveToStr(last.from, last.to, last.promo))) saveOpp();
         performUndo();
+        if (typeof refreshTree === 'function') refreshTree();
         setStatus('Coup adverse annulé — choisissez une autre branche.', 'info');
         return;
     }
@@ -511,6 +520,7 @@ function undoMove() {
     const finish  = extra => {
         _deleteEntries([key].concat(extra));
         performUndo();
+        if (typeof refreshTree === 'function') refreshTree();
         setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.'
             + (extra.length ? ` (${extra.length} branche(s) orpheline(s) nettoyée(s).)` : ''), 'new');
     };
@@ -656,6 +666,7 @@ function saveEntry(key, newMoveStr) {
             if (old.path) { upd.path = old.path.slice(0, -1).concat(newMoveStr); upd.ply = upd.path.length; }
             openingDB[key] = upd;
             saveDB();
+            noteChange(1 + extra.length);
             renderAdminEntries();
         };
         const orphans = findOrphans(key, newMoveStr);
@@ -697,11 +708,13 @@ function addManualEntry() {
     if (!san) { alert('Ce coup est impossible depuis cette position.'); return; }
     openingDB[key] = { move: m, san, attempts: 1, failures: 0, lastReviewed: Date.now() };
     saveDB();
+    noteChange(1);
     renderAdminEntries();
 }
 
 function closeAdmin() {
     document.getElementById('admin-overlay').classList.add('hidden');
+    if (typeof refreshTree === 'function') refreshTree();
 }
 
 // ─── IMPORT PGN ───────────────────────────────────────────────────────────────
@@ -813,7 +826,10 @@ function _restoreEngine(s) { board = s.board.slice(); turn = s.turn; castlingRig
 
 // Traite un coup AVANT son application. Renvoie 'new' | 'same' | 'conflict' | 'opp'.
 function _importPgnMove(uci, path, ctx) {
-    if (turn !== playerColor) return 'opp';
+    if (turn !== playerColor) {                                  // coup adverse : jamais stocké dans la base,
+        if (recordOppReply(positionKey(), uci)) ctx.oppAdded = true;   // mais mémorisé comme réponse connue
+        return 'opp';
+    }
     const key = positionKey();
     const e   = openingDB[key];
     const { from, to, promo } = _parseUci(uci);
@@ -878,6 +894,8 @@ function importPgnText(text) {
     });
     ctx.totalGames = games.length;
     if (ctx.added || ctx.healed) saveDB();
+    if (ctx.oppAdded) saveOpp();
+    if (ctx.added) noteChange(ctx.added);
     return ctx;
 }
 
@@ -947,6 +965,7 @@ function runPgnImport() {
     }
     out.innerHTML = html;
     renderAdminEntries();
+    if (typeof refreshTree === 'function') refreshTree();
 }
 
 // ─── OVERLAY BASE : fermeture par clic extérieur et touche Échap ──────────────
