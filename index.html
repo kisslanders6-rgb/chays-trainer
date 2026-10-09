@@ -178,7 +178,11 @@
         <div class="panel">
             <div class="panel-head">
                 <div class="panel-title">🗄 Base de données d'ouvertures</div>
-                <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                <div class="panel-head-actions">
+                    <button class="panel-x" onclick="adminScroll('top')" title="Aller tout en haut" aria-label="Tout en haut">▲</button>
+                    <button class="panel-x" onclick="adminScroll('bottom')" title="Aller tout en bas" aria-label="Tout en bas">▼</button>
+                    <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+                </div>
             </div>
             <div class="admin-tabs" id="admin-tabs"></div>
             <div id="admin-entries"></div>
