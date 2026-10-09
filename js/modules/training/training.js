@@ -1,12 +1,13 @@
 /**
  * modules/training/training.js
  * ──────────────────────────────────────────────────────────────────────────
- * Module Entraînement : drill ciblé en boucle sur les positions du répertoire
- * actif ayant le plus fort taux d'échec (failures / attempts).
+ * Module Entraînement : révision de TOUT le répertoire actif, par tirage aléatoire pondéré.
+ * Chaque position reçoit un poids (cf. _trainingWeight) ; sa probabilité de sortie est
+ * poids / somme des poids de l'univers. Les positions fragiles ou oubliées sortent souvent,
+ * les positions maîtrisées ou vues récemment rarement — mais jamais avec une probabilité nulle.
  *
  * Pour chaque position : l'échiquier se place 2 demi-coups avant, rejoue
  * automatiquement ces deux coups (contexte), puis me rend la main.
- *   - sélection : score de priorité (taux d'erreur lissé × fraîcheur, cf. _priorityScore)
  *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
  *   - erreur : coup refusé, on réessaie ; l'entraînement ne modifie pas les
  *     compteurs (les stats reflètent les erreurs du menu « Jouer »).
@@ -34,10 +35,9 @@ function initTraining() {
     panel.innerHTML = '<div class="train-cards">' + ['w', 'b'].map(c => {
         const db    = readDBFor(currentRepertoire, c);
         const total = Object.keys(db).length;
-        const n     = Object.values(db).filter(e => e.failures > 0).length;
+        const weak  = Object.values(db).filter(e => e.failures > 0).length;
         const sub   = !total ? 'Répertoire vide'
-                    : n      ? `${n} position${n > 1 ? 's' : ''} à retravailler · ${total} au total`
-                             : `Tout est maîtrisé · révision libre (${total})`;
+                    : `${total} position${total > 1 ? 's' : ''} · ${weak ? `${weak} avec erreur${weak > 1 ? 's' : ''}` : 'aucune erreur'}`;
         return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `onclick="startTraining('${c}')"` : ''}>
             <div class="train-card-icon">${c === 'w' ? '♔' : '♚'}</div>
             <div class="train-card-title">${c === 'w' ? 'BLANCS' : 'NOIRS'}</div>
@@ -47,8 +47,7 @@ function initTraining() {
 
 // ─── BOUCLE D'ENTRAÎNEMENT ────────────────────────────────────────────────────
 
-// Toutes les positions du répertoire sont éligibles ; celles sans erreur ont un score
-// très réduit (TRAIN_MASTERED_FACTOR) et n'apparaissent donc que rarement.
+// Univers de révision : toutes les positions du répertoire, avec ou sans erreur.
 function _trainingPool() {
     return Object.keys(openingDB);
 }
@@ -64,39 +63,58 @@ function startTraining(color) {
     nextDrill();
 }
 
-// ─── SCORE DE PRIORITÉ (répétition espacée) ──────────────────────────────────
-//   score = (0,15 + erreur lissée) × (0,05 + fraîcheur)
-//   - erreur lissée : (échecs + 0,6) / (essais + 2). Le lissage donne plus de poids
-//     à 3 échecs sur 3 (≈ 0,72) qu'à 1 échec sur 1 (≈ 0,53).
-//   - positions sans aucune erreur : score × 0,15 (révision occasionnelle).
-//   - fraîcheur     : 1 − e^(−jours / 3). ≈ 0 juste après un passage, ≈ 0,63 à 3 jours,
-//     ≈ 0,9 à 7 jours. Sans lastReviewed (ancienne entrée) : traité comme 30 jours.
+// ─── POIDS DE TIRAGE (répétition espacée, sélection probabiliste continue) ──
+//   poids = ( facteur d'échec × facteur d'oubli ) ^ TRAIN_SHARPNESS
+//
+//   facteur d'échec = PLANCHER_ÉCHEC + erreur relative × volume
+//     erreur relative = (échecs + 0,6) / (essais + 2)  → lissée : 3/3 pèse plus que 1/1,
+//                                                         100 % de réussite sur beaucoup d'essais → proche de 0
+//     volume          = 1 + 0,25 × ln(1 + échecs)        → davantage d'échecs = davantage de poids
+//   facteur d'oubli = PLANCHER_ÂGE + (1 − e^(−jours / 3))
+//     ≈ 0 juste après un passage, ≈ 0,63 à 3 jours, ≈ 0,9 à 7 jours ; sans lastReviewed : 30 jours.
+//   Les deux planchers garantissent un poids toujours strictement positif.
 
+const TRAIN_FAIL_FLOOR  = 0.04;
+const TRAIN_AGE_FLOOR   = 0.03;
 const TRAIN_TAU_DAYS    = 3;
 const TRAIN_UNSEEN_DAYS = 30;
-const TRAIN_MASTERED_FACTOR = 0.15;   // positions à 0 erreur : score × 0,15 → poids ÷ ~45 (tirage au carré)
+const TRAIN_SHARPNESS   = 1.5;      // > 1 : accentue l'écart entre positions prioritaires et acquises
 const DAY_MS            = 86400000;
 
 function _ageDays(e, now) {
     return e.lastReviewed ? Math.max(0, (now - e.lastReviewed) / DAY_MS) : TRAIN_UNSEEN_DAYS;
 }
 
-function _priorityScore(e, now) {
-    const err   = (e.failures + 0.6) / (e.attempts + 2);
-    const fresh = 1 - Math.exp(-_ageDays(e, now) / TRAIN_TAU_DAYS);
-    const score = (0.15 + err) * (0.05 + fresh);
-    return e.failures === 0 ? score * TRAIN_MASTERED_FACTOR : score;
+function _failureFactor(e) {
+    const err    = (e.failures + 0.6) / (e.attempts + 2);
+    const volume = 1 + 0.25 * Math.log(1 + e.failures);
+    return TRAIN_FAIL_FLOOR + err * volume;
 }
 
-// Choix pondéré par score² : les positions prioritaires reviennent souvent,
-// les autres restent possibles. Jamais deux fois de suite la même s'il y a le choix.
+function _forgetFactor(e, now) {
+    return TRAIN_AGE_FLOOR + (1 - Math.exp(-_ageDays(e, now) / TRAIN_TAU_DAYS));
+}
+
+function _trainingWeight(e, now) {
+    return Math.pow(_failureFactor(e) * _forgetFactor(e, now), TRAIN_SHARPNESS);
+}
+
+// Probabilités de sortie : poids normalisés sur l'univers. Si le répertoire compte plusieurs
+// positions, celle qui vient de sortir est exclue AVANT normalisation (jamais deux fois de suite).
+function _trainingDistribution(excludeKey) {
+    const now   = Date.now();
+    let items   = _trainingPool().map(k => ({ key: k, w: _trainingWeight(openingDB[k], now) }));
+    if (items.length > 1) items = items.filter(x => x.key !== excludeKey);
+    const total = items.reduce((sum, x) => sum + x.w, 0);
+    items.forEach(x => { x.p = x.w / total; });
+    return items;
+}
+
 function _pickDrill() {
-    const now  = Date.now();
-    let pool   = _trainingPool().map(k => ({ k, w: Math.pow(_priorityScore(openingDB[k], now), 2) }));
-    if (pool.length > 1) pool = pool.filter(x => x.k !== trainingState.lastKey);
-    let r = Math.random() * pool.reduce((s, x) => s + x.w, 0);
-    for (const x of pool) { r -= x.w; if (r <= 0) return x.k; }
-    return pool[pool.length - 1].k;
+    const dist = _trainingDistribution(trainingState.lastKey);
+    let r = Math.random();
+    for (const x of dist) { r -= x.p; if (r <= 0) return x.key; }
+    return dist[dist.length - 1].key;
 }
 
 // Raison affichée au début de l'exercice.
@@ -112,11 +130,11 @@ function _ageLabel(e, now) {
 }
 
 function _drillReason(e) {
-    const now  = Date.now();
-    if (e.failures === 0)             return `Révision · 100% de réussite · ${_ageLabel(e, now)}`;
-    const pct  = Math.round(100 * e.failures / e.attempts);
-    if (pct >= 50)                    return `Position critique · ${pct}% d'erreur`;
-    if (_ageDays(e, now) >= 2)        return `À réviser · ${_ageLabel(e, now)}`;
+    const now = Date.now();
+    if (e.failures === 0 || !e.attempts) return `Entretien · 100% de réussite · ${_ageLabel(e, now)}`;
+    const pct = Math.round(100 * e.failures / e.attempts);
+    if (pct >= 50)                return `Position critique · ${pct}% d'erreur`;
+    if (_ageDays(e, now) >= 2)    return `À réviser · ${_ageLabel(e, now)}`;
     return `À consolider · ${pct}% d'erreur · ${_ageLabel(e, now)}`;
 }
 
