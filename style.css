@@ -969,4 +969,19 @@ html[data-board="night"][data-theme="light"] {
 .theme-toggle[data-backup-dot].has-alert::after { content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--err); border: 2px solid var(--surface); }
 .theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }
 
+:root                { --logo-color: var(--accent); }
+[data-theme="light"] { --logo-color: var(--accent-bright); }   /* mode sombre : un cran plus clair, meilleur contraste */
+
+/* Si le navigateur ne gère pas les masques, le PNG d'origine reste affiché. */
+@supports ((-webkit-mask-image: url("a.png")) or (mask-image: url("a.png"))) {
+    img.is-tinted {
+        background-color: var(--logo-color);
+        -webkit-mask: var(--tint-src) center / contain no-repeat;
+                mask: var(--tint-src) center / contain no-repeat;
+        object-fit: none;
+        object-position: -9999px 0;          /* masque les pixels d'origine ; seule la teinte reste */
+        transition: background-color .2s;
+    }
+}
+
 
