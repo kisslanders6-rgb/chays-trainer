@@ -848,3 +848,77 @@ html[data-board="night"][data-theme="light"] {
 .piece-preview > span:first-child { background: var(--board-light); }
 .piece-preview > span:last-child  { background: var(--board-dark); }
 .piece-preview svg { width: 88%; height: 88%; display: block; pointer-events: none; }
+
+/* ─── ICÔNES ─────────────────────────────────────────────────────────────── */
+.ico {
+    width: 1.15em; height: 1.15em;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0; display: inline-block; vertical-align: -0.2em;
+    pointer-events: none;
+}
+.ico-xl { width: 40px; height: 40px; stroke-width: 1.6; }
+
+/* Pièces du style actif utilisées comme glyphes (remplacent ♔ ♚) */
+.glyph { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }
+.glyph svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); pointer-events: none; }
+.color-btn .glyph       { width: 1em; height: 1em; }          /* taille = font-size du bouton */
+.train-card-icon .glyph { width: 1em; height: 1em; }
+.color-badge .glyph     { width: 1.35em; height: 1.35em; vertical-align: -0.35em; }
+
+/* Conteneurs qui portent désormais une icône + du texte */
+.tab-title, .trash-link, .seg-btn, .side-tab, .color-badge, .panel-close {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.tab-title  { display: flex; gap: 9px; }
+.trash-link { display: flex; gap: 6px; }
+.panel-close { display: flex; }
+.empty-tab-icon { display: flex; color: var(--text-dim); }
+.panel-x .ico { width: 15px; height: 15px; }
+.toast-x .ico { width: 14px; height: 14px; }
+.help-icon { color: var(--accent); }
+.help-icon .ico { width: 22px; height: 22px; }
+.help-text .ico { width: 1em; height: 1em; vertical-align: -0.15em; color: var(--accent); }
+.chip-del .ico { width: 13px; height: 13px; }
+.tree-forget .ico { width: 13px; height: 13px; }
+.tree-pill, .tree-warn-text, .tree-ok-text { display: inline-flex; align-items: center; gap: 4px; }
+.tree-pill .ico { width: 12px; height: 12px; }
+.trash-meta .ico { width: 13px; height: 13px; vertical-align: -0.2em; }
+
+/* ─── BOUTONS : gabarit commun avec icône ───────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn:disabled { cursor: default; transform: none; box-shadow: var(--shadow-sm); }
+.btn:disabled:hover { background: var(--surface); border-color: var(--border); color: var(--text-muted); }
+.btn:focus-visible, .panel-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ─── RANGÉE PRINCIPALE : ‹ [ action principale ] › ─────────────────────── */
+.controls.controls-main { display: flex; gap: 8px; margin-bottom: 10px; }
+.controls-main .btn { min-height: 46px; font-size: 13.5px; }
+.controls-main .btn-grow { flex: 1 1 0; }
+.controls-main .btn-nav  { flex: 0 0 58px; padding: 10px 0; }
+.controls-main .btn-nav .ico { width: 20px; height: 20px; }
+
+/* ─── ACTIONS SECONDAIRES : icône au-dessus d'un libellé court ──────────── */
+.controls.controls-tools { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.btn-tool {
+    flex: 1 1 0; max-width: 138px;
+    flex-direction: column; gap: 5px;
+    padding: 9px 4px 8px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px;
+    background: transparent; border-color: transparent; box-shadow: none;
+}
+.btn-tool .ico { width: 20px; height: 20px; }
+.btn-tool:hover { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow-sm); }
+.btn-tool.is-exit:hover { color: var(--err); border-color: var(--err); }
+
+/* ─── MOBILE ─────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+    .controls-main .btn      { min-height: 52px; font-size: 14.5px; }
+    .controls-main .btn-nav  { flex-basis: 60px; }
+    .btn-tool                { min-height: 58px; max-width: none; font-size: 12px; }
+    .btn-tool .ico           { width: 22px; height: 22px; }
+}
+
+
+
+
