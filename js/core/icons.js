@@ -75,3 +75,17 @@ function refreshGlyphs() {
         el.innerHTML = (typeof PIECE_SVG !== 'undefined' && PIECE_SVG[el.dataset.glyph]) || '';
     });
 }
+
+// ─── AUTO-BRANCHEMENT DES GLYPHES DE PIÈCES ───────────────────────────────────
+// Sans modifier app.js ni pieces.js :
+//   1. à la fin du chargement (pieces.js est alors disponible), on remplit les emplacements ;
+//   2. à chaque changement de style de pièces (applyPieceSet), on les redessine.
+document.addEventListener('DOMContentLoaded', () => {
+    refreshGlyphs();
+    if (typeof applyPieceSet === 'function' && !applyPieceSet._glyphHooked) {
+        const orig = applyPieceSet;
+        const hooked = function () { orig(); refreshGlyphs(); };
+        hooked._glyphHooked = true;
+        window.applyPieceSet = hooked;
+    }
+});
