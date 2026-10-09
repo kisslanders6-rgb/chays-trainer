@@ -45,6 +45,23 @@ function closeHelp() { document.getElementById('help-overlay').classList.add('hi
     });
 })();
 
+// ─── RAPPEL DE SAUVEGARDE (toast) ─────────────────────────────────────────────
+
+let _toastTimer = null;
+
+function showBackupToast() {
+    document.getElementById('backup-toast').classList.remove('hidden');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(hideBackupToast, 20000);
+}
+
+function hideBackupToast() {
+    clearTimeout(_toastTimer);
+    document.getElementById('backup-toast').classList.add('hidden');
+}
+
+function exportFromToast() { exportDB(); }          // exportDB() remet le compteur à zéro et ferme le toast
+
 // ─── PARAMÈTRES (sons, volume, thème de l'échiquier) ──────────────────────────
 
 function syncSettingsUI() {
@@ -132,6 +149,7 @@ function applyModeUI() {
     document.querySelectorAll('[data-modes]').forEach(el => {
         el.style.display = el.dataset.modes.split(',').includes(gameMode) ? '' : 'none';
     });
+    if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
 }
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
