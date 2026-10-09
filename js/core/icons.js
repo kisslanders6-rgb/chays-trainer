@@ -89,3 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.applyPieceSet = hooked;
     }
 });
+
+// ─── LOGOS TEINTÉS ────────────────────────────────────────────────────────────
+// <img data-tint> : le PNG sert de MASQUE (son canal alpha), la couleur vient de
+// --logo-color (= couleur d'accent du thème). Les PNG ne sont jamais modifiés.
+// Condition : logo d'une seule couleur sur fond TRANSPARENT.
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('img[data-tint]').forEach(img => {
+        img.style.setProperty('--tint-src', `url("${img.src}")`);
+        img.classList.add('is-tinted');
+    });
+});
