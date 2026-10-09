@@ -1,14 +1,16 @@
 /**
  * core/settings.js
  * ──────────────────────────────────────────────────────────────────────────
- * Préférences de l'application (sons, volume, thème de l'échiquier),
- * persistées dans localStorage. L'interface est dans app.js.
+ * Préférences de l'application (sons, volume, thème de l'échiquier, style des
+ * pièces), persistées dans localStorage. L'interface est dans app.js.
  */
 
 'use strict';
 
-const SETTINGS_KEY  = 'chessTrainer_settings';
-const BOARD_THEMES  = ['classic', 'wood', 'night'];
+const SETTINGS_KEY    = 'chessTrainer_settings';
+const BOARD_THEMES    = ['classic', 'wood', 'night'];
+const PIECE_SET_IDS   = ['cburnett', 'modern', 'minimal'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
+const DEFAULT_PIECE_SET = 'cburnett';
 
 function loadSettings() {
     let s = {};
@@ -17,7 +19,8 @@ function loadSettings() {
     return {
         sound:      s.sound !== false,                                   // activé par défaut
         volume:     Number.isFinite(vol) ? Math.min(1, Math.max(0, vol)) : 0.6,
-        boardTheme: BOARD_THEMES.includes(s.boardTheme) ? s.boardTheme : 'classic'
+        boardTheme: BOARD_THEMES.includes(s.boardTheme) ? s.boardTheme : 'classic',
+        pieceSet:   PIECE_SET_IDS.includes(s.pieceSet) ? s.pieceSet : DEFAULT_PIECE_SET
     };
 }
 
