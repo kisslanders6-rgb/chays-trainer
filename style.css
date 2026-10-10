@@ -984,4 +984,229 @@ html[data-board="night"][data-theme="light"] {
     }
 }
 
+/* ═════ DEBUT : STYLES AJOUTES (icônes, boutons, stats, sauvegarde, logos, pièces, échiquiers) ═════
+   Si une ancienne version de ce bloc est déjà dans style.css, supprime tout ce qui est entre
+   DEBUT et FIN avant de coller celle-ci. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   À AJOUTER À LA FIN DE style.css
+   Étape 1 : icônes SVG (remplacent les emojis)
+   Étape 2 : hiérarchie des boutons de l'écran de jeu
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ICÔNES ─────────────────────────────────────────────────────────────── */
+.ico {
+    width: 1.15em; height: 1.15em;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0; display: inline-block; vertical-align: -0.2em;
+    pointer-events: none;
+}
+.ico-xl { width: 40px; height: 40px; stroke-width: 1.6; }
+
+/* Pièces du style actif utilisées comme glyphes (remplacent ♔ ♚) */
+.glyph { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }
+.glyph svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); pointer-events: none; }
+.color-btn .glyph       { width: 1em; height: 1em; }          /* taille = font-size du bouton */
+.train-card-icon .glyph { width: 1em; height: 1em; }
+.color-badge .glyph     { width: 1.35em; height: 1.35em; vertical-align: -0.35em; }
+
+/* Conteneurs qui portent désormais une icône + du texte */
+.tab-title, .trash-link, .seg-btn, .side-tab, .color-badge, .panel-close {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.tab-title  { display: flex; gap: 9px; }
+.trash-link { display: flex; gap: 6px; }
+.panel-close { display: flex; }
+.empty-tab-icon { display: flex; color: var(--text-dim); }
+.panel-x .ico { width: 15px; height: 15px; }
+.toast-x .ico { width: 14px; height: 14px; }
+.help-icon { color: var(--accent); }
+.help-icon .ico { width: 22px; height: 22px; }
+.help-text .ico { width: 1em; height: 1em; vertical-align: -0.15em; color: var(--accent); }
+.chip-del .ico { width: 13px; height: 13px; }
+.tree-forget .ico { width: 13px; height: 13px; }
+.tree-pill, .tree-warn-text, .tree-ok-text { display: inline-flex; align-items: center; gap: 4px; }
+.tree-pill .ico { width: 12px; height: 12px; }
+.trash-meta .ico { width: 13px; height: 13px; vertical-align: -0.2em; }
+
+/* ─── BOUTONS : gabarit commun avec icône ───────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn:disabled { cursor: default; transform: none; box-shadow: var(--shadow-sm); }
+.btn:disabled:hover { background: var(--surface); border-color: var(--border); color: var(--text-muted); }
+.btn:focus-visible, .panel-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ─── RANGÉE PRINCIPALE : ‹ [ action principale ] › ─────────────────────── */
+.controls.controls-main { display: flex; gap: 8px; margin-bottom: 10px; }
+.controls-main .btn { min-height: 46px; font-size: 13.5px; }
+.controls-main .btn-grow { flex: 1 1 0; }
+.controls-main .btn-nav  { flex: 0 0 58px; padding: 10px 0; }
+.controls-main .btn-nav .ico { width: 20px; height: 20px; }
+
+/* ─── ACTIONS SECONDAIRES : icône au-dessus d'un libellé court ──────────── */
+.controls.controls-tools { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.btn-tool {
+    flex: 1 1 0; max-width: 138px;
+    flex-direction: column; gap: 5px;
+    padding: 9px 4px 8px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px;
+    background: transparent; border-color: transparent; box-shadow: none;
+}
+.btn-tool .ico { width: 20px; height: 20px; }
+.btn-tool:hover { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow-sm); }
+.btn-tool.is-exit:hover { color: var(--err); border-color: var(--err); }
+
+/* ─── MOBILE ─────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+    .controls-main .btn      { min-height: 52px; font-size: 14.5px; }
+    .controls-main .btn-nav  { flex-basis: 60px; }
+    .btn-tool                { min-height: 58px; max-width: none; font-size: 12px; }
+    .btn-tool .ico           { width: 22px; height: 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   À AJOUTER À LA FIN DE style.css (après style-additions.css)
+   Étape 3 : statistiques — résumé, répartition, filtres, tri
+   Étape 4 : sauvegarde visible — carte dans les Paramètres + pastille sur ⚙
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── STATISTIQUES ───────────────────────────────────────────────────────── */
+.stats-kpis { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stats-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.stats-kpi-n { font-size: 26px; font-weight: 800; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.stats-kpi-l { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+
+/* Barre de répartition : la largeur de chaque segment suit le nombre de positions */
+.stats-bar { width: 100%; height: 10px; display: flex; gap: 3px; }
+.stats-bar-seg { min-width: 8px; border-radius: 5px; background: var(--c); }
+
+/* Légende = filtres */
+.stats-filters { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.stats-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, box-shadow .15s, color .15s; }
+.stats-chip b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.stats-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.stats-chip.all .stats-chip-dot { display: none; }
+.stats-chip:hover { border-color: var(--c); }
+.stats-chip.active { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); color: var(--text); }
+.stats-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.seg-sm .seg-btn { padding: 5px 14px; font-size: 12px; }
+
+@media (max-width: 599px) {
+    .stats-kpi-n { font-size: 22px; }
+    .stats-chip  { padding: 9px 14px; }
+    .seg-sm .seg-btn { padding: 8px 12px; }
+}
+
+/* ─── SAUVEGARDE ─────────────────────────────────────────────────────────── */
+.backup-card { --c: var(--ok); display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1.5px solid var(--c); border-radius: 14px; background: color-mix(in srgb, var(--c) 8%, var(--surface)); }
+.backup-card.lv-empty  { --c: var(--text-dim); }
+.backup-card.lv-warn   { --c: #d9a21b; }
+.backup-card.lv-danger { --c: var(--err); }
+.backup-head { display: flex; align-items: flex-start; gap: 12px; }
+.backup-ico { display: flex; color: var(--c); }
+.backup-ico .ico { width: 26px; height: 26px; }
+.backup-title { font-size: 14px; font-weight: 800; color: var(--text); }
+.backup-sub { margin-top: 2px; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+.backup-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-dim); }
+.backup-meta .ico { width: 13px; height: 13px; }
+.backup-meta .toast-link { font-size: 12px; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.backup-actions .btn { flex: 1 1 140px; min-height: 40px; }
+.backup-note { font-size: 11.5px; line-height: 1.5; color: var(--text-dim); }
+
+/* Pastille d'alerte sur le bouton ⚙ de la barre du haut */
+.theme-toggle[data-backup-dot] { position: relative; }
+.theme-toggle[data-backup-dot].has-alert::after { content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--err); border: 2px solid var(--surface); }
+.theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   À AJOUTER À LA FIN DE style.css
+   Logos PNG teintés selon le thème (le PNG sert de masque, sa couleur d'origine
+   n'est jamais affichée). Activé par <img data-tint> + icons.js.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root                { --logo-color: var(--accent); }
+[data-theme="light"] { --logo-color: var(--accent-bright); }   /* mode sombre : un cran plus clair, meilleur contraste */
+
+/* Si le navigateur ne gère pas les masques, le PNG d'origine reste affiché. */
+@supports ((-webkit-mask-image: url("a.png")) or (mask-image: url("a.png"))) {
+    img.is-tinted {
+        background-color: var(--logo-color);
+        -webkit-mask: var(--tint-src) center / contain no-repeat;
+                mask: var(--tint-src) center / contain no-repeat;
+        object-fit: none;
+        object-position: -9999px 0;          /* masque les pixels d'origine ; seule la teinte reste */
+        transition: background-color .2s;
+    }
+}
+
+/* ─── PIÈCES : <img> au lieu de <svg> en ligne ───────────────────────────── */
+.piece img {
+    width: 92%; height: 92%; display: block; object-fit: contain;
+    pointer-events: none; user-select: none; -webkit-user-drag: none;
+    filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .28));
+}
+.drag-ghost img  { width: 100%; height: 100%; display: block; pointer-events: none; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .35)); }
+.promo-piece img { width: 82%; height: 82%; display: block; pointer-events: none; }
+.piece-preview img { width: 88%; height: 88%; display: block; pointer-events: none; }
+.glyph img { width: 100%; height: 100%; display: block; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+
+/* ─── PARAMÈTRES : grilles de choix ──────────────────────────────────────── */
+#piece-options, #board-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+#piece-options .theme-opt, #board-options .theme-opt { min-width: 0; }
+
+/* ─── ÉCHIQUIERS TEXTURÉS (Pierre, Cuir vert, Noyer) ─────────────────────────
+   La texture est UNE image posée sur #board ; les cases deviennent transparentes.
+   Les surbrillances (cases jouées, sélection) restent donc de simples voiles
+   translucides par-dessus la texture. */
+html[data-board="stone"]   { --board-light: #cdcdc8; --board-dark: #484848; --board-border: #242422; }
+html[data-board="leather"] { --board-light: #ecebe7; --board-dark: #3f7058; --board-border: #232321; }
+html[data-board="walnut"]  { --board-light: #dbc09a; --board-dark: #70503a; --board-border: #4a3426; }
+html[data-board="ice"]     { --board-light: #f0f0ef; --board-dark: #c9d6e5; --board-border: #9fb2c7; }
+
+html[data-board="stone"]   #board { background: url("assets/boards/stone.webp")   center / 100% 100% no-repeat; }
+html[data-board="leather"] #board { background: url("assets/boards/leather.webp") center / 100% 100% no-repeat; }
+html[data-board="walnut"]  #board { background: url("assets/boards/walnut.webp")  center / 100% 100% no-repeat; }
+
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.light,
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.dark { background: transparent; }
+
+/* Repères de coups légaux lisibles sur fond clair comme sombre */
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.hl-legal::after {
+    background: rgba(20, 20, 20, .34); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .38);
+}
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.hl-legal.has-piece::after {
+    background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .35), inset 0 0 0 5px rgba(255, 255, 255, .38);
+}
+
+/* Surbrillances par thème */
+html[data-board="stone"]   .sq.hl-from, html[data-board="stone"]   .sq.hl-to { background: rgba(205, 200, 80, .45) !important; }
+html[data-board="stone"]   .sq.hl-selected                                   { background: rgba(170, 200, 70, .60) !important; }
+html[data-board="leather"] .sq.hl-from, html[data-board="leather"] .sq.hl-to { background: rgba(235, 205, 80, .50) !important; }
+html[data-board="leather"] .sq.hl-selected                                   { background: rgba(220, 190, 60, .62) !important; }
+html[data-board="walnut"]  .sq.hl-from, html[data-board="walnut"]  .sq.hl-to { background: rgba(220, 175, 50, .50) !important; }
+html[data-board="walnut"]  .sq.hl-selected                                   { background: rgba(230, 150, 40, .62) !important; }
+html[data-board="ice"]     .sq.hl-from, html[data-board="ice"]     .sq.hl-to { background: rgba(90, 150, 225, .42) !important; }
+html[data-board="ice"]     .sq.hl-selected                                   { background: rgba(60, 130, 230, .55) !important; }
+
+/* ─── COULEURS D'ACCENT PAR THÈME (clair, puis sombre = data-theme="light") ─ */
+html[data-board="stone"]   { --accent: #4a5642; --accent-bright: #5d6b53; --accent-dim: #7a876e; --info: #4a5642; }
+html[data-board="leather"] { --accent: #2f5a40; --accent-bright: #3d6e50; --accent-dim: #6b9079; --info: #2f5a40; }
+html[data-board="walnut"]  { --accent: #7a4e24; --accent-bright: #94622f; --accent-dim: #b0824f; --info: #7a4e24; }
+html[data-board="ice"]     { --accent: #3f5f86; --accent-bright: #4f73a0; --accent-dim: #7f9bbd; --info: #3f5f86; }
+
+html[data-board="stone"][data-theme="light"]   { --accent: #66765a; --accent-bright: #778868; --accent-dim: #4f5d45; --info: #66765a; }
+html[data-board="leather"][data-theme="light"] { --accent: #3f7a58; --accent-bright: #4f8e69; --accent-dim: #2f5a40; --info: #3f7a58; }
+html[data-board="walnut"][data-theme="light"]  { --accent: #9a6431; --accent-bright: #b3763b; --accent-dim: #7a4e24; --info: #9a6431; }
+html[data-board="ice"][data-theme="light"]     { --accent: #4f7ab0; --accent-bright: #6089c0; --accent-dim: #3f5f86; --info: #4f7ab0; }
+
+/* ─── PASTILLES D'APERÇU (Paramètres) : 2×2 cases de la texture ───────────── */
+.theme-opt[data-board="stone"]   .theme-swatch { background: url("assets/boards/stone.webp")   0 0 / 400% 400%; }
+.theme-opt[data-board="leather"] .theme-swatch { background: url("assets/boards/leather.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="walnut"]  .theme-swatch { background: url("assets/boards/walnut.webp")  0 0 / 400% 400%; }
+.theme-opt[data-board="ice"] { --sw-l: #f0f0ef; --sw-d: #c9d6e5; }
+
+/* ═════ FIN : STYLES AJOUTES ═════ */
+
 
