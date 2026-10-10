@@ -157,3 +157,22 @@ function checkBackupOnStart() {
     try { localStorage.setItem(BACKUP_NAG_KEY, String(Date.now())); } catch (e) {}
     setTimeout(() => { if (typeof showBackupToast === 'function') showBackupToast(); }, 1500);
 }
+
+// ─── AUTO-BRANCHEMENT (aucune modification d'app.js ni de storage.js requise) ─
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. La carte « Sauvegarde » se remplit à chaque ouverture des Paramètres.
+    if (typeof showSettings === 'function' && !showSettings._bk) {
+        const orig = showSettings;
+        window.showSettings = function () { orig(); renderBackupStatus(); };
+        window.showSettings._bk = true;
+    }
+    // 2. La pastille se met à jour après chaque modification ou export.
+    ['noteChange', 'markExported'].forEach(name => {
+        const orig = window[name];
+        if (typeof orig !== 'function' || orig._bk) return;
+        window[name] = function (...args) { const r = orig.apply(this, args); updateBackupIndicators(); return r; };
+        window[name]._bk = true;
+    });
+    // 3. Rappel éventuel au lancement.
+    checkBackupOnStart();
+});
