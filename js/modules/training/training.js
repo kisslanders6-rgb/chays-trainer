@@ -9,13 +9,14 @@
  * Pour chaque position : l'échiquier se place 2 demi-coups avant, rejoue
  * automatiquement ces deux coups (contexte), puis me rend la main.
  *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
- *   - erreur : coup refusé, on réessaie ; l'entraînement ne modifie pas les
- *     compteurs (les stats reflètent les erreurs du menu « Jouer »).
+ *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »),
+ *     on réessaie (les stats reflètent les erreurs du menu « Jouer »).
  */
 
 'use strict';
 
 const TRAIN_STEP_MS = 750;
+const TRAIN_CONTEXT_PLIES = 3;
 
 const trainingState = { busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '' };
 
@@ -151,7 +152,7 @@ function nextDrill() {
 
     if (entry.path && entry.path.length) {
         const n     = entry.path.length - 1;            // coups avant ma réponse
-        const start = Math.max(0, n - 2);
+        const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
         const ctx   = entry.path.slice(start, n);
         loadPositionFromPath(entry.path.slice(0, start));
         setStatus(`Mise en situation… · ${trainingState.reason}`, 'info');
@@ -197,6 +198,15 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         _commitMove(from, to, promo, null, msg, 'ok');
         _later(nextDrill, 1400);
     } else {
-        _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
+        if (entry) {                                   // erreur : comptée exactement comme en mode « Jouer »
+            entry.attempts++;
+            entry.failures++;
+            entry.lastReviewed = Date.now();
+            saveDB();
+            const pct = Math.round(100 * entry.failures / entry.attempts);
+            _rejectMove(to, `✗ Ce n'est pas le bon coup — taux d'erreur : ${pct}%. Réessayez.`);
+        } else {
+            _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
+        }
     }
 }
