@@ -97,7 +97,7 @@ function _runMoveAnim(a) {
 
 function _paintMovesBar(active) {
     const bar = document.getElementById('moves-bar');
-    bar.classList.toggle('locked', gameMode === 'training');   // non cliquable en entraînement
+    bar.classList.toggle('locked', gameMode === 'training' || gameMode === 'endgame');   // non cliquable en entraînement
     if (!moveHistory.length) {
         bar.innerHTML = '<span style="color:#5a4020">Aucun coup joué</span>';
         return;
@@ -330,7 +330,7 @@ function refreshPieces() {
 // (même mécanisme que Précédent / Suivant ; désactivé en entraînement).
 
 function goToMove(i) {
-    if (gameMode === 'training') return;
+    if (gameMode === 'training' || gameMode === 'endgame') return;
     const len = moveHistory.length;
     if (i < 0 || i >= len) return;
     if (i === len - 1) {
@@ -359,6 +359,7 @@ function _dragJustEnded() { return performance.now() - _lastDragEnd < 60; }
 
 function _canInteract() {
     if (gameMode === 'preview') return false;
+    if (gameMode === 'endgame' && endgameState.busy) return false;
     if (gameMode === 'training' && trainingState.busy) return false;
     return document.getElementById('promo-overlay').classList.contains('hidden');
 }
@@ -477,10 +478,10 @@ document.addEventListener('keydown', e => {
     if (!_keyboardAllowed(e)) return;
     switch (e.key) {
         case 'ArrowLeft':
-            if (gameMode === 'training') return;
+            if (gameMode === 'training' || gameMode === 'endgame') return;
             e.preventDefault(); navPrev(); break;
         case 'ArrowRight':
-            if (gameMode === 'training') return;
+            if (gameMode === 'training' || gameMode === 'endgame') return;
             e.preventDefault(); navNext(); break;
         case ' ':
             if (e.repeat) return;
