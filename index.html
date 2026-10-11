@@ -83,7 +83,20 @@
 
                 <div class="repertoire-select">
                     <div class="repertoire-select-label">Répertoire de travail</div>
-                    <div class="repertoire-list" id="repertoire-list"></div>
+                    <div class="repertoire-row">
+                        <div class="repertoire-list" id="repertoire-list"></div>
+                        <div class="menu-wrap">
+                            <button class="menu-btn" id="rep-menu-btn" onclick="toggleRepMenu()" title="Actions sur les répertoires" aria-label="Actions sur les répertoires" aria-haspopup="true" aria-expanded="false">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+                            </button>
+                            <div class="menu hidden" id="rep-menu" role="menu">
+                                <button class="menu-item" role="menuitem" onclick="repMenuAction('new')"><svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire</button>
+                                <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
+                                <div class="menu-sep"></div>
+                                <button class="menu-item" role="menuitem" onclick="repMenuAction('trash')"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="color-choice">
@@ -324,22 +337,6 @@
                     <button class="theme-opt" data-board="wood"    onclick="setBoardTheme('wood')"><span class="theme-swatch"></span>Bois chaud</button>
                     <button class="theme-opt" data-board="ice"     onclick="setBoardTheme('ice')"><span class="theme-swatch"></span>Bleu glace</button>
                     <button class="theme-opt" data-board="night"   onclick="setBoardTheme('night')"><span class="theme-swatch"></span>Bleu nuit</button>
-                </div>
-            </div>
-
-            <div class="set-section" id="data-section">
-                <div class="set-label" style="margin-bottom:6px;">Données &amp; Corbeille</div>
-                <div class="set-hint" id="data-rep-hint" style="margin-bottom:10px;"></div>
-                <div class="data-actions">
-                    <button class="btn" onclick="createRepertoireFromSettings()">
-                        <svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire
-                    </button>
-                    <button class="btn btn-danger-outline" id="data-del-btn" onclick="deleteCurrentRepertoire()">
-                        <svg class="ico"><use href="#i-trash"/></svg> <span id="data-del-label">Supprimer le répertoire</span>
-                    </button>
-                    <button class="btn" onclick="openTrashFromSettings()">
-                        <svg class="ico"><use href="#i-trash"/></svg> Corbeille (30 jours) <span data-trash-count></span>
-                    </button>
                 </div>
             </div>
         </div>

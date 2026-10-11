@@ -238,31 +238,3 @@ function emptyTrash() {
         renderTrash();
     });
 }
-
-// ─── PARAMÈTRES : « Données & Corbeille » ─────────────────────────────────────
-
-function _inGameScreen() {
-    const gs = document.getElementById('game-screen');
-    return !!gs && gs.style.display !== 'none' && !gs.classList.contains('hidden');
-}
-
-function renderDataSection() {
-    const btn = document.getElementById('data-del-btn');
-    if (!btn) return;
-    const isDefault = currentRepertoire === DEFAULT_REPERTOIRE;
-    const inGame    = _inGameScreen();
-    document.getElementById('data-rep-hint').textContent =
-        `Répertoire actif : ${currentRepertoire}` + (inGame ? " · revenez à l'accueil pour le supprimer." : '');
-    document.getElementById('data-del-label').textContent =
-        isDefault ? 'Supprimer (« Général » est protégé)' : `Supprimer « ${currentRepertoire} »`;
-    btn.disabled = isDefault || inGame;
-    updateTrashBadges();
-}
-
-function deleteCurrentRepertoire() {
-    if (currentRepertoire === DEFAULT_REPERTOIRE || _inGameScreen()) return;
-    deleteRepertoirePrompt(currentRepertoire);
-}
-
-function createRepertoireFromSettings() { closeSettings(); createRepertoirePrompt(); }
-function openTrashFromSettings()        { closeSettings(); showTrash(); }

@@ -76,7 +76,7 @@ function syncSettingsUI() {
         b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
 }
 
-function showSettings()  { syncSettingsUI(); renderDataSection(); document.getElementById('settings-overlay').classList.remove('hidden'); }
+function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
 function closeSettings() { document.getElementById('settings-overlay').classList.add('hidden'); }
 
 function onSoundToggle(on) {
@@ -133,6 +133,7 @@ function setPieceStyle(id) {
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
 function switchHomeTab(tab) {
+    closeRepMenu();
     ['play', 'stats', 'training', 'endgame'].forEach(t => {
         const tabEl = document.getElementById('home-tab-' + t);
         const navEl = document.getElementById('nav-tab-' + t);
@@ -163,9 +164,45 @@ function deleteRepertoirePrompt(name) {
         if (!deleteRepertoire(name)) return;
         if (currentRepertoire === name) selectRepertoire(DEFAULT_REPERTOIRE);
         else { renderRepertoireList(); initStats(); initTraining(); }
-        renderDataSection();
     });
 }
+
+// ─── MENU « ⋮ » DES RÉPERTOIRES (accueil, onglet Jouer) ──────────────────────
+// Regroupe : nouveau répertoire, suppression du répertoire actif, accès à la Corbeille.
+
+function renderRepMenu() {
+    const isDefault = currentRepertoire === DEFAULT_REPERTOIRE;
+    document.getElementById('rep-menu-del-label').textContent =
+        isDefault ? 'Supprimer (« Général » est protégé)' : `Supprimer « ${currentRepertoire} »`;
+    document.getElementById('rep-menu-del').disabled = isDefault;
+    updateTrashBadges();                                  // compteur de la Corbeille
+}
+
+function closeRepMenu() {
+    const m = document.getElementById('rep-menu'), b = document.getElementById('rep-menu-btn');
+    if (m) m.classList.add('hidden');
+    if (b) b.setAttribute('aria-expanded', 'false');
+}
+
+function toggleRepMenu() {
+    const m = document.getElementById('rep-menu'), b = document.getElementById('rep-menu-btn');
+    if (!m.classList.contains('hidden')) { closeRepMenu(); return; }
+    renderRepMenu();
+    m.classList.remove('hidden');
+    b.setAttribute('aria-expanded', 'true');
+}
+
+function repMenuAction(action) {
+    closeRepMenu();
+    if (action === 'new')         createRepertoirePrompt();
+    else if (action === 'delete') deleteRepertoirePrompt(currentRepertoire);   // confirmation + protection de « Général »
+    else if (action === 'trash')  showTrash();
+}
+
+(function initRepMenuDismiss() {
+    document.addEventListener('pointerdown', e => { if (!e.target.closest('.menu-wrap')) closeRepMenu(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRepMenu(); });
+})();
 
 function selectRepertoire(name) {
     currentRepertoire = name;
@@ -220,6 +257,7 @@ function startGame(color) {
 // ─── RETOUR À L'ACCUEIL ───────────────────────────────────────────────────────
 
 function goHome(tab) {
+    closeRepMenu();
     if (typeof stopTraining === 'function') stopTraining();
     gameMode = 'play';
     applyModeUI();
