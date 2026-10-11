@@ -133,11 +133,9 @@
 
             <!-- Onglet Finales -->
             <div id="home-tab-endgame" class="home-tab hidden">
-                <div class="empty-tab">
-                    <div class="empty-tab-icon"><svg class="ico ico-xl"><use href="#i-pawn"/></svg></div>
-                    <div>Finales</div>
-                    <div class="empty-tab-sub">Le module d'entraînement aux finales sera disponible prochainement.</div>
-                </div>
+                <div class="tab-title"><svg class="ico"><use href="#i-pawn"/></svg> Finales</div>
+                <div class="tab-sub">Finales théoriques : l'adversaire répond tout seul, chaque coup est jugé. Les positions de pions sont vérifiées par un calcul exact.</div>
+                <div id="endgame-panel"></div>
             </div>
 
         </div>
@@ -156,21 +154,25 @@
                     </div>
 
                     <!--
-                        Rangée principale (commune aux trois modes) :
+                        Rangée principale :
                           Jouer        ‹  [ Indice ]  ›
                           Entraînement    [ Indice ] [ Passer ]
                           Aperçu       ‹  [ ← Statistiques ]  ›
+                          Finales         [ Indice ] [ Recommencer ]
                         Chaque bouton choisit ses modes avec data-modes (cf. applyModeUI dans app.js).
                     -->
                     <div class="controls controls-main">
                         <button class="btn btn-nav" id="btn-prev" data-modes="play,preview" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
                             <svg class="ico"><use href="#i-chevron-left"/></svg>
                         </button>
-                        <button class="btn btn-primary btn-grow" data-modes="play,training" onclick="showHint()" title="Indice (Espace)">
+                        <button class="btn btn-primary btn-grow" data-modes="play,training,endgame" onclick="showHint()" title="Indice (Espace)">
                             <svg class="ico"><use href="#i-lightbulb"/></svg> Indice
                         </button>
                         <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante">
                             <svg class="ico"><use href="#i-skip-forward"/></svg> Passer
+                        </button>
+                        <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
+                            <svg class="ico"><use href="#i-rotate-ccw"/></svg> Recommencer
                         </button>
                         <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
                             <svg class="ico"><use href="#i-arrow-left"/></svg> Statistiques
@@ -208,9 +210,18 @@
                             <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
                         </button>
                     </div>
+                    <div class="controls controls-tools" data-modes="endgame">
+                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
+                        </button>
+                        <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice">
+                            <svg class="ico"><use href="#i-x"/></svg>Quitter
+                        </button>
+                    </div>
                 </div>
 
                 <div class="side-panel">
+                    <div class="endgame-card" id="endgame-card" data-modes="endgame"></div>
                     <div class="status-bar" id="status-bar">
                         <div class="status-dot dot-info" id="status-dot"></div>
                         <div class="status-text" id="status-text">Initialisation...</div>
