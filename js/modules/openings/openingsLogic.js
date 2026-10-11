@@ -65,6 +65,7 @@ function _sanForKeyMove(key, uci) {
 
 // Replace l'échiquier (avec historique navigable) après la suite de coups UCI donnée.
 function loadPositionFromPath(moves) {
+    clearErrorFx();                                    // ← ajout
     parseFEN(INIT_FEN);
     moveHistory = []; lastFrom = -1; lastTo = -1;
     selected = null; legalMoves = []; hintPiece = null; awaitingPromotion = null;
@@ -555,6 +556,7 @@ function performUndo() {
 // ─── RÉINITIALISATION ─────────────────────────────────────────────────────────
 
 function resetGame() {
+    clearErrorFx();
     parseFEN(INIT_FEN);
     moveHistory      = [];
     selected         = null; legalMoves = [];
