@@ -18,7 +18,8 @@ const CORE = [
     'js/core/sound.js', 'js/core/pieces.js', 'js/core/chessEngine.js', 'js/core/mobile.js',
     'js/modules/openings/openingsLogic.js', 'js/modules/openings/openingsUI.js', 'js/modules/openings/treeView.js',
     'js/modules/stats/stats.js', 'js/modules/training/training.js', 'js/modules/endgame/endgame.js',
-    'assets/favicon.png', 'assets/chlogo.png', 'assets/chaysTrainerlogo.png', 'assets/chaysTrainerAndLogo.png',
+    'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png', 'assets/icons/apple-touch-icon.png',
+    'assets/icons/favicon-32.png', 'assets/icons/favicon-64.png', 'assets/chlogo.png', 'assets/chaysTrainerlogo.png', 'assets/chaysTrainerAndLogo.png',
     'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp'
 ];
 
