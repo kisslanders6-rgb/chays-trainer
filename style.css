@@ -1207,6 +1207,46 @@ html[data-board="ice"][data-theme="light"]     { --accent: #4f7ab0; --accent-bri
 .theme-opt[data-board="walnut"]  .theme-swatch { background: url("assets/boards/walnut.webp")  0 0 / 400% 400%; }
 .theme-opt[data-board="ice"] { --sw-l: #f0f0ef; --sw-d: #c9d6e5; }
 
-/* ═════ FIN : STYLES AJOUTES ═════ */
+/* Pas de zoom automatique du texte à la rotation (iOS) */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Zones sûres des iPhone récents (encoche, barre d'accueil) — actives grâce à viewport-fit=cover */
+.app {
+    padding-left:   env(safe-area-inset-left,   0px);
+    padding-right:  env(safe-area-inset-right,  0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.toast { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 599px) { .toast { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); } }
+
+/* Hauteur réelle de l'écran sur mobile (la barre d'adresse mobile fausse 100vh) */
+@supports (height: 100dvh) {
+    body, .app { min-height: 100dvh; }
+    .setup-screen { min-height: calc(100dvh - 56px); }
+}
+
+/* Au toucher, :hover reste « collé » après un appui : on neutralise les effets de survol */
+@media (hover: none) {
+    .btn:hover, .stat-badge:hover, .train-card:hover, .color-btn:hover,
+    .repertoire-chip:hover, .promo-piece:hover, .theme-opt:hover { transform: none; }
+    .btn-tool:hover { background: transparent; border-color: transparent; box-shadow: none; }
+}
+
+/* Téléphone en PAYSAGE : plateau à gauche (dimensionné sur la hauteur), panneau à droite */
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 600px) and (max-width: 919px) {
+    .topnav { position: static; }
+    .game-screen-inner { padding: 8px 12px 16px; }
+    .game-main { flex-direction: row; align-items: flex-start; justify-content: center; gap: 16px; }
+    .board-col { --bw: clamp(180px, calc(100dvh - 100px), 46vw); width: calc(var(--bw) + 22px); }
+    .board-wrap { width: var(--bw); margin-bottom: 30px; }
+    #board { width: 100%; }
+    .sq { width: auto; height: auto; aspect-ratio: 1 / 1; font-size: clamp(18px, 5vw, 40px); }
+    .side-panel { display: flex; order: 0; flex: 1; min-width: 220px; max-width: 420px; }
+    .side-panel .status-bar, .side-panel .moves-bar { order: 0; }
+    .controls { max-width: none; }
+}
+
+/* ═════ FIN : STYLES MOBILE ═════ */
+
 
 
