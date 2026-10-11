@@ -187,9 +187,9 @@ function renderTrash() {
     box.innerHTML = list.map(it => {
         const days = Math.max(0, Math.ceil((it.deletedAt + TRASH_TTL_MS - Date.now()) / 86400000));
         const side = it.color ? (it.color === 'w' ? 'Blancs' : 'Noirs') : '';
-        const kind = it.type === 'repertoire' ? `📁 Répertoire · ${it.count} coup${it.count > 1 ? 's' : ''}`
-                   : it.type === 'branch'     ? `🌿 Branche · ${it.count} coups`
-                                              : '♟ Coup';
+        const kind = it.type === 'repertoire' ? `${ico('folder')} Répertoire · ${it.count} coup${it.count > 1 ? 's' : ''}`
+                   : it.type === 'branch'     ? `${ico('git-branch')} Branche · ${it.count} coups`
+                                              : `${ico('pawn')} Coup`;
         const where = it.type === 'repertoire' ? '' : ` · ${_esc(it.rep)} (${side})`;
         return `<div class="trash-item">
             <div class="trash-info">

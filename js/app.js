@@ -150,7 +150,7 @@ function renderRepertoireList() {
     const build = manage => list.map(name => {
         const esc = name.replace(/'/g, "\\'");
         const del = (manage && name !== DEFAULT_REPERTOIRE)
-            ? `<button class="chip-del" title="Supprimer ce répertoire (corbeille 30 jours)" aria-label="Supprimer" onclick="event.stopPropagation(); deleteRepertoirePrompt('${esc}')">🗑</button>` : '';
+            ? `<button class="chip-del" title="Supprimer ce répertoire (corbeille 30 jours)" aria-label="Supprimer" onclick="event.stopPropagation(); deleteRepertoirePrompt('${esc}')">${ico('trash')}</button>` : '';
         return `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" onclick="selectRepertoire('${esc}')">${name}${del}</div>`;
     }).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
     const plain = build(false), managed = build(true);        // la corbeille n'apparaît que dans l'onglet « Jouer »
@@ -201,7 +201,8 @@ function showGameScreen(color) {
     gs.classList.remove('hidden');
 
     const badge = document.getElementById('color-badge');
-    badge.textContent = color === 'w' ? '♔ BLANCS' : '♚ NOIRS';
+    badge.innerHTML = `<span class="glyph" data-glyph="${color === 'w' ? 'K' : 'k'}"></span> ${color === 'w' ? 'BLANCS' : 'NOIRS'}`;
+    if (typeof refreshGlyphs === 'function') refreshGlyphs();
     badge.className   = 'color-badge ' + (color === 'w' ? 'badge-white' : 'badge-black');
 
     const pill = document.getElementById('repertoire-pill');

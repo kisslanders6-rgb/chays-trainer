@@ -255,7 +255,7 @@ function executeOpponentMove(from, to, promo) {
     _commitMove(from, to, promo, null, `Adversaire : ${san} — à vous de répondre.`, 'info');
     // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
     if (turn === playerColor && _isTransposition(openingDB[positionKey()])) {
-        setStatus(`Adversaire : ${san} · ℹ️ Transposition détectée — position connue.`, 'info');
+        setStatus(`Adversaire : ${san} · Transposition détectée — position connue.`, 'info');
     }
 }
 
@@ -294,7 +294,7 @@ function executePlayerMove(from, to, promo) {
         openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length, lastReviewed: Date.now() };
         saveDB();
         noteChange(1);
-        _commitMove(from, to, promo, key, `📝 Nouveau coup enregistré : ${san}`, 'new');
+        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${san}`, 'new');
 
     } else if (movStr === entry.move) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
@@ -954,14 +954,14 @@ function runPgnImport() {
     } else if (r.added) {
         html = `<div class="pgn-note ok">✓ Import PGN réussi : ${pl(r.added, 'nouveau coup ajouté', 'nouveaux coups ajoutés')}, ${pl(r.branches, 'branche créée', 'branches créées')}.</div>`;
     } else if (r.same || r.conflicts.length) {
-        html = '<div class="pgn-note info">ℹ️ Rien de nouveau : tous les coups de ce PGN sont déjà dans le répertoire (ou en conflit).</div>';
+        html = `<div class="pgn-note info">${ico('info')} Rien de nouveau : tous les coups de ce PGN sont déjà dans le répertoire (ou en conflit).</div>`;
     } else {
         html = '<div class="pgn-note err">Aucun coup valide trouvé dans ce PGN.</div>';
     }
     if (r.same)    html += `<div class="pgn-line">${pl(r.same, 'coup déjà connu', 'coups déjà connus')} (ignoré${r.same > 1 ? 's' : ''}).</div>`;
     if (r.skipped) html += `<div class="pgn-line">${pl(r.skipped, 'partie ignorée', 'parties ignorées')} (position de départ personnalisée).</div>`;
     if (r.conflicts.length) {
-        html += `<div class="pgn-note warn">⚠ ${pl(r.conflicts.length, 'conflit', 'conflits')} : votre coup déjà enregistré a été conservé, la suite de la ligne n'a pas été importée.</div><ul class="pgn-list">`;
+        html += `<div class="pgn-note warn">${ico('alert-triangle')} ${pl(r.conflicts.length, 'conflit', 'conflits')} : votre coup déjà enregistré a été conservé, la suite de la ligne n'a pas été importée.</div><ul class="pgn-list">`;
         r.conflicts.slice(0, 10).forEach(c => {
             html += `<li>${_esc(_pgnLineLabel(c.path, ''))}<br>PGN : <strong>${_esc(c.pgnSan)}</strong> · conservé : <strong>${_esc(c.keptSan)}</strong></li>`;
         });
@@ -969,7 +969,7 @@ function runPgnImport() {
         html += '</ul>';
     }
     if (r.errors.length) {
-        html += `<div class="pgn-note warn">⚠ ${pl(r.errors.length, 'coup illisible ou illégal', 'coups illisibles ou illégaux')} (ligne abandonnée à cet endroit) :</div><ul class="pgn-list">`;
+        html += `<div class="pgn-note warn">${ico('alert-triangle')} ${pl(r.errors.length, 'coup illisible ou illégal', 'coups illisibles ou illégaux')} (ligne abandonnée à cet endroit) :</div><ul class="pgn-list">`;
         r.errors.slice(0, 8).forEach(e => { html += `<li>${_esc(_pgnLineLabel(e.path, ''))}<strong>${_esc(e.san)}</strong></li>`; });
         if (r.errors.length > 8) html += `<li>… et ${r.errors.length - 8} autre(s)</li>`;
         html += '</ul>';

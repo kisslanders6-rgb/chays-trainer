@@ -203,7 +203,7 @@ function renderTree(rebuild) {
             <button class="tree-mode ${_treeFocus ? '' : 'active'}" data-mode="all" title="Affiche tout l'arbre">Vue complète</button>
         </div>
         <span><i class="tree-dot me"></i> mes coups</span><span><i class="tree-dot opp"></i> adversaire</span>
-        ${t.uncovered ? `<span class="tree-warn-text">⚠️ ${t.uncovered} non couvert${t.uncovered > 1 ? 's' : ''}</span>` : '<span class="tree-ok-text">✓ Rien de non couvert</span>'}
+        ${t.uncovered ? `<span class="tree-warn-text">${ico('alert-triangle')} ${t.uncovered} non couvert${t.uncovered > 1 ? 's' : ''}</span>` : `<span class="tree-ok-text">${ico('check')} Rien de non couvert</span>`}
         ${t.isolated > 0 ? `<span>${t.isolated} isolé${t.isolated > 1 ? 's' : ''}</span>` : ''}
     </div>`;
 
@@ -220,7 +220,7 @@ function renderTree(rebuild) {
             if (r.ref) badges += '<span class="tree-ref">↪ transposition</span>';
             if (r.attempts && r.failures) badges += `<span class="tree-err">${Math.round(100 * r.failures / r.attempts)}%</span>`;
         } else if (!r.covered) {
-            badges += `<span class="tree-pill">⚠️ Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">✕</button>`;
+            badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;
         }
         html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${_treeLabel(r)}</span>${badges}</div>`;
     });
@@ -245,7 +245,7 @@ function openTreeNode(i) {
     if (!r || gameMode !== 'play') return;
     loadPositionFromPath(r.path);
     if (r.kind === 'opp' && !r.covered) {
-        setStatus('⚠️ Réponse adverse non couverte — jouez votre réponse pour l\'enregistrer.', 'hint');
+        setStatus('Réponse adverse non couverte — jouez votre réponse pour l\'enregistrer.', 'hint');
     } else {
         setStatus(`Position chargée : ${_treeLabel(r)}.`, 'info');
     }

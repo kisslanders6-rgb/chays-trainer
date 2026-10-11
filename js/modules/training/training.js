@@ -39,7 +39,7 @@ function initTraining() {
         const sub   = !total ? 'Répertoire vide'
                     : `${total} position${total > 1 ? 's' : ''} · ${weak ? `${weak} avec erreur${weak > 1 ? 's' : ''}` : 'aucune erreur'}`;
         return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `onclick="startTraining('${c}')"` : ''}>
-            <div class="train-card-icon">${c === 'w' ? '♔' : '♚'}</div>
+            <div class="train-card-icon">${pieceGlyph(c === 'w' ? 'K' : 'k')}</div>
             <div class="train-card-title">${c === 'w' ? 'BLANCS' : 'NOIRS'}</div>
             <div class="train-card-sub">${sub}</div></div>`;
     }).join('') + '</div>';
