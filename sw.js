@@ -8,7 +8,7 @@
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE   = 'chays-trainer-' + VERSION;
 
 const CORE = [
