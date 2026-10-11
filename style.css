@@ -1249,4 +1249,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* ═════ FIN : STYLES MOBILE ═════ */
 
 
+/* Icônes de suppression retirées des badges de répertoire (gestion via Paramètres) */
+.chip-del { display: none !important; }
 
+.data-actions { display: flex; flex-direction: column; gap: 8px; }
+.data-actions .btn { justify-content: flex-start; padding: 11px 14px; font-size: 13px; }
+.btn-danger-outline:not(:disabled):hover { color: var(--err); border-color: var(--err); }
+.btn-danger-outline:disabled { opacity: .45; }
