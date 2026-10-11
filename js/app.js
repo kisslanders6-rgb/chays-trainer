@@ -142,6 +142,8 @@ function switchHomeTab(tab) {
     });
     if (tab === 'stats')    initStats();
     if (tab === 'training') initTraining();
+    // switchHomeTab(), après les lignes initStats / initTraining :
+    if (tab === 'endgame') initEndgame();
 }
 
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────
@@ -259,6 +261,7 @@ function startGame(color) {
 function goHome(tab) {
     closeRepMenu();
     if (typeof stopTraining === 'function') stopTraining();
+    if (typeof stopEndgame === 'function') stopEndgame();
     gameMode = 'play';
     applyModeUI();
     document.getElementById('game-screen').style.display = 'none';
