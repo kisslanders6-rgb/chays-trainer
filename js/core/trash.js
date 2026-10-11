@@ -252,7 +252,7 @@ function renderDataSection() {
     const isDefault = currentRepertoire === DEFAULT_REPERTOIRE;
     const inGame    = _inGameScreen();
     document.getElementById('data-rep-hint').textContent =
-        `Répertoire actif : ${currentRepertoire}` + (inGame ? ' · revenez à l\'accueil pour le supprimer.' : '');
+        `Répertoire actif : ${currentRepertoire}` + (inGame ? " · revenez à l'accueil pour le supprimer." : '');
     document.getElementById('data-del-label').textContent =
         isDefault ? 'Supprimer (« Général » est protégé)' : `Supprimer « ${currentRepertoire} »`;
     btn.disabled = isDefault || inGame;
@@ -260,24 +260,9 @@ function renderDataSection() {
 }
 
 function deleteCurrentRepertoire() {
-    const name = currentRepertoire;
-    if (name === DEFAULT_REPERTOIRE || _inGameScreen()) return;
-    askConfirm(`Supprimer le répertoire « ${name} » ? Il sera placé dans la corbeille et restera restaurable pendant 30 jours.`, () => {
-        if (!deleteRepertoire(name)) return;
-        selectRepertoire(DEFAULT_REPERTOIRE);
-        if (typeof renderRepertoireList === 'function') renderRepertoireList();
-        initStats(); initTraining();
-        renderDataSection();
-    });
+    if (currentRepertoire === DEFAULT_REPERTOIRE || _inGameScreen()) return;
+    deleteRepertoirePrompt(currentRepertoire);
 }
 
 function createRepertoireFromSettings() { closeSettings(); createRepertoirePrompt(); }
 function openTrashFromSettings()        { closeSettings(); showTrash(); }
-
-// Rafraîchit la section à chaque ouverture des Paramètres (sans toucher à showSettings()).
-(function () {
-    const o = document.getElementById('settings-overlay');
-    if (!o) return;
-    new MutationObserver(() => { if (!o.classList.contains('hidden')) renderDataSection(); })
-        .observe(o, { attributes: true, attributeFilter: ['class'] });
-})();

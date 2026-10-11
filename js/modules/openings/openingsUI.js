@@ -19,6 +19,7 @@ let navCursor = -1;
 // ─── RENDU DU PLATEAU ─────────────────────────────────────────────────────────
 
 function renderBoard() {
+    clearErrorFx();         // un réaffichage ne doit jamais rejouer la secousse d'une erreur passée
     const el        = document.getElementById('board');
     el.innerHTML    = '';
     const colCoords = document.getElementById('coords-col');
@@ -279,6 +280,10 @@ function showPromotion() {
 }
 
 // ─── RETOUR VISUEL D'UN COUP REFUSÉ ───────────────────────────────────────────
+// La secousse ne doit se jouer qu'UNE fois, au moment du coup faux. Elle est retirée :
+//   - par un minuteur juste après la fin des animations (sinon, quand l'écran de jeu repasse de
+//     display:none à display:flex, le navigateur relance les animations CSS encore présentes) ;
+//   - à chaque renderBoard() (position rechargée, nouvel exercice, retour à l'accueil…).
 
 let _wrongTimer = null;
 
@@ -296,9 +301,9 @@ function flashWrong(toIdx) {
     const b  = document.getElementById('board');
     const sq = document.querySelector(`#board .sq[data-idx="${toIdx}"]`);
     if (sq) sq.classList.add('hl-wrong');
-    void b.offsetWidth;                       // relance l'animation
+    void b.offsetWidth;                            // relance l'animation
     b.classList.add('shake');
-    _wrongTimer = setTimeout(clearErrorFx, 750);   // > durée des animations (.45 s / .7 s) : jouées une seule fois
+    _wrongTimer = setTimeout(clearErrorFx, 750);   // > durée des animations (.45 s / .7 s)
 }
 
 // ─── FLIP BOARD ───────────────────────────────────────────────────────────────

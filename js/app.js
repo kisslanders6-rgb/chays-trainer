@@ -76,7 +76,7 @@ function syncSettingsUI() {
         b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
 }
 
-function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
+function showSettings()  { syncSettingsUI(); renderDataSection(); document.getElementById('settings-overlay').classList.remove('hidden'); }
 function closeSettings() { document.getElementById('settings-overlay').classList.add('hidden'); }
 
 function onSoundToggle(on) {
@@ -147,14 +147,11 @@ function switchHomeTab(tab) {
 
 function renderRepertoireList() {
     const list = loadRepertoireList();
-    const build = manage => list.map(name => {
+    const html = list.map(name => {
         const esc = name.replace(/'/g, "\\'");
-        const del = (manage && name !== DEFAULT_REPERTOIRE)
-            ? `<button class="chip-del" title="Supprimer ce répertoire (corbeille 30 jours)" aria-label="Supprimer" onclick="event.stopPropagation(); deleteRepertoirePrompt('${esc}')">${ico('trash')}</button>` : '';
-        return `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" onclick="selectRepertoire('${esc}')">${name}${del}</div>`;
+        return `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" onclick="selectRepertoire('${esc}')">${name}</div>`;
     }).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
-    const plain = build(false), managed = build(true);        // la corbeille n'apparaît que dans l'onglet « Jouer »
-    document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = c.dataset.manage ? managed : plain; });
+    document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
 }
 
 // Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
@@ -166,6 +163,7 @@ function deleteRepertoirePrompt(name) {
         if (!deleteRepertoire(name)) return;
         if (currentRepertoire === name) selectRepertoire(DEFAULT_REPERTOIRE);
         else { renderRepertoireList(); initStats(); initTraining(); }
+        renderDataSection();
     });
 }
 

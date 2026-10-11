@@ -6,17 +6,16 @@
  * poids / somme des poids de l'univers. Les positions fragiles ou oubliées sortent souvent,
  * les positions maîtrisées ou vues récemment rarement — mais jamais avec une probabilité nulle.
  *
- * Pour chaque position : l'échiquier se place 2 demi-coups avant, rejoue
- * automatiquement ces deux coups (contexte), puis me rend la main.
+ * Pour chaque position : l'échiquier se place 3 demi-coups avant, rejoue
+ * automatiquement ces trois coups (contexte), puis me rend la main.
  *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
- *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »),
- *     on réessaie (les stats reflètent les erreurs du menu « Jouer »).
+ *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »), on réessaie.
  */
 
 'use strict';
 
 const TRAIN_STEP_MS = 750;
-const TRAIN_CONTEXT_PLIES = 3;
+const TRAIN_CONTEXT_PLIES = 3;   // demi-coups rejoués avant que la main soit rendue
 
 const trainingState = { busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '' };
 

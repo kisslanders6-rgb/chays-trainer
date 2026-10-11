@@ -83,7 +83,7 @@
 
                 <div class="repertoire-select">
                     <div class="repertoire-select-label">Répertoire de travail</div>
-                    <div class="repertoire-list" id="repertoire-list" data-manage="1"></div>
+                    <div class="repertoire-list" id="repertoire-list"></div>
                 </div>
 
                 <div class="color-choice">
@@ -101,7 +101,7 @@
             <!-- Onglet Statistiques -->
             <div id="home-tab-stats" class="home-tab hidden">
                 <div class="tab-title"><svg class="ico"><use href="#i-bar-chart"/></svg> Statistiques</div>
-                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer ». Cliquez sur une pastille pour revoir la position.</div>
+                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer » et « Entraînement ». Cliquez sur une pastille pour revoir la position.</div>
                 <div class="repertoire-list"></div>
                 <div class="seg">
                     <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
@@ -326,23 +326,23 @@
                     <button class="theme-opt" data-board="night"   onclick="setBoardTheme('night')"><span class="theme-swatch"></span>Bleu nuit</button>
                 </div>
             </div>
-        </div>
 
-        <div class="set-section" id="data-section">
-    <div class="set-label" style="margin-bottom:6px;">Données &amp; Corbeille</div>
-    <div class="set-hint" id="data-rep-hint" style="margin-bottom:10px;"></div>
-    <div class="data-actions">
-        <button class="btn" onclick="createRepertoireFromSettings()">
-            <svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire
-        </button>
-        <button class="btn btn-danger-outline" id="data-del-btn" onclick="deleteCurrentRepertoire()">
-            <svg class="ico"><use href="#i-trash"/></svg> <span id="data-del-label">Supprimer le répertoire</span>
-        </button>
-        <button class="btn" onclick="openTrashFromSettings()">
-            <svg class="ico"><use href="#i-trash"/></svg> Corbeille (30 jours) <span data-trash-count></span>
-        </button>
-    </div>
-</div>
+            <div class="set-section" id="data-section">
+                <div class="set-label" style="margin-bottom:6px;">Données &amp; Corbeille</div>
+                <div class="set-hint" id="data-rep-hint" style="margin-bottom:10px;"></div>
+                <div class="data-actions">
+                    <button class="btn" onclick="createRepertoireFromSettings()">
+                        <svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire
+                    </button>
+                    <button class="btn btn-danger-outline" id="data-del-btn" onclick="deleteCurrentRepertoire()">
+                        <svg class="ico"><use href="#i-trash"/></svg> <span id="data-del-label">Supprimer le répertoire</span>
+                    </button>
+                    <button class="btn" onclick="openTrashFromSettings()">
+                        <svg class="ico"><use href="#i-trash"/></svg> Corbeille (30 jours) <span data-trash-count></span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ─── OVERLAY CORBEILLE ─────────────────────────────────────────────── -->
@@ -374,12 +374,12 @@
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
                 <div><div class="help-title">Statistiques</div>
-                    <div class="help-text">Chaque coup de votre répertoire reçoit un <strong>taux d'erreur</strong> (erreurs ÷ essais) calculé depuis le mode Jouer. Cliquez sur une pastille pour revoir la position correspondante.</div></div>
+                    <div class="help-text">Chaque coup de votre répertoire reçoit un <strong>taux d'erreur</strong> (erreurs ÷ essais) calculé depuis les modes Jouer et Entraînement. Cliquez sur une pastille pour revoir la position correspondante.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-target"/></svg></div>
                 <div><div class="help-title">Entraînement</div>
-                    <div class="help-text">Révision de <strong>tout votre répertoire</strong> : les positions fragiles ou longtemps oubliées reviennent plus souvent, les coups bien maîtrisés ou vus récemment plus rarement. L'échiquier rejoue les deux derniers coups pour remettre la position en contexte, puis vous cherchez la bonne réponse. Chaque réussite fait baisser le taux d'erreur.</div></div>
+                    <div class="help-text">Révision de <strong>tout votre répertoire</strong> : les positions fragiles ou longtemps oubliées reviennent plus souvent, les coups bien maîtrisés ou vus récemment plus rarement. L'échiquier rejoue les trois derniers coups pour remettre la position en contexte, puis vous cherchez la bonne réponse. Chaque réussite fait baisser le taux d'erreur ; chaque erreur le fait monter.</div></div>
             </div>
             <div class="help-tips">Astuces : glissez-déposez ou cliquez les pièces · cliquez un coup de la barre pour y revenir · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>Espace</kbd> indice · <kbd>F</kbd> retourner · <kbd>Échap</kbd> fermer</div>
         </div>
