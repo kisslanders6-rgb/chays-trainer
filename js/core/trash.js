@@ -238,3 +238,46 @@ function emptyTrash() {
         renderTrash();
     });
 }
+
+// ─── PARAMÈTRES : « Données & Corbeille » ─────────────────────────────────────
+
+function _inGameScreen() {
+    const gs = document.getElementById('game-screen');
+    return !!gs && gs.style.display !== 'none' && !gs.classList.contains('hidden');
+}
+
+function renderDataSection() {
+    const btn = document.getElementById('data-del-btn');
+    if (!btn) return;
+    const isDefault = currentRepertoire === DEFAULT_REPERTOIRE;
+    const inGame    = _inGameScreen();
+    document.getElementById('data-rep-hint').textContent =
+        `Répertoire actif : ${currentRepertoire}` + (inGame ? ' · revenez à l\'accueil pour le supprimer.' : '');
+    document.getElementById('data-del-label').textContent =
+        isDefault ? 'Supprimer (« Général » est protégé)' : `Supprimer « ${currentRepertoire} »`;
+    btn.disabled = isDefault || inGame;
+    updateTrashBadges();
+}
+
+function deleteCurrentRepertoire() {
+    const name = currentRepertoire;
+    if (name === DEFAULT_REPERTOIRE || _inGameScreen()) return;
+    askConfirm(`Supprimer le répertoire « ${name} » ? Il sera placé dans la corbeille et restera restaurable pendant 30 jours.`, () => {
+        if (!deleteRepertoire(name)) return;
+        selectRepertoire(DEFAULT_REPERTOIRE);
+        if (typeof renderRepertoireList === 'function') renderRepertoireList();
+        initStats(); initTraining();
+        renderDataSection();
+    });
+}
+
+function createRepertoireFromSettings() { closeSettings(); createRepertoirePrompt(); }
+function openTrashFromSettings()        { closeSettings(); showTrash(); }
+
+// Rafraîchit la section à chaque ouverture des Paramètres (sans toucher à showSettings()).
+(function () {
+    const o = document.getElementById('settings-overlay');
+    if (!o) return;
+    new MutationObserver(() => { if (!o.classList.contains('hidden')) renderDataSection(); })
+        .observe(o, { attributes: true, attributeFilter: ['class'] });
+})();
