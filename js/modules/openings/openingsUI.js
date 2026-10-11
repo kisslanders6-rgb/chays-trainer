@@ -280,13 +280,25 @@ function showPromotion() {
 
 // ─── RETOUR VISUEL D'UN COUP REFUSÉ ───────────────────────────────────────────
 
+let _wrongTimer = null;
+
+// Retire toute trace de l'effet d'erreur (secousse + flash de case).
+function clearErrorFx() {
+    clearTimeout(_wrongTimer);
+    _wrongTimer = null;
+    const b = document.getElementById('board');
+    if (b) b.classList.remove('shake');
+    document.querySelectorAll('#board .hl-wrong').forEach(el => el.classList.remove('hl-wrong'));
+}
+
 function flashWrong(toIdx) {
+    clearErrorFx();
+    const b  = document.getElementById('board');
     const sq = document.querySelector(`#board .sq[data-idx="${toIdx}"]`);
     if (sq) sq.classList.add('hl-wrong');
-    const b = document.getElementById('board');
-    b.classList.remove('shake');
-    void b.offsetWidth;            // relance l'animation
+    void b.offsetWidth;                       // relance l'animation
     b.classList.add('shake');
+    _wrongTimer = setTimeout(clearErrorFx, 750);   // > durée des animations (.45 s / .7 s) : jouées une seule fois
 }
 
 // ─── FLIP BOARD ───────────────────────────────────────────────────────────────
