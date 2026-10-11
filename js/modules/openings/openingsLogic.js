@@ -120,6 +120,7 @@ function migrateLegacyPaths() {
 
 function handleClick(idx) {
     if (gameMode === 'preview') return;                                   // aperçu : lecture seule
+    if (gameMode === 'endgame' && endgameState.busy) return;
     if (gameMode === 'training' && trainingState.busy) return;            // cinématique en cours
 
     // Si on visualise une position passée (navigation Précédent/Suivant),
@@ -280,6 +281,8 @@ function executePlayerMove(from, to, promo) {
         promo = null;
     }
 
+    if (gameMode === 'endgame') { answerEndgameMove(from, to, promo); return; }
+
     const key    = positionKey();
     const entry  = openingDB[key];
     const movStr = moveToStr(from, to, promo);
@@ -321,6 +324,7 @@ function executePlayerMove(from, to, promo) {
 const PIECE_HINT = { P: 'un Pion', N: 'un Cavalier', B: 'un Fou', R: 'une Tour', Q: 'une Dame', K: 'le Roi' };
 
 function showHint() {
+    if (gameMode === 'endgame') { endgameHint(); return; }
     if (gameMode === 'preview' || (gameMode === 'training' && trainingState.busy)) return;
     if (turn !== playerColor) {
         setStatus("L'indice n'est disponible que pour vos propres coups.", 'info');
