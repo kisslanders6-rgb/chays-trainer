@@ -1,5 +1,0 @@
-/* ─── PARAMÈTRES : Données & Corbeille — À COLLER À LA FIN DE style.css ─── */
-.data-actions { display: flex; flex-direction: column; gap: 8px; }
-.data-actions .btn { justify-content: flex-start; padding: 11px 14px; font-size: 13px; }
-.btn-danger-outline:not(:disabled):hover { color: var(--err); border-color: var(--err); }
-.btn-danger-outline:disabled { opacity: .45; }
