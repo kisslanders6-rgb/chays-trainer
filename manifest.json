@@ -44,6 +44,11 @@
       "name": "Entraînement",
       "short_name": "Entraîner",
       "url": "/?tab=training"
+    },
+
+    { "name": "Finales",
+      "short_name": "Finales",
+      "url": "/?tab=endgame"
     }
   ]
 }
