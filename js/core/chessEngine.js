@@ -62,7 +62,7 @@ function positionKey() {
 // ─── ANALYSE FEN ──────────────────────────────────────────────────────────────
 
 function parseFEN(fen) {
-    const parts = fen.split(' ');
+    const parts = fen.trim().split(/\s+/);
     const rows  = parts[0].split('/');
     board = new Array(64).fill('');
     for (let r = 0; r < 8; r++) {
@@ -73,8 +73,17 @@ function parseFEN(fen) {
         }
     }
     turn = parts[1] || 'w';
-    const cr = parts[2] || '-';
+
+    // Champ absent => on suppose les droits possibles ; champ présent => on le respecte
+    const cr = parts[2] === undefined ? 'KQkq' : parts[2];
     castlingRights = { K: cr.includes('K'), Q: cr.includes('Q'), k: cr.includes('k'), q: cr.includes('q') };
+
+    // Cohérence avec la position réelle (roi et tours sur leurs cases d'origine)
+    castlingRights.K = castlingRights.K && board[4]  === 'K' && board[7]  === 'R';
+    castlingRights.Q = castlingRights.Q && board[4]  === 'K' && board[0]  === 'R';
+    castlingRights.k = castlingRights.k && board[60] === 'k' && board[63] === 'r';
+    castlingRights.q = castlingRights.q && board[60] === 'k' && board[56] === 'r';
+
     const ep = parts[3] || '-';
     if (ep !== '-') { const f = ep.charCodeAt(0) - 97, rk = parseInt(ep[1]) - 1; enPassant = rk * 8 + f; }
     else enPassant = -1;
@@ -124,20 +133,39 @@ function getRawMoves(idx) {
         [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc]) => add(r+dr, c+dc));
 
     } else if (type === 'K') {
-        [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc]) => add(r+dr, c+dc));
-        if (isWhite(p)) {
-            if (castlingRights.K && !board[r*8+5] && !board[r*8+6] && board[r*8+7]==='R') moves.push(r*8+6);
-            if (castlingRights.Q && !board[r*8+3] && !board[r*8+2] && !board[r*8+1] && board[r*8]==='R') moves.push(r*8+2);
-        } else {
-            if (castlingRights.k && !board[r*8+5] && !board[r*8+6] && board[r*8+7]==='r') moves.push(r*8+6);
-            if (castlingRights.q && !board[r*8+3] && !board[r*8+2] && !board[r*8+1] && board[r*8]==='r') moves.push(r*8+2);
-        }
+      [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc]) => add(r+dr, c+dc));
+      addCastling(idx, p, moves);
 
     } else if (type === 'R') { slide(1,0); slide(-1,0); slide(0,1); slide(0,-1); }
     else if (type === 'B')   { slide(1,1); slide(1,-1); slide(-1,1); slide(-1,-1); }
     else if (type === 'Q')   { slide(1,0); slide(-1,0); slide(0,1); slide(0,-1); slide(1,1); slide(1,-1); slide(-1,1); slide(-1,-1); }
 
     return moves;
+}
+
+function addCastling(idx, p, moves) {
+    const white = isWhite(p);
+    const home  = white ? 4 : 60;
+    if (idx !== home) return;
+
+    const enemy = white ? 'b' : 'w';
+    if (isSquareAttacked(home, enemy)) return;               // roi en échec
+
+    const base  = white ? 0 : 56;
+    const rook  = white ? 'R' : 'r';
+    const canK  = white ? castlingRights.K : castlingRights.k;
+    const canQ  = white ? castlingRights.Q : castlingRights.q;
+
+    if (canK && board[base + 7] === rook
+        && !board[base + 5] && !board[base + 6]
+        && !isSquareAttacked(base + 5, enemy) && !isSquareAttacked(base + 6, enemy)) {
+        moves.push(base + 6);
+    }
+    if (canQ && board[base] === rook
+        && !board[base + 1] && !board[base + 2] && !board[base + 3]
+        && !isSquareAttacked(base + 3, enemy) && !isSquareAttacked(base + 2, enemy)) {
+        moves.push(base + 2);
+    }
 }
 
 // ─── POSITION DU ROI ──────────────────────────────────────────────────────────
@@ -150,12 +178,41 @@ function findKing(color) {
 // ─── DÉTECTION D'ATTAQUE ──────────────────────────────────────────────────────
 
 function isSquareAttacked(sq, byColor) {
-    for (let i = 0; i < 64; i++) {
-        const p = board[i];
-        if (!p) continue;
-        if ((byColor === 'w') !== isWhite(p)) continue;
-        if (getRawMoves(i).includes(sq)) return true;
+    const white = byColor === 'w';
+    const r = Math.floor(sq / 8), c = sq % 8;
+    const at = (rr, cc) => inBounds(rr, cc) ? board[rr * 8 + cc] : null;
+
+    // Pions
+    const pr = white ? r - 1 : r + 1;
+    const pawn = white ? 'P' : 'p';
+    if (at(pr, c - 1) === pawn || at(pr, c + 1) === pawn) return true;
+
+    // Cavaliers
+    const knight = white ? 'N' : 'n';
+    for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+        if (at(r + dr, c + dc) === knight) return true;
     }
+
+    // Roi
+    const king = white ? 'K' : 'k';
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if ((dr || dc) && at(r + dr, c + dc) === king) return true;
+    }
+
+    // Pièces à longue portée
+    const rook = white ? 'R' : 'r', bishop = white ? 'B' : 'b', queen = white ? 'Q' : 'q';
+    const ray = (dr, dc, a, b) => {
+        let nr = r + dr, nc = c + dc;
+        while (inBounds(nr, nc)) {
+            const t = board[nr * 8 + nc];
+            if (t) return t === a || t === b;
+            nr += dr; nc += dc;
+        }
+        return false;
+    };
+    for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) if (ray(dr, dc, rook, queen))   return true;
+    for (const [dr, dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]) if (ray(dr, dc, bishop, queen)) return true;
+
     return false;
 }
 
@@ -182,18 +239,19 @@ function getLegalMoves(idx) {
 // ─── APPLICATION D'UN COUP (état interne, sans historique) ────────────────────
 
 function applyMoveRaw(from, to) {
-    const p    = board[from];
-    board[to]  = p;
+    const p        = board[from];
+    const captured = board[to];
+    board[to]   = p;
     board[from] = '';
     const type = p.toUpperCase();
     const r    = Math.floor(from / 8), c2 = to % 8;
 
-    // En passant : capture du pion adverse
+    // En passant
     if (type === 'P' && to === enPassant) { board[r * 8 + c2] = ''; }
     enPassant = -1;
     if (type === 'P' && Math.abs(to - from) === 16) { enPassant = (from + to) >> 1; }
 
-    // Roque
+    // Roque (déplacement de la tour)
     if (type === 'K') {
         if (isWhite(p)) { castlingRights.K = false; castlingRights.Q = false; }
         else            { castlingRights.k = false; castlingRights.q = false; }
@@ -205,13 +263,10 @@ function applyMoveRaw(from, to) {
         }
     }
 
-    // Mise à jour des droits de roque pour les tours
-    if (type === 'R') {
-        if (from ===  0) castlingRights.Q = false;
-        if (from ===  7) castlingRights.K = false;
-        if (from === 56) castlingRights.q = false;
-        if (from === 63) castlingRights.k = false;
-    }
+    // Droits perdus si une tour part de son coin OU est capturée dans son coin
+    const corners = { 0: 'Q', 7: 'K', 56: 'q', 63: 'k' };
+    if (type === 'R' && corners[from]) castlingRights[corners[from]] = false;
+    if (captured && corners[to])       castlingRights[corners[to]]   = false;
 }
 
 // ─── NOTATION ALGÉBRIQUE ──────────────────────────────────────────────────────
