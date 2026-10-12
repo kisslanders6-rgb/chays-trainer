@@ -1311,8 +1311,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @media (min-width: 920px) { .endgame-card { max-width: none; } }
 @media (max-width: 599px) { .eg-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .eg-card { padding: 10px; } }
 
-<<<<<<< HEAD
-=======
 /* ═════ DEBUT : MODULE FINALES (ne pas modifier entre DEBUT et FIN) ═════ */
 /* ─── Accueil : catalogue ─────────────────────────────────────────────────── */
 #endgame-panel { width: 100%; display: flex; flex-direction: column; gap: 26px; text-align: left; }
@@ -1364,4 +1362,3 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @media (max-width: 599px) { .eg-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .eg-card { padding: 10px; } }
 /* ═════ FIN : MODULE FINALES ═════ */
 
->>>>>>> f872ee8 (endgame-update)

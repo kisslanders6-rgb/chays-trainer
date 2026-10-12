@@ -281,8 +281,6 @@ function executePlayerMove(from, to, promo) {
         promo = null;
     }
 
-    if (gameMode === 'endgame') { answerEndgameMove(from, to, promo); return; }
-
     const key    = positionKey();
     const entry  = openingDB[key];
     const movStr = moveToStr(from, to, promo);

@@ -134,11 +134,7 @@
             <!-- Onglet Finales -->
             <div id="home-tab-endgame" class="home-tab hidden">
                 <div class="tab-title"><svg class="ico"><use href="#i-pawn"/></svg> Finales</div>
-<<<<<<< HEAD
-                <div class="tab-sub">Finales théoriques : l'adversaire répond tout seul, chaque coup est jugé. Les positions de pions sont vérifiées par un calcul exact.</div>
-=======
                 <div class="tab-sub">Finales théoriques : l'adversaire répond tout seul et chaque coup est jugé. Les finales de pions sont vérifiées par un calcul exact.</div>
->>>>>>> f872ee8 (endgame-update)
                 <div id="endgame-panel"></div>
             </div>
 
@@ -158,11 +154,10 @@
                     </div>
 
                     <!--
-                        Rangée principale :
+                        Rangée principale (commune aux trois modes) :
                           Jouer        ‹  [ Indice ]  ›
                           Entraînement    [ Indice ] [ Passer ]
                           Aperçu       ‹  [ ← Statistiques ]  ›
-                          Finales         [ Indice ] [ Recommencer ]
                         Chaque bouton choisit ses modes avec data-modes (cf. applyModeUI dans app.js).
                     -->
                     <div class="controls controls-main">
@@ -220,14 +215,6 @@
                     <div class="controls controls-tools" data-modes="preview">
                         <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                             <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
-                    </div>
-                    <div class="controls controls-tools" data-modes="endgame">
-                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
-                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
-                        <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice">
-                            <svg class="ico"><use href="#i-x"/></svg>Quitter
                         </button>
                     </div>
                 </div>

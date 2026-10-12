@@ -142,12 +142,7 @@ function switchHomeTab(tab) {
     });
     if (tab === 'stats')    initStats();
     if (tab === 'training') initTraining();
-<<<<<<< HEAD
-    // switchHomeTab(), après les lignes initStats / initTraining :
-    if (tab === 'endgame') initEndgame();
-=======
     if (tab === 'endgame')  initEndgame();
->>>>>>> f872ee8 (endgame-update)
 }
 
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────
