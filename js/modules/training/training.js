@@ -80,26 +80,19 @@ function initTraining() {
     if (!panel) return;
 
     const opt = (v, label, cur) => `<option value="${v}" ${Number(v) === Number(cur) ? 'selected' : ''}>${label}</option>`;
-    const selStyle = 'background:transparent;color:inherit;border:1px solid var(--border,#555);border-radius:6px;padding:3px 6px;font:inherit;';
-    const options = `
-        <div class="train-options" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--text-dim);">
-          <label>Profondeur
-            <select style="${selStyle}" onchange="setTrainingOption('maxPlies', this.value)">
-              ${opt(0, 'Illimitée', trainingSettings.maxPlies)}
-              ${opt(5, '≤ 5 demi-coups', trainingSettings.maxPlies)}
-              ${opt(10, '≤ 10 demi-coups', trainingSettings.maxPlies)}
-              ${opt(20, '≤ 20 demi-coups', trainingSettings.maxPlies)}
-            </select>
-          </label>
-          <label>Exercice
-            <select style="${selStyle}" onchange="setTrainingOption('seqLen', this.value)">
-              ${opt(1, 'Coup unique', trainingSettings.seqLen)}
-              ${opt(3, 'Séquence de 3 coups', trainingSettings.seqLen)}
-              ${opt(5, 'Séquence de 5 coups', trainingSettings.seqLen)}
-              ${opt(TRAIN_SEQ_END, 'Jusqu\'à la fin de la variante', trainingSettings.seqLen)}
-            </select>
-          </label>
-        </div>`;
+    const select = (label, name, rows, cur) => `
+        <label class="train-opt">
+          <span class="train-opt-label">${label}</span>
+          <select class="train-select" onchange="setTrainingOption('${name}', this.value)">
+            ${rows.map(([v, t]) => opt(v, t, cur)).join('')}
+          </select>
+        </label>`;
+    const options = '<div class="train-options">'
+        + select('Profondeur', 'maxPlies',
+            [[0, 'Illimitée'], [5, '≤ 5 demi-coups'], [10, '≤ 10 demi-coups'], [20, '≤ 20 demi-coups']], trainingSettings.maxPlies)
+        + select('Exercice', 'seqLen',
+            [[1, 'Coup unique'], [3, 'Séquence de 3 coups'], [5, 'Séquence de 5 coups'], [TRAIN_SEQ_END, "Jusqu'à la fin de la variante"]], trainingSettings.seqLen)
+        + '</div>';
 
     panel.innerHTML = options + '<div class="train-cards">' + ['w', 'b'].map(c => {
         const all      = Object.values(readDBFor(currentRepertoire, c));
@@ -387,7 +380,9 @@ function showTrainingSolution() {
     selected   = squareToIdx(entry.move.slice(0, 2));
     legalMoves = [squareToIdx(entry.move.slice(2, 4))];
     hintPiece  = null;
+    trainingState.solutionMove = { from: selected, to: legalMoves[0] };
     renderBoard();
+    _solutionFx(true);
     setStatus(`Solution : ${entry.san} — jouez-le pour continuer (aucune réussite comptée).`, 'hint');
 }
 
@@ -397,17 +392,31 @@ function _solutionBtn() {
     if (!b && document.body) {
         b = document.createElement('button');
         b.id        = 'train-solution-btn';
-        b.className = 'btn';
+        b.className = 'btn train-solution-btn';
         b.textContent = 'Solution';
-        b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:50;display:none;';
+        b.style.display = 'none';
         b.onclick = showTrainingSolution;
         document.body.appendChild(b);
     }
     return b;
 }
 
+// Classe .show-solution sur #board (halo doré animé) tant que la solution est bien celle affichée.
+function _solutionFx(on) {
+    const el = document.getElementById('board');
+    if (el) el.classList.toggle('show-solution', !!on);
+}
+
+function _solutionFxValid() {
+    const m = trainingState.solutionMove;
+    return !!m && trainingState.solutionFor === positionKey()
+        && selected === m.from && legalMoves.length === 1 && legalMoves[0] === m.to;
+}
+
 function _syncSolutionBtn() {
     try {
+        const board_ = document.getElementById('board');
+        if (board_ && board_.classList.contains('show-solution') && !_solutionFxValid()) _solutionFx(false);
         const b = _solutionBtn();
         if (b) b.style.display = (gameMode === 'training' && !trainingState.busy && turn === playerColor) ? '' : 'none';
     } catch (_) { /* globals pas encore initialisés */ }
