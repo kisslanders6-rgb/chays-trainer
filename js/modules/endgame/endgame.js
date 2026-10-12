@@ -418,8 +418,45 @@ const EG = (function () {
         return best;
     }
 
+    // Recherche bornée (preuve) : le camp blanc, au trait, peut-il forcer une promotion en dame
+    // non prenable en `plies` demi-coups ? Sert à vérifier qu'une défense tient (finales de tours).
+    function forcesPromotion(st, plies) {
+        const memo = new Map();
+        const key = (s, d) => s.stm + ':' + d + ':' + s.b.join(',');
+        const white = (s, d) => {
+            if (d <= 0) return false;
+            const k = key(s, d);
+            if (memo.has(k)) return memo.get(k);
+            let res = false;
+            const mv = legalMoves(s).sort((a, c) => (Math.abs(s.b[c & 63]) === P ? 1 : 0) - (Math.abs(s.b[a & 63]) === P ? 1 : 0));
+            for (const x of mv) {
+                const pr = x >> 12, to = (x >> 6) & 63;
+                if (pr) {
+                    if (pr !== Q) continue;
+                    const rep = legalMoves(make(s, x));
+                    if (rep.length && !rep.some(r => ((r >> 6) & 63) === to)) { res = true; break; }
+                    continue;
+                }
+                if (black(make(s, x), d - 1)) { res = true; break; }
+            }
+            memo.set(k, res);
+            return res;
+        };
+        const black = (s, d) => {
+            const mv = legalMoves(s);
+            if (!mv.length || d <= 0) return false;
+            const k = key(s, -d);
+            if (memo.has(k)) return memo.get(k);
+            let all = true;
+            for (const x of mv) if (!white(make(s, x), d - 1)) { all = false; break; }
+            memo.set(k, all);
+            return all;
+        };
+        return white(st, plies);
+    }
+
     return {
-        P, N, B, R, Q, K, LETTER, MATE,
+        P, N, B, R, Q, K, LETTER, MATE, forcesPromotion,
         fromFen, fromGlobals, mFrom, mTo, mPromo, mk, promoLetter,
         attacked, inCheck, legalMoves, make, kingSq, piecesOf, dist,
         searchBest, judgeMate,
@@ -437,7 +474,8 @@ const EG = (function () {
 // player 'w' | 'b' : le joueur a toujours le trait au départ.
 const ENDGAME_CATEGORIES = [
     { id: 'mats',  label: 'Mats élémentaires', desc: 'Technique pure : confiner le roi et le mater sans pat.' },
-    { id: 'pions', label: 'Finales de pions',  desc: 'Roi + pion contre roi : carré, opposition, cases clés. Verdict exact à chaque coup.' }
+    { id: 'pions', label: 'Finales de pions',  desc: 'Roi + pion contre roi : carré, opposition, cases clés. Verdict exact à chaque coup.' },
+    { id: 'tours', label: 'Finales de tours',  desc: 'Les deux positions fondamentales : Lucena (gagner) et Philidor (annuler).' }
 ];
 
 const ENDGAME_EXERCISES = [
@@ -473,7 +511,7 @@ const ENDGAME_EXERCISES = [
         title: 'Entrer dans le carré',
         fen: '8/8/8/8/3P4/7k/8/K7 b - - 0 1',
         tips: ['Le roi noir est un rang trop bas : un seul coup l\'amène dans le carré du pion.'],
-        theory: '…Rg4 ! entre dans le carré : après d5 Rf5 d6 Re6 d7 Rxd7, le roi rattrape le pion. Tout autre coup le laisse hors du carré : le pion se promeut.'
+        theory: '…Kg4 ! entre dans le carré : après d5 Kf5 d6 Ke6 d7 Kxd7, le roi rattrape le pion. Tout autre coup le laisse hors du carré : le pion se promeut.'
     },
     {
         id: 'kpk-opposition', cat: 'pions', kind: 'kpk', goal: 'win', player: 'w', level: 2,
@@ -481,7 +519,7 @@ const ENDGAME_EXERCISES = [
         fen: '8/3k4/8/2K5/3P4/8/8/8 w - - 0 1',
         tips: ['Deux rois face à face, une case entre eux : celui qui n\'a PAS le trait détient l\'opposition.',
                'Placez votre roi devant le pion, à deux cases du roi adverse, pour que ce soit à lui de jouer.'],
-        theory: 'Un seul coup gagne : Rd5! prend l\'opposition (Rd5 face à Rd7, les Noirs au trait). Le roi noir doit céder du terrain, et le roi blanc gagne les cases clés devant le pion.'
+        theory: 'Un seul coup gagne : Kd5! prend l\'opposition (Kd5 face à Kd7, les Noirs au trait). Le roi noir doit céder du terrain, et le roi blanc gagne les cases clés devant le pion.'
     },
     {
         id: 'kpk-opposition-def', cat: 'pions', kind: 'kpk', goal: 'draw', player: 'b', level: 2, hold: 8,
@@ -489,7 +527,7 @@ const ENDGAME_EXERCISES = [
         fen: '8/4k3/8/3K4/2P5/8/8/8 b - - 0 1',
         tips: ['Le roi blanc menace d\'avancer : placez votre roi pour que ce soit à lui de jouer, face à face.',
                'Restez devant le pion, jamais sur le côté.'],
-        theory: '…Rd7! reprend l\'opposition : le roi blanc ne peut plus avancer sans que le roi noir ne garde le contrôle des cases clés. La nulle se tient en gardant l\'opposition à chaque coup.'
+        theory: '…Kd7! reprend l\'opposition : le roi blanc ne peut plus avancer sans que le roi noir ne garde le contrôle des cases clés. La nulle se tient en gardant l\'opposition à chaque coup.'
     },
     {
         id: 'kpk-sixieme', cat: 'pions', kind: 'kpk', goal: 'win', player: 'w', level: 2,
@@ -504,7 +542,7 @@ const ENDGAME_EXERCISES = [
         fen: '8/8/8/8/3p4/3k4/8/3K4 b - - 0 1',
         tips: ['Les règles sont les mêmes, à l\'envers : les Noirs avancent vers la 1re rangée.',
                'Face au roi blanc, un pas de côté permet de contourner l\'opposition.'],
-        theory: 'Les règles sont symétriques. Le roi noir précède son pion, le roi blanc lui fait face sur la 1re rangée. Au trait, les Noirs gagnent par un pas de côté (…Rc3 ou …Re3) qui contourne l\'opposition.'
+        theory: 'Les règles sont symétriques. Le roi noir précède son pion, le roi blanc lui fait face sur la 1re rangée. Au trait, les Noirs gagnent par un pas de côté (…Kc3 ou …Ke3) qui contourne l\'opposition.'
     },
     {
         id: 'kpk-tour', cat: 'pions', kind: 'kpk', goal: 'draw', player: 'b', level: 3, hold: 8,
@@ -512,6 +550,23 @@ const ENDGAME_EXERCISES = [
         fen: '2k5/8/2K5/P7/8/8/8/8 b - - 0 1',
         tips: ['Avec un pion de colonne a, le roi défenseur nulle s\'il atteint le coin de promotion.'],
         theory: 'Un pion de colonne a ou h ne gagne pas si le roi défenseur atteint le coin de promotion : le roi attaquant manque de place d\'un côté, et les pats tombent dès que le roi noir touche a8 ou b8.'
+    },
+    {
+        id: 'rook-lucena', cat: 'tours', kind: 'script', goal: 'win', player: 'w', level: 3,
+        title: 'Position de Lucena',
+        fen: '3K4/3P2k1/8/8/8/8/r7/5R2 w - - 0 1',
+        line: ['f1f4', 'a2a1', 'd8e7', 'a1e1', 'e7d6', 'e1d1', 'd6e6', 'd1e1', 'e6d5', 'e1d1', 'f4d4', 'd1d4', 'd5d4', 'g7f7', 'd7d8q'],
+        tips: ['Le roi est enfermé devant son pion : il faut construire un « pont » avec la Tour sur la 4e rangée.',
+               'Gardez le roi noir coupé sur la colonne f, et préparez l\'interposition de la Tour sur la 4e rangée.'],
+        theory: 'Lucena : 1.Rf4! (le pont) Ra1 2.Ke7 Re1+ 3.Kd6 Rd1+ 4.Ke6 Re1+ 5.Kd5 Rd1+ 6.Rd4! Rxd4+ 7.Kxd4 : le pion se promeut (d8=Q). Le roi sort de devant son pion, et la Tour, protégée par le roi, s\'interpose sur la 4e rangée pour casser les échecs.'
+    },
+    {
+        id: 'rook-philidor', cat: 'tours', kind: 'rules', goal: 'draw', player: 'b', level: 3, hold: 12,
+        title: 'Position de Philidor',
+        fen: '4k3/8/r7/3KP3/8/7R/8/8 b - - 0 1', beta: true,
+        tips: ['Tant que le pion n\'a pas atteint la 6e rangée, gardez la Tour noire sur la 6e rangée et le roi sur sa dernière rangée.',
+               'Dès que le pion avance en e6, passez avec la Tour sur la 1re rangée pour donner des échecs par derrière.'],
+        theory: 'Défense de Philidor : la Tour reste sur la 6e rangée (elle interdit au roi blanc d\'avancer) tant que le pion n\'est pas en 6e ; dès qu\'il avance, la Tour passe derrière et donne échec sur échec, le roi noir restant sur sa dernière rangée.'
     }
 ];
 
@@ -534,6 +589,18 @@ function endgameSelfTest() {
         if (st.stm !== (ex.player === 'w' ? 1 : -1)) problems.push('le joueur n\'a pas le trait');
         if (EG.attacked(st.b, EG.kingSq(st.b, -st.stm), st.stm)) problems.push('position illégale (roi adverse en échec)');
         if (!EG.legalMoves(st).length) problems.push('aucun coup légal');
+        if (ex.kind === 'script') {
+            let cur = st;
+            ex.line.forEach((u, i) => {
+                const m = _egParseUci(u);
+                if (!EG.legalMoves(cur).includes(m)) { problems.push(`coup illégal dans la ligne : ${u} (n°${i + 1})`); return; }
+                cur = EG.make(cur, m);
+            });
+        }
+        if (ex.kind === 'rules') {
+            const ok = EG.legalMoves(st).filter(m => !_egPhilidorCheck(st, m));
+            if (!ok.length) problems.push('aucun coup de défense conforme');
+        }
         if (ex.kind === 'kpk') {
             const pr = EG.kpkProbe(st), expectWin = ex.goal === 'win';
             if (pr.invalid) problems.push('position invalide pour la base KPK');
@@ -613,7 +680,7 @@ function initEndgame() {
             html += `<button class="eg-card" onclick="startEndgame('${ex.id}')">
                 ${egMiniBoard(ex)}
                 <div class="eg-card-body">
-                    <div class="eg-card-title">${_esc(ex.title)}</div>
+                    <div class="eg-card-title">${_esc(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</div>
                     <div class="eg-card-goal">${egObjective(ex)}</div>
                     <div class="eg-card-meta"><span class="eg-lvl" title="Niveau ${ex.level}/3">${_egDots(ex.level)}</span>${badge}</div>
                 </div></button>`;
@@ -625,6 +692,87 @@ function initEndgame() {
     // Précalcule la base KPK pendant que l'utilisateur choisit (≈ 0,25 s).
     const warm = () => { try { EG.buildKpk(); } catch (e) {} };
     if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 1500 }); else setTimeout(warm, 400);
+}
+
+
+// ─── Outils des finales de tours ──────────────────────────────────────────────
+const _egSqName = s => 'abcdefgh'[s & 7] + ((s >> 3) + 1);
+const _egUci = m => _egSqName(EG.mFrom(m)) + _egSqName(EG.mTo(m)) + (EG.mPromo(m) ? EG.LETTER[EG.mPromo(m)].toLowerCase() : '');
+function _egParseUci(u) {
+    const sq = n => 'abcdefgh'.indexOf(n[0]) + 8 * (Number(n[1]) - 1);
+    return EG.mk(sq(u.slice(0, 2)), sq(u.slice(2, 4)), u[4] ? { q: 5, r: 4, b: 3, n: 2 }[u[4]] : 0);
+}
+
+// Défense de Philidor (Noirs) : règles canoniques + garde-fou par recherche (les Blancs ne doivent pas
+// pouvoir forcer la promotion en 9 demi-coups). Renvoie null si le coup est correct, sinon le message.
+function _egPhilBasic(ns) {                                 // règles + Tour non abandonnée (aucune recherche)
+    let pawn = -1, rook = -1;
+    for (let i = 0; i < 64; i++) { if (ns.b[i] === 1) pawn = i; if (ns.b[i] === -4) rook = i; }
+    if (pawn < 0 || rook < 0) return null;
+    if (EG.attacked(ns.b, rook, 1) && !EG.attacked(ns.b, rook, -1)) return 'Votre Tour est en prise : elle serait perdue.';
+    const bk = EG.kingSq(ns.b, -1), pr = pawn >> 3;
+    if (pr <= 4) {
+        if ((rook >> 3) !== 5) return 'Philidor : tant que le pion n\'est pas en 6e, la Tour reste sur la 6e rangée.';
+        if ((bk >> 3) < 6) return 'Philidor : gardez le roi noir sur sa dernière rangée (ou la 7e), devant le pion.';
+    } else if (pr === 5 && (rook >> 3) !== 0) {
+        return 'Le pion est en 6e : la Tour doit passer derrière, sur la 1re rangée, pour donner des échecs par derrière.';
+    }
+    return null;
+}
+
+// Défense de Philidor (Noirs) : règles canoniques, anticipation de la poussée e5-e6, et garde-fou par
+// recherche (les Blancs ne doivent pas forcer la promotion en 9 demi-coups). null = coup correct.
+function _egPhilidorCheck(st, m) {
+    const ns = EG.make(st, m);
+    const pawn = ns.b.indexOf(1);
+    if (pawn < 0) {                                           // prise du pion : valable seulement si la Tour n'est pas reprise
+        const back = EG.legalMoves(ns).some(r => ns.b[EG.mTo(r)] < 0 && Math.abs(ns.b[EG.mTo(r)]) !== 6);
+        return back ? { msg: 'La Tour serait reprise par le roi : le pion est protégé.' } : { capture: true };
+    }
+    const basic = _egPhilBasic(ns);
+    if (basic) return { msg: basic };
+    if ((pawn >> 3) <= 4 && !EG.inCheck(st) && ns.b.indexOf(-6) !== 60)
+        return { msg: 'Philidor : sans échec à parer, le roi reste sur e8 devant le pion ; jouez avec la Tour sur la 6e rangée.' };
+    if ((pawn >> 3) === 4) {                                  // les Blancs peuvent-ils pousser, et aurez-vous alors une défense ?
+        const push = EG.legalMoves(ns).find(x => EG.mFrom(x) === pawn && EG.mTo(x) === pawn + 8);
+        if (push) {
+            const n2 = EG.make(ns, push);
+            const ok = EG.legalMoves(n2).some(r => {
+                const n3 = EG.make(n2, r);
+                if (n3.b.indexOf(1) < 0) return !EG.legalMoves(n3).some(x => n3.b[EG.mTo(x)] < 0 && Math.abs(n3.b[EG.mTo(x)]) !== 6);   // prise du pion non reprise
+                return !_egPhilBasic(n3) && !EG.forcesPromotion(n3, 5);
+            });
+            if (!ok) return { msg: 'Après e6, vous n\'auriez plus de défense : placez la Tour et le roi autrement.' };
+        }
+    }
+    if (EG.forcesPromotion(ns, 7)) return { msg: 'Ce coup perd : les Blancs peuvent forcer la promotion du pion.' };
+    return null;
+}
+
+// Les Blancs poussent, doublent sur la 7e, donnent échec : un adversaire qui « essaie » vraiment.
+function _egPhilidorWhite(st) {
+    let best = null, bs = -1e9;
+    for (const m of EG.legalMoves(st)) {
+        const ns = EG.make(st, m), from = EG.mFrom(m), to = EG.mTo(m), t = Math.abs(st.b[from]);
+        let sc = 0;
+        if (st.b[to] < 0) sc += 500;
+        if (t === 1) { sc += 60; if (EG.attacked(ns.b, to, -1) && !EG.attacked(ns.b, to, 1)) sc -= 300; }
+        if (t === 4) { const rk = to >> 3; if (rk === 6) sc += 30; if (rk === 7) sc += 25; if (EG.attacked(ns.b, to, -1) && !EG.attacked(ns.b, to, 1)) sc -= 400; }
+        if (t === 6) sc += 6 * (to >> 3);
+        if (EG.inCheck(ns)) sc += 15;
+        const ps = ns.b.indexOf(1);
+        if (ps >= 0 && EG.attacked(ns.b, ps, -1) && !EG.attacked(ns.b, ps, 1)) sc -= 500;      // ne jamais laisser le pion en prise
+        if (ps >= 0 && !EG.attacked(ns.b, ps, 1)) sc -= 150;                                   // garder le pion protégé
+        if (ps >= 0) {                                                                         // prise du pion non reprise ?
+            for (const r of EG.legalMoves(ns)) {
+                if (EG.mTo(r) !== ps) continue;
+                const n2 = EG.make(ns, r);
+                if (!EG.legalMoves(n2).some(x => EG.mTo(x) === ps)) { sc -= 600; break; }
+            }
+        }
+        if (sc > bs) { bs = sc; best = m; }
+    }
+    return best;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -675,7 +823,9 @@ function _egLoadPosition() {
     if (ex.kind === 'kpk') {
         const pr = EG.kpkProbe(_egCur());
         s.budget = ex.goal === 'win' ? Math.ceil(pr.dtw / 2) + 3 : ex.hold;
-    } else s.budget = ex.maxMoves;
+    } else if (ex.kind === 'script') s.budget = Math.ceil(ex.line.length / 2);
+    else if (ex.kind === 'rules')    s.budget = ex.hold;
+    else s.budget = ex.maxMoves;
     renderMoves();
     renderBoard();
     renderEndgameCard();
@@ -701,7 +851,7 @@ function renderEndgameCard() {
     const s = endgameState, ex = s.ex;
     if (!el || !ex) return;
     const cat = ENDGAME_CATEGORIES.find(c => c.id === ex.cat);
-    const unit = ex.kind === 'mate' ? 'max' : (ex.goal === 'draw' ? 'à tenir' : 'max');
+    const unit = ex.kind === 'script' ? 'au total' : ex.goal === 'draw' ? 'à tenir' : 'max';
     const meter = `<div class="eg-meter"><span>Coup <b>${s.moves}</b> / ${s.budget} ${unit}</span><span>${s.errors} erreur${s.errors > 1 ? 's' : ''}</span><span>${s.hints} indice${s.hints > 1 ? 's' : ''}</span></div>`;
 
     let result = '';
@@ -715,7 +865,7 @@ function renderEndgameCard() {
     }
     el.className = 'endgame-card' + (s.over ? ' is-ok' : s.failed ? ' is-err' : '');
     el.innerHTML = `<div class="eg-card-top"><span class="eg-cat">${_esc(cat ? cat.label : '')}</span><span class="eg-lvl">${_egDots(ex.level)}</span></div>
-        <div class="eg-title">${_esc(ex.title)}</div>
+        <div class="eg-title">${_esc(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</div>
         <div class="eg-goal">${egObjective(ex)}</div>
         ${meter}${result}`;
 }
@@ -729,6 +879,19 @@ function _egJudge(ex, st, m) {
         if (j.stalemate) return { state: 'fail', undoable: true,  msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse (hors échec).' };
         if (j.hanging)   return { state: 'fail', undoable: true,  msg: 'Votre pièce est abandonnée : le roi adverse la prend et le gain disparaît.' };
         if (n > ex.maxMoves) return { state: 'fail', undoable: false, msg: `Trop lent : le mat doit tomber en ${ex.maxMoves} coups maximum.` };
+        return { state: 'continue' };
+    }
+    if (ex.kind === 'script') {
+        const i = 2 * (n - 1);
+        if (_egUci(m) !== ex.line[i]) return { state: 'fail', undoable: true, msg: 'Ce coup sort de la méthode théorique : cherchez le plan de la leçon (utilisez l\'indice).' };
+        if (i === ex.line.length - 1) return { state: 'success', msg: 'Pion promu : position gagnée !' };
+        return { state: 'continue' };
+    }
+    if (ex.kind === 'rules') {
+        const r = _egPhilidorCheck(st, m);
+        if (r && r.capture) return { state: 'success', msg: 'Pion capturé : nulle !' };
+        if (r) return { state: 'fail', undoable: true, msg: r.msg };
+        if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec la défense de Philidor.` };
         return { state: 'continue' };
     }
     const info = EG.kpkAfter(st, m);
@@ -787,7 +950,9 @@ function _egAiReply() {
     const st = _egCur();
     const me = ex.player === 'w' ? 1 : -1;
     let m;
-    if (ex.kind === 'mate')       m = EG.searchBest(st, ex.defDepth || 4, me);      // défense du roi seul
+    if (ex.kind === 'script')     m = _egParseUci(ex.line[2 * s.moves - 1]);        // réponse de la ligne théorique
+    else if (ex.kind === 'rules') m = _egPhilidorWhite(st);                         // Blancs qui cherchent à gagner
+    else if (ex.kind === 'mate')  m = EG.searchBest(st, ex.defDepth || 4, me);      // défense du roi seul
     else if (ex.goal === 'win')   m = EG.kpkDefense(st);                            // défense parfaite (base exacte)
     else                          m = EG.kpkTrapAttack(st);                         // attaque qui tend des pièges
     if (m == null) { _egFinish('Partie terminée.'); return; }
@@ -845,7 +1010,16 @@ function endgameHint() {
     const st = _egCur();
     s.hints++;
 
-    if (ex.kind === 'mate') {
+    if (ex.kind === 'script') {
+        const want = _egParseUci(ex.line[2 * s.moves]), from = EG.mFrom(want);
+        if (s.hintLevel === 0) setStatus(`Indice : déplacez ${PIECE_HINT[(board[from] || '').toUpperCase()] || 'une pièce'}.`, 'hint');
+        else if (s.hintLevel === 1 && ex.tips.length) setStatus(`Indice : ${ex.tips[Math.min(s.moves ? 1 : 0, ex.tips.length - 1)]}`, 'hint');
+        else setStatus(`Solution : ${toAlgebraic(from, EG.mTo(want), EG.promoLetter(want))}`, 'hint');
+        s.hintLevel = Math.min(s.hintLevel + 1, 2);
+        renderEndgameCard();
+        return;
+    }
+    if (ex.kind === 'mate' || ex.kind === 'rules') {
         const tip = ex.tips[Math.min(s.hintLevel, ex.tips.length - 1)];
         s.hintLevel++;
         setStatus(`Indice : ${tip}`, 'hint');
@@ -875,5 +1049,5 @@ function endgameHint() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { EG, ENDGAME_EXERCISES, endgameSelfTest };
+    module.exports = { EG, ENDGAME_EXERCISES, endgameSelfTest, _egPhilidorCheck, _egPhilidorWhite };
 }

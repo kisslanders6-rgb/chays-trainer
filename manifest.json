@@ -45,8 +45,13 @@
       "short_name": "Entraîner",
       "url": "/?tab=training"
     },
+<<<<<<< HEAD
 
     { "name": "Finales",
+=======
+    {
+      "name": "Finales",
+>>>>>>> f872ee8 (endgame-update)
       "short_name": "Finales",
       "url": "/?tab=endgame"
     }

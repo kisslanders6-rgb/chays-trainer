@@ -288,6 +288,7 @@ function executePlayerMove(from, to, promo) {
     const movStr = moveToStr(from, to, promo);
     const san    = toAlgebraic(from, to, promo);
 
+    if (gameMode === 'endgame') { answerEndgameMove(from, to, promo); return; }
     if (gameMode === 'training') { answerTrainingMove(entry, from, to, promo, movStr); return; }
 
     const pathNow = moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
