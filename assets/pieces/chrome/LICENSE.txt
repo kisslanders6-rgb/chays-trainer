@@ -1,0 +1,3 @@
+Chrome piece set — original metallic rendering (gradients, bevels, engraved details) built on the
+silhouettes of the "Cburnett" set by Colin M.L. Burnett (GPLv2+ / BSD / GFDL), as distributed in the
+lichess open-source repository. Distributed under GPLv2+.

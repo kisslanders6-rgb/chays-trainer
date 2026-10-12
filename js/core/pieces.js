@@ -35,7 +35,7 @@ const PIECE_SETS = {
     'merida':         _def('merida',         'Merida',         'Armando Hernandez Marroquin', 'GPLv2+'),
     'maestro':        _def('maestro',        'Maestro',        'sadsnake1',                   'CC BY-NC-SA 4.0'),
     'staunty':        _def('staunty',        'Staunty',        'sadsnake1',                   'CC BY-NC-SA 4.0'),
-    'chrome':         { label: 'Chrome',     author: 'Merida en acier poli — Armando Hernandez Marroquin', license: 'GPLv2+', src: 'merida', svg: _imgSet('merida') },
+    'chrome':         _def('chrome',         'Chrome',         'Chrome — dérivé des silhouettes de Colin M.L. Burnett', 'GPLv2+'),
     'chessnut':       _def('chessnut',       'Chessnut',       'Alexis Luengas',              'Apache 2.0'),
     'minimal-warmth': _def('minimal-warmth', 'Minimal Warmth', 'blunder_reign',               'CC BY-NC-SA 4.0'),
     'fantasy':        _def('fantasy',        'Fantasy',        'Maurizio Monge',              'MIT'),

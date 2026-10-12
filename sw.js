@@ -8,7 +8,7 @@
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE   = 'chays-trainer-' + VERSION;
 
 const CORE = [
@@ -23,7 +23,7 @@ const CORE = [
     'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp'
 ];
 
-const SETS = ['merida', 'maestro', 'staunty', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi'];
+const SETS = ['merida', 'maestro', 'staunty', 'chrome', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi'];
 const PIECES = SETS.flatMap(s => ['w', 'b'].flatMap(c => 'KQRBNP'.split('').map(t => `assets/pieces/${s}/${c}${t}.svg`)));
 
 self.addEventListener('install', e => {
