@@ -138,6 +138,28 @@ function _drillReason(e) {
     return `À consolider · ${pct}% d'erreur · ${_ageLabel(e, now)}`;
 }
 
+// Retrouve la ligne menant à une clé de position en rejouant les chemins des autres entrées
+// (la position d'une entrée sans `path` est un ancêtre des entrées plus profondes).
+// Renvoie un tableau UCI (peut être vide = position initiale) ou null si introuvable.
+function _findPathToKey(key) {
+    return _withEngineSnapshot(() => {
+        parseFEN(INIT_FEN);
+        if (positionKey() === key) return [];
+        for (const k of Object.keys(openingDB)) {
+            const p = openingDB[k].path;
+            if (!p || !p.length) continue;
+            parseFEN(INIT_FEN);
+            try {
+                for (let i = 0; i < p.length; i++) {
+                    _applyUciRaw(p[i]);
+                    if (positionKey() === key) return p.slice(0, i + 1);
+                }
+            } catch (_) { /* chemin corrompu : on passe au suivant */ }
+        }
+        return null;
+    });
+}
+
 function nextDrill() {
     stopTraining();
     if (!_trainingPool().length) { setStatus('Aucune position dans ce répertoire.', 'info'); return; }
@@ -149,23 +171,37 @@ function nextDrill() {
     trainingState.lastKey = key;
     trainingState.busy    = true;
 
-    if (entry.path && entry.path.length) {
-        const n     = entry.path.length - 1;            // coups avant ma réponse
+    // Chemin absent ou vide : reconstitution via les autres entrées, puis auto-réparation de l'entrée.
+    let fullPath = (entry.path && entry.path.length) ? entry.path : null;
+    if (!fullPath) {
+        const pre = _findPathToKey(key);
+        if (pre) {
+            fullPath = pre.concat(entry.move);
+            entry.path = fullPath;
+            entry.ply  = fullPath.length;
+            saveDB();
+        }
+    }
+
+    if (fullPath) {
+        const n     = fullPath.length - 1;               // coups avant ma réponse
         const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
-        const ctx   = entry.path.slice(start, n);
-        loadPositionFromPath(entry.path.slice(0, start));
+        const ctx   = fullPath.slice(start, n);
+        loadPositionFromPath(fullPath.slice(0, start));
         setStatus(`Mise en situation… · ${trainingState.reason}`, 'info');
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
             playMoveSound(m.from, m.to);
             animateNextMove(m.from, m.to);
-            applyMove(m.from, m.to, m.promo);
+            applyMove(m.from, m.to, m.promo);            // applyMove appelle renderMoves()
             renderBoard();
         }, TRAIN_STEP_MS * (i + 1)));
         _later(_drillReady, TRAIN_STEP_MS * ctx.length + 300);
     } else {
+        // Dernier recours : aucune ligne connue → position posée directement (historique vide inévitable).
         loadPositionFromPath([]);
         parseFEN(key);
+        renderMoves();
         renderBoard();
         _drillReady();
     }
@@ -173,9 +209,20 @@ function nextDrill() {
 
 function _drillReady() {
     const key = trainingState.current;
-    if (positionKey() !== key) {                         // sécurité : position exacte de la clé
-        loadPositionFromPath([]);
-        parseFEN(key);
+    if (positionKey() !== key) {
+        const entry = openingDB[key];
+        if (entry && entry.path && entry.path.length) {
+            // Resynchronisation complète ET historique reconstruit (jamais vidé).
+            loadPositionFromPath(entry.path.slice(0, -1));
+        }
+        if (positionKey() !== key) {
+            // Sans toucher à moveHistory : on ne force que l'état du moteur.
+            const prevHistory = moveHistory;
+            parseFEN(key);
+            moveHistory = prevHistory;
+            selected = null; legalMoves = []; hintPiece = null; awaitingPromotion = null;
+        }
+        renderMoves();
         renderBoard();
     }
     trainingState.busy = false;
