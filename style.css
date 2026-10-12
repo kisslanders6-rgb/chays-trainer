@@ -1383,10 +1383,28 @@ html[data-board="hache"] .sq.hl-selected { background: rgba(190, 180, 60, .65) !
 html[data-board="hache"] .sq.hl-legal::after { background: rgba(0, 0, 0, .38); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .6); }
 .theme-opt[data-board="hache"] .theme-swatch { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
 
-/* ─── Pièces « Chrome » : jeu Merida passé en métal (niveaux de gris, contraste) ── */
-html[data-piece="chrome"] .piece img, html[data-piece="chrome"] .drag-ghost img, html[data-piece="chrome"] .promo-piece img,
-html[data-piece="chrome"] .glyph img, html[data-piece="chrome"] .eg-sq img, .piece-opt[data-piece="chrome"] .piece-preview img
-    { filter: grayscale(1) contrast(1.3) brightness(1.04) drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .35)); }
+/* ─── Pièces « Chrome » : Merida en acier — blanches argentées, noires anthracite ── */
+html[data-piece="chrome"] .piece img[src*="/merida/w"],
+html[data-piece="chrome"] .drag-ghost img[src*="/merida/w"],
+html[data-piece="chrome"] .promo-piece img[src*="/merida/w"],
+html[data-piece="chrome"] .glyph img[src*="/merida/w"],
+html[data-piece="chrome"] .eg-sq img[src*="/merida/w"],
+.piece-opt[data-piece="chrome"] .piece-preview img[src*="/merida/w"] {
+    filter: grayscale(1) sepia(.12) hue-rotate(180deg) saturate(1.4)
+            brightness(1.06) contrast(1.35)
+            drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .4));
+}
+html[data-piece="chrome"] .piece img[src*="/merida/b"],
+html[data-piece="chrome"] .drag-ghost img[src*="/merida/b"],
+html[data-piece="chrome"] .promo-piece img[src*="/merida/b"],
+html[data-piece="chrome"] .glyph img[src*="/merida/b"],
+html[data-piece="chrome"] .eg-sq img[src*="/merida/b"],
+.piece-opt[data-piece="chrome"] .piece-preview img[src*="/merida/b"] {
+    filter: grayscale(1) sepia(.12) hue-rotate(180deg) saturate(1.2)
+            brightness(.78) contrast(1.45)
+            drop-shadow(0 0 .5px rgba(255, 255, 255, .55))
+            drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .45));
+}
 
 /* ─── Pièces « Invisibles » (entraînement à l'aveugle) : cases, coups et surbrillances restent visibles ── */
 html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .drag-ghost img { opacity: 0; }
