@@ -1,7 +1,7 @@
 /**
  * modules/training/training.js
  * ──────────────────────────────────────────────────────────────────────────
- * Module Entraînement : révision de TOUT le répertoire actif, par tirage aléatoire pondéré.
+ * Module Entraînement : révision du répertoire actif, par tirage aléatoire pondéré.
  * Chaque position reçoit un poids (cf. _trainingWeight) ; sa probabilité de sortie est
  * poids / somme des poids de l'univers. Les positions fragiles ou oubliées sortent souvent,
  * les positions maîtrisées ou vues récemment rarement — mais jamais avec une probabilité nulle.
@@ -10,6 +10,13 @@
  * automatiquement ces trois coups (contexte), puis me rend la main.
  *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
  *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »), on réessaie.
+ *
+ * Options (persistées, défauts = comportement historique) :
+ *   - Profondeur max  : 0 = illimitée ; sinon seules les positions avec ply <= maxPlies sont tirées.
+ *   - Exercice        : seqLen 1 = coup unique ; 3 / 5 = nombre de coups à enchaîner ; 999 = fin de variante.
+ *     Après chaque bon coup, l'ordinateur rejoue la réponse adverse enregistrée dans les `path` du
+ *     répertoire, et la position suivante est interrogée (erreurs comptées sur la position exacte).
+ *   - Solution        : bouton qui surligne le coup attendu ; aucune réussite n'est comptée.
  */
 
 'use strict';
@@ -17,7 +24,46 @@
 const TRAIN_STEP_MS = 750;
 const TRAIN_CONTEXT_PLIES = 3;   // demi-coups rejoués avant que la main soit rendue
 
-const trainingState = { busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '' };
+// Afficher la solution compte comme un échec sur la position (attempts + 1, failures + 1), une seule fois.
+// Mettre à false pour que la solution ne modifie aucune statistique.
+const TRAIN_SOLUTION_PENALTY = true;
+
+const TRAIN_SETTINGS_KEY = 'chessTrainer.trainingSettings';
+const TRAIN_SEQ_END      = 999;
+
+const trainingState = {
+    busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '',
+    seq: { len: 1, done: 0, assisted: false },
+    solutionFor: null
+};
+
+// ─── OPTIONS (persistées) ─────────────────────────────────────────────────────
+
+function _loadTrainingSettings() {
+    const d = { maxPlies: 0, seqLen: 1 };
+    try {
+        const s = JSON.parse(localStorage.getItem(TRAIN_SETTINGS_KEY) || '{}');
+        if (Number.isFinite(s.maxPlies) && s.maxPlies >= 0) d.maxPlies = s.maxPlies;
+        if (Number.isFinite(s.seqLen)   && s.seqLen   >= 1) d.seqLen   = s.seqLen;
+    } catch (_) { /* stockage indisponible : valeurs par défaut */ }
+    return d;
+}
+
+const trainingSettings = _loadTrainingSettings();
+
+function setTrainingOption(name, value) {
+    trainingSettings[name] = Number(value);
+    try { localStorage.setItem(TRAIN_SETTINGS_KEY, JSON.stringify(trainingSettings)); } catch (_) {}
+    initTraining();
+}
+
+function _entryDepth(e) { return e.ply || (e.path && e.path.length) || null; }
+
+function _isEligible(e) {
+    if (!trainingSettings.maxPlies) return true;
+    const d = _entryDepth(e);
+    return d !== null && d <= trainingSettings.maxPlies;
+}
 
 function _later(fn, ms) { trainingState.timers.push(setTimeout(fn, ms)); }
 
@@ -32,11 +78,36 @@ function stopTraining() {
 function initTraining() {
     const panel = document.getElementById('training-panel');
     if (!panel) return;
-    panel.innerHTML = '<div class="train-cards">' + ['w', 'b'].map(c => {
-        const db    = readDBFor(currentRepertoire, c);
-        const total = Object.keys(db).length;
-        const weak  = Object.values(db).filter(e => e.failures > 0).length;
-        const sub   = !total ? 'Répertoire vide'
+
+    const opt = (v, label, cur) => `<option value="${v}" ${Number(v) === Number(cur) ? 'selected' : ''}>${label}</option>`;
+    const selStyle = 'background:transparent;color:inherit;border:1px solid var(--border,#555);border-radius:6px;padding:3px 6px;font:inherit;';
+    const options = `
+        <div class="train-options" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--text-dim);">
+          <label>Profondeur
+            <select style="${selStyle}" onchange="setTrainingOption('maxPlies', this.value)">
+              ${opt(0, 'Illimitée', trainingSettings.maxPlies)}
+              ${opt(5, '≤ 5 demi-coups', trainingSettings.maxPlies)}
+              ${opt(10, '≤ 10 demi-coups', trainingSettings.maxPlies)}
+              ${opt(20, '≤ 20 demi-coups', trainingSettings.maxPlies)}
+            </select>
+          </label>
+          <label>Exercice
+            <select style="${selStyle}" onchange="setTrainingOption('seqLen', this.value)">
+              ${opt(1, 'Coup unique', trainingSettings.seqLen)}
+              ${opt(3, 'Séquence de 3 coups', trainingSettings.seqLen)}
+              ${opt(5, 'Séquence de 5 coups', trainingSettings.seqLen)}
+              ${opt(TRAIN_SEQ_END, 'Jusqu\'à la fin de la variante', trainingSettings.seqLen)}
+            </select>
+          </label>
+        </div>`;
+
+    panel.innerHTML = options + '<div class="train-cards">' + ['w', 'b'].map(c => {
+        const all      = Object.values(readDBFor(currentRepertoire, c));
+        const eligible = all.filter(_isEligible);
+        const total    = eligible.length;
+        const weak     = eligible.filter(e => e.failures > 0).length;
+        const sub   = !all.length ? 'Répertoire vide'
+                    : !total      ? 'Aucune position dans cette limite'
                     : `${total} position${total > 1 ? 's' : ''} · ${weak ? `${weak} avec erreur${weak > 1 ? 's' : ''}` : 'aucune erreur'}`;
         return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `onclick="startTraining('${c}')"` : ''}>
             <div class="train-card-icon">${pieceGlyph(c === 'w' ? 'K' : 'k')}</div>
@@ -47,9 +118,9 @@ function initTraining() {
 
 // ─── BOUCLE D'ENTRAÎNEMENT ────────────────────────────────────────────────────
 
-// Univers de révision : toutes les positions du répertoire, avec ou sans erreur.
+// Univers de révision : positions du répertoire respectant la profondeur maximale choisie.
 function _trainingPool() {
-    return Object.keys(openingDB);
+    return Object.keys(openingDB).filter(k => _isEligible(openingDB[k]));
 }
 
 function startTraining(color) {
@@ -166,10 +237,13 @@ function nextDrill() {
 
     const key   = _pickDrill();
     const entry = openingDB[key];
-    trainingState.current = key;
-    trainingState.reason  = _drillReason(entry);
-    trainingState.lastKey = key;
-    trainingState.busy    = true;
+    trainingState.current     = key;
+    trainingState.reason      = _drillReason(entry);
+    trainingState.lastKey     = key;
+    trainingState.busy        = true;
+    trainingState.solutionFor = null;
+    trainingState.seq         = { len: trainingSettings.seqLen, done: 0, assisted: false };
+    _syncSolutionBtn();
 
     // Chemin absent ou vide : reconstitution via les autres entrées, puis auto-réparation de l'entrée.
     let fullPath = (entry.path && entry.path.length) ? entry.path : null;
@@ -207,6 +281,12 @@ function nextDrill() {
     }
 }
 
+function _seqLabel() {
+    const s = trainingState.seq;
+    if (s.len <= 1) return '';
+    return ` · coup ${s.done + 1}${s.len < TRAIN_SEQ_END ? '/' + s.len : ''}`;
+}
+
 function _drillReady() {
     const key = trainingState.current;
     if (positionKey() !== key) {
@@ -226,33 +306,145 @@ function _drillReady() {
         renderBoard();
     }
     trainingState.busy = false;
-    setStatus(`À vous de jouer · ${trainingState.reason}${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
+    _syncSolutionBtn();
+    setStatus(`À vous de jouer · ${trainingState.reason}${_seqLabel()}${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
 }
 
-// Appelé par executePlayerMove() en mode entraînement.
-function answerTrainingMove(entry, from, to, promo, movStr) {
-    if (entry && movStr === entry.move) {
-        const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
-        entry.attempts++;
-        entry.lastReviewed = Date.now();
-        saveDB();
-        const after = Math.round(100 * entry.failures / entry.attempts);
-        const msg   = entry.failures === 0 ? '✓ Bien joué ! Toujours à 100% de réussite'
-                                            : `✓ Bien joué ! Taux d'erreur : ${before}% → ${after}%`;
-        trainingState.busy = true;
-        trainingState.ok++;
-        _commitMove(from, to, promo, null, msg, 'ok');
-        _later(nextDrill, 1400);
-    } else {
-        if (entry) {                                   // erreur : comptée exactement comme en mode « Jouer »
+// ─── SÉQUENCE : RÉPONSE ADVERSE ENREGISTRÉE ───────────────────────────────────
+
+// Parmi les entrées dont le `path` prolonge la ligne jouée de (coup adverse + mon coup suivant),
+// renvoie au hasard un coup adverse UCI ; null = fin de la variante (ou limite de profondeur).
+function _pickOppContinuation(line) {
+    const n = line.length, cand = new Set();
+    for (const k in openingDB) {
+        const e = openingDB[k], p = e.path;
+        if (!p || p.length !== n + 2 || !_isEligible(e)) continue;
+        let match = true;
+        for (let i = 0; i < n; i++) if (p[i] !== line[i]) { match = false; break; }
+        if (match) cand.add(p[n]);
+    }
+    const arr = [...cand];
+    return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
+}
+
+function _finishDrill() {
+    if (!trainingState.seq.assisted) trainingState.ok++;
+    _later(nextDrill, 1400);
+}
+
+function _continueSequence() {
+    const s = trainingState.seq;
+    if (s.done < s.len) {
+        const line = moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
+        const opp  = _pickOppContinuation(line);
+        if (opp) {
+            _later(() => {
+                const m   = _parseUci(opp);
+                const san = toAlgebraic(m.from, m.to, m.promo);
+                playMoveSound(m.from, m.to);
+                animateNextMove(m.from, m.to);
+                applyMove(m.from, m.to, m.promo);
+                selected = null; legalMoves = []; hintPiece = null;
+                renderBoard();
+                if (openingDB[positionKey()]) {
+                    trainingState.solutionFor = null;
+                    trainingState.busy = false;
+                    _syncSolutionBtn();
+                    setStatus(`Adversaire : ${san} · à vous de jouer${_seqLabel()}`, 'info');
+                } else {
+                    setStatus('Fin de la variante.', 'ok');
+                    _finishDrill();
+                }
+            }, TRAIN_STEP_MS);
+            return;
+        }
+        if (s.len > 1) setStatus('✓ Fin de la variante.', 'ok');
+    }
+    _finishDrill();
+}
+
+// ─── SOLUTION ─────────────────────────────────────────────────────────────────
+
+function showTrainingSolution() {
+    if (gameMode !== 'training' || trainingState.busy || turn !== playerColor) return;
+    if (navCursor !== -1) _syncEngineToNavCursor();
+
+    const key   = positionKey();
+    const entry = openingDB[key];
+    if (!entry) { setStatus('Aucune solution connue pour cette position.', 'info'); return; }
+
+    if (trainingState.solutionFor !== key) {
+        trainingState.solutionFor   = key;
+        trainingState.seq.assisted  = true;
+        if (TRAIN_SOLUTION_PENALTY) {
             entry.attempts++;
             entry.failures++;
             entry.lastReviewed = Date.now();
             saveDB();
-            const pct = Math.round(100 * entry.failures / entry.attempts);
-            _rejectMove(to, `✗ Ce n'est pas le bon coup — taux d'erreur : ${pct}%. Réessayez.`);
-        } else {
-            _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
         }
+    }
+    // Surbrillance via la sélection standard : pièce à jouer + case d'arrivée.
+    selected   = squareToIdx(entry.move.slice(0, 2));
+    legalMoves = [squareToIdx(entry.move.slice(2, 4))];
+    hintPiece  = null;
+    renderBoard();
+    setStatus(`Solution : ${entry.san} — jouez-le pour continuer (aucune réussite comptée).`, 'hint');
+}
+
+// Bouton « Solution » : utilise #train-solution-btn s'il existe dans le HTML, sinon le crée (flottant).
+function _solutionBtn() {
+    let b = document.getElementById('train-solution-btn');
+    if (!b && document.body) {
+        b = document.createElement('button');
+        b.id        = 'train-solution-btn';
+        b.className = 'btn';
+        b.textContent = 'Solution';
+        b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:50;display:none;';
+        b.onclick = showTrainingSolution;
+        document.body.appendChild(b);
+    }
+    return b;
+}
+
+function _syncSolutionBtn() {
+    try {
+        const b = _solutionBtn();
+        if (b) b.style.display = (gameMode === 'training' && !trainingState.busy && turn === playerColor) ? '' : 'none';
+    } catch (_) { /* globals pas encore initialisés */ }
+}
+setInterval(_syncSolutionBtn, 400);   // masque aussi le bouton quand on quitte le mode entraînement
+
+// ─── RÉPONSE DU JOUEUR ────────────────────────────────────────────────────────
+
+// Appelé par executePlayerMove() en mode entraînement (le coup n'est pas encore appliqué).
+function answerTrainingMove(entry, from, to, promo, movStr) {
+    const key      = positionKey();
+    const revealed = trainingState.solutionFor === key;
+
+    if (entry && movStr === entry.move) {
+        let msg = '✓ Solution jouée — aucune réussite comptée.';
+        if (!revealed) {
+            const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
+            entry.attempts++;
+            entry.lastReviewed = Date.now();
+            saveDB();
+            const after = Math.round(100 * entry.failures / entry.attempts);
+            msg = entry.failures === 0 ? '✓ Bien joué ! Toujours à 100% de réussite'
+                                       : `✓ Bien joué ! Taux d'erreur : ${before}% → ${after}%`;
+        }
+        trainingState.busy = true;
+        _syncSolutionBtn();
+        _commitMove(from, to, promo, null, msg, revealed ? 'info' : 'ok');
+        trainingState.seq.done++;
+        _continueSequence();
+    } else if (entry && !revealed) {                   // erreur : comptée sur la position exacte, comme en mode « Jouer »
+        entry.attempts++;
+        entry.failures++;
+        entry.lastReviewed = Date.now();
+        saveDB();
+        const pct = Math.round(100 * entry.failures / entry.attempts);
+        _rejectMove(to, `✗ Ce n'est pas le bon coup — taux d'erreur : ${pct}%. Réessayez.`);
+    } else {
+        _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution." : "✗ Ce n'est pas le bon coup — réessayez.");
     }
 }
