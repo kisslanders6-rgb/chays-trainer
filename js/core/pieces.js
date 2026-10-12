@@ -38,7 +38,9 @@ const PIECE_SETS = {
     'minimal-warmth': _def('minimal-warmth', 'Minimal Warmth', 'blunder_reign',               'CC BY-NC-SA 4.0'),
     'fantasy':        _def('fantasy',        'Fantasy',        'Maurizio Monge',              'MIT'),
     'chessnut':       _def('chessnut',       'Chessnut',       'Alexis Luengas',              'Apache 2.0'),
-    'kiwen-suwi':     _def('kiwen-suwi',     'Kiwen Suwi',     'neverRare',                   'CC BY 4.0')
+    'kiwen-suwi':     _def('kiwen-suwi',     'Kiwen Suwi',     'neverRare',                   'CC BY 4.0'),
+    'chrome':         { label: 'Chrome',     author: 'Merida passé en métal — Armando Hernandez Marroquin', license: 'GPLv2+', src: 'merida', svg: _imgSet('merida') },
+    'blindfold':      { label: 'Invisibles', author: 'Entraînement à l\'aveugle (pièces masquées)', license: '—', src: 'merida', svg: _imgSet('merida') }
 };
 
 const PIECE_SVG = {};
@@ -59,7 +61,8 @@ function applyPieceSet() {
     const set = PIECE_SETS[id];
     Object.keys(PIECE_SVG).forEach(k => delete PIECE_SVG[k]);
     Object.assign(PIECE_SVG, set.svg);
-    _preloadPieceSet(id);
+    document.documentElement.setAttribute('data-piece', id);
+    _preloadPieceSet(set.src || id);
 
     const credit = document.getElementById('piece-credit');
     if (credit) credit.textContent = `${set.label} · ${set.author} · ${set.license}`;

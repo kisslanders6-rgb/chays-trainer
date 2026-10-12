@@ -8,8 +8,8 @@
 'use strict';
 
 const SETTINGS_KEY    = 'chessTrainer_settings';
-const BOARD_THEMES    = ['classic', 'wood', 'night', 'stone', 'leather', 'walnut', 'ice'];
-const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
+const BOARD_THEMES    = ['classic', 'wood', 'night', 'stone', 'leather', 'walnut', 'ice', 'violet', 'hache'];
+const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi', 'chrome', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
 const DEFAULT_PIECE_SET = 'merida';
 
 function loadSettings() {

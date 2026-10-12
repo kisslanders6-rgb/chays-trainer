@@ -1362,3 +1362,35 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @media (max-width: 599px) { .eg-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .eg-card { padding: 10px; } }
 /* ═════ FIN : MODULE FINALES ═════ */
 
+/* ═════ DEBUT : THEMES 3x3 (ne pas modifier entre DEBUT et FIN) ═════ */
+#piece-options, #board-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* 3 lignes de 3 */
+
+/* ─── Échiquier « Violet » (clair / violet) ─────────────────────────────── */
+html[data-board="violet"] { --board-light: #f0f0f0; --board-dark: #8477ba; --board-border: #5e4f8a; --accent: #6a559a; --accent-bright: #7d68b0; --accent-dim: #9a8ac0; --info: #6a559a; }
+html[data-board="violet"][data-theme="light"] { --accent: #8f7bc0; --accent-bright: #a090d0; --accent-dim: #6a559a; --info: #8f7bc0; }
+html[data-board="violet"] .sq.hl-from, html[data-board="violet"] .sq.hl-to { background: rgba(205, 210, 106, .55) !important; }
+html[data-board="violet"] .sq.hl-selected { background: rgba(170, 190, 60, .65) !important; }
+.theme-opt[data-board="violet"] { --sw-l: #f0f0f0; --sw-d: #8477ba; }
+
+/* ─── Échiquier « Hachuré » (papier gris, cases sombres hachurées) ───────── */
+html[data-board="hache"] { --board-light: #d3d3ce; --board-dark: #8c8c88; --board-border: #4a4a48; --accent: #4a4a48; --accent-bright: #5f5f5c; --accent-dim: #80807c; --info: #4a4a48; }
+html[data-board="hache"][data-theme="light"] { --accent: #6f6f6b; --accent-bright: #85857f; --accent-dim: #5a5a56; --info: #6f6f6b; }
+html[data-board="hache"] .sq { outline: .5px solid rgba(50, 50, 50, .55); outline-offset: -.5px; }
+html[data-board="hache"] .sq.dark,
+html[data-board="hache"] .eg-sq.d { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
+html[data-board="hache"] .sq.hl-from, html[data-board="hache"] .sq.hl-to { background: rgba(205, 200, 80, .5) !important; }
+html[data-board="hache"] .sq.hl-selected { background: rgba(190, 180, 60, .65) !important; }
+html[data-board="hache"] .sq.hl-legal::after { background: rgba(0, 0, 0, .38); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .6); }
+.theme-opt[data-board="hache"] .theme-swatch { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
+
+/* ─── Pièces « Chrome » : jeu Merida passé en métal (niveaux de gris, contraste) ── */
+html[data-piece="chrome"] .piece img, html[data-piece="chrome"] .drag-ghost img, html[data-piece="chrome"] .promo-piece img,
+html[data-piece="chrome"] .glyph img, html[data-piece="chrome"] .eg-sq img, .piece-opt[data-piece="chrome"] .piece-preview img
+    { filter: grayscale(1) contrast(1.3) brightness(1.04) drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .35)); }
+
+/* ─── Pièces « Invisibles » (entraînement à l'aveugle) : cases, coups et surbrillances restent visibles ── */
+html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .drag-ghost img { opacity: 0; }
+.piece-opt[data-piece="blindfold"] .piece-preview img { opacity: .15; }
+
+/* ═════ FIN : THEMES 3x3 ═════ */
+
