@@ -74,18 +74,18 @@ function parseFEN(fen) {
     }
     turn = parts[1] || 'w';
 
-    // Champ absent => on suppose les droits possibles ; champ présent => on le respecte
-    const cr = parts[2] === undefined ? 'KQkq' : parts[2];
+    // Clé à 2 champs (ou champ roque absent/invalide) : droits déduits des pièces sur leurs cases d'origine.
+    const hasCastlingField = parts.length >= 3 && /^(-|[KQkq]+)$/.test(parts[2]);
+    const cr = hasCastlingField ? parts[2] : 'KQkq';
     castlingRights = { K: cr.includes('K'), Q: cr.includes('Q'), k: cr.includes('k'), q: cr.includes('q') };
 
-    // Cohérence avec la position réelle (roi et tours sur leurs cases d'origine)
     castlingRights.K = castlingRights.K && board[4]  === 'K' && board[7]  === 'R';
     castlingRights.Q = castlingRights.Q && board[4]  === 'K' && board[0]  === 'R';
     castlingRights.k = castlingRights.k && board[60] === 'k' && board[63] === 'r';
     castlingRights.q = castlingRights.q && board[60] === 'k' && board[56] === 'r';
 
     const ep = parts[3] || '-';
-    if (ep !== '-') { const f = ep.charCodeAt(0) - 97, rk = parseInt(ep[1]) - 1; enPassant = rk * 8 + f; }
+    if (ep !== '-' && /^[a-h][1-8]$/.test(ep)) { enPassant = (parseInt(ep[1]) - 1) * 8 + (ep.charCodeAt(0) - 97); }
     else enPassant = -1;
 }
 
