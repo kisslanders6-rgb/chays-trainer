@@ -79,6 +79,7 @@ function parseFEN(fen) {
     const cr = hasCastlingField ? parts[2] : 'KQkq';
     castlingRights = { K: cr.includes('K'), Q: cr.includes('Q'), k: cr.includes('k'), q: cr.includes('q') };
 
+    // Cohérence avec la position réelle (roi et tours sur leurs cases d'origine)
     castlingRights.K = castlingRights.K && board[4]  === 'K' && board[7]  === 'R';
     castlingRights.Q = castlingRights.Q && board[4]  === 'K' && board[0]  === 'R';
     castlingRights.k = castlingRights.k && board[60] === 'k' && board[63] === 'r';
