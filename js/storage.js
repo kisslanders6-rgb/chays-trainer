@@ -1,13 +1,14 @@
 /**
  * storage.js
  * ──────────────────────────────────────────────────────────────────────────
- * Couche de persistance : localStorage, répertoires, import/export JSON.
+ * Couche de persistance : répertoires, bases d'ouvertures, import/export JSON.
+ * Tous les accès au stockage passent par `dataStore` (js/core/storageAdapter.js).
  * Toutes les fonctions sont globales pour être accessibles depuis les autres modules.
  */
 
 'use strict';
 
-// ─── CLÉS LOCALSTORAGE ────────────────────────────────────────────────────────
+// ─── CLÉS DE STOCKAGE ─────────────────────────────────────────────────────────
 
 const THEME_STORAGE_KEY     = 'chessTrainer_theme';
 const REPERTOIRE_LIST_KEY   = 'chessTrainer_repertoires';
@@ -25,18 +26,14 @@ function slugifyRepertoire(name) {
 }
 
 function loadRepertoireList() {
-    let list = [];
-    try {
-        const raw = localStorage.getItem(REPERTOIRE_LIST_KEY);
-        list = raw ? JSON.parse(raw) : [];
-    } catch (e) { list = []; }
+    let list = dataStore.getJSON(REPERTOIRE_LIST_KEY, []);
     if (!Array.isArray(list) || !list.length) list = [DEFAULT_REPERTOIRE];
     if (!list.includes(DEFAULT_REPERTOIRE)) list.unshift(DEFAULT_REPERTOIRE);
     return list;
 }
 
 function saveRepertoireList(list) {
-    try { localStorage.setItem(REPERTOIRE_LIST_KEY, JSON.stringify(list)); } catch (e) {}
+    dataStore.setJSON(REPERTOIRE_LIST_KEY, list);
 }
 
 function addRepertoire(name) {
@@ -95,10 +92,9 @@ function normalizeDB(db) {
 
 // Lecture d'une base sans toucher à l'état global (utilisée par Stats / Entraînement).
 function readDBFor(rep, color) {
-    try {
-        const raw = localStorage.getItem(dbKeyFor(rep, color));
-        return raw ? normalizeDB(JSON.parse(raw)) : {};
-    } catch (e) { return {}; }
+    const raw = dataStore.get(dbKeyFor(rep, color));
+    if (!raw) return {};
+    try { return normalizeDB(JSON.parse(raw)); } catch (e) { return {}; }
 }
 
 // ─── RÉPONSES ADVERSES CONNUES (pour détecter les lignes « non couvertes ») ───
@@ -111,17 +107,15 @@ function oppKeyFor(rep, color) { return `openingOpp_${rep}_${color}`; }
 
 function readOppFor(rep, color) {
     const out = {};
-    try {
-        const o = JSON.parse(localStorage.getItem(oppKeyFor(rep, color)));
-        if (o && typeof o === 'object') {
-            Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(u => typeof u === 'string'); });
-        }
-    } catch (e) {}
+    const o = dataStore.getJSON(oppKeyFor(rep, color), null);
+    if (o && typeof o === 'object') {
+        Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(u => typeof u === 'string'); });
+    }
     return out;
 }
 
 function saveOpp() {
-    try { localStorage.setItem(oppKeyFor(currentRepertoire, playerColor), JSON.stringify(oppSeen)); } catch (e) {}
+    dataStore.setJSON(oppKeyFor(currentRepertoire, playerColor), oppSeen);
 }
 
 function recordOppReply(posKey, uci) {                 // renvoie true si nouveau (l'appelant appelle saveOpp)
@@ -148,14 +142,12 @@ const BACKUP_STATE_KEY = 'chessTrainer_backupState';
 const BACKUP_THRESHOLD = 15;
 
 function _readBackupState() {
-    try {
-        const s = JSON.parse(localStorage.getItem(BACKUP_STATE_KEY)) || {};
-        return { changes: Number(s.changes) || 0, remindedAt: Number(s.remindedAt) || 0, lastExport: Number(s.lastExport) || 0 };
-    } catch (e) { return { changes: 0, remindedAt: 0, lastExport: 0 }; }
+    const s = dataStore.getJSON(BACKUP_STATE_KEY, null) || {};
+    return { changes: Number(s.changes) || 0, remindedAt: Number(s.remindedAt) || 0, lastExport: Number(s.lastExport) || 0 };
 }
 
 function _writeBackupState(s) {
-    try { localStorage.setItem(BACKUP_STATE_KEY, JSON.stringify(s)); } catch (e) {}
+    dataStore.setJSON(BACKUP_STATE_KEY, s);
 }
 
 function noteChange(n) {
@@ -177,8 +169,7 @@ const _legacyChecked = new Set();
 
 function loadDB() {
     const key = getDBKey();
-    let raw = null;
-    try { raw = localStorage.getItem(key); } catch (e) {}
+    const raw = dataStore.get(key);
     openingDB = readDBFor(currentRepertoire, playerColor);
     oppSeen   = readOppFor(currentRepertoire, playerColor);
     // Reconstruit (une fois par session) le chemin des anciennes entrées sans `path`.
@@ -187,7 +178,7 @@ function loadDB() {
 }
 
 function saveDB() {
-    try { localStorage.setItem(getDBKey(), JSON.stringify(openingDB)); } catch (e) {}
+    dataStore.set(getDBKey(), JSON.stringify(openingDB));
 }
 
 // ─── EXPORT / IMPORT JSON ─────────────────────────────────────────────────────
@@ -206,16 +197,15 @@ function exportDB() {
     list.forEach(rep => {
         colors.forEach(col => {
             const key = dbKeyFor(rep, col);
-            let raw = null;
-            try { raw = localStorage.getItem(key); } catch (e) {}
+            const raw = dataStore.get(key);
             if (raw) {
                 try { exportData.databases[key] = JSON.parse(raw); } catch (e) {}
             }
             const okey = oppKeyFor(rep, col);
-            try {
-                const oraw = localStorage.getItem(okey);
-                if (oraw) exportData.opponents[okey] = JSON.parse(oraw);
-            } catch (e) {}
+            const oraw = dataStore.get(okey);
+            if (oraw) {
+                try { exportData.opponents[okey] = JSON.parse(oraw); } catch (e) {}
+            }
         });
     });
 
@@ -269,26 +259,22 @@ function importDBFromFile(event) {
                     if (typeof entries !== 'object') return;
                     let existing = {};
                     try {
-                        const raw = localStorage.getItem(key);
+                        const raw = dataStore.get(key);
                         if (raw) existing = JSON.parse(raw);
                     } catch (err) {}
                     const merged = Object.assign({}, normalizeDB(existing), normalizeDB(entries));
-                    try {
-                        localStorage.setItem(key, JSON.stringify(merged));
-                        count += Object.keys(entries).length;
-                    } catch (err) {}
+                    if (dataStore.set(key, JSON.stringify(merged))) count += Object.keys(entries).length;
                 });
                 // Réponses adverses connues : union avec l'existant
                 if (data.opponents && typeof data.opponents === 'object') {
                     Object.entries(data.opponents).forEach(([okey, map]) => {
                         if (!map || typeof map !== 'object') return;
-                        let cur = {};
-                        try { cur = JSON.parse(localStorage.getItem(okey)) || {}; } catch (err) {}
+                        const cur = dataStore.getJSON(okey, null) || {};
                         Object.keys(map).forEach(pk => {
                             if (!Array.isArray(map[pk])) return;
                             cur[pk] = Array.from(new Set((cur[pk] || []).concat(map[pk])));
                         });
-                        try { localStorage.setItem(okey, JSON.stringify(cur)); } catch (err) {}
+                        dataStore.setJSON(okey, cur);
                     });
                 }
                 // Recharger la base active et l'UI

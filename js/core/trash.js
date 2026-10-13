@@ -5,7 +5,7 @@
  *   - répertoire entier   → type 'repertoire'  (bases Blancs/Noirs + réponses adverses connues)
  *   - coup isolé          → type 'move'
  *   - branche / variante  → type 'branch'      (coup + coups en aval supprimés avec lui)
- * Stockage : localStorage « chessTrainer_trash » = [{ id, type, deletedAt, rep, color?, label, count, data }].
+ * Stockage (via dataStore) : « chessTrainer_trash » = [{ id, type, deletedAt, rep, color?, label, count, data }].
  * Purge automatique des éléments de plus de 30 jours au chargement de l'application.
  */
 
@@ -17,14 +17,12 @@ const TRASH_TTL_MS = 30 * 24 * 3600 * 1000;
 // ─── STOCKAGE ─────────────────────────────────────────────────────────────────
 
 function loadTrash() {
-    try {
-        const a = JSON.parse(localStorage.getItem(TRASH_KEY));
-        return Array.isArray(a) ? a.filter(it => it && it.id && it.deletedAt) : [];
-    } catch (e) { return []; }
+    const a = dataStore.getJSON(TRASH_KEY, null);
+    return Array.isArray(a) ? a.filter(it => it && it.id && it.deletedAt) : [];
 }
 
 function saveTrash(list) {
-    try { localStorage.setItem(TRASH_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+    return dataStore.setJSON(TRASH_KEY, list);
 }
 
 function purgeExpiredTrash() {
@@ -76,16 +74,15 @@ function deleteRepertoire(name) {
     const data = { index: idx, dbs: {}, opp: {} };
     let count = 0;
     ['w', 'b'].forEach(c => {
-        try {
-            data.dbs[c] = localStorage.getItem(dbKeyFor(name, c));
-            data.opp[c] = localStorage.getItem(oppKeyFor(name, c));
-        } catch (e) { data.dbs[c] = data.opp[c] = null; }
+        data.dbs[c] = dataStore.get(dbKeyFor(name, c));
+        data.opp[c] = dataStore.get(oppKeyFor(name, c));
         count += Object.keys(readDBFor(name, c)).length;
     });
     if (!moveToTrash({ type: 'repertoire', rep: name, label: name, count, data })) return false;
 
     ['w', 'b'].forEach(c => {
-        try { localStorage.removeItem(dbKeyFor(name, c)); localStorage.removeItem(oppKeyFor(name, c)); } catch (e) {}
+        dataStore.remove(dbKeyFor(name, c));
+        dataStore.remove(oppKeyFor(name, c));
     });
     list.splice(idx, 1);
     saveRepertoireList(list);
@@ -110,8 +107,8 @@ function restoreTrashItem(id) {
                 while (reps.includes(name)) name = `${item.rep} (restauré ${n++})`;
             }
             ['w', 'b'].forEach(c => {
-                if (item.data.dbs[c]  != null) localStorage.setItem(dbKeyFor(name, c),  item.data.dbs[c]);
-                if (item.data.opp[c]  != null) localStorage.setItem(oppKeyFor(name, c), item.data.opp[c]);
+                if (item.data.dbs[c]  != null) dataStore.mustSet(dbKeyFor(name, c),  item.data.dbs[c]);
+                if (item.data.opp[c]  != null) dataStore.mustSet(oppKeyFor(name, c), item.data.opp[c]);
             });
             reps.splice(Math.min(item.data.index, reps.length), 0, name);
             saveRepertoireList(reps);
@@ -130,7 +127,7 @@ function restoreTrashItem(id) {
             if (db[k]) conflicts[k] = item.data.entries[k];                // position déjà occupée : on n'écrase jamais
             else { db[k] = item.data.entries[k]; restored++; }
         });
-        localStorage.setItem(dbKeyFor(item.rep, item.color), JSON.stringify(db));
+        dataStore.mustSet(dbKeyFor(item.rep, item.color), JSON.stringify(db));
         noteChange(restored);
 
         const rest = Object.keys(conflicts).length;

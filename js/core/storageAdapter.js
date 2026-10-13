@@ -1,0 +1,55 @@
+/**
+ * core/storageAdapter.js
+ * ──────────────────────────────────────────────────────────────────────────
+ * Étape 1 du stockage hybride : TOUS les accès au stockage passent par `dataStore`.
+ * Aujourd'hui l'adaptateur est LocalStorageAdapter (comportement strictement identique
+ * à l'ancien code). Plus tard, un autre adaptateur (cloud, préfixe par compte…) pourra
+ * être branché avec dataStore.setAdapter(...) sans toucher aux modules appelants.
+ *
+ * Contrat d'un adaptateur (SYNCHRONE — le reste de l'application ne sait pas attendre) :
+ *   get(key)         → string | null   (jamais d'exception ; null si absent ou erreur)
+ *   set(key, value)  → boolean         (true = écrit ; false = échec, ex. stockage plein)
+ *   remove(key)      → boolean
+ *   keys()           → string[]
+ *
+ * À charger AVANT storage.js.
+ */
+
+'use strict';
+
+const LocalStorageAdapter = {
+    name: 'local',
+    get(key)        { try { return localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); return true; } catch (e) { return false; } },
+    remove(key)     { try { localStorage.removeItem(key); return true; } catch (e) { return false; } },
+    keys() {
+        const out = [];
+        try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch (e) {}
+        return out;
+    }
+};
+
+const dataStore = {
+    adapter: LocalStorageAdapter,
+
+    setAdapter(a) { this.adapter = a || LocalStorageAdapter; },
+
+    // Chaînes brutes
+    get(key)         { return this.adapter.get(key); },
+    set(key, value)  { return this.adapter.set(key, String(value)); },
+    remove(key)      { return this.adapter.remove(key); },
+    keys()           { return this.adapter.keys(); },
+
+    // JSON : getJSON renvoie `fallback` si la clé est absente OU si le JSON est invalide.
+    getJSON(key, fallback = null) {
+        const raw = this.get(key);
+        if (raw === null) return fallback;
+        try { return JSON.parse(raw); } catch (e) { return fallback; }
+    },
+    setJSON(key, value) { return this.set(key, JSON.stringify(value)); },
+
+    // Écriture qui lève une exception en cas d'échec (pour les blocs try/catch existants).
+    mustSet(key, value) {
+        if (!this.set(key, value)) throw new Error('Stockage indisponible : ' + key);
+    }
+};

@@ -33,15 +33,12 @@ function _countPositions() {
     return n;
 }
 
-// Poids approximatif des données de l'application dans localStorage (en Ko).
+// Poids approximatif des données de l'application dans le stockage (en Ko).
 function _dataSizeKb() {
     let chars = 0;
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (/^(openingDB_|openingOpp_|chessTrainer_)/.test(k)) chars += k.length + (localStorage.getItem(k) || '').length;
-        }
-    } catch (e) {}
+    dataStore.keys().forEach(k => {
+        if (/^(openingDB_|openingOpp_|chessTrainer_)/.test(k)) chars += k.length + (dataStore.get(k) || '').length;
+    });
     return Math.max(1, Math.round(chars * 2 / 1024));
 }
 
@@ -151,10 +148,9 @@ function checkBackupOnStart() {
     updateBackupIndicators();
     const st = getBackupStatus();
     if (st.level !== 'warn' && st.level !== 'danger') return;
-    let last = 0;
-    try { last = Number(localStorage.getItem(BACKUP_NAG_KEY)) || 0; } catch (e) {}
+    const last = Number(dataStore.get(BACKUP_NAG_KEY)) || 0;
     if (Date.now() - last < _BK_DAY_MS) return;
-    try { localStorage.setItem(BACKUP_NAG_KEY, String(Date.now())); } catch (e) {}
+    dataStore.set(BACKUP_NAG_KEY, String(Date.now()));
     setTimeout(() => { if (typeof showBackupToast === 'function') showBackupToast(); }, 1500);
 }
 

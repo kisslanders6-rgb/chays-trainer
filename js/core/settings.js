@@ -2,7 +2,7 @@
  * core/settings.js
  * ──────────────────────────────────────────────────────────────────────────
  * Préférences de l'application (sons, volume, thème de l'échiquier, style des
- * pièces), persistées dans localStorage. L'interface est dans app.js.
+ * pièces), persistées via dataStore. L'interface est dans app.js.
  */
 
 'use strict';
@@ -13,8 +13,7 @@ const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', '
 const DEFAULT_PIECE_SET = 'merida';
 
 function loadSettings() {
-    let s = {};
-    try { s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) { s = {}; }
+    const s = dataStore.getJSON(SETTINGS_KEY, null) || {};
     const vol = Number(s.volume);
     return {
         sound:      s.sound !== false,                                   // activé par défaut
@@ -27,7 +26,7 @@ function loadSettings() {
 let appSettings = loadSettings();
 
 function saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); } catch (e) {}
+    dataStore.setJSON(SETTINGS_KEY, appSettings);
 }
 
 function applyBoardTheme() {
