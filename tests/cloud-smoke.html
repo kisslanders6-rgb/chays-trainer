@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><title>Test de connexion Supabase — Chays Trainer</title>
+<style>
+ body{font:14px/1.5 system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 16px}
+ input,button{font:inherit;padding:8px 10px;margin:4px 6px 4px 0}
+ pre{background:#111;color:#ddd;padding:12px;border-radius:8px;white-space:pre-wrap;min-height:120px}
+ .ok{color:#6c6}.ko{color:#e66}
+</style></head><body>
+<h2>Test de connexion Supabase</h2>
+<p>Utilisez un compte créé dans Supabase (Authentication → Users → Add user). Rien d'autre que des lignes <code>smoke_test_*</code> n'est écrit, puis supprimé.</p>
+<input id="email" type="email" placeholder="e-mail" autocomplete="username">
+<input id="pw" type="password" placeholder="mot de passe" autocomplete="current-password">
+<button id="go">Lancer le test</button>
+<pre id="out"></pre>
+<script src="../js/core/cloudConfig.js"></script>
+<script src="../js/core/cloudClient.js"></script>
+<script>
+const out = document.getElementById('out');
+const log = (ok, msg) => { const s = document.createElement('span'); s.className = ok ? 'ok' : 'ko'; s.textContent = (ok ? '✓ ' : '✗ ') + msg + '\n'; out.appendChild(s); };
+let failed = 0;
+const check = (cond, msg) => { if (!cond) failed++; log(!!cond, msg); return !!cond; };
+
+async function signIn(email, password) {
+    const r = await fetch(CLOUD_CONFIG.url.replace(/\/+$/, '') + '/auth/v1/token?grant_type=password', {
+        method: 'POST', headers: { apikey: CLOUD_CONFIG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    return { ok: r.ok, json: await r.json().catch(() => ({})) };
+}
+
+document.getElementById('go').onclick = async () => {
+    out.textContent = ''; failed = 0;
+    if (!CloudClient.configured()) { log(false, "js/core/cloudConfig.js : renseignez url et anonKey."); return; }
+    const a = await signIn(document.getElementById('email').value.trim(), document.getElementById('pw').value);
+    if (!check(a.ok && a.json.access_token, 'Connexion' + (a.ok ? '' : ' — ' + (a.json.msg || a.json.error_description || 'refusée')))) return;
+    CloudClient.setSession({ access_token: a.json.access_token, user: a.json.user });
+
+    const K = 'smoke_test_Général & co';
+    await CloudClient.deleteDoc(K, (await CloudClient.getDoc(K)).doc?.version ?? 0);        // nettoyage d'un test interrompu
+
+    const c1 = await CloudClient.createDoc(K, { a: 1 });
+    check(c1.ok && c1.doc.version === 1, 'Création (version 1)');
+    check((await CloudClient.createDoc(K, { a: 9 })).conflict === true, 'Recréer la même clé → conflit');
+    const u1 = await CloudClient.updateDoc(K, { a: 2 }, 1);
+    check(u1.ok && u1.doc.version === 2, 'Mise à jour avec la bonne version (→ version 2, incrémentée par le serveur)');
+    check((await CloudClient.updateDoc(K, { a: 3 }, 1)).conflict === true, 'Mise à jour avec une version périmée → conflit');
+    const g = await CloudClient.getDoc(K);
+    check(g.ok && g.doc.data.a === 2, 'Lecture : la valeur périmée n\'a rien écrasé');
+    const l = await CloudClient.listDocs();
+    check(l.ok && l.docs.some(d => d.key === K), 'Liste des documents');
+    check((await CloudClient.deleteDoc(K, 1)).conflict === true, 'Suppression avec une version périmée → conflit');
+    check((await CloudClient.deleteDoc(K, 2)).ok === true, 'Suppression avec la bonne version');
+    check((await CloudClient.getDoc(K)).doc === null, 'Ligne bien supprimée');
+
+    log(true, failed ? failed + ' vérification(s) en échec — voir ci-dessus.' : 'Tout fonctionne : le backend est prêt pour l\'étape 4.');
+};
+</script></body></html>
