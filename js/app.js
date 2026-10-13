@@ -19,8 +19,7 @@ let gameMode    = 'play';   // 'play' | 'preview' | 'training'
 // ─── THÈME ────────────────────────────────────────────────────────────────────
 
 function loadTheme() {
-    let saved = null;
-    try { saved = localStorage.getItem(THEME_STORAGE_KEY); } catch (e) {}
+    const saved = dataStore.get(THEME_STORAGE_KEY);
     const theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
     document.documentElement.setAttribute('data-theme', theme);
 }
@@ -29,7 +28,7 @@ function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     const next    = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (e) {}
+    dataStore.set(THEME_STORAGE_KEY, next);
 }
 
 // ─── AIDE (« Comment ça marche ? ») ───────────────────────────────────────────
