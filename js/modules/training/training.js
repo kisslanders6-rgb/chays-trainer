@@ -53,7 +53,7 @@ const trainingSettings = _loadTrainingSettings();
 
 function setTrainingOption(name, value) {
     trainingSettings[name] = Number(value);
-    try { localStorage.setItem(TRAIN_SETTINGS_KEY, JSON.stringify(trainingSettings)); } catch (_) {}
+    dataStore.setJSON(TRAIN_SETTINGS_KEY, trainingSettings);
     initTraining();
 }
 

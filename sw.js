@@ -8,13 +8,13 @@
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  */
-const VERSION = 'v4';
+const VERSION = 'v6';
 const CACHE   = 'chays-trainer-' + VERSION;
 
 const CORE = [
     './', 'index.html', 'style.css', 'manifest.json',
     'js/storage.js', 'js/app.js',
-    'js/core/icons.js', 'js/core/backup.js', 'js/core/trash.js', 'js/core/settings.js', 'js/core/themeColor.js',
+    'js/core/icons.js', 'js/core/storageAdapter.js', 'js/core/backup.js', 'js/core/trash.js', 'js/core/settings.js', 'js/core/themeColor.js',
     'js/core/sound.js', 'js/core/pieces.js', 'js/core/chessEngine.js', 'js/core/mobile.js',
     'js/modules/openings/openingsLogic.js', 'js/modules/openings/openingsUI.js', 'js/modules/openings/treeView.js',
     'js/modules/stats/stats.js', 'js/modules/training/training.js', 'js/modules/endgame/endgame.js',
