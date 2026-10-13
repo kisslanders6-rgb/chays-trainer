@@ -27,7 +27,7 @@ const _expandedBranches = new Set();
 
 const TREE_FOCUS_KEY = 'chessTrainer_treeFocus';
 let _treeFocus = true;
-try { _treeFocus = localStorage.getItem(TREE_FOCUS_KEY) !== '0'; } catch (e) {}
+_treeFocus = dataStore.get(TREE_FOCUS_KEY) !== '0';
 
 // ─── ONGLETS DU PANNEAU LATÉRAL ───────────────────────────────────────────────
 
@@ -257,7 +257,7 @@ document.getElementById('tree-view').addEventListener('click', e => {
     const mode = e.target.closest('[data-mode]');
     if (mode) {
         _treeFocus = mode.dataset.mode === 'focus';
-        try { localStorage.setItem(TREE_FOCUS_KEY, _treeFocus ? '1' : '0'); } catch (err) {}
+        dataStore.set(TREE_FOCUS_KEY, _treeFocus ? '1' : '0');
         renderTree(false);
         return;
     }
