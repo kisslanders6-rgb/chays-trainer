@@ -9,6 +9,6 @@
 'use strict';
 
 const CLOUD_CONFIG = {
-    url:     '',
-    anonKey: ''
+    url:     'https://axkwnkqdslabcqhaiati.supabase.co',
+    anonKey: 'sb_publishable_h0-dyHTbEMUvbCUPRV1a_Q_QeGqd0s2'
 };
