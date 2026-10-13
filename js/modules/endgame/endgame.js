@@ -617,10 +617,10 @@ function endgameSelfTest() {
 const ENDGAME_PROGRESS_KEY = 'chessTrainer_endgames';
 
 function readEndgameProgress() {
-    try { const o = JSON.parse(localStorage.getItem(ENDGAME_PROGRESS_KEY)); return o && typeof o === 'object' ? o : {}; }
-    catch (e) { return {}; }
+    const o = dataStore.getJSON(ENDGAME_PROGRESS_KEY, null);
+    return o && typeof o === 'object' ? o : {};
 }
-function _egSaveProgress(p) { try { localStorage.setItem(ENDGAME_PROGRESS_KEY, JSON.stringify(p)); } catch (e) {} }
+function _egSaveProgress(p) { dataStore.setJSON(ENDGAME_PROGRESS_KEY, p); }
 
 function _egBump(id, fn) {
     const p = readEndgameProgress();
