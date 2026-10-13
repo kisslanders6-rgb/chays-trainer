@@ -42,7 +42,7 @@ const trainingState = {
 function _loadTrainingSettings() {
     const d = { maxPlies: 0, seqLen: 1 };
     try {
-        const s = JSON.parse(localStorage.getItem(TRAIN_SETTINGS_KEY) || '{}');
+        const s = dataStore.getJSON(TRAIN_SETTINGS_KEY, null) || {};
         if (Number.isFinite(s.maxPlies) && s.maxPlies >= 0) d.maxPlies = s.maxPlies;
         if (Number.isFinite(s.seqLen)   && s.seqLen   >= 1) d.seqLen   = s.seqLen;
     } catch (_) { /* stockage indisponible : valeurs par défaut */ }
