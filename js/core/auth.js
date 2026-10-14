@@ -38,7 +38,10 @@ const Auth = (function () {
     const api        = p => cfg().url.replace(/\/+$/, '') + '/auth/v1' + p;
     const nowS       = () => Math.floor(Date.now() / 1000);
     const enc        = encodeURIComponent;
-    const redirect   = () => (typeof location !== 'undefined' ? enc(location.origin + location.pathname) : '');
+    // Adresse de retour des e-mails (confirmation, réinitialisation). Uniquement en http(s) : ouverte en file://
+    // l'adresse serait invalide (« requested path is invalid ») ; sans redirect_to, Supabase utilise alors le « Site URL ».
+    const redirectQuery = () => (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)
+        ? '?redirect_to=' + enc(location.origin + location.pathname) : '');
 
     let session = null, refreshTimer = null, refreshing = null, notice = null;
     const listeners = [];
@@ -149,7 +152,7 @@ const Auth = (function () {
     }
 
     async function signUp(email, password) {
-        const r = await request('/signup?redirect_to=' + redirect(), { body: { email, password } });
+        const r = await request('/signup' + redirectQuery(), { body: { email, password } });
         if (r.error || !r.ok) return failure(r);
         if (r.json.access_token) {                                   // confirmation d'e-mail désactivée : déjà connecté
             const s = toSession(r.json);
@@ -170,7 +173,7 @@ const Auth = (function () {
     }
 
     async function recover(email) {
-        const r = await request('/recover?redirect_to=' + redirect(), { body: { email } });
+        const r = await request('/recover' + redirectQuery(), { body: { email } });
         return r.error || !r.ok ? failure(r) : { ok: true };
     }
 
