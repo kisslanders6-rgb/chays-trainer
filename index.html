@@ -14,6 +14,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="64x64" href="assets/icons/favicon-64.png" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
 <!-- Sprite d'icônes : doit être chargé en premier, avant tout contenu qui référence <use href="#i-…"> -->
@@ -417,6 +418,11 @@
 
 <!-- ─── SCRIPTS (ordre de dépendance ; icons.js est chargé en tête de <body>) ─── -->
 <script src="js/core/storageAdapter.js"></script>
+<script src="js/core/syncModel.js"></script>
+<script src="js/core/cloudConfig.js"></script>
+<script src="js/core/cloudClient.js"></script>
+<script src="js/core/cloudAdapter.js"></script>
+<script src="js/core/auth.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/core/backup.js"></script>
 <script src="js/core/trash.js"></script>
@@ -432,6 +438,7 @@
 <script src="js/modules/training/training.js"></script>
 <script src="js/modules/endgame/endgame.js"></script>
 <script src="js/app.js"></script>
+<script src="js/core/accountUI.js"></script>
 <script src="js/core/mobile.js"></script>
 </body>
 </html>

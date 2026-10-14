@@ -8,10 +8,11 @@
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  */
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE   = 'chays-trainer-' + VERSION;
 
 const CORE = [
+    'css/account.css', 'js/core/syncModel.js', 'js/core/cloudConfig.js', 'js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js',
     './', 'index.html', 'style.css', 'manifest.json',
     'js/storage.js', 'js/app.js',
     'js/core/icons.js', 'js/core/storageAdapter.js', 'js/core/backup.js', 'js/core/trash.js', 'js/core/settings.js', 'js/core/themeColor.js',
