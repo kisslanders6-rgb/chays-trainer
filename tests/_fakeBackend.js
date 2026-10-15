@@ -44,17 +44,42 @@ module.exports = function makeBackend(opts) {
             if (body.password.length < 6) return res(422, { code: 422, error_code: 'weak_password', msg: 'Password should be at least 6 characters.' });
             who.password = body.password; return res(200, { id: who.id, email: who.email });
         }
-        if (p === '/rest/v1/documents') {                                   // PostgREST minimal : liste seulement (suffit à l'interface)
+        if (p === '/rest/v1/documents') {                                   // PostgREST : mêmes règles que supabase/schema.sql
             if (!who) return res(401, { message: 'JWT expired' });
-            const tb = docs.get(who.id) || new Map();
-            return res(200, [...tb.values()].map(r => ({ key: r.key, data: r.data, version: r.version, updated_at: 'now' })));
+            const tb = docs.get(who.id) || docs.set(who.id, new Map()).get(who.id);
+            const eq = name => { const v = u.searchParams.get(name); return v && v.startsWith('eq.') ? v.slice(3) : null; };
+            const key = eq('key'), ver = eq('version');
+            const rows = () => [...tb.values()].filter(r => (key === null || r.key === key) && (ver === null || String(r.version) === ver));
+            const sel = (u.searchParams.get('select') || '').split(',');
+            const out = r => { const o = { key: r.key, version: r.version }; if (sel.includes('data') || !sel[0]) o.data = JSON.parse(JSON.stringify(r.data)); o.updated_at = 'now'; return o; };
+            if (opts.onRest) opts.onRest(o.method, key, who, tb);          // crochet : permet de simuler un autre appareil entre deux requêtes
+            if (o.method === 'GET') {
+                let all = rows().sort((a, b) => (a.key < b.key ? -1 : 1)).map(out);
+                const rg = h.Range && /^(\d+)-(\d+)$/.exec(h.Range);
+                if (rg) { const from = +rg[1], to = +rg[2]; if (from > 0 && from >= all.length) return res(416, { message: 'range' }); all = all.slice(from, to + 1); }
+                return res(rg ? 206 : 200, all);
+            }
+            if (o.method === 'POST') {
+                if (tb.has(body.key)) return res(409, { code: '23505', message: 'duplicate key' });
+                const row = { key: body.key, data: JSON.parse(JSON.stringify(body.data)), version: 1 };
+                tb.set(body.key, row); return res(201, [out(row)]);
+            }
+            if (o.method === 'PATCH') {
+                const hit = rows(); hit.forEach(r => { r.data = JSON.parse(JSON.stringify(body.data)); r.version += 1; });
+                return res(200, hit.map(out));
+            }
+            if (o.method === 'DELETE') { const hit = rows(); hit.forEach(r => tb.delete(r.key)); return res(200, hit.map(out)); }
         }
         return res(404, {});
     }
     return {
-        fetch, log, users, docs,
+        fetch, log, users, docs, sessions,
         addUser(email, password, confirmed = true) { const usr = { id: 'u' + (users.size + 1), email, password, confirmed }; users.set(email, usr); return usr; },
         addDoc(userId, key, data) { const tb = docs.get(userId) || docs.set(userId, new Map()).get(userId); tb.set(key, { key, data, version: 1 }); },
+        doc(userId, key) { const tb = docs.get(userId); return tb && tb.get(key) ? tb.get(key) : null; },
+        bump(userId, key, data) { const tb = docs.get(userId) || docs.set(userId, new Map()).get(userId); const r = tb.get(key); if (r) { r.data = data; r.version += 1; } else tb.set(key, { key, data, version: 1 }); },
+        removeDoc(userId, key) { const tb = docs.get(userId); if (tb) tb.delete(key); },
+        opts,
         token(usr) { return issue(usr); }
     };
 };

@@ -10,7 +10,7 @@
  *
  * Choix de première synchronisation → SyncIntent (auth.js) + événement window « chays-sync-intent »,
  * que le moteur de synchro (étape 5) consommera. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
- * avec niveau = 'ok' | 'busy' | 'error'.
+ * avec niveau = 'ok' | 'busy' | 'offline' | 'error'.
  * Prérequis : auth.js, cloudClient.js, cloudAdapter.js ; au besoin askConfirm (openingsLogic.js),
  * exportDB (storage.js) et ico (icons.js), appelés seulement à l'exécution.
  */
@@ -138,6 +138,7 @@ const AccountUI = (function () {
             </div>
             <div class="account-msg" role="status" aria-live="polite"></div>
             <div class="account-actions">
+                <button class="btn btn-primary" data-act="sync-now">Synchroniser maintenant</button>
                 <button class="btn" data-act="signout">Se déconnecter</button>
                 <button class="btn btn-danger" data-act="signout-erase">Se déconnecter et effacer les données de cet appareil</button>
             </div>
@@ -273,6 +274,7 @@ const AccountUI = (function () {
             i.type = i.type === 'password' ? 'text' : 'password';
             el.textContent = i.type === 'password' ? 'Afficher' : 'Masquer';
         }
+        else if (act === 'sync-now') { if (typeof SyncEngine !== 'undefined') SyncEngine.syncNow(); }
         else if (act === 'signout') onSignOut(false);
         else if (act === 'signout-erase') onSignOut(true);
         else if (act.startsWith('strategy:')) {

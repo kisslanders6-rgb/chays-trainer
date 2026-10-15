@@ -70,20 +70,26 @@ const CloudClient = (function () {
     const docOf = r => ({ key: r.key, data: r.data, version: r.version, updated_at: r.updated_at });
     const where = (key, version) => `?key=eq.${enc(key)}&version=eq.${Number(version)}`;
 
-    // Tous les documents de l'utilisateur (pagination automatique par blocs de 1000).
-    async function listDocs() {
+    // Liste paginée (blocs de 1000) avec les colonnes demandées.
+    async function pagedList(select) {
         const docs = [];
         for (let from = 0; ; from += PAGE) {
-            const r = await call('GET', '?select=key,data,version,updated_at&order=key.asc', undefined,
+            const r = await call('GET', `?select=${select}&order=key.asc`, undefined,
                                  { 'Range-Unit': 'items', Range: `${from}-${from + PAGE - 1}` });
             if (r.status === 416) break;
             if (r.error || !r.ok) return fail(r);
             const page = Array.isArray(r.json) ? r.json : [];
-            page.forEach(x => docs.push(docOf(x)));
+            page.forEach(x => docs.push(select === 'key,version' ? { key: x.key, version: x.version } : docOf(x)));
             if (page.length < PAGE) break;
         }
         return { ok: true, docs };
     }
+
+    // Tous les documents de l'utilisateur, contenu compris.
+    const listDocs = () => pagedList('key,data,version,updated_at');
+
+    // Clés et versions seulement (pas de contenu) : sert à savoir ce qui a changé sur le serveur.
+    const listVersions = () => pagedList('key,version');
 
     async function getDoc(key) {
         const r = await call('GET', `?key=eq.${enc(key)}&select=key,data,version,updated_at`);
@@ -116,7 +122,7 @@ const CloudClient = (function () {
         return rowOf(r.json) ? { ok: true } : { ok: false, conflict: true };
     }
 
-    return { configured, setSession, hasSession, listDocs, getDoc, createDoc, updateDoc, deleteDoc };
+    return { configured, setSession, hasSession, listDocs, listVersions, getDoc, createDoc, updateDoc, deleteDoc };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { CloudClient };

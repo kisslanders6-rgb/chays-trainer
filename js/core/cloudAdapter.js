@@ -70,9 +70,12 @@ const SyncMeta = (function () {
     }
 
     const base = key => L().get(BASE_PREFIX + key);
+    // Renvoie false si l'écriture échoue (stockage plein) : le moteur doit alors s'arrêter.
     function setBase(key, raw) {
-        if (raw === null || raw === undefined) L().remove(BASE_PREFIX + key); else L().set(BASE_PREFIX + key, String(raw));
+        if (raw === null || raw === undefined) return L().remove(BASE_PREFIX + key);
+        return L().set(BASE_PREFIX + key, String(raw));
     }
+    const baseKeys = () => L().keys().filter(k => k.startsWith(BASE_PREFIX)).map(k => k.slice(BASE_PREFIX.length));
 
     const owner = () => read().owner;
     // Rattache l'état au compte. Renvoie true si un AUTRE compte était rattaché (état remis à zéro).
@@ -90,7 +93,7 @@ const SyncMeta = (function () {
     function onDirty(fn) { listeners.push(fn); }
 
     return { owner, bindOwner, markDirty, markAllDirty, dirtySnapshot, clearDirty,
-             version, setVersion, base, setBase, reset, onDirty };
+             version, setVersion, base, setBase, baseKeys, reset, onDirty };
 })();
 
 function createSyncingAdapter(inner) {
