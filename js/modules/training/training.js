@@ -75,43 +75,100 @@ function stopTraining() {
 
 // ─── ÉCRAN D'ACCUEIL DU MODULE ────────────────────────────────────────────────
 
+// Résumé d'une couleur pour l'écran d'accueil : volumes, niveaux (mêmes seuils que les Statistiques),
+// révisions dues et prochaine échéance.
+function _trainingSummary(color) {
+    const all = Object.values(readDBFor(currentRepertoire, color));
+    const pool = all.filter(_isEligible), now = Date.now();
+    const lv = { mastered: 0, fragile: 0, weak: 0 };
+    pool.forEach(e => { lv[e.attempts ? _level(e) : 'mastered']++; });
+    const due  = pool.filter(e => isDue(e, now)).length;
+    const next = pool.length && !due ? Math.min(...pool.map(dueOf)) : 0;
+    return { all: all.length, total: pool.length, due, next, lv,
+             mastery: pool.length ? Math.round(100 * lv.mastered / pool.length) : 0 };
+}
+
+function _inLabel(t) {
+    const min = Math.max(1, Math.round((t - Date.now()) / 60000));
+    if (min < 60)   return `dans ${min} min`;
+    if (min < 1440) return `dans ${Math.round(min / 60)} h`;
+    const d = Math.round(min / 1440);
+    return `dans ${d} jour${d > 1 ? 's' : ''}`;
+}
+
 function initTraining() {
     const panel = document.getElementById('training-panel');
     if (!panel) return;
 
-    const opt = (v, label, cur) => `<option value="${v}" ${Number(v) === Number(cur) ? 'selected' : ''}>${label}</option>`;
-    const select = (label, name, rows, cur) => `
-        <label class="train-opt">
-          <span class="train-opt-label">${label}</span>
-          <select class="train-select" data-change="trainingOption" data-arg="${name}">
-            ${rows.map(([v, t]) => opt(v, t, cur)).join('')}
-          </select>
-        </label>`;
-    const options = '<div class="train-options">'
-        + select('Profondeur', 'maxPlies',
-            [[0, 'Illimitée'], [5, '≤ 5 demi-coups'], [10, '≤ 10 demi-coups'], [20, '≤ 20 demi-coups']], trainingSettings.maxPlies)
-        + select('Exercice', 'seqLen',
-            [[1, 'Coup unique'], [3, 'Séquence de 3 coups'], [5, 'Séquence de 5 coups'], [TRAIN_SEQ_END, "Jusqu'à la fin de la variante"]], trainingSettings.seqLen)
+    // ── Options : boutons segmentés (un seul toucher) ──
+    const seg = (label, name, rows, cur) => `
+        <div class="tr-opt">
+          <span class="tr-opt-label">${label}</span>
+          <div class="tr-seg" role="radiogroup" aria-label="${label}">
+            ${rows.map(([v, txt]) => `<button class="tr-seg-btn ${Number(v) === Number(cur) ? 'active' : ''}" role="radio" aria-checked="${Number(v) === Number(cur)}"
+                data-action="trainingOption" data-arg="${name}=${v}">${txt}</button>`).join('')}
+          </div>
+        </div>`;
+    const options = '<div class="tr-options">'
+        + seg('Profondeur', 'maxPlies', [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], trainingSettings.maxPlies)
+        + seg('Exercice', 'seqLen', [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [TRAIN_SEQ_END, 'Variante']], trainingSettings.seqLen)
         + '</div>';
 
-    panel.innerHTML = options + '<div class="train-cards">' + ['w', 'b'].map(c => {
-        const all      = Object.values(readDBFor(currentRepertoire, c));
-        const eligible = all.filter(_isEligible);
-        const total    = eligible.length;
-        const weak     = eligible.filter(e => e.failures > 0).length;
-        const due      = eligible.filter(e => isDue(e)).length;
-        const sub   = !all.length ? 'Répertoire vide'
-                    : !total      ? 'Aucune position dans cette limite'
-                    : `${total} position${total > 1 ? 's' : ''} · ${weak ? `${weak} avec erreur${weak > 1 ? 's' : ''}` : 'aucune erreur'}`;
-        const dueLine = total ? `<div class="train-card-due ${due ? '' : 'none'}">${due ? `${due} à réviser` : 'Tout est à jour'}</div>` : '';
-        return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `role="button" tabindex="0" data-action="startTraining" data-arg="${c}"` : 'aria-disabled="true"'}>
-            <div class="train-card-icon">${pieceGlyph(c === 'w' ? 'K' : 'k')}</div>
-            <div class="train-card-title">${c === 'w' ? 'BLANCS' : 'NOIRS'}</div>
-            <div class="train-card-sub">${sub}</div>${dueLine}</div>`;
-    }).join('') + '</div>';
+    // ── Bandeau : objectif du jour ──
+    const sums   = { w: _trainingSummary('w'), b: _trainingSummary('b') };
+    const due    = sums.w.due + sums.b.due;
+    const total  = sums.w.total + sums.b.total;
+    const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
+    const today  = (readActivity()[dayStamp(Date.now())] || { a: 0 }).a;
+    const hero = !total ? '' : `
+        <div class="tr-hero ${due ? '' : 'done'}">
+          <div class="tr-hero-main">
+            <span class="tr-hero-n">${due || ico('check')}</span>
+            <span class="tr-hero-txt"><b>${due ? `position${due > 1 ? 's' : ''} à réviser` : 'Tout est à jour'}</b>
+              <small>${due ? 'Commencez par la couleur qui en compte le plus.' : 'Les prochaines révisions arrivent bientôt ; un entraînement libre reste possible.'}</small></span>
+          </div>
+          <div class="tr-hero-side">
+            <span class="tr-chip" title="Jours consécutifs avec au moins un essai">${ico('target')} ${streak} jour${streak > 1 ? 's' : ''} d'affilée</span>
+            <span class="tr-chip" title="Essais aujourd'hui, tous répertoires">${ico('bar-chart')} ${today} essai${today > 1 ? 's' : ''} aujourd'hui</span>
+          </div>
+        </div>`;
+
+    // ── Cartes Blancs / Noirs ──
+    const cards = ['w', 'b'].map(c => {
+        const s = sums[c], side = c === 'w' ? 'Blancs' : 'Noirs';
+        if (!s.total) {
+            return `<div class="tr-card empty" aria-disabled="true">
+                <div class="tr-card-top"><span class="tr-glyph">${pieceGlyph(c === 'w' ? 'K' : 'k')}</span>
+                  <div class="tr-head"><div class="tr-title">${side}</div><div class="tr-sub">${s.all ? 'Aucune position dans cette limite' : 'Répertoire vide'}</div></div></div>
+                <div class="tr-empty-note">${s.all ? 'Augmentez la profondeur pour inclure vos positions.' : 'Jouez vos lignes dans « Jouer » pour les réviser ici.'}</div>
+            </div>`;
+        }
+        const badge = (cls, n, label) => n ? `<span class="tr-badge ${cls}">${n} ${label}</span>` : '';
+        const bar = ['mastered', 'fragile', 'weak'].filter(l => s.lv[l]).map(l => `<i class="tr-bar-seg ${l}" style="flex:${s.lv[l]}"></i>`).join('');
+        return `<div class="tr-card ${s.due ? 'has-due' : ''}" role="button" tabindex="0" data-action="startTraining" data-arg="${c}"
+                     aria-label="Réviser les ${side} : ${s.due} position${s.due > 1 ? 's' : ''} à réviser sur ${s.total}">
+            <div class="tr-card-top">
+              <span class="tr-glyph">${pieceGlyph(c === 'w' ? 'K' : 'k')}</span>
+              <div class="tr-head"><div class="tr-title">${side}</div><div class="tr-sub">${s.total} position${s.total > 1 ? 's' : ''}</div></div>
+              <div class="tr-ring" style="--p:${s.mastery}" title="${s.lv.mastered} position${s.lv.mastered > 1 ? 's' : ''} sans erreur">
+                <span class="tr-ring-n">${s.mastery}%</span><span class="tr-ring-l">maîtrise</span></div>
+            </div>
+            <div class="tr-bar" aria-hidden="true">${bar}</div>
+            <div class="tr-badges">
+              ${s.due ? `<span class="tr-badge due"><i class="tr-pulse"></i>${s.due} à réviser</span>` : '<span class="tr-badge ok">À jour</span>'}
+              ${badge('weak', s.lv.weak, 'à retravailler')}${badge('fragile', s.lv.fragile, s.lv.fragile > 1 ? 'fragiles' : 'fragile')}
+            </div>
+            <div class="tr-cta">${s.due ? 'Réviser maintenant' : `Prochaine révision ${_inLabel(s.next)} · s'entraîner quand même`}<span class="tr-arrow">${ico('chevron-right')}</span></div>
+        </div>`;
+    }).join('');
+
+    panel.innerHTML = hero + options + `<div class="tr-cards">${cards}</div>`;
 }
 
-registerActions({ trainingOption: (name, el) => setTrainingOption(name, el.value), startTraining: c => startTraining(c) });
+registerActions({
+    trainingOption: arg => { const [name, value] = arg.split('='); setTrainingOption(name, value); },
+    startTraining: c => startTraining(c)
+});
 
 // ─── BOUCLE D'ENTRAÎNEMENT ────────────────────────────────────────────────────
 
