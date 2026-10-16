@@ -94,7 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // <img data-tint> : le PNG sert de MASQUE (son canal alpha), la couleur vient de
 // --logo-color (= couleur d'accent du thème). Les PNG ne sont jamais modifiés.
 // Condition : logo d'une seule couleur sur fond TRANSPARENT.
+// Ouvert en file:// le navigateur bloque les masques CSS (logo invisible) : le PNG reste alors tel quel.
 document.addEventListener('DOMContentLoaded', () => {
+    if (location.protocol === 'file:') return;
     document.querySelectorAll('img[data-tint]').forEach(img => {
         img.style.setProperty('--tint-src', `url("${img.src}")`);
         img.classList.add('is-tinted');
