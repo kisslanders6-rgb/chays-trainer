@@ -10,7 +10,12 @@
  *   - checkBackupOnStart()       rappel au lancement (au plus une fois par jour)
  *   - requestPersistence()       demande au navigateur de ne pas purger le stockage
  *
+ * Avec un compte connecté (synchronisation active), les données sont aussi enregistrées en ligne :
+ * la carte l'indique, et ni rappel ni pastille ne poussent à télécharger un fichier — la sauvegarde
+ * locale (.json) reste proposée, jamais imposée.
+ *
  * Niveaux :
+ *   synced  compte connecté : copie en ligne
  *   empty   rien (ou presque) à protéger
  *   ok      sauvegarde récente, ou rien de modifié depuis
  *   warn    ≥ 7 jours ou > BACKUP_THRESHOLD modifications non sauvegardées
@@ -51,6 +56,11 @@ function _agoLabel(ts) {
     return `il y a ${Math.floor(d / 30)} mois`;
 }
 
+// Compte connecté et service configuré : les données sont synchronisées en ligne.
+function isCloudBackedUp() {
+    return typeof Auth !== 'undefined' && Auth.isSignedIn() && typeof CloudClient !== 'undefined' && CloudClient.configured();
+}
+
 function getBackupStatus() {
     const s       = _readBackupState();              // storage.js : { changes, remindedAt, lastExport }
     const total   = _countPositions();
@@ -58,25 +68,30 @@ function getBackupStatus() {
     const days    = last ? (Date.now() - last) / _BK_DAY_MS : Infinity;
     const changes = s.changes;
     const plural  = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+    const lastLocal = last ? `Dernière sauvegarde locale : ${_agoLabel(last)}` : 'Aucune sauvegarde locale';
 
     let level, title, sub;
-    if (!total || (!last && total < BACKUP_MIN_POSITIONS)) {
+    if (isCloudBackedUp()) {
+        level = 'synced';
+        title = 'Synchronisé avec votre compte';
+        sub   = `Vos données sont enregistrées en ligne et sur cet appareil. Une sauvegarde locale (fichier .json) reste possible si vous le souhaitez. ${lastLocal}.`;
+    } else if (!total || (!last && total < BACKUP_MIN_POSITIONS)) {
         level = 'empty';
-        title = last ? `Dernière sauvegarde : ${_agoLabel(last)}` : 'Pas encore de sauvegarde';
-        sub   = total ? 'Pensez à exporter dès que votre répertoire grandit.' : 'Rien à sauvegarder pour le moment.';
+        title = lastLocal;
+        sub   = total ? 'Pensez à télécharger une sauvegarde, ou à créer un compte, dès que votre répertoire grandit.' : 'Rien à sauvegarder pour le moment.';
     } else if (!last) {
         level = 'danger';
-        title = 'Jamais sauvegardé';
-        sub   = `Vos ${plural(total, 'position', 'positions')} n'existent que dans ce navigateur. Un export les met à l'abri.`;
+        title = 'Aucune sauvegarde';
+        sub   = `Vos ${plural(total, 'position', 'positions')} n'existent que dans ce navigateur, sur cet appareil. Téléchargez une sauvegarde ou connectez-vous pour les synchroniser.`;
     } else if (!changes) {
         level = 'ok';
-        title = `Sauvegardé ${_agoLabel(last)}`;
+        title = `Sauvegarde locale à jour (${_agoLabel(last)})`;
         sub   = 'Aucune modification depuis.';
     } else {
         level = days >= BACKUP_DANGER_DAYS ? 'danger'
               : (days >= BACKUP_STALE_DAYS || changes > BACKUP_THRESHOLD) ? 'warn' : 'ok';
-        title = `Dernière sauvegarde : ${_agoLabel(last)}`;
-        sub   = `${plural(changes, 'modification', 'modifications')} depuis, non sauvegardée${changes > 1 ? 's' : ''}.`;
+        title = lastLocal;
+        sub   = `${plural(changes, 'modification', 'modifications')} depuis, non sauvegardée${changes > 1 ? 's' : ''} hors de ce navigateur.`;
     }
     return { level, title, sub, total, changes, last, days };
 }
@@ -85,11 +100,12 @@ function getBackupStatus() {
 
 function updateBackupIndicators() {
     const st    = getBackupStatus();
-    const alert = st.level === 'warn' || st.level === 'danger';
+    const alert = st.level === 'warn' || st.level === 'danger';           // jamais quand le compte synchronise
     document.querySelectorAll('[data-backup-dot]').forEach(el => {
         el.classList.toggle('has-alert', alert);
         el.dataset.level = st.level;
         el.title = alert ? 'Paramètres — sauvegarde recommandée' : 'Paramètres';
+        el.setAttribute('aria-label', el.title);
     });
 }
 
@@ -100,7 +116,10 @@ function renderBackupStatus() {
     if (!box) return;
     const st     = getBackupStatus();
     const urgent = st.level === 'warn' || st.level === 'danger';
-    const icon   = st.level === 'ok' ? 'shield-check' : st.level === 'empty' ? 'info' : 'shield-alert';
+    const icon   = st.level === 'ok' || st.level === 'synced' ? 'shield-check' : st.level === 'empty' ? 'info' : 'shield-alert';
+    const note   = st.level === 'synced'
+        ? 'Cet appareil garde une copie pour fonctionner hors ligne ; les modifications sont envoyées dès que la connexion revient.'
+        : 'Sans compte, les données ne vivent que dans ce navigateur : vider le cache ou les données du site les efface, même si le stockage est protégé.';
 
     box.innerHTML = `
         <div class="backup-card lv-${st.level}">
@@ -116,10 +135,10 @@ function renderBackupStatus() {
             <span id="backup-persist"></span>
           </div>
           <div class="backup-actions">
-            <button class="btn ${urgent ? 'btn-primary' : ''}" data-action="backupExport">${ico('download')} Exporter maintenant</button>
-            <button class="btn" data-action="importDBPrompt">${ico('upload')} Importer</button>
+            <button class="btn ${urgent ? 'btn-primary' : ''}" data-action="backupExport" title="Fichier .json : répertoires, statistiques, planning de révision, finales">${ico('download')} Télécharger une sauvegarde</button>
+            <button class="btn" data-action="importDBPrompt" title="Fusionne un fichier .json avec vos données">${ico('upload')} Restaurer une sauvegarde</button>
           </div>
-          <div class="backup-note">Les données vivent dans ce navigateur : vider le cache ou les données du site les efface, même si le stockage est protégé.</div>
+          <div class="backup-note">${note} Pour échanger des lignes avec d'autres logiciels, utilisez l'export PGN du panneau Base.</div>
         </div>`;
     _fillPersistence();
 }
@@ -151,7 +170,7 @@ function checkBackupOnStart() {
     const last = Number(dataStore.get(BACKUP_NAG_KEY)) || 0;
     if (Date.now() - last < _BK_DAY_MS) return;
     dataStore.set(BACKUP_NAG_KEY, String(Date.now()));
-    setTimeout(() => { if (typeof showBackupToast === 'function') showBackupToast(); }, 1500);
+    setTimeout(() => { if (typeof showBackupToast === 'function' && !isCloudBackedUp()) showBackupToast(); }, 1500);   // session restaurée entre-temps
 }
 
 // ─── AUTO-BRANCHEMENT (aucune modification d'app.js ni de storage.js requise) ─
@@ -171,6 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // 3. Rappel éventuel au lancement.
     checkBackupOnStart();
+    // 4. Connexion / déconnexion : la carte et la pastille changent de discours.
+    if (typeof Auth !== 'undefined' && Auth.onChange) Auth.onChange(() => {
+        updateBackupIndicators();
+        const ov = document.getElementById('settings-overlay');
+        if (ov && !ov.classList.contains('hidden')) renderBackupStatus();
+        if (isCloudBackedUp() && typeof hideBackupToast === 'function') hideBackupToast();
+    });
 });
 
 registerActions({

@@ -66,7 +66,9 @@ function _adminRow(key, e, inputId, prefix) {
 function renderAdminEntries() {
     const el   = document.getElementById('admin-entries');
     const keys = Object.keys(openingDB);
-    const info = `<div class="panel-sub">Répertoire actif : <strong style="color:var(--accent)">${escapeHtml(currentRepertoire)}</strong> · couleur <strong>${playerColor === 'w' ? 'Blancs' : 'Noirs'}</strong>. La base est sauvegardée dans ce navigateur (localStorage) et persiste après fermeture, tant que le cache n'est pas vidé.</div>`;
+    const info = `<div class="panel-sub">Répertoire actif : <strong style="color:var(--accent)">${escapeHtml(currentRepertoire)}</strong> · couleur <strong>${playerColor === 'w' ? 'Blancs' : 'Noirs'}</strong>. ${typeof isCloudBackedUp === 'function' && isCloudBackedUp()
+        ? 'La base est enregistrée sur cet appareil et synchronisée avec votre compte.'
+        : "La base est enregistrée dans ce navigateur, sur cet appareil uniquement : connectez-vous pour la synchroniser, ou téléchargez une sauvegarde (.json)."} Le PGN sert à échanger vos lignes avec d'autres logiciels (sans statistiques).</div>`;
 
     if (!keys.length) {
         el.innerHTML = info + "<div class=\"empty-note\">Base vide pour ce répertoire — jouez des parties pour l'enrichir.</div>";

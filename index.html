@@ -265,8 +265,8 @@
             <div id="admin-entries"></div>
             <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()"><svg class="ico"><use href="#i-plus"/></svg> Ajouter une entrée manuelle</button>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()"><svg class="ico"><use href="#i-download"/></svg> Exporter (JSON)</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()"><svg class="ico"><use href="#i-upload"/></svg> Importer (JSON)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()" title="Fichier .json complet : répertoires, statistiques, planning de révision, finales"><svg class="ico"><use href="#i-download"/></svg> Sauvegarde (.json)</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()" title="Fusionne une sauvegarde .json avec vos données"><svg class="ico"><use href="#i-upload"/></svg> Restaurer (.json)</button>
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()"><svg class="ico"><use href="#i-upload"/></svg> Importer PGN</button>
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportPgn()" title="Toutes les lignes du répertoire actif, Blancs et Noirs"><svg class="ico"><use href="#i-download"/></svg> Exporter PGN</button>
             </div>
@@ -296,8 +296,8 @@
 
     <!-- ─── RAPPEL DE SAUVEGARDE ──────────────────────────────────────────── -->
     <div id="backup-toast" class="toast hidden" role="status">
-        <span>Sauvegarde recommandée : exportez votre base pour sécuriser vos données</span>
-        <button class="toast-link" onclick="exportFromToast()">Exporter maintenant</button>
+        <span>Vos données ne sont que dans ce navigateur : téléchargez une sauvegarde, ou connectez-vous pour les synchroniser.</span>
+        <button class="toast-link" onclick="exportFromToast()">Télécharger (.json)</button>
         <button class="toast-x" onclick="hideBackupToast()" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
     </div>
 
@@ -310,7 +310,7 @@
             </div>
 
             <div class="set-section">
-                <div class="set-label" style="margin-bottom:10px;">Sauvegarde des données</div>
+                <div class="set-label" style="margin-bottom:10px;">Sauvegarde et synchronisation</div>
                 <div id="backup-status"></div>
             </div>
 

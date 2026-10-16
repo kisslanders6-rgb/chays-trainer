@@ -246,7 +246,8 @@ function noteChange(n) {
     const remind = s.changes > BACKUP_THRESHOLD && (s.changes - s.remindedAt) > BACKUP_THRESHOLD;
     if (remind) s.remindedAt = s.changes;
     _writeBackupState(s);
-    if (remind && typeof showBackupToast === 'function') showBackupToast();
+    // Avec un compte synchronisé, aucune incitation à télécharger un fichier (la sauvegarde locale reste facultative).
+    if (remind && typeof showBackupToast === 'function' && !(typeof isCloudBackedUp === 'function' && isCloudBackedUp())) showBackupToast();
 }
 
 function markExported() {

@@ -159,7 +159,7 @@ const AccountUI = (function () {
                     <span class="account-choice-desc">Le contenu en ligne est remplacé par celui de cet appareil.</span></button>
                 <button class="account-choice" data-act="strategy:download">
                     <span class="account-choice-title">Récupérer mon compte</span>
-                    <span class="account-choice-desc">Cet appareil est remplacé par le contenu en ligne. Une sauvegarde JSON est téléchargée d'abord.</span></button>
+                    <span class="account-choice-desc">Cet appareil est remplacé par le contenu en ligne. Une sauvegarde locale (.json) vous sera proposée avant.</span></button>
             </div>
             <button class="toast-link account-link" data-act="close" type="button">Plus tard</button>
             <div class="account-msg" role="status" aria-live="polite"></div>`;
@@ -184,9 +184,9 @@ const AccountUI = (function () {
     function close() { if (overlay) overlay.classList.add('hidden'); }
 
     // ─── Première synchronisation ─────────────────────────────────────────────
-    function applyStrategy(strategy) {
+    function applyStrategy(strategy, backupFirst) {
         const u = Auth.user(); if (!u) return;
-        if (strategy === 'download') { try { if (typeof exportDB === 'function') exportDB(); } catch (e) {} }   // sauvegarde avant remplacement
+        if (backupFirst) { try { if (typeof exportDB === 'function') exportDB(); } catch (e) {} }   // sauvegarde locale, seulement si demandée
         SyncIntent.set({ user: u.id, strategy, at: Date.now() });
         if (strategy !== 'download') SyncMeta.markAllDirty();
         window.dispatchEvent(new CustomEvent('chays-sync-intent', { detail: { strategy, user: u.id } }));
@@ -279,10 +279,16 @@ const AccountUI = (function () {
         else if (act === 'signout-erase') onSignOut(true);
         else if (act.startsWith('strategy:')) {
             const s = act.slice(9);
-            const run = () => { applyStrategy(s); view = 'account'; render(); toast(s === 'merge' ? 'Fusion programmée : vos données vont être réunies.' : s === 'upload' ? 'Vos données vont remplacer celles du compte.' : 'Les données du compte vont remplacer celles de cet appareil.'); };
-            const warn = s === 'upload' ? "Remplacer les données en ligne par celles de cet appareil ? Ce qui n'existe pas ici sera supprimé du compte."
-                       : s === 'download' ? 'Remplacer les données de cet appareil par celles du compte ? Une sauvegarde JSON va d\'abord être téléchargée.' : null;
-            if (warn && typeof askConfirm === 'function') askConfirm(warn, run); else run();
+            const run = backupFirst => { applyStrategy(s, backupFirst); view = 'account'; render(); toast(s === 'merge' ? 'Fusion programmée : vos données vont être réunies.' : s === 'upload' ? 'Vos données vont remplacer celles du compte.' : 'Les données du compte vont remplacer celles de cet appareil.'); };
+            if (s === 'download') {
+                // La sauvegarde locale est proposée, pas imposée.
+                const text = 'Remplacer les données de cet appareil par celles du compte ? Vous pouvez d\'abord télécharger une sauvegarde locale (.json) de ce qui va être remplacé.';
+                if (typeof askConfirmChoice === 'function') askConfirmChoice(text, { cascade: 'Télécharger une sauvegarde, puis remplacer', solo: 'Remplacer sans sauvegarde' }, () => run(true), () => run(false));
+                else if (confirm(text)) run(false);
+                return;
+            }
+            const warn = s === 'upload' ? "Remplacer les données en ligne par celles de cet appareil ? Ce qui n'existe pas ici sera supprimé du compte." : null;
+            if (warn && typeof askConfirm === 'function') askConfirm(warn, () => run(false)); else run(false);
         }
     }
 

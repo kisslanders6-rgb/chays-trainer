@@ -16,6 +16,7 @@ function boot({ backend, store = {}, confirmAnswer = true } = {}) {
     w.fetch = backend.fetch;
     w.__confirms = []; w.__exports = 0; w.__reloads = 0;
     w.eval(`window.askConfirm = (msg, ok) => { window.__confirms.push(msg); ${confirmAnswer ? 'ok();' : ''} };
+            window.askConfirmChoice = (msg, labels, withBackup, without) => { window.__confirms.push(msg); (window.__backupFirst ? withBackup : without)(); };
             window.exportDB = () => { window.__exports++; }; window.ico = () => '';`);
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
     ['js/core/storageAdapter.js', 'js/core/syncModel.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
@@ -109,6 +110,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
         assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'download');
         assert.deepStrictEqual(Object.keys(w2.eval('SyncMeta').dirtySnapshot()), []); assert.match(text(w2, '.account-toast span'), /1 position/);
+        assert.strictEqual(w2.__exports, 0);                                       // aucune sauvegarde téléchargée sans demande
     });
 
     const mkBoth = async opts => {
@@ -132,11 +134,14 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const w2 = await mkBoth({ confirmAnswer: false }); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
         click(w2, '[data-act="strategy:upload"]'); assert.strictEqual(w2.__confirms.length, 1); assert(!w2.localStorage.getItem('chessTrainer_syncIntent'));
     });
-    await t('choix « Récupérer mon compte » : confirmation + sauvegarde JSON automatique, rien n\'est marqué à envoyer', async () => {
-        const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
-        click(w2, '[data-act="strategy:download"]');
-        assert.strictEqual(w2.__confirms.length, 1); assert.strictEqual(w2.__exports, 1);
-        assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'download'); assert.deepStrictEqual(Object.keys(w2.eval('SyncMeta').dirtySnapshot()), []);
+    await t('choix « Récupérer mon compte » : confirmation, sauvegarde locale seulement si demandée, rien n\'est marqué à envoyer', async () => {
+        for (const backupFirst of [true, false]) {
+            const w2 = await mkBoth(); w2.__backupFirst = backupFirst;
+            await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
+            click(w2, '[data-act="strategy:download"]');
+            assert.strictEqual(w2.__confirms.length, 1); assert.strictEqual(w2.__exports, backupFirst ? 1 : 0);
+            assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'download'); assert.deepStrictEqual(Object.keys(w2.eval('SyncMeta').dirtySnapshot()), []);
+        }
     });
     await t('« Plus tard » : fenêtre fermée, aucune intention ; le choix est reproposé à la prochaine ouverture de session', async () => {
         const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
