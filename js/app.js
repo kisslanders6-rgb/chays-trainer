@@ -119,6 +119,8 @@ function setPieceStyle(id) {
     applyPieceSet();
     syncSettingsUI();
     refreshPieces();                       // bascule instantanée sur le plateau
+    initTraining();                        // cartes Blancs / Noirs de l'onglet Entraînement
+    initEndgame();                         // mini-échiquiers du catalogue des finales
 }
 
 (function initSettingsDismiss() {
