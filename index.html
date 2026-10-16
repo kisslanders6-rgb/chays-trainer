@@ -92,6 +92,7 @@
                             </button>
                             <div class="menu hidden" id="rep-menu" role="menu">
                                 <button class="menu-item" role="menuitem" onclick="repMenuAction('new')"><svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire</button>
+                                <button class="menu-item" id="rep-menu-rename" role="menuitem" onclick="repMenuAction('rename')"><svg class="ico"><use href="#i-pencil"/></svg> <span id="rep-menu-rename-label">Renommer le répertoire</span></button>
                                 <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
                                 <div class="menu-sep"></div>
                                 <button class="menu-item" role="menuitem" onclick="repMenuAction('trash')"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></button>
@@ -257,6 +258,7 @@
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()"><svg class="ico"><use href="#i-download"/></svg> Exporter (JSON)</button>
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()"><svg class="ico"><use href="#i-upload"/></svg> Importer (JSON)</button>
                 <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()"><svg class="ico"><use href="#i-upload"/></svg> Importer PGN</button>
+                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportPgn()" title="Toutes les lignes du répertoire actif, Blancs et Noirs"><svg class="ico"><use href="#i-download"/></svg> Exporter PGN</button>
             </div>
             <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
             <button class="panel-close" onclick="closeAdmin()">Fermer</button>
@@ -402,6 +404,19 @@
                 <button class="btn btn-danger" id="confirm-ok-btn">Confirmer</button>
             </div>
         </div>
+    </div>
+
+    <!-- ─── OVERLAY SAISIE DE TEXTE (nouveau répertoire, renommage) ────────── -->
+    <div id="text-overlay" class="overlay hidden">
+        <form class="panel confirm-box text-box" id="text-form" novalidate>
+            <label class="confirm-text" id="text-title" for="text-input"></label>
+            <input class="text-input" id="text-input" type="text" maxlength="60" autocomplete="off" spellcheck="false">
+            <div class="text-error" id="text-error" role="alert"></div>
+            <div class="confirm-actions">
+                <button class="btn" type="button" id="text-cancel-btn">Annuler</button>
+                <button class="btn btn-primary" type="submit" id="text-ok-btn">OK</button>
+            </div>
+        </form>
     </div>
 
     <!-- ─── OVERLAY PROMOTION ─────────────────────────────────────────────── -->

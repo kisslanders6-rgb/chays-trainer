@@ -44,6 +44,42 @@ function closeHelp() { document.getElementById('help-overlay').classList.add('hi
     });
 })();
 
+// ─── SAISIE DE TEXTE (remplace prompt()) ──────────────────────────────────────
+// askText({ title, value?, placeholder?, ok?, validate?(texte) → message d'erreur | '' }, onOk(texte))
+
+function askText(opts, onOk) {
+    const overlay = document.getElementById('text-overlay');
+    const form    = document.getElementById('text-form');
+    const input   = document.getElementById('text-input');
+    const err     = document.getElementById('text-error');
+    document.getElementById('text-title').textContent = opts.title;
+    document.getElementById('text-ok-btn').textContent = opts.ok || 'OK';
+    input.value = opts.value || '';
+    input.placeholder = opts.placeholder || '';
+    err.textContent = '';
+    overlay.classList.remove('hidden');
+    input.focus();
+    input.select();
+
+    const close = () => {
+        overlay.classList.add('hidden');
+        form.onsubmit = null; input.oninput = null; overlay.onmousedown = null; overlay.onkeydown = null;
+        document.getElementById('text-cancel-btn').onclick = null;
+    };
+    form.onsubmit = e => {
+        e.preventDefault();
+        const v = input.value.trim();
+        const msg = !v ? 'Le nom ne peut pas être vide.' : (opts.validate ? opts.validate(v) : '');
+        if (msg) { err.textContent = msg; input.focus(); return; }
+        close();
+        onOk(v);
+    };
+    input.oninput = () => { err.textContent = ''; };
+    document.getElementById('text-cancel-btn').onclick = close;
+    overlay.onmousedown = e => { if (e.target === overlay) close(); };
+    overlay.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+}
+
 // ─── RAPPEL DE SAUVEGARDE (toast) ─────────────────────────────────────────────
 
 let _toastTimer = null;
@@ -176,6 +212,9 @@ function renderRepMenu() {
     document.getElementById('rep-menu-del-label').textContent =
         isDefault ? 'Supprimer (« Général » est protégé)' : `Supprimer « ${currentRepertoire} »`;
     document.getElementById('rep-menu-del').disabled = isDefault;
+    document.getElementById('rep-menu-rename-label').textContent =
+        isDefault ? 'Renommer (« Général » est protégé)' : `Renommer « ${currentRepertoire} »`;
+    document.getElementById('rep-menu-rename').disabled = isDefault;
     updateTrashBadges();                                  // compteur de la Corbeille
 }
 
@@ -196,6 +235,7 @@ function toggleRepMenu() {
 function repMenuAction(action) {
     closeRepMenu();
     if (action === 'new')         createRepertoirePrompt();
+    else if (action === 'rename') renameRepertoirePrompt(currentRepertoire);
     else if (action === 'delete') deleteRepertoirePrompt(currentRepertoire);   // confirmation + protection de « Général »
     else if (action === 'trash')  showTrash();
 }

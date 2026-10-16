@@ -271,6 +271,34 @@ function resetNavCursor() {
     updateNavButtons();
 }
 
+// ─── FEN DE LA POSITION AFFICHÉE ET ANALYSE SUR LICHESS ──────────────────────
+
+// FEN complet de la position affichée (position courante, ou position passée en navigation).
+function displayedFen() {
+    let b = board, t = turn, cr = castlingRights, ep = enPassant;
+    if (navCursor !== -1 && moveHistory.length) {
+        const s = moveHistory[navCursor === NAV_START ? 0 : navCursor + 1];
+        b = s.boardBefore; t = s.turnBefore; cr = s.castlingBefore; ep = s.epBefore;
+    }
+    const rows = [];
+    for (let r = 7; r >= 0; r--) {
+        let row = '', empty = 0;
+        for (let c = 0; c < 8; c++) {
+            const p = b[r * 8 + c];
+            if (!p) empty++;
+            else { if (empty) { row += empty; empty = 0; } row += p; }
+        }
+        rows.push(row + (empty || ''));
+    }
+    const castle = ['K', 'Q', 'k', 'q'].filter(k => cr[k]).join('') || '-';
+    return `${rows.join('/')} ${t} ${castle} ${ep >= 0 ? squareToName(ep) : '-'} 0 1`;
+}
+
+function openLichessAnalysis() {
+    const url = `https://lichess.org/analysis/standard/${encodeURI(displayedFen().replace(/ /g, '_'))}?color=${boardFlipped ? 'black' : 'white'}`;
+    window.open(url, '_blank', 'noopener');
+}
+
 // ─── OVERLAY DE PROMOTION ─────────────────────────────────────────────────────
 
 function showPromotion() {
@@ -510,7 +538,7 @@ function _keyboardAllowed(e) {
     if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return false;
     const gs = document.getElementById('game-screen');
     if (!gs || gs.style.display === 'none' || gs.classList.contains('hidden')) return false;
-    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay', 'settings-overlay', 'trash-overlay']
+    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay', 'settings-overlay', 'trash-overlay', 'text-overlay']
         .every(id => document.getElementById(id).classList.contains('hidden'));
 }
 

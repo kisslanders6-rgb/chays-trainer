@@ -48,10 +48,46 @@ function addRepertoire(name) {
 }
 
 function createRepertoirePrompt() {
-    const name = prompt('Nom du nouveau répertoire (ex : "Défense Sicilienne", "Ruy Lopez") :');
-    if (!name || !name.trim()) return;
-    const clean = addRepertoire(name);
-    if (clean) selectRepertoire(clean);
+    askText({ title: 'Nouveau répertoire', placeholder: 'ex : Défense Sicilienne', ok: 'Créer',
+              validate: n => loadRepertoireList().includes(n) ? 'Ce répertoire existe déjà.' : '' }, name => {
+        const clean = addRepertoire(name);
+        if (clean) selectRepertoire(clean);
+    });
+}
+
+// Renomme un répertoire : ses bases (Blancs / Noirs), ses réponses adverses connues et les éléments
+// de la corbeille qui s'y rattachent. « Général » est protégé (comme pour la suppression).
+// Renvoie le nouveau nom, ou null si le renommage est impossible.
+function renameRepertoire(oldName, newName) {
+    const clean = slugifyRepertoire(newName || '');
+    const list  = loadRepertoireList();
+    if (!clean || clean === oldName || oldName === DEFAULT_REPERTOIRE || list.includes(clean) || !list.includes(oldName)) return null;
+    for (const c of ['w', 'b']) {
+        for (const [from, to] of [[dbKeyFor(oldName, c), dbKeyFor(clean, c)], [oppKeyFor(oldName, c), oppKeyFor(clean, c)]]) {
+            const raw = dataStore.get(from);
+            if (raw === null) continue;
+            if (!dataStore.set(to, raw)) return null;            // stockage plein : on s'arrête avant toute suppression
+        }
+    }
+    for (const c of ['w', 'b']) { dataStore.remove(dbKeyFor(oldName, c)); dataStore.remove(oppKeyFor(oldName, c)); }
+    list[list.indexOf(oldName)] = clean;
+    saveRepertoireList(list);
+    const trash = loadTrash();
+    if (trash.some(it => it.rep === oldName && it.type !== 'repertoire')) {
+        trash.forEach(it => { if (it.rep === oldName && it.type !== 'repertoire') it.rep = clean; });
+        saveTrash(trash);
+    }
+    if (currentRepertoire === oldName) currentRepertoire = clean;
+    return clean;
+}
+
+function renameRepertoirePrompt(name) {
+    if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être renommé.'); return; }
+    askText({ title: 'Renommer le répertoire', value: name, ok: 'Renommer',
+              validate: n => n === name ? 'Choisissez un nom différent.' : loadRepertoireList().includes(n) ? 'Ce nom est déjà utilisé.' : '' }, n => {
+        const clean = renameRepertoire(name, n);
+        if (clean) selectRepertoire(clean);
+    });
 }
 
 // ─── BASE DE DONNÉES (ouvertures) ─────────────────────────────────────────────

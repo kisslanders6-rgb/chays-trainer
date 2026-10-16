@@ -414,6 +414,10 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 .confirm-actions .btn { flex: 1; padding: 11px; font-size: 13px; }
 .confirm-actions .btn-danger { background: var(--err); border-color: var(--err); color: #fff; }
 .confirm-actions .btn-danger:hover { opacity: 0.88; }
+.text-box { align-items: stretch; text-align: left; width: min(360px, calc(100vw - 32px)); }
+.text-input { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg-inset); color: var(--text); font: inherit; font-size: 15px; }
+.text-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.text-error { min-height: 16px; margin-top: -8px; font-size: 12px; font-weight: 600; color: var(--err); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CORRECTIONS GRAND ÉCRAN

@@ -255,3 +255,90 @@ function runPgnImport() {
     if (typeof refreshTree === 'function') refreshTree();
 }
 
+// ─── EXPORT PGN ───────────────────────────────────────────────────────────────
+// Le répertoire actif devient un fichier .pgn : une « partie » par couleur (si elle n'est pas vide),
+// toutes les lignes en variantes. Ligne principale = la branche la plus développée.
+// Les entrées sans chemin connu (anciennes entrées non rattachées) ne peuvent pas être exportées.
+
+function _pgnTree(db) {
+    const root = { kids: new Map(), size: 0 };
+    let skipped = 0;
+    Object.values(db).forEach(e => {
+        if (!e.path || !e.path.length) { skipped++; return; }
+        let n = root;
+        e.path.forEach(u => {
+            if (!n.kids.has(u)) n.kids.set(u, { kids: new Map(), size: 0 });
+            n = n.kids.get(u);
+        });
+    });
+    const size = n => (n.size = [...n.kids.values()].reduce((s, k) => s + 1 + size(k), 0));
+    size(root);
+    return { root, skipped };
+}
+
+const _pgnNum = (ply, force) => ply % 2 === 0 ? `${ply / 2 + 1}. ` : (force ? `${Math.floor(ply / 2) + 1}... ` : '');
+
+// Coups depuis `node` (le moteur est dans la position de `node`), au format PGN avec variantes.
+function _pgnMovetext(node, ply, forceNum) {
+    const kids = [...node.kids.entries()].sort((a, b) => b[1].size - a[1].size);
+    if (!kids.length) return '';
+    const before = _engineState();
+    const [mainUci, mainNode] = kids[0];
+    const out = _pgnNum(ply, forceNum) + _applyUciRaw(mainUci);
+    const afterMain = _engineState();
+    let vars = '';
+    kids.slice(1).forEach(([uci, child]) => {
+        _restoreEngine(before);
+        const san  = _applyUciRaw(uci);
+        const rest = _pgnMovetext(child, ply + 1, false);
+        vars += ` (${_pgnNum(ply, true)}${san}${rest ? ' ' + rest : ''})`;
+    });
+    _restoreEngine(afterMain);
+    const rest = _pgnMovetext(mainNode, ply + 1, !!vars);
+    return out + vars + (rest ? ' ' + rest : '');
+}
+
+function _pgnWrap(text, width = 80) {
+    const lines = [];
+    let cur = '';
+    text.split(' ').forEach(w => {
+        if (cur && cur.length + 1 + w.length > width) { lines.push(cur); cur = w; }
+        else cur = cur ? cur + ' ' + w : w;
+    });
+    if (cur) lines.push(cur);
+    return lines.join('\n');
+}
+
+// Texte PGN d'un répertoire ; { pgn, games, skipped }.
+function repertoirePgn(rep) {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+    const tag  = s => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    let pgn = '', games = 0, skipped = 0;
+    ['w', 'b'].forEach(color => {
+        const t = _pgnTree(readDBFor(rep, color));
+        skipped += t.skipped;
+        if (!t.root.kids.size) return;
+        const moves = _withEngineSnapshot(() => { parseFEN(INIT_FEN); return _pgnMovetext(t.root, 0, false); });
+        const side  = color === 'w' ? 'Blancs' : 'Noirs';
+        pgn += `[Event "${tag(`Répertoire ${rep} (${side})`)}"]\n[Site "Chays Trainer"]\n[Date "${date}"]\n` +
+               `[White "${color === 'w' ? tag(rep) : '?'}"]\n[Black "${color === 'b' ? tag(rep) : '?'}"]\n[Result "*"]\n\n` +
+               _pgnWrap(moves + ' *') + '\n\n';
+        games++;
+    });
+    return { pgn, games, skipped };
+}
+
+function exportPgn() {
+    const { pgn, games, skipped } = repertoirePgn(currentRepertoire);
+    if (!games) { alert(`Le répertoire « ${currentRepertoire} » ne contient aucune ligne exportable.`); return; }
+    const blob = new Blob([pgn], { type: 'application/x-chess-pgn' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `Repertoire_${currentRepertoire.replace(/[^\p{L}\p{N}_-]+/gu, '_')}_${new Date().toISOString().slice(0, 10)}.pgn`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (skipped) setTimeout(() => alert(`${skipped} coup(s) sans ligne connue depuis la position de départ n'ont pas pu être exportés.`), 50);
+}
