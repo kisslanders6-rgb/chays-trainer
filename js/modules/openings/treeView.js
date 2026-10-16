@@ -222,7 +222,7 @@ function renderTree(rebuild) {
         } else if (!r.covered) {
             badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;
         }
-        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${_treeLabel(r)}</span>${badges}</div>`;
+        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${escapeHtml(_treeLabel(r))}</span>${badges}</div>`;
     });
     el.innerHTML = html;
 

@@ -83,7 +83,7 @@ function initTraining() {
     const select = (label, name, rows, cur) => `
         <label class="train-opt">
           <span class="train-opt-label">${label}</span>
-          <select class="train-select" onchange="setTrainingOption('${name}', this.value)">
+          <select class="train-select" data-change="trainingOption" data-arg="${name}">
             ${rows.map(([v, t]) => opt(v, t, cur)).join('')}
           </select>
         </label>`;
@@ -108,6 +108,8 @@ function initTraining() {
             <div class="train-card-sub">${sub}</div></div>`;
     }).join('') + '</div>';
 }
+
+registerActions({ trainingOption: (name, el) => setTrainingOption(name, el.value), startTraining: c => startTraining(c) });
 
 // ─── BOUCLE D'ENTRAÎNEMENT ────────────────────────────────────────────────────
 

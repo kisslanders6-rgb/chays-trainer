@@ -107,7 +107,7 @@ function renderPieceOptions() {
     if (!box) return;
     box.innerHTML = PIECE_SET_IDS.map(id => {
         const s = PIECE_SETS[id];
-        return `<button class="theme-opt piece-opt" data-piece="${id}" onclick="setPieceStyle('${id}')">` +
+        return `<button class="theme-opt piece-opt" data-piece="${id}" data-action="setPieceStyle" data-arg="${id}">` +
                `<span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`;
     }).join('');
 }
@@ -151,8 +151,8 @@ function switchHomeTab(tab) {
 function renderRepertoireList() {
     const list = loadRepertoireList();
     const html = list.map(name =>       // nom échappé : il vient de l'utilisateur (ou d'un autre appareil via la synchro)
-        `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" data-rep="${_esc(name)}" onclick="selectRepertoire(this.dataset.rep)">${_esc(name)}</div>`
-    ).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
+        `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" role="button" tabindex="0" aria-pressed="${name === currentRepertoire}" data-action="selectRepertoire" data-arg="${escapeHtml(name)}">${escapeHtml(name)}</div>`
+    ).join('') + `<div class="repertoire-chip repertoire-chip-new" role="button" tabindex="0" data-action="createRepertoire">+ Nouveau</div>`;
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
 }
 
@@ -275,6 +275,8 @@ function goHome(tab) {
     switchHomeTab(typeof tab === 'string' ? tab : 'play');
     renderRepertoireList();
 }
+
+registerActions({ setPieceStyle, selectRepertoire, createRepertoire: () => createRepertoirePrompt() });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 

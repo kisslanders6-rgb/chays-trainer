@@ -86,7 +86,7 @@ function initStats() {
     if (!rows.length) {
         body.innerHTML = `<div class="empty-tab"><div class="empty-tab-icon">${ico('bar-chart', 'ico-xl')}</div>
             <div>Aucune donnée</div>
-            <div class="empty-tab-sub">Jouez votre répertoire « ${_esc(currentRepertoire)} » avec les ${statsColor === 'w' ? 'Blancs' : 'Noirs'} pour voir apparaître vos statistiques.</div></div>`;
+            <div class="empty-tab-sub">Jouez votre répertoire « ${escapeHtml(currentRepertoire)} » avec les ${statsColor === 'w' ? 'Blancs' : 'Noirs'} pour voir apparaître vos statistiques.</div></div>`;
         return;
     }
 
@@ -113,7 +113,7 @@ function initStats() {
 
     // ── Filtres (la légende de la barre sert de filtre) ──
     const chip = (id, label, n, color) =>
-        `<button class="stats-chip ${id === 'all' ? 'all' : ''} ${statsFilter === id ? 'active' : ''}" style="--c:${color}" aria-pressed="${statsFilter === id}" onclick="setStatsFilter('${id}')">
+        `<button class="stats-chip ${id === 'all' ? 'all' : ''} ${statsFilter === id ? 'active' : ''}" style="--c:${color}" aria-pressed="${statsFilter === id}" data-action="statsFilter" data-arg="${id}">
             <i class="stats-chip-dot"></i>${label} <b>${n}</b></button>`;
     const filters = '<div class="stats-filters">' +
         chip('all', 'Toutes', rows.length, 'var(--accent)') +
@@ -122,8 +122,8 @@ function initStats() {
 
     const sort = `
         <div class="seg seg-sm" role="group" aria-label="Tri">
-          <button class="seg-btn ${statsSort === 'worst' ? 'active' : ''}" onclick="setStatsSort('worst')">Pires d'abord</button>
-          <button class="seg-btn ${statsSort === 'line'  ? 'active' : ''}" onclick="setStatsSort('line')">Ordre du répertoire</button>
+          <button class="seg-btn ${statsSort === 'worst' ? 'active' : ''}" data-action="statsSort" data-arg="worst">Pires d'abord</button>
+          <button class="seg-btn ${statsSort === 'line'  ? 'active' : ''}" data-action="statsSort" data-arg="line">Ordre du répertoire</button>
         </div>`;
 
     // ── Pastilles ──
@@ -135,11 +135,11 @@ function initStats() {
         const label = ok ? '100%' : pct + '%';
         const sub   = ok ? 'de réussite' : "d'erreur";
         return `
-        <div class="stat-badge" style="--c:${_statColor(rate)};--p:${ok ? 100 : pct}" onclick="openStatsPreview('${k}')" title="${_LEVELS[lv].label} · voir la position">
+        <div class="stat-badge" style="--c:${_statColor(rate)};--p:${ok ? 100 : pct}" role="button" tabindex="0" data-action="statsPreview" data-arg="${escapeHtml(k)}" title="${_LEVELS[lv].label} · voir la position">
           <div class="stat-ring"><div class="stat-ring-inner">
             <span class="stat-pct">${label}</span><span class="stat-lbl">${sub}</span>
           </div></div>
-          <div class="stat-move">${_moveLabel(e)}</div>
+          <div class="stat-move">${escapeHtml(_moveLabel(e))}</div>
           <div class="stat-n">${e.failures} erreur${e.failures > 1 ? 's' : ''} / ${e.attempts} essai${e.attempts > 1 ? 's' : ''}</div>
         </div>`;
     }).join('');
@@ -147,6 +147,8 @@ function initStats() {
     body.innerHTML = kpis + bar + filters + sort +
         `<div class="stats-grid">${badges}</div>`;
 }
+
+registerActions({ statsFilter: f => setStatsFilter(f), statsSort: s => setStatsSort(s), statsPreview: k => openStatsPreview(k) });
 
 // Aperçu en lecture seule de la position AVANT mon coup.
 function openStatsPreview(key) {

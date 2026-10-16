@@ -156,7 +156,7 @@ function updateTrashBadges() {
 }
 
 function _trashMsg(text, kind) {
-    document.getElementById('trash-msg').innerHTML = text ? `<div class="pgn-note ${kind}">${_esc(text)}</div>` : '';
+    document.getElementById('trash-msg').innerHTML = text ? `<div class="pgn-note ${kind}">${escapeHtml(text)}</div>` : '';
 }
 
 function showTrash() {
@@ -187,15 +187,15 @@ function renderTrash() {
         const kind = it.type === 'repertoire' ? `${ico('folder')} Répertoire · ${it.count} coup${it.count > 1 ? 's' : ''}`
                    : it.type === 'branch'     ? `${ico('git-branch')} Branche · ${it.count} coups`
                                               : `${ico('pawn')} Coup`;
-        const where = it.type === 'repertoire' ? '' : ` · ${_esc(it.rep)} (${side})`;
+        const where = it.type === 'repertoire' ? '' : ` · ${escapeHtml(it.rep)} (${side})`;
         return `<div class="trash-item">
             <div class="trash-info">
-                <div class="trash-title">${_esc(it.label)}</div>
+                <div class="trash-title">${escapeHtml(it.label)}</div>
                 <div class="trash-meta">${kind}${where}<br>Supprimé le ${fmt(it.deletedAt)} · purge dans ${days} j</div>
             </div>
             <div class="trash-actions">
-                <button class="btn" onclick="onTrashRestore('${it.id}')">Restaurer</button>
-                <button class="btn btn-danger" onclick="onTrashDelete('${it.id}')">Supprimer définitivement</button>
+                <button class="btn" data-action="trashRestore" data-arg="${escapeHtml(it.id)}">Restaurer</button>
+                <button class="btn btn-danger" data-action="trashDelete" data-arg="${escapeHtml(it.id)}">Supprimer définitivement</button>
             </div>
         </div>`;
     }).join('');
@@ -235,3 +235,5 @@ function emptyTrash() {
         renderTrash();
     });
 }
+
+registerActions({ trashRestore: id => onTrashRestore(id), trashDelete: id => onTrashDelete(id) });

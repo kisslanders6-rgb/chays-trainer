@@ -116,8 +116,8 @@ function renderBackupStatus() {
             <span id="backup-persist"></span>
           </div>
           <div class="backup-actions">
-            <button class="btn ${urgent ? 'btn-primary' : ''}" onclick="exportDB(); renderBackupStatus();">${ico('download')} Exporter maintenant</button>
-            <button class="btn" onclick="importDBPrompt()">${ico('upload')} Importer</button>
+            <button class="btn ${urgent ? 'btn-primary' : ''}" data-action="backupExport">${ico('download')} Exporter maintenant</button>
+            <button class="btn" data-action="importDBPrompt">${ico('upload')} Importer</button>
           </div>
           <div class="backup-note">Les données vivent dans ce navigateur : vider le cache ou les données du site les efface, même si le stockage est protégé.</div>
         </div>`;
@@ -133,7 +133,7 @@ async function _fillPersistence() {
     try { ok = await navigator.storage.persisted(); } catch (e) { return; }
     el.innerHTML = ok
         ? `${ico('check')} Stockage protégé par le navigateur`
-        : `${ico('alert-triangle')} Stockage non protégé · <button class="toast-link" onclick="requestPersistence()">Protéger</button>`;
+        : `${ico('alert-triangle')} Stockage non protégé · <button class="toast-link" data-action="requestPersistence">Protéger</button>`;
 }
 
 async function requestPersistence() {
@@ -171,4 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // 3. Rappel éventuel au lancement.
     checkBackupOnStart();
+});
+
+registerActions({
+    backupExport: () => { exportDB(); renderBackupStatus(); },
+    importDBPrompt: () => importDBPrompt(),
+    requestPersistence: () => requestPersistence()
 });

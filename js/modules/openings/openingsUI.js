@@ -124,7 +124,7 @@ function _paintMovesBar(active) {
     let html = '';
     moveHistory.forEach((m, i) => {
         if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
-        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${m.san}</span> `;
+        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${escapeHtml(m.san)}</span> `;
     });
     bar.innerHTML = html;
     if (typeof syncTreeToPosition === 'function') syncTreeToPosition();     // l'arbre suit la position affichée
