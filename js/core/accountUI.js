@@ -1,7 +1,7 @@
 /**
  * core/accountUI.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 4 : interface du compte. Autonome : crée elle-même son bouton « Compte » (barre du haut)
+ * Interface du compte. Autonome : crée elle-même son bouton « Compte » (barre du haut)
  * et sa fenêtre — aucune modification de index.html (hors balises <script>/<link>) ni d'app.js.
  * Rien n'apparaît si le service n'est pas configuré (cloudConfig.js vide).
  *
@@ -9,7 +9,7 @@
  *        compte connecté · première synchronisation (choix fusionner / envoyer / récupérer).
  *
  * Choix de première synchronisation → SyncIntent (auth.js) + événement window « chays-sync-intent »,
- * que le moteur de synchro (étape 5) consommera. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
+ * consommés par syncEngine.js. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
  * avec niveau = 'ok' | 'busy' | 'offline' | 'error'.
  * Prérequis : auth.js, cloudClient.js, cloudAdapter.js ; au besoin askConfirm (openingsLogic.js),
  * exportDB (storage.js) et ico (icons.js), appelés seulement à l'exécution.

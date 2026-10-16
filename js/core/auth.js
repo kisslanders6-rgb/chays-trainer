@@ -1,7 +1,7 @@
 /**
  * core/auth.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 4 : comptes utilisateurs (Supabase Auth / GoTrue), sans dépendance : appels fetch.
+ * Comptes utilisateurs (Supabase Auth / GoTrue), sans dépendance : appels fetch.
  * Aucune interface ici (cf. accountUI.js). Sans configuration (cloudConfig.js vide) ou sans
  * compte connecté, rien n'est installé : l'application reste en stockage local pur.
  *
@@ -18,7 +18,7 @@
 
 'use strict';
 
-// Choix fait à la première connexion sur cet appareil (consommé par le moteur de synchro, étape 5) :
+// Choix fait à la première connexion sur cet appareil (consommé par syncEngine.js) :
 //   { user, strategy: 'merge' | 'upload' | 'download', at }
 const SyncIntent = {
     KEY: 'chessTrainer_syncIntent',

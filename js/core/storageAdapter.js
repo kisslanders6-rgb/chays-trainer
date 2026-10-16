@@ -1,10 +1,10 @@
 /**
  * core/storageAdapter.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 1 du stockage hybride : TOUS les accès au stockage passent par `dataStore`.
- * Aujourd'hui l'adaptateur est LocalStorageAdapter (comportement strictement identique
- * à l'ancien code). Plus tard, un autre adaptateur (cloud, préfixe par compte…) pourra
- * être branché avec dataStore.setAdapter(...) sans toucher aux modules appelants.
+ * TOUS les accès au stockage passent par `dataStore`. Par défaut l'adaptateur est
+ * LocalStorageAdapter ; quand un compte est connecté, cloudAdapter.js le remplace par un
+ * adaptateur qui marque les clés synchronisables à envoyer (dataStore.setAdapter(...)),
+ * sans que les modules appelants n'aient à changer.
  *
  * Contrat d'un adaptateur (SYNCHRONE — le reste de l'application ne sait pas attendre) :
  *   get(key)         → string | null   (jamais d'exception ; null si absent ou erreur)

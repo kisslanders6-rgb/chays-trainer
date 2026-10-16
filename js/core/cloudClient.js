@@ -1,9 +1,9 @@
 /**
  * core/cloudClient.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 3 : client bas niveau de la table `documents` (Supabase / PostgREST), sans dépendance :
+ * Client bas niveau de la table `documents` (Supabase / PostgREST), sans dépendance :
  * simples appels fetch. Ne touche NI au stockage local NI à l'interface ; l'authentification
- * (obtenir / rafraîchir le jeton) est l'étape 4 — ici on reçoit une session via setSession().
+ * (obtenir / rafraîchir le jeton) est dans auth.js, qui fournit la session via setSession().
  *
  * Toutes les méthodes renvoient une Promise qui ne rejette JAMAIS :
  *   { ok: true, … }

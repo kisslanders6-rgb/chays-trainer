@@ -52,6 +52,6 @@ document.getElementById('go').onclick = async () => {
     check((await CloudClient.deleteDoc(K, 2)).ok === true, 'Suppression avec la bonne version');
     check((await CloudClient.getDoc(K)).doc === null, 'Ligne bien supprimée');
 
-    log(true, failed ? failed + ' vérification(s) en échec — voir ci-dessus.' : 'Tout fonctionne : le backend est prêt pour l\'étape 4.');
+    log(true, failed ? failed + ' vérification(s) en échec — voir ci-dessus.' : 'Tout fonctionne : le backend est prêt.');
 };
 </script></body></html>

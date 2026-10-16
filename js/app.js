@@ -69,7 +69,7 @@ function syncSettingsUI() {
     slider.value    = Math.round(appSettings.volume * 100);
     slider.disabled = !appSettings.sound;
     document.getElementById('set-volume-val').textContent = slider.value + ' %';
-        document.querySelectorAll('.theme-opt[data-board]').forEach(b =>
+    document.querySelectorAll('.theme-opt[data-board]').forEach(b =>
         b.classList.toggle('active', b.dataset.board === appSettings.boardTheme));
     document.querySelectorAll('.piece-opt').forEach(b =>
         b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
@@ -148,10 +148,9 @@ function switchHomeTab(tab) {
 
 function renderRepertoireList() {
     const list = loadRepertoireList();
-    const html = list.map(name => {
-        const esc = name.replace(/'/g, "\\'");
-        return `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" onclick="selectRepertoire('${esc}')">${name}</div>`;
-    }).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
+    const html = list.map(name =>       // nom échappé : il vient de l'utilisateur (ou d'un autre appareil via la synchro)
+        `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" data-rep="${_esc(name)}" onclick="selectRepertoire(this.dataset.rep)">${_esc(name)}</div>`
+    ).join('') + `<div class="repertoire-chip repertoire-chip-new" onclick="createRepertoirePrompt()">+ Nouveau</div>`;
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
 }
 
@@ -283,6 +282,5 @@ function goHome(tab) {
     purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
     updateTrashBadges();
-    loadTheme();
     renderPieceOptions();
 })();

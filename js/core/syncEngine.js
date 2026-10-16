@@ -1,7 +1,7 @@
 /**
  * core/syncEngine.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 5 : moteur de synchronisation. Ne fait rien sans compte connecté (stockage local pur).
+ * Moteur de synchronisation. Ne fait rien sans compte connecté (stockage local pur).
  *
  * Principe : pour chaque document (clé synchronisable), fusion à trois points
  *   base (dernière version synchronisée) · local · distant      → SyncModel.merge()

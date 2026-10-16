@@ -1,9 +1,8 @@
 /**
  * core/syncModel.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 2 du stockage hybride : MODÈLE DE DONNÉES ET RÈGLES DE FUSION.
- * Fonctions PURES (aucun DOM, aucun réseau, aucun accès au stockage) — pas encore branchées
- * dans l'application : ce fichier ne change donc rien à son comportement.
+ * MODÈLE DE DONNÉES ET RÈGLES DE FUSION du stockage hybride (utilisé par syncEngine.js).
+ * Fonctions PURES : aucun DOM, aucun réseau, aucun accès au stockage.
  *
  * Unité de synchronisation = une clé de stockage (un « document » JSON).
  *   chessTrainer_repertoires     'list'      noms des répertoires

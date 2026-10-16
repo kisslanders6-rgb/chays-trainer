@@ -1,4 +1,4 @@
-// Faux backend Supabase (GoTrue + PostgREST) en mémoire, partagé par les tests de l'étape 4.
+// Faux backend Supabase (GoTrue + PostgREST) en mémoire, partagé par les tests de compte et de synchro.
 module.exports = function makeBackend(opts) {
     opts = Object.assign({ confirmEmail: false, expiresIn: 3600 }, opts);
     const users = new Map(), sessions = new Map(), docs = new Map();      // email → user ; access → user ; user id → Map(key → row)

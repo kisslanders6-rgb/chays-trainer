@@ -1,7 +1,7 @@
 /**
  * core/cloudAdapter.js
  * ──────────────────────────────────────────────────────────────────────────
- * Étape 3 : suivi local des changements à synchroniser. Aucun réseau ici.
+ * Suivi local des changements à synchroniser. Aucun réseau ici.
  *
  *   SyncMeta               état de synchro de CET appareil (local, jamais synchronisé) :
  *                            owner     compte auquel appartiennent ces données
@@ -13,7 +13,7 @@
  *   installSyncingAdapter  à appeler quand un compte est connecté.
  *   uninstallSyncingAdapter retour au stockage local pur (comportement d'origine).
  *
- * Règle pour le moteur de synchro (étape 5) : les données reçues du serveur s'écrivent via
+ * Règle pour le moteur de synchro (syncEngine.js) : les données reçues du serveur s'écrivent via
  * LocalStorageAdapter (qui ne marque rien), puis SyncMeta.setBase / setVersion.
  * Prérequis : storageAdapter.js (LocalStorageAdapter, dataStore) et syncModel.js (SyncModel).
  */

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
---  Chays Trainer — schéma Supabase (étape 3)
+--  Chays Trainer — schéma Supabase
 --  À coller dans : Supabase → SQL Editor → New query → Run.   Rejouable sans risque.
 --
 --  Une ligne = un « document » synchronisé (une clé de stockage : openingDB_Général_w, …).

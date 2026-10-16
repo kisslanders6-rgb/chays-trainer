@@ -633,7 +633,7 @@ function _adminRow(key, e, inputId, prefix) {
 function renderAdminEntries() {
     const el   = document.getElementById('admin-entries');
     const keys = Object.keys(openingDB);
-    const info = `<div class="panel-sub">Répertoire actif : <strong style="color:var(--accent)">${currentRepertoire}</strong> · couleur <strong>${playerColor === 'w' ? 'Blancs' : 'Noirs'}</strong>. La base est sauvegardée dans ce navigateur (localStorage) et persiste après fermeture, tant que le cache n'est pas vidé.</div>`;
+    const info = `<div class="panel-sub">Répertoire actif : <strong style="color:var(--accent)">${_esc(currentRepertoire)}</strong> · couleur <strong>${playerColor === 'w' ? 'Blancs' : 'Noirs'}</strong>. La base est sauvegardée dans ce navigateur (localStorage) et persiste après fermeture, tant que le cache n'est pas vidé.</div>`;
 
     if (!keys.length) {
         el.innerHTML = info + "<div class=\"empty-note\">Base vide pour ce répertoire — jouez des parties pour l'enrichir.</div>";

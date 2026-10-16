@@ -1,0 +1,9 @@
+# Système / éditeur
+.DS_Store
+.idea/
+
+# Sauvegardes personnelles exportées depuis l'application
+ChaysTrainer_backup_*.json
+
+# Dépendances des tests (jsdom)
+node_modules/

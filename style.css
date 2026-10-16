@@ -845,147 +845,8 @@ html[data-board="night"][data-theme="light"] {
 .piece-preview > span:last-child  { background: var(--board-dark); }
 .piece-preview svg { width: 88%; height: 88%; display: block; pointer-events: none; }
 
-/* ─── ICÔNES ─────────────────────────────────────────────────────────────── */
-.ico {
-    width: 1.15em; height: 1.15em;
-    fill: none; stroke: currentColor;
-    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-    flex-shrink: 0; display: inline-block; vertical-align: -0.2em;
-    pointer-events: none;
-}
-.ico-xl { width: 40px; height: 40px; stroke-width: 1.6; }
-
-/* Pièces du style actif utilisées comme glyphes (remplacent ♔ ♚) */
-.glyph { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }
-.glyph svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); pointer-events: none; }
-.color-btn .glyph       { width: 1em; height: 1em; }          /* taille = font-size du bouton */
-.train-card-icon .glyph { width: 1em; height: 1em; }
-.color-badge .glyph     { width: 1.35em; height: 1.35em; vertical-align: -0.35em; }
-
-/* Conteneurs qui portent désormais une icône + du texte */
-.tab-title, .seg-btn, .side-tab, .color-badge, .panel-close {
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-}
-.tab-title  { display: flex; gap: 9px; }
-.panel-close { display: flex; }
-.empty-tab-icon { display: flex; color: var(--text-dim); }
-.panel-x .ico { width: 15px; height: 15px; }
-.toast-x .ico { width: 14px; height: 14px; }
-.help-icon { color: var(--accent); }
-.help-icon .ico { width: 22px; height: 22px; }
-.help-text .ico { width: 1em; height: 1em; vertical-align: -0.15em; color: var(--accent); }
-.tree-forget .ico { width: 13px; height: 13px; }
-.tree-pill, .tree-warn-text, .tree-ok-text { display: inline-flex; align-items: center; gap: 4px; }
-.tree-pill .ico { width: 12px; height: 12px; }
-.trash-meta .ico { width: 13px; height: 13px; vertical-align: -0.2em; }
-
-/* ─── BOUTONS : gabarit commun avec icône ───────────────────────────────── */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
-.btn:disabled { cursor: default; transform: none; box-shadow: var(--shadow-sm); }
-.btn:disabled:hover { background: var(--surface); border-color: var(--border); color: var(--text-muted); }
-.btn:focus-visible, .panel-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* ─── RANGÉE PRINCIPALE : ‹ [ action principale ] › ─────────────────────── */
-.controls.controls-main { display: flex; gap: 8px; margin-bottom: 10px; }
-.controls-main .btn { min-height: 46px; font-size: 13.5px; }
-.controls-main .btn-grow { flex: 1 1 0; }
-.controls-main .btn-nav  { flex: 0 0 58px; padding: 10px 0; }
-.controls-main .btn-nav .ico { width: 20px; height: 20px; }
-
-/* ─── ACTIONS SECONDAIRES : icône au-dessus d'un libellé court ──────────── */
-.controls.controls-tools { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
-.btn-tool {
-    flex: 1 1 0; max-width: 138px;
-    flex-direction: column; gap: 5px;
-    padding: 9px 4px 8px;
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px;
-    background: transparent; border-color: transparent; box-shadow: none;
-}
-.btn-tool .ico { width: 20px; height: 20px; }
-.btn-tool:hover { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow-sm); }
-.btn-tool.is-exit:hover { color: var(--err); border-color: var(--err); }
-
-/* ─── MOBILE ─────────────────────────────────────────────────────────────── */
-@media (max-width: 599px) {
-    .controls-main .btn      { min-height: 52px; font-size: 14.5px; }
-    .controls-main .btn-nav  { flex-basis: 60px; }
-    .btn-tool                { min-height: 58px; max-width: none; font-size: 12px; }
-    .btn-tool .ico           { width: 22px; height: 22px; }
-}
-
-/* ─── STATISTIQUES ───────────────────────────────────────────────────────── */
-.stats-kpis { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.stats-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
-.stats-kpi-n { font-size: 26px; font-weight: 800; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
-.stats-kpi-l { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
-
-/* Barre de répartition : la largeur de chaque segment suit le nombre de positions */
-.stats-bar { width: 100%; height: 10px; display: flex; gap: 3px; }
-.stats-bar-seg { min-width: 8px; border-radius: 5px; background: var(--c); }
-
-/* Légende = filtres */
-.stats-filters { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.stats-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, box-shadow .15s, color .15s; }
-.stats-chip b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
-.stats-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
-.stats-chip.all .stats-chip-dot { display: none; }
-.stats-chip:hover { border-color: var(--c); }
-.stats-chip.active { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); color: var(--text); }
-.stats-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.seg-sm .seg-btn { padding: 5px 14px; font-size: 12px; }
-
-@media (max-width: 599px) {
-    .stats-kpi-n { font-size: 22px; }
-    .stats-chip  { padding: 9px 14px; }
-    .seg-sm .seg-btn { padding: 8px 12px; }
-}
-
-/* ─── SAUVEGARDE ─────────────────────────────────────────────────────────── */
-.backup-card { --c: var(--ok); display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1.5px solid var(--c); border-radius: 14px; background: color-mix(in srgb, var(--c) 8%, var(--surface)); }
-.backup-card.lv-empty  { --c: var(--text-dim); }
-.backup-card.lv-warn   { --c: #d9a21b; }
-.backup-card.lv-danger { --c: var(--err); }
-.backup-head { display: flex; align-items: flex-start; gap: 12px; }
-.backup-ico { display: flex; color: var(--c); }
-.backup-ico .ico { width: 26px; height: 26px; }
-.backup-title { font-size: 14px; font-weight: 800; color: var(--text); }
-.backup-sub { margin-top: 2px; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
-.backup-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-dim); }
-.backup-meta .ico { width: 13px; height: 13px; }
-.backup-meta .toast-link { font-size: 12px; }
-.backup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.backup-actions .btn { flex: 1 1 140px; min-height: 40px; }
-.backup-note { font-size: 11.5px; line-height: 1.5; color: var(--text-dim); }
-
-/* Pastille d'alerte sur le bouton ⚙ de la barre du haut */
-.theme-toggle[data-backup-dot] { position: relative; }
-.theme-toggle[data-backup-dot].has-alert::after { content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--err); border: 2px solid var(--surface); }
-.theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }
-
-:root                { --logo-color: var(--accent); }
-[data-theme="light"] { --logo-color: var(--accent-bright); }   /* mode sombre : un cran plus clair, meilleur contraste */
-
-/* Si le navigateur ne gère pas les masques, le PNG d'origine reste affiché. */
-@supports ((-webkit-mask-image: url("a.png")) or (mask-image: url("a.png"))) {
-    img.is-tinted {
-        background-color: var(--logo-color);
-        -webkit-mask: var(--tint-src) center / contain no-repeat;
-                mask: var(--tint-src) center / contain no-repeat;
-        object-fit: none;
-        object-position: -9999px 0;          /* masque les pixels d'origine ; seule la teinte reste */
-        transition: background-color .2s;
-    }
-}
-
-/* ═════ DEBUT : STYLES AJOUTES (icônes, boutons, stats, sauvegarde, logos, pièces, échiquiers) ═════
-   Si une ancienne version de ce bloc est déjà dans style.css, supprime tout ce qui est entre
-   DEBUT et FIN avant de coller celle-ci. */
-
 /* ═══════════════════════════════════════════════════════════════════════════
-   À AJOUTER À LA FIN DE style.css
-   Étape 1 : icônes SVG (remplacent les emojis)
-   Étape 2 : hiérarchie des boutons de l'écran de jeu
+   ICÔNES SVG ET BOUTONS DE L'ÉCRAN DE JEU
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── ICÔNES ─────────────────────────────────────────────────────────────── */
@@ -1057,9 +918,7 @@ html[data-board="night"][data-theme="light"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   À AJOUTER À LA FIN DE style.css (après style-additions.css)
-   Étape 3 : statistiques — résumé, répartition, filtres, tri
-   Étape 4 : sauvegarde visible — carte dans les Paramètres + pastille sur ⚙
+   STATISTIQUES ET CARTE DE SAUVEGARDE
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── STATISTIQUES ───────────────────────────────────────────────────────── */
@@ -1113,7 +972,6 @@ html[data-board="night"][data-theme="light"] {
 .theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   À AJOUTER À LA FIN DE style.css
    Logos PNG teintés selon le thème (le PNG sert de masque, sa couleur d'origine
    n'est jamais affichée). Activé par <img data-tint> + icons.js.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1238,8 +1096,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     .controls { max-width: none; }
 }
 
-/* ═════ FIN : STYLES MOBILE ═════ */
-
 /* ─── MENU « ⋮ » DES RÉPERTOIRES (accueil, onglet Jouer) ─────────────────── */
 .repertoire-row { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
 .repertoire-row::before { content: ''; flex: 0 0 36px; }                 /* équilibre le bouton : les badges restent centrés */
@@ -1265,53 +1121,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 @media (hover: none) { .menu-item:hover:not(:disabled) { background: transparent; } }
 
-/* ═════ À AJOUTER À LA FIN DE style.css — module Finales ═════ */
-
-/* ─── Accueil : catalogue ─────────────────────────────────────────────────── */
-#endgame-panel { width: 100%; display: flex; flex-direction: column; gap: 26px; text-align: left; }
-.eg-section-head { margin-bottom: 12px; }
-.eg-section-title { font-size: 15px; font-weight: 800; color: var(--text); }
-.eg-section-desc  { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
-.eg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-.eg-card { display: flex; flex-direction: column; gap: 10px; padding: 12px; text-align: left; font-family: inherit; color: inherit; cursor: pointer;
-           background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm);
-           transition: transform .15s, border-color .15s, box-shadow .15s; }
-.eg-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: var(--shadow); }
-.eg-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.eg-mini { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--board-border); }
-.eg-sq { display: flex; align-items: center; justify-content: center; font-style: normal; }
-.eg-sq.l { background: var(--board-light); }
-.eg-sq.d { background: var(--board-dark); }
-.eg-sq img { width: 94%; height: 94%; display: block; pointer-events: none; }
-.eg-card-title { font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.25; }
-.eg-card-goal  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.eg-card-meta  { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; min-height: 22px; }
-.eg-lvl { font-size: 11px; letter-spacing: 2px; color: var(--accent); }
-.eg-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--text-muted); }
-.eg-badge.ok { border-color: var(--ok); color: var(--ok); }
-.eg-badge .ico { width: 12px; height: 12px; }
-
-/* ─── Écran de jeu : carte d'objectif ─────────────────────────────────────── */
-.endgame-card { order: -1; width: 100%; max-width: 580px; padding: 12px 16px; margin-bottom: 10px; background: var(--surface);
-                border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); transition: border-color .2s; }
-.endgame-card.is-ok  { border-color: var(--ok); }
-.endgame-card.is-err { border-color: var(--err); }
-.eg-card-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
-.eg-title { margin-top: 4px; font-size: 16px; font-weight: 800; color: var(--text); }
-.eg-goal  { font-size: 13px; color: var(--accent); font-weight: 700; margin-top: 2px; }
-.eg-meter { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
-.eg-meter b { color: var(--text); }
-.eg-result { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.45; font-weight: 600; border: 1px solid var(--c); color: var(--c); background: color-mix(in srgb, var(--c) 8%, var(--surface)); }
-.eg-result.ok  { --c: var(--ok); }
-.eg-result.err { --c: var(--err); }
-.eg-theory { margin-top: 10px; font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
-.eg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.eg-actions .btn { flex: 1 1 130px; min-height: 42px; }
-
-@media (min-width: 920px) { .endgame-card { max-width: none; } }
-@media (max-width: 599px) { .eg-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .eg-card { padding: 10px; } }
-
-/* ═════ DEBUT : MODULE FINALES (ne pas modifier entre DEBUT et FIN) ═════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE FINALES
+   ═══════════════════════════════════════════════════════════════════════════ */
 /* ─── Accueil : catalogue ─────────────────────────────────────────────────── */
 #endgame-panel { width: 100%; display: flex; flex-direction: column; gap: 26px; text-align: left; }
 .eg-section-head { margin-bottom: 12px; }
@@ -1360,9 +1172,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 @media (min-width: 920px) { .endgame-card { max-width: none; } }
 @media (max-width: 599px) { .eg-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .eg-card { padding: 10px; } }
-/* ═════ FIN : MODULE FINALES ═════ */
 
-/* ═════ DEBUT : THEMES 3x3 (ne pas modifier entre DEBUT et FIN) ═════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THÈMES D'ÉCHIQUIER ET DE PIÈCES (grilles 3 × 3)
+   ═══════════════════════════════════════════════════════════════════════════ */
 #piece-options, #board-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* 3 lignes de 3 */
 
 /* ─── Échiquier « Violet » (clair / violet) ─────────────────────────────── */
@@ -1392,9 +1205,9 @@ html[data-piece="chrome"] .glyph img, html[data-piece="chrome"] .eg-sq img, .pie
 html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .drag-ghost img { opacity: 0; }
 .piece-opt[data-piece="blindfold"] .piece-preview img { opacity: .15; }
 
-/* ═════ FIN : THEMES 3x3 ═════ */
-
-/* ═════ DEBUT : ENTRAÎNEMENT — options, bouton Solution, surbrillance ═════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENTRAÎNEMENT — options, bouton Solution, surbrillance
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── Options au-dessus des cartes Blancs / Noirs ─────────────────────────── */
 #training-panel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 22px; }
@@ -1458,5 +1271,3 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     .train-select { font-size: 15px; }
     .train-solution-btn { right: 10px; min-height: 52px; font-size: 14.5px; }
 }
-
-/* ═════ FIN : ENTRAÎNEMENT ═════ */
