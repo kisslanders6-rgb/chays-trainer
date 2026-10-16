@@ -7,7 +7,7 @@ const E = (move, a, f, extra = {}) => Object.assign({ move, san: move, attempts:
 const DB = 'openingDB_Général_w', OPP = 'openingOpp_Général_w';
 
 t('portée : clés synchronisées vs locales', () => {
-    ['chessTrainer_repertoires', 'chessTrainer_trash', 'chessTrainer_endgames', 'chessTrainer_activity', DB, OPP].forEach(k => assert(S.isSynced(k), k));
+    ['chessTrainer_repertoires', 'chessTrainer_trash', 'chessTrainer_endgames', 'chessTrainer_activity', 'chessTrainer_prefs', DB, OPP].forEach(k => assert(S.isSynced(k), k));
     ['chessTrainer_theme', 'chessTrainer_settings', 'chessTrainer_backupState', 'chessTrainer_backupNag',
      'chessTrainer.trainingSettings'].forEach(k => assert(!S.isSynced(k), k));
 });
@@ -29,6 +29,15 @@ t('journal d\'activité : compteurs par jour additionnés, jours supprimés prop
     const r = S.merge(K, { d1: { a: 2, f: 1 }, d0: { a: 1, f: 0 } }, { d1: { a: 5, f: 2 } , d0: { a: 1, f: 0 } }, { d1: { a: 3, f: 1 }, d2: { a: 4, f: 0 } });
     assert.deepStrictEqual(r, { d1: { a: 6, f: 2 }, d2: { a: 4, f: 0 } });
     assert.deepStrictEqual(S.merge(K, { d0: { a: 1, f: 0 } }, {}, { d0: { a: 1, f: 0 } }), {});
+});
+t('préférences : le choix le plus récent l\'emporte, champ par champ', () => {
+    const K = 'chessTrainer_prefs';
+    const b = { pieceSet: { v: 'merida', at: 1 }, boardTheme: { v: 'classic', at: 1 } };
+    const l = { pieceSet: { v: 'chrome', at: 5 }, boardTheme: { v: 'classic', at: 1 } };
+    const r = { pieceSet: { v: 'fantasy', at: 3 }, boardTheme: { v: 'walnut', at: 4 }, arrowStyle: { v: 'contour', at: 2 } };
+    const x = S.merge(K, b, l, r);
+    assert.deepStrictEqual(x, { arrowStyle: { v: 'contour', at: 2 }, boardTheme: { v: 'walnut', at: 4 }, pieceSet: { v: 'chrome', at: 5 } });
+    assert.deepStrictEqual(S.merge(K, b, r, l), x);
 });
 t('un seul côté a changé → ce côté', () => {
     const b = { p: E('e2e4', 3, 1) };
@@ -107,9 +116,10 @@ const gen = {
     list:  () => ['Général', 'A', 'B', 'C'].filter((x, i) => i === 0 || rnd(2)),
     trash: () => ['a', 'b', 'c'].filter(() => rnd(2)).map(id => ({ id, deletedAt: rnd(9), count: rnd(4) + 1, type: 'branch', data: {} })),
     endgames: () => { const o = {}; ['x', 'y'].forEach(k => { if (rnd(2)) o[k] = { tries: rnd(5), wins: rnd(3), perfect: !!rnd(2), best: rnd(8), last: rnd(9) }; }); return o; },
+    prefs: () => { const o = {}; ['pieceSet', 'boardTheme'].forEach(k => { if (rnd(3)) o[k] = { v: pick(['a', 'b', 'c']), at: rnd(4) }; }); return o; },
     activity: () => { const o = {}; ['d1', 'd2', 'd3'].forEach(k => { if (rnd(2)) { const a = rnd(6); o[k] = { a, f: rnd(a + 1) }; } }); return o; }
 };
-const keyOf = { db: DB, opp: OPP, list: 'chessTrainer_repertoires', trash: 'chessTrainer_trash', endgames: 'chessTrainer_endgames', activity: 'chessTrainer_activity' };
+const keyOf = { db: DB, opp: OPP, list: 'chessTrainer_repertoires', trash: 'chessTrainer_trash', endgames: 'chessTrainer_endgames', activity: 'chessTrainer_activity', prefs: 'chessTrainer_prefs' };
 Object.keys(keyOf).forEach(kind => t(`propriétés (${kind}) : symétrie, idempotence, convergence × 400`, () => {
     const key = keyOf[kind];
     for (let i = 0; i < 400; i++) {

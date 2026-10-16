@@ -48,6 +48,8 @@ Les données restent dans le navigateur (`localStorage`). Toutes les lectures et
 2. Renseignez `url` et `anonKey` dans `js/core/cloudConfig.js`. Cette clé est publique : la sécurité repose sur les règles RLS du schéma. N'y mettez jamais la clé `service_role`.
 3. Pour vérifier la connexion, ouvrez `tests/cloud-smoke.html` (servi en HTTP).
 
+Sont synchronisés : répertoires, statistiques et planning de révision, corbeille, progression des finales, journal d'activité, ainsi que le thème de l'échiquier, le style des pièces et celui des flèches (le choix le plus récent l'emporte). Le mode clair / sombre et les sons restent propres à chaque appareil.
+
 Sans configuration, le bouton « Compte » n'apparaît pas et l'application fonctionne entièrement en local.
 
 ## Tests

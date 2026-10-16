@@ -166,6 +166,18 @@ function setArrowStyle(id) {
     if (typeof renderAnnotations === 'function') renderAnnotations();
 }
 
+// Préférences reçues d'un autre appareil (synchro) : appSettings est déjà à jour (reloadSyncedPrefs),
+// on redessine tout ce qui en dépend.
+function applySyncedPrefs() {
+    applyBoardTheme();
+    applyPieceSet();
+    syncSettingsUI();
+    refreshPieces();
+    initTraining();
+    initEndgame();
+    if (typeof renderAnnotations === 'function') renderAnnotations();
+}
+
 function setPieceStyle(id) {
     if (!PIECE_SET_IDS.includes(id)) return;
     appSettings.pieceSet = id;

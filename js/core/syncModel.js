@@ -11,7 +11,8 @@
  *   chessTrainer_trash           'trash'     [{ id, type, deletedAt, … }]
  *   chessTrainer_endgames        'endgames'  exercice → { tries, wins, perfect, best, last }
  *   chessTrainer_activity        'activity'  jour (AAAA-MM-JJ) → { a: essais, f: erreurs }
- * Tout le reste (thème, sons, pièces, échiquier, options d'entraînement, état de sauvegarde…)
+ *   chessTrainer_prefs           'prefs'     préférence → { v: valeur, at: date du choix } (échiquier, pièces, flèches)
+ * Tout le reste (mode clair / sombre, sons, options d'entraînement, état de sauvegarde…)
  * reste LOCAL à l'appareil.
  *
  * Fusion À TROIS POINTS : merge(base, local, remote)
@@ -36,6 +37,7 @@ const SyncModel = (function () {
         if (key === 'chessTrainer_trash')       return 'trash';
         if (key === 'chessTrainer_endgames')    return 'endgames';
         if (key === 'chessTrainer_activity')    return 'activity';
+        if (key === 'chessTrainer_prefs')       return 'prefs';
         if (typeof key === 'string' && key.startsWith('openingDB_'))  return 'db';
         if (typeof key === 'string' && key.startsWith('openingOpp_')) return 'opp';
         return null;
@@ -173,8 +175,16 @@ const SyncModel = (function () {
     }
     const mergeActivity = (b, l, r) => mergeMap(b, l, r, mergeDay);
 
+    // ─── Préférences d'affichage : le choix le plus récent l'emporte, champ par champ ──
+    function mergePref(b, l, r) {
+        const a = num(l.at), c = num(r.at);
+        if (a !== c) return clone(a > c ? l : r);
+        return clone(stable(l) >= stable(r) ? l : r);                    // même date : choix déterministe
+    }
+    const mergePrefs = (b, l, r) => mergeMap(b, l, r, mergePref);
+
     // ─── Point d'entrée ───────────────────────────────────────────────────────
-    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity };
+    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs };
 
     // Valeurs déjà décodées (null = absent). Renvoie la valeur fusionnée (null = supprimée).
     function merge(key, base, local, remote) {

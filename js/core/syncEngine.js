@@ -70,6 +70,7 @@ const SyncEngine = (function () {
     // rechargée avant que l'application ne puisse en réécrire un ancien instantané.
     function reloadMemory(key) {
         try {
+            if (key === 'chessTrainer_prefs' && typeof reloadSyncedPrefs === 'function') { reloadSyncedPrefs(); return; }
             if (typeof loadDB !== 'function' || typeof getDBKey !== 'function') return;
             if (key === getDBKey() || (typeof oppKeyFor === 'function' && key === oppKeyFor(currentRepertoire, playerColor))) loadDB();
         } catch (e) {}
@@ -91,6 +92,7 @@ const SyncEngine = (function () {
         });
         if (!hidden('admin-overlay') && typeof renderAdminEntries === 'function') attempt(renderAdminEntries);
         if (typeof refreshTree === 'function') attempt(refreshTree);
+        if (keys.includes('chessTrainer_prefs') && typeof applySyncedPrefs === 'function') attempt(applySyncedPrefs);
     }
 
     // ─── Un document ──────────────────────────────────────────────────────────
