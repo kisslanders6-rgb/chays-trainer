@@ -140,6 +140,8 @@ function readDBFor(rep, color) {
 //   - réussite alors que la révision était due : intervalle × REVIEW_GROWTH (1 jour la première fois),
 //     plafonné à REVIEW_MAX_DAYS ; une réussite anticipée ne change pas l'échéance ;
 //   - erreur : intervalle remis à zéro, la position redevient due dans REVIEW_RETRY_MS.
+// Positions enregistrées avant l'arrivée du planning (sans `due`) : échéance estimée d'après leur
+// historique (impliedInterval), pour ne pas les déclarer toutes « à réviser » d'un coup.
 // L'entraînement favorise les positions dues (cf. _trainingWeight) sans jamais exclure les autres.
 
 const DAY_MS           = 86400000;
@@ -149,17 +151,29 @@ const REVIEW_RETRY_MS  = 10 * 60000;
 const ACTIVITY_KEY     = 'chessTrainer_activity';
 const ACTIVITY_KEEP_DAYS = 400;
 
-const isDue = (e, now = Date.now()) => !e.due || e.due <= now;
+// Intervalle (jours) estimé pour une position sans planning : 0 = jamais revue.
+function impliedInterval(e) {
+    if (!e.lastReviewed || !e.attempts) return 0;
+    const rate = e.failures / e.attempts;
+    return rate > 0.34 ? 1 : e.failures ? 3 : Math.min(30, 1 + e.attempts);
+}
+
+const dueOf = e => e.due || (e.lastReviewed ? e.lastReviewed + impliedInterval(e) * DAY_MS : 0);
+const isDue = (e, now = Date.now()) => dueOf(e) <= now;
 
 function recordReview(entry, ok) {
     const now = Date.now();
+    const wasDue = isDue(entry, now), prev = entry.interval || impliedInterval(entry);
     entry.lastReviewed = now;
     if (!ok) {
         entry.interval = 0;
         entry.due = now + REVIEW_RETRY_MS;
-    } else if (isDue(entry, now)) {
-        entry.interval = entry.interval ? Math.min(REVIEW_MAX_DAYS, Math.round(entry.interval * REVIEW_GROWTH * 10) / 10) : 1;
+    } else if (wasDue) {
+        entry.interval = prev ? Math.min(REVIEW_MAX_DAYS, Math.round(prev * REVIEW_GROWTH * 10) / 10) : 1;
         entry.due = now + entry.interval * DAY_MS;
+    } else if (!entry.due) {                   // révision anticipée d'une ancienne position : son planning devient explicite
+        entry.interval = prev;
+        entry.due = now + prev * DAY_MS;
     }
     logActivity(ok);
 }
