@@ -127,6 +127,8 @@ function _paintMovesBar(active) {
         html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${escapeHtml(m.san)}</span> `;
     });
     bar.innerHTML = html;
+    const cur = bar.querySelector('.move-token.active');
+    if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2;   // ligne défilante (mobile)
     if (typeof syncTreeToPosition === 'function') syncTreeToPosition();     // l'arbre suit la position affichée
 }
 

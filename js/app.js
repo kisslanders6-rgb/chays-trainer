@@ -261,6 +261,7 @@ function applyModeUI() {
         el.style.display = el.dataset.modes.split(',').includes(gameMode) ? '' : 'none';
     });
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
+    if (typeof _syncSolutionBtn === 'function') _syncSolutionBtn(); // bouton Solution : entraînement seulement
 }
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
@@ -301,6 +302,7 @@ function goHome(tab) {
     closeRepMenu();
     if (typeof stopTraining === 'function') stopTraining();
     if (typeof stopEndgame === 'function') stopEndgame();
+    if (typeof setSheetOpen === 'function') setSheetOpen(false);
     gameMode = 'play';
     applyModeUI();
     document.getElementById('game-screen').style.display = 'none';

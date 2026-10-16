@@ -7,6 +7,7 @@
  *     iPhone/iPad : mode d'emploi, Safari n'offre pas d'invite)
  *   - raccourcis de l'icône d'appli : /?tab=stats, /?tab=training…
  *   - petite vibration sur un coup refusé (Android ; suit le réglage « Effets sonores »)
+ *   - tiroir du panneau de jeu sous l'échiquier (écrans < 600 px) : toucher la poignée ou glisser
  */
 
 'use strict';
@@ -54,6 +55,52 @@ async function installApp() {
     _installEvent = null;
     updateInstallRow();
 }
+
+// ─── TIROIR DU PANNEAU DE JEU (mobile) ────────────────────────────────────────
+// Fermé : statut + coups sur une ligne, sous l'échiquier. Ouvert : feuille plein écran (arbre, théorie…).
+let _sheetBackdrop = null;
+
+function setSheetOpen(open) {
+    const panel = document.getElementById('side-panel'), handle = document.getElementById('sheet-handle');
+    if (!panel) return;
+    if (!_sheetBackdrop) {
+        _sheetBackdrop = document.createElement('div');
+        _sheetBackdrop.className = 'sheet-backdrop';
+        _sheetBackdrop.addEventListener('click', () => setSheetOpen(false));
+        document.body.appendChild(_sheetBackdrop);
+    }
+    panel.classList.toggle('open', open);
+    _sheetBackdrop.classList.toggle('open', open);
+    if (handle) {
+        handle.setAttribute('aria-expanded', String(open));
+        handle.setAttribute('aria-label', open ? 'Réduire le panneau' : 'Agrandir le panneau');
+    }
+    if (!open) panel.scrollTop = 0;
+}
+
+function toggleSheet() {
+    const panel = document.getElementById('side-panel');
+    if (panel) setSheetOpen(!panel.classList.contains('open'));
+}
+
+(function initSheetSwipe() {
+    const handle = document.getElementById('sheet-handle');
+    if (!handle) return;
+    let y0 = null, moved = false;
+    handle.addEventListener('pointerdown', e => { y0 = e.clientY; moved = false; });
+    handle.addEventListener('pointermove', e => {
+        if (y0 === null || moved) return;
+        const dy = e.clientY - y0;
+        if (Math.abs(dy) > 30) { moved = true; setSheetOpen(dy < 0); }
+    });
+    handle.addEventListener('pointerup', () => { y0 = null; });
+    handle.addEventListener('click', e => { if (moved) { e.stopImmediatePropagation(); e.preventDefault(); moved = false; } }, true);
+})();
+
+document.addEventListener('keydown', e => {
+    const panel = document.getElementById('side-panel');
+    if (e.key === 'Escape' && panel && panel.classList.contains('open')) setSheetOpen(false);
+});
 
 // ─── DÉMARRAGE ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

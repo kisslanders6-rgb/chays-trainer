@@ -154,72 +154,82 @@
                     </div>
 
                     <!--
-                        Rangée principale (commune aux trois modes) :
-                          Jouer        ‹  [ Indice ]  ›
-                          Entraînement    [ Indice ] [ Passer ]
-                          Aperçu       ‹  [ ← Statistiques ]  ›
-                        Chaque bouton choisit ses modes avec data-modes (cf. applyModeUI dans app.js).
+                        Barre de contrôle (commune à tous les modes) ; chaque bouton choisit ses modes avec
+                        data-modes (cf. applyModeUI dans app.js).
+                          Ordinateur : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
+                          Mobile     : une seule barre d'icônes uniformes, dans l'ordre
+                                       précédent · suivant · retourner · indice · autres actions (classes tb-*).
                     -->
-                    <div class="controls controls-main">
-                        <button class="btn btn-nav" id="btn-prev" data-modes="play,preview" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
-                            <svg class="ico"><use href="#i-chevron-left"/></svg>
-                        </button>
-                        <button class="btn btn-primary btn-grow" data-modes="play,training,endgame" onclick="showHint()" title="Indice (Espace)">
-                            <svg class="ico"><use href="#i-lightbulb"/></svg> Indice
-                        </button>
-                        <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante">
-                            <svg class="ico"><use href="#i-skip-forward"/></svg> Passer
-                        </button>
-                        <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
-                            <svg class="ico"><use href="#i-rotate-ccw"/></svg> Recommencer
-                        </button>
-                        <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
-                            <svg class="ico"><use href="#i-arrow-left"/></svg> Statistiques
-                        </button>
-                        <button class="btn btn-nav" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
-                            <svg class="ico"><use href="#i-chevron-right"/></svg>
-                        </button>
-                    </div>
+                    <div class="board-controls">
+                        <div class="controls controls-main">
+                            <button class="btn btn-nav tb-prev" id="btn-prev" data-modes="play,preview" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
+                                <svg class="ico"><use href="#i-chevron-left"/></svg><span class="btn-label mobile-only">Préc.</span>
+                            </button>
+                            <button class="btn btn-primary btn-grow tb-hint" data-modes="play,training,endgame" onclick="showHint()" title="Indice (Espace)">
+                                <svg class="ico"><use href="#i-lightbulb"/></svg><span class="btn-label">Indice</span>
+                            </button>
+                            <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante">
+                                <svg class="ico"><use href="#i-skip-forward"/></svg><span class="btn-label">Passer</span>
+                            </button>
+                            <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
+                                <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
+                            </button>
+                            <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
+                                <svg class="ico"><use href="#i-arrow-left"/></svg><span class="btn-label">Statistiques</span>
+                            </button>
+                            <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
+                                <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
+                            </button>
+                        </div>
 
-                    <!-- Actions secondaires : icône + libellé court, discrètes -->
-                    <div class="controls controls-tools" data-modes="play">
-                        <button class="btn btn-tool" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">
-                            <svg class="ico"><use href="#i-pencil"/></svg>Corriger
-                        </button>
-                        <button class="btn btn-tool" onclick="resetGame()" title="Recommencer depuis la position de départ">
-                            <svg class="ico"><use href="#i-rotate-ccw"/></svg>Rejouer
-                        </button>
-                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
-                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
-                        <button class="btn btn-tool" onclick="showAdmin()" title="Base de données d'ouvertures">
-                            <svg class="ico"><use href="#i-database"/></svg>Base
-                        </button>
-                    </div>
-                    <div class="controls controls-tools" data-modes="training">
-                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
-                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
-                        <button class="btn btn-tool is-exit" onclick="goHome('training')" title="Quitter l'entraînement">
-                            <svg class="ico"><use href="#i-x"/></svg>Quitter
-                        </button>
-                    </div>
-                    <div class="controls controls-tools" data-modes="endgame">
-                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
-                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
-                        <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice">
-                            <svg class="ico"><use href="#i-x"/></svg>Quitter
-                        </button>
-                    </div>
-                    <div class="controls controls-tools" data-modes="preview">
-                        <button class="btn btn-tool" onclick="flipBoard()" title="Retourner l'échiquier (F)">
-                            <svg class="ico"><use href="#i-arrow-up-down"/></svg>Retourner
-                        </button>
+                        <!-- Actions secondaires : icône + libellé court, discrètes -->
+                        <div class="controls controls-tools" data-modes="play">
+                            <button class="btn btn-tool" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">
+                                <svg class="ico"><use href="#i-pencil"/></svg><span class="btn-label">Corriger</span>
+                            </button>
+                            <button class="btn btn-tool" onclick="resetGame()" title="Recommencer depuis la position de départ">
+                                <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Rejouer</span>
+                            </button>
+                            <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                                <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
+                            </button>
+                            <button class="btn btn-tool" onclick="showAdmin()" title="Base de données d'ouvertures">
+                                <svg class="ico"><use href="#i-database"/></svg><span class="btn-label">Base</span>
+                            </button>
+                            <button class="btn btn-tool" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                                <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            </button>
+                        </div>
+                        <div class="controls controls-tools" data-modes="training">
+                            <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                                <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
+                            </button>
+                            <button class="btn btn-tool is-exit" onclick="goHome('training')" title="Quitter l'entraînement">
+                                <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
+                            </button>
+                        </div>
+                        <div class="controls controls-tools" data-modes="endgame">
+                            <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                                <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
+                            </button>
+                            <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice">
+                                <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
+                            </button>
+                        </div>
+                        <div class="controls controls-tools" data-modes="preview">
+                            <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                                <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
+                            </button>
+                            <button class="btn btn-tool" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                                <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="side-panel">
+                <div class="side-panel" id="side-panel">
+                    <!-- Mobile : poignée du tiroir (toucher = ouvrir / fermer, glisser vers le haut / le bas) -->
+                    <button class="sheet-handle" id="sheet-handle" onclick="toggleSheet()" aria-label="Agrandir le panneau" aria-expanded="false"><span></span></button>
                     <div class="endgame-card" id="endgame-card" data-modes="endgame"></div>
                     <div class="status-bar" id="status-bar">
                         <div class="status-dot dot-info" id="status-dot"></div>

@@ -390,17 +390,18 @@ function showTrainingSolution() {
     setStatus(`Solution : ${entry.san} — jouez-le pour continuer (aucune réussite comptée).`, 'hint');
 }
 
-// Bouton « Solution » : utilise #train-solution-btn s'il existe dans le HTML, sinon le crée (flottant).
+// Bouton « Solution » : créé dans la barre de contrôle (flottant sur ordinateur, intégré à la barre sur mobile).
 function _solutionBtn() {
     let b = document.getElementById('train-solution-btn');
-    if (!b && document.body) {
+    const host = document.querySelector('.board-controls .controls-main') || document.body;
+    if (!b && host) {
         b = document.createElement('button');
         b.id        = 'train-solution-btn';
         b.className = 'btn train-solution-btn';
-        b.textContent = 'Solution';
+        b.innerHTML = `${ico('target')}<span class="btn-label">Solution</span>`;
         b.style.display = 'none';
         b.onclick = showTrainingSolution;
-        document.body.appendChild(b);
+        host.appendChild(b);
     }
     return b;
 }
