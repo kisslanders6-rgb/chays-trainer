@@ -4,9 +4,9 @@ const makeBackend = require('./_fakeBackend.js');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 const jeq = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
-function boot({ backend, mem = new Map(), hash = '', configured = true } = {}) {
+function boot({ backend, mem = new Map(), hash = '', configured = true, protocol = 'https:' } = {}) {
     const timers = [];
-    const loc = { hash, pathname: '/app/', search: '', origin: 'https://chays.test' };
+    const loc = { hash, protocol, pathname: '/app/', search: '', origin: protocol === 'file:' ? 'null' : 'https://chays.test' };
     const ctx = {
         localStorage: { getItem: k => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k),
                         get length() { return mem.size; }, key: i => [...mem.keys()][i] },
@@ -140,6 +140,11 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         const r = await c2.run(`Auth.signUp('new@test.fr', 'motdepasse1')`);
         assert.strictEqual(r.ok, true); assert.strictEqual(r.needsConfirmation, true); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
         assert(be2.log.some(l => l.startsWith('POST /auth/v1/signup?redirect_to=https%3A%2F%2Fchays.test%2Fapp%2F')));
+    });
+    await t('ouverte en file:// : aucune adresse de retour (Supabase utilise le « Site URL »)', async () => {
+        const be2 = makeBackend({ confirmEmail: true }); const c2 = boot({ backend: be2, protocol: 'file:' }); c2.boot();
+        await c2.run(`Auth.signUp('new@test.fr', 'motdepasse1')`);
+        assert(be2.log.some(l => l === 'POST /auth/v1/signup'));
     });
     await t('inscription sans confirmation : connecté directement', async () => {
         const c2 = boot({ backend: makeBackend() }); c2.boot();
