@@ -321,6 +321,7 @@ function goHome(tab) {
     if (typeof stopTraining === 'function') stopTraining();
     if (typeof stopEndgame === 'function') stopEndgame();
     if (typeof setSheetOpen === 'function') setSheetOpen(false);
+    if (typeof closeToolbarMore === 'function') closeToolbarMore();
     gameMode = 'play';
     applyModeUI();
     document.getElementById('game-screen').style.display = 'none';

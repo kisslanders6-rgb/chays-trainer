@@ -8,6 +8,7 @@
  *   - raccourcis de l'icône d'appli : /?tab=stats, /?tab=training…
  *   - petite vibration sur un coup refusé (Android ; suit le réglage « Effets sonores »)
  *   - tiroir du panneau de jeu sous l'échiquier (écrans < 600 px) : toucher la poignée ou glisser
+ *   - menu « Plus » de la barre d'icônes : actions secondaires (.tb-more), pour des boutons assez larges
  */
 
 'use strict';
@@ -101,6 +102,47 @@ document.addEventListener('keydown', e => {
     const panel = document.getElementById('side-panel');
     if (e.key === 'Escape' && panel && panel.classList.contains('open')) setSheetOpen(false);
 });
+
+// ─── BARRE D'ICÔNES : MENU « PLUS » (mobile) ──────────────────────────────────
+// Les actions secondaires (.tb-more) du groupe affiché sont proposées dans un petit menu au-dessus
+// de la barre ; chaque entrée déclenche le bouton d'origine.
+let _tbMenu = null;
+
+function closeToolbarMore() {
+    if (!_tbMenu) return;
+    _tbMenu.menu.remove();
+    _tbMenu.btn.setAttribute('aria-expanded', 'false');
+    _tbMenu = null;
+}
+
+function toggleToolbarMore(btn) {
+    if (_tbMenu) { const same = _tbMenu.btn === btn; closeToolbarMore(); if (same) return; }
+    const menu = document.createElement('div');
+    menu.className = 'menu tb-more-menu';
+    menu.setAttribute('role', 'menu');
+    btn.parentElement.querySelectorAll('.tb-more').forEach(src => {
+        const item = document.createElement('button');
+        item.className = 'menu-item';
+        item.setAttribute('role', 'menuitem');
+        item.innerHTML = src.querySelector('.ico').outerHTML + ' ' + src.querySelector('.btn-label').textContent;
+        item.addEventListener('click', () => { closeToolbarMore(); src.click(); });
+        menu.appendChild(item);
+    });
+    document.body.appendChild(menu);
+    const r = btn.getBoundingClientRect();
+    menu.style.right  = Math.max(8, window.innerWidth - r.right) + 'px';
+    menu.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+    btn.setAttribute('aria-expanded', 'true');
+    _tbMenu = { menu, btn };
+    const first = menu.querySelector('.menu-item');
+    if (first) first.focus({ preventScroll: true });
+}
+
+document.addEventListener('pointerdown', e => {
+    if (_tbMenu && !_tbMenu.menu.contains(e.target) && !_tbMenu.btn.contains(e.target)) closeToolbarMore();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeToolbarMore(); });
+window.addEventListener('resize', closeToolbarMore);
 
 // ─── DÉMARRAGE ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

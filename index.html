@@ -175,7 +175,7 @@
                                 <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
                             </button>
                             <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
-                                <svg class="ico"><use href="#i-arrow-left"/></svg><span class="btn-label">Statistiques</span>
+                                <svg class="ico"><use href="#i-arrow-left"/></svg><span class="btn-label"><span class="desktop-only">Statistiques</span><span class="mobile-only">Stats</span></span>
                             </button>
                             <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
@@ -187,17 +187,21 @@
                             <button class="btn btn-tool" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">
                                 <svg class="ico"><use href="#i-pencil"/></svg><span class="btn-label">Corriger</span>
                             </button>
-                            <button class="btn btn-tool" onclick="resetGame()" title="Recommencer depuis la position de départ">
+                            <button class="btn btn-tool tb-more" onclick="resetGame()" title="Recommencer depuis la position de départ">
                                 <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Rejouer</span>
                             </button>
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool" onclick="showAdmin()" title="Base de données d'ouvertures">
+                            <button class="btn btn-tool tb-more" onclick="showAdmin()" title="Base de données d'ouvertures">
                                 <svg class="ico"><use href="#i-database"/></svg><span class="btn-label">Base</span>
                             </button>
-                            <button class="btn btn-tool" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                            <button class="btn btn-tool tb-more" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
                                 <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            </button>
+                            <!-- Mobile : les actions .tb-more passent dans ce menu pour que chaque bouton garde une largeur confortable -->
+                            <button class="btn btn-tool tb-more-btn" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
+                                <svg class="ico"><use href="#i-more-horizontal"/></svg><span class="btn-label">Plus</span>
                             </button>
                         </div>
                         <div class="controls controls-tools" data-modes="training">

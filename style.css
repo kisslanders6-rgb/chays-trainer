@@ -1390,7 +1390,8 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
    BARRE DE CONTRÔLE ET TIROIR (MOBILE)
    ═══════════════════════════════════════════════════════════════════════════ */
 .board-controls { width: 100%; display: flex; flex-direction: column; align-items: center; }
-.mobile-only, .sheet-handle, .sheet-backdrop { display: none; }
+.mobile-only, .sheet-handle, .sheet-backdrop, .tb-more-btn { display: none; }
+.tb-more-menu { position: fixed; z-index: 320; top: auto; min-width: 200px; }
 
 @media (max-width: 599px) {
     /* Échiquier bord à bord, carré */
@@ -1411,6 +1412,9 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
         background: var(--surface); border: 1.5px solid var(--border); color: var(--text-muted);
     }
     .board-controls .btn .ico { width: 22px; height: 22px; }
+    .board-controls .tb-more { display: none; }                         /* regroupées dans « Plus » */
+    .board-controls .tb-more-btn { display: inline-flex; }
+    .board-controls .btn { font-size: clamp(9.5px, 2.8vw, 10.5px); }   /* iPhone SE (320 px) compris */
     .board-controls .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
     .board-controls .is-exit { color: var(--err); }
     .btn-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
