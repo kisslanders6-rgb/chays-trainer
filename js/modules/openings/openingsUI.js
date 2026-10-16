@@ -18,26 +18,39 @@ let navCursor = -1;
 
 // ─── RENDU DU PLATEAU ─────────────────────────────────────────────────────────
 
+// ─── ACCESSIBILITÉ : nom des cases et navigation au clavier ─────────────────
+// Une seule case est atteignable par Tab (« tabindex mobile ») ; les flèches déplacent le focus,
+// Entrée / Espace équivalent à un clic. Chaque case porte un libellé lisible (« e4, pion blanc »).
+const _PIECE_NAMES = { K: 'roi', Q: 'dame', R: 'tour', B: 'fou', N: 'cavalier', P: 'pion' };
+let _kbFocus = null;
+
+function _squareLabel(idx, p) {
+    if (!p) return squareToName(idx);
+    const t = p.toUpperCase(), fem = t === 'Q' || t === 'R';
+    return `${squareToName(idx)}, ${_PIECE_NAMES[t]} ${isWhite(p) ? (fem ? 'blanche' : 'blanc') : (fem ? 'noire' : 'noir')}`;
+}
+
 function renderBoard() {
     clearErrorFx();         // un réaffichage ne doit jamais rejouer la secousse d'une erreur passée
     const el        = document.getElementById('board');
+    const focused   = el.contains(document.activeElement) && document.activeElement.dataset.idx !== undefined
+                    ? Number(document.activeElement.dataset.idx) : null;
     el.innerHTML    = '';
-    const colCoords = document.getElementById('coords-col');
-    const rowCoords = document.getElementById('coords-row');
+    if (_kbFocus === null) _kbFocus = boardFlipped ? 52 : 12;
 
     const ranks = boardFlipped ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
     const files = boardFlipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
-    colCoords.innerHTML = ranks.map(r => `<span>${r + 1}</span>`).join('');
-    rowCoords.innerHTML = files.map(c => `<span>${'abcdefgh'[c]}</span>`).join('');
-
-    ranks.forEach(r => {
-        files.forEach(c => {
+    ranks.forEach((r, row) => {
+        files.forEach((c, col) => {
             const idx    = r * 8 + c;
             const sq     = document.createElement('div');
             const isLight = (r + c) % 2 === 1;
             sq.className  = 'sq ' + (isLight ? 'light' : 'dark');
             sq.dataset.idx = idx;
+            sq.setAttribute('role', 'button');
+            sq.tabIndex = idx === _kbFocus ? 0 : -1;
+            sq.setAttribute('aria-label', _squareLabel(idx, board[idx]) + (selected === idx ? ', sélectionnée' : '') + (legalMoves.includes(idx) ? ', coup possible' : ''));
 
             if (idx === lastFrom)             sq.classList.add('hl-from');
             if (idx === lastTo)               sq.classList.add('hl-to');
@@ -55,11 +68,17 @@ function renderBoard() {
                 sq.appendChild(pc);
             }
 
+            // Coordonnées intégrées aux cases du bord : chiffre en haut à gauche, lettre en bas à droite.
+            if (col === 0) sq.insertAdjacentHTML('beforeend', `<span class="coord coord-rank">${r + 1}</span>`);
+            if (row === 7) sq.insertAdjacentHTML('beforeend', `<span class="coord coord-file">${'abcdefgh'[c]}</span>`);
+
             sq.addEventListener('click', () => { if (_dragJustEnded()) return; handleClick(idx); });
             el.appendChild(sq);
         });
     });
 
+    if (focused !== null) { const f = el.querySelector(`.sq[data-idx="${focused}"]`); if (f) f.focus({ preventScroll: true }); }
+    if (typeof renderAnnotations === 'function') renderAnnotations(true);
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
 }
 
@@ -452,6 +471,27 @@ _boardEl.addEventListener('touchmove',   e => { if (e.cancelable) e.preventDefau
 _boardEl.addEventListener('contextmenu', e => e.preventDefault());
 
 _boardEl.addEventListener('pointerup',     e => _endDrag(e, false));
+
+// Clavier : flèches = déplacer le focus (dans le sens d'affichage), Entrée / Espace = cliquer la case.
+_boardEl.addEventListener('keydown', e => {
+    const sq = e.target.closest && e.target.closest('.sq');
+    if (!sq || e.ctrlKey || e.metaKey || e.altKey) return;
+    const idx = Number(sq.dataset.idx);
+    const dir = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    if (dir) {
+        e.preventDefault(); e.stopPropagation();             // pas de navigation dans l'historique
+        const s = boardFlipped ? -1 : 1, c = idx % 8 + dir[0] * s, r = Math.floor(idx / 8) + dir[1] * s;
+        if (c < 0 || c > 7 || r < 0 || r > 7) return;
+        const next = r * 8 + c, el = _boardEl.querySelector(`.sq[data-idx="${next}"]`);
+        sq.tabIndex = -1; _kbFocus = next;
+        if (el) { el.tabIndex = 0; el.focus(); }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); e.stopPropagation();             // pas d'indice (Espace) quand le focus est sur l'échiquier
+        _kbFocus = idx;
+        if (_canInteract()) handleClick(idx);
+    }
+});
+_boardEl.addEventListener('focusin', e => { const sq = e.target.closest && e.target.closest('.sq'); if (sq) _kbFocus = Number(sq.dataset.idx); });
 _boardEl.addEventListener('pointercancel', e => _endDrag(e, true));
 
 // ─── CLIC SUR LA BARRE DE COUPS ───────────────────────────────────────────────
