@@ -7,31 +7,36 @@
  *     → en ligne, tu as toujours la dernière version déployée.
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
+ *
+ * Liste de mise en cache : construite à l'installation à partir des balises src / href d'index.html
+ * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
+ * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v9';
+const VERSION = 'v10';
 const CACHE   = 'chays-trainer-' + VERSION;
 
-const CORE = [
-    'js/core/syncEngine.js',
-    'css/account.css', 'js/core/syncModel.js', 'js/core/cloudConfig.js', 'js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js',
-    './', 'index.html', 'style.css', 'manifest.json',
-    'js/storage.js', 'js/app.js',
-    'js/core/icons.js', 'js/core/storageAdapter.js', 'js/core/backup.js', 'js/core/trash.js', 'js/core/settings.js', 'js/core/themeColor.js',
-    'js/core/sound.js', 'js/core/pieces.js', 'js/core/chessEngine.js', 'js/core/mobile.js',
-    'js/modules/openings/openingsLogic.js', 'js/modules/openings/openingsUI.js', 'js/modules/openings/treeView.js',
-    'js/modules/stats/stats.js', 'js/modules/training/training.js', 'js/modules/endgame/endgame.js',
-    'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png', 'assets/icons/apple-touch-icon.png',
-    'assets/icons/favicon-32.png', 'assets/icons/favicon-64.png', 'assets/chlogo.png', 'assets/chaysTrainerlogo.png', 'assets/chaysTrainerAndLogo.png',
+const EXTRA = [
+    './', 'manifest.json',
+    'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png',
     'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp'
 ];
+
+// Ressources locales référencées par index.html (les liens externes et les ancres sont ignorés).
+async function pageAssets() {
+    try {
+        const html = await (await fetch('index.html', { cache: 'no-cache' })).text();
+        return [...html.matchAll(/\s(?:src|href)="([^"#:]+)"/g)].map(m => m[1]);
+    } catch (e) { return ['index.html']; }
+}
 
 const SETS = ['merida', 'maestro', 'staunty', 'chrome', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi'];
 const PIECES = SETS.flatMap(s => ['w', 'b'].flatMap(c => 'KQRBNP'.split('').map(t => `assets/pieces/${s}/${c}${t}.svg`)));
 
 self.addEventListener('install', e => {
     e.waitUntil(
-        caches.open(CACHE)
-            .then(cache => Promise.all(CORE.concat(PIECES).map(u => cache.add(u).catch(() => {}))))   // un fichier absent n'empêche pas l'installation
+        Promise.all([caches.open(CACHE), pageAssets()])
+            .then(([cache, page]) => Promise.all([...new Set(EXTRA.concat('index.html', page, PIECES))]
+                .map(u => cache.add(u).catch(() => {}))))            // un fichier absent n'empêche pas l'installation
             .then(() => self.skipWaiting())
     );
 });

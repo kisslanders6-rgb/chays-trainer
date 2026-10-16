@@ -1,0 +1,14 @@
+{
+  "name": "chays-trainer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Entraîneur de répertoire d'ouvertures et de finales aux échecs, par répétition espacée.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node tests/run.js",
+    "start": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
