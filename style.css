@@ -271,6 +271,11 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 #board { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); border-radius: 12px; overflow: hidden; border: 2px solid var(--board-border); box-shadow: var(--shadow); cursor: pointer; }
 .sq:focus-visible { outline: 3px solid var(--accent-bright); outline-offset: -3px; z-index: 3; }
 .annot-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
+/* Couleurs des flèches : « accent » suit le thème de l'échiquier ; un liseré clair les détache de toutes les cases */
+:root { --annot-accent: color-mix(in srgb, var(--accent) 80%, #000); --annot-red: #d8463e; --annot-blue: #3f84d8; --annot-gold: #e0a92e; }
+.annot-halo { stroke: rgba(255, 255, 255, .6); stroke-width: .035; stroke-linejoin: round; paint-order: stroke; }
+.annot-halo-stroke { filter: drop-shadow(0 0 .025px rgba(255, 255, 255, .9)); }
+.arrow-preview { width: 84px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--board-border); display: block; }
 
 .sq { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 44px; line-height: 1; position: relative; transition: background 0.12s; user-select: none; }
 .sq.light { background: var(--board-light); }
@@ -1207,7 +1212,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* ═══════════════════════════════════════════════════════════════════════════
    THÈMES D'ÉCHIQUIER ET DE PIÈCES (grilles 3 × 3)
    ═══════════════════════════════════════════════════════════════════════════ */
-#piece-options, #board-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* 3 lignes de 3 */
+#piece-options, #board-options, #arrow-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#arrow-options { display: grid; gap: 10px; }
+#arrow-options .theme-opt { min-width: 0; }   /* 3 lignes de 3 */
 
 /* ─── Échiquier « Violet » (clair / violet) ─────────────────────────────── */
 html[data-board="violet"] { --board-light: #f0f0f0; --board-dark: #8477ba; --board-border: #5e4f8a; --accent: #6a559a; --accent-bright: #7d68b0; --accent-dim: #9a8ac0; --info: #6a559a; }

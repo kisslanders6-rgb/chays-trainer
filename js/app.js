@@ -109,6 +109,8 @@ function syncSettingsUI() {
         b.classList.toggle('active', b.dataset.board === appSettings.boardTheme));
     document.querySelectorAll('.piece-opt').forEach(b =>
         b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
+    document.querySelectorAll('.arrow-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.arrow === appSettings.arrowStyle));
 }
 
 function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
@@ -146,6 +148,22 @@ function renderPieceOptions() {
         return `<button class="theme-opt piece-opt" data-piece="${id}" data-action="setPieceStyle" data-arg="${id}">` +
                `<span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`;
     }).join('');
+}
+
+// Cartes de sélection du style des flèches (aperçu dessiné par annotations.js).
+function renderArrowOptions() {
+    const box = document.getElementById('arrow-options');
+    if (!box || typeof arrowStylePreview !== 'function') return;
+    box.innerHTML = ARROW_STYLE_IDS.map(id =>
+        `<button class="theme-opt arrow-opt" data-arrow="${id}" data-action="setArrowStyle" data-arg="${id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join('');
+}
+
+function setArrowStyle(id) {
+    if (!ARROW_STYLE_IDS.includes(id)) return;
+    appSettings.arrowStyle = id;
+    saveSettings();
+    syncSettingsUI();
+    if (typeof renderAnnotations === 'function') renderAnnotations();
 }
 
 function setPieceStyle(id) {
@@ -318,7 +336,7 @@ function goHome(tab) {
     renderRepertoireList();
 }
 
-registerActions({ setPieceStyle, selectRepertoire, createRepertoire: () => createRepertoirePrompt() });
+registerActions({ setPieceStyle, setArrowStyle, selectRepertoire, createRepertoire: () => createRepertoirePrompt() });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 
@@ -329,4 +347,5 @@ registerActions({ setPieceStyle, selectRepertoire, createRepertoire: () => creat
     renderRepertoireList();
     updateTrashBadges();
     renderPieceOptions();
+    renderArrowOptions();
 })();
