@@ -294,7 +294,8 @@ function executePlayerMove(from, to, promo) {
     if (!entry) {
         // Position inconnue → ce coup devient l'unique réponse de référence.
         const path = pathNow.concat(movStr);
-        openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length, lastReviewed: Date.now() };
+        openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length };
+        recordReview(openingDB[key], true);
         saveDB();
         noteChange(1);
         _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${san}`, 'new');
@@ -303,7 +304,7 @@ function executePlayerMove(from, to, promo) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
         const transp = _isTransposition(entry);
         entry.attempts++;
-        entry.lastReviewed = Date.now();
+        recordReview(entry, true);
         if (!entry.path) { entry.path = pathNow.concat(movStr); entry.ply = entry.path.length; }
         saveDB();
         _commitMove(from, to, promo, null, transp ? '✓ Correct ! (transposition)' : '✓ Correct !', 'ok');
@@ -312,7 +313,7 @@ function executePlayerMove(from, to, promo) {
         // Mauvais coup : refusé, la bonne réponse n'est pas dévoilée.
         entry.attempts++;
         entry.failures++;
-        entry.lastReviewed = Date.now();
+        recordReview(entry, false);
         saveDB();
         _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
     }

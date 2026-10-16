@@ -80,6 +80,7 @@ function normalizeEntry(e) {
     // → traité comme « non revu depuis longtemps » par l'entraînement.
     const lr = typeof e.lastReviewed === 'string' ? Date.parse(e.lastReviewed) : e.lastReviewed;
     if (Number.isFinite(lr) && lr > 0) out.lastReviewed = lr;
+    if (Number.isFinite(e.due) && e.due > 0) { out.due = e.due; out.interval = Number.isFinite(e.interval) ? Math.max(0, e.interval) : 0; }
     return out;   // l'ancien champ `alt` est volontairement abandonné
 }
 
@@ -95,6 +96,58 @@ function readDBFor(rep, color) {
     const raw = dataStore.get(dbKeyFor(rep, color));
     if (!raw) return {};
     try { return normalizeDB(JSON.parse(raw)); } catch (e) { return {}; }
+}
+
+// ─── RÉPÉTITION ESPACÉE ET JOURNAL D'ACTIVITÉ ─────────────────────────────────
+// Chaque passage sur une position (Jouer ou Entraînement) appelle recordReview() APRÈS la mise à jour
+// de ses compteurs. Planning (inspiré de SM-2) :
+//   - réussite alors que la révision était due : intervalle × REVIEW_GROWTH (1 jour la première fois),
+//     plafonné à REVIEW_MAX_DAYS ; une réussite anticipée ne change pas l'échéance ;
+//   - erreur : intervalle remis à zéro, la position redevient due dans REVIEW_RETRY_MS.
+// L'entraînement favorise les positions dues (cf. _trainingWeight) sans jamais exclure les autres.
+
+const DAY_MS           = 86400000;
+const REVIEW_GROWTH    = 2.5;
+const REVIEW_MAX_DAYS  = 180;
+const REVIEW_RETRY_MS  = 10 * 60000;
+const ACTIVITY_KEY     = 'chessTrainer_activity';
+const ACTIVITY_KEEP_DAYS = 400;
+
+const isDue = (e, now = Date.now()) => !e.due || e.due <= now;
+
+function recordReview(entry, ok) {
+    const now = Date.now();
+    entry.lastReviewed = now;
+    if (!ok) {
+        entry.interval = 0;
+        entry.due = now + REVIEW_RETRY_MS;
+    } else if (isDue(entry, now)) {
+        entry.interval = entry.interval ? Math.min(REVIEW_MAX_DAYS, Math.round(entry.interval * REVIEW_GROWTH * 10) / 10) : 1;
+        entry.due = now + entry.interval * DAY_MS;
+    }
+    logActivity(ok);
+}
+
+// Jour local au format AAAA-MM-JJ.
+function dayStamp(t) {
+    const d = new Date(t);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function readActivity() {
+    const o = dataStore.getJSON(ACTIVITY_KEY, null);
+    return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+}
+
+function logActivity(ok) {
+    const now = Date.now(), act = readActivity(), day = dayStamp(now);
+    const d = act[day] || { a: 0, f: 0 };
+    d.a++;
+    if (!ok) d.f++;
+    act[day] = d;
+    const oldest = dayStamp(now - ACTIVITY_KEEP_DAYS * DAY_MS);
+    Object.keys(act).forEach(k => { if (k < oldest) delete act[k]; });
+    dataStore.setJSON(ACTIVITY_KEY, act);
 }
 
 // ─── RÉPONSES ADVERSES CONNUES (pour détecter les lignes « non couvertes ») ───
@@ -192,7 +245,11 @@ function exportDB() {
         exportDate: new Date().toISOString(),
         repertoires: list,
         databases: {},
-        opponents: {}          // réponses adverses connues (facultatif à l'import)
+        opponents: {},         // réponses adverses connues (facultatif à l'import)
+        progress: {            // progression des finales et journal d'activité (facultatifs à l'import)
+            endgames: dataStore.getJSON('chessTrainer_endgames', {}),
+            activity: readActivity()
+        }
     };
     list.forEach(rep => {
         colors.forEach(col => {
@@ -249,14 +306,18 @@ function importDBFromFile(event) {
                 const currentList = loadRepertoireList();
                 if (Array.isArray(data.repertoires)) {
                     data.repertoires.forEach(rep => {
-                        if (!currentList.includes(rep)) currentList.push(rep);
+                        if (typeof rep === 'string' && rep.trim() && !currentList.includes(rep)) currentList.push(rep);
                     });
                     saveRepertoireList(currentList);
                 }
                 // Importer chaque base
                 let count = 0;
+                // Seules les clés de bases d'ouvertures sont acceptées (un fichier ne doit pas pouvoir
+                // écrire d'autres clés, ex. la session de connexion).
+                const isDbKey  = k => /^openingDB_.+_[wb]$/.test(k);
+                const isOppKey = k => /^openingOpp_.+_[wb]$/.test(k);
                 Object.entries(data.databases).forEach(([key, entries]) => {
-                    if (typeof entries !== 'object') return;
+                    if (!isDbKey(key) || !entries || typeof entries !== 'object') return;
                     let existing = {};
                     try {
                         const raw = dataStore.get(key);
@@ -268,7 +329,7 @@ function importDBFromFile(event) {
                 // Réponses adverses connues : union avec l'existant
                 if (data.opponents && typeof data.opponents === 'object') {
                     Object.entries(data.opponents).forEach(([okey, map]) => {
-                        if (!map || typeof map !== 'object') return;
+                        if (!isOppKey(okey) || !map || typeof map !== 'object') return;
                         const cur = dataStore.getJSON(okey, null) || {};
                         Object.keys(map).forEach(pk => {
                             if (!Array.isArray(map[pk])) return;
@@ -276,6 +337,25 @@ function importDBFromFile(event) {
                         });
                         dataStore.setJSON(okey, cur);
                     });
+                }
+                // Progression : on garde, pour chaque jour / exercice, la valeur la plus avancée
+                const prog = data.progress && typeof data.progress === 'object' ? data.progress : {};
+                if (prog.activity && typeof prog.activity === 'object') {
+                    const act = readActivity();
+                    Object.entries(prog.activity).forEach(([day, d]) => {
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !d || !(Number(d.a) >= 0)) return;
+                        const cur = act[day] || { a: 0, f: 0 };
+                        if (Number(d.a) > cur.a) act[day] = { a: Number(d.a), f: Math.min(Number(d.a), Math.max(0, Number(d.f) || 0)) };
+                    });
+                    dataStore.setJSON(ACTIVITY_KEY, act);
+                }
+                if (prog.endgames && typeof prog.endgames === 'object') {
+                    const eg = dataStore.getJSON('chessTrainer_endgames', {}) || {};
+                    Object.entries(prog.endgames).forEach(([id, p]) => {
+                        if (!p || typeof p !== 'object') return;
+                        if (!eg[id] || (Number(p.tries) || 0) > (Number(eg[id].tries) || 0)) eg[id] = p;
+                    });
+                    dataStore.setJSON('chessTrainer_endgames', eg);
                 }
                 // Recharger la base active et l'UI
                 loadDB();

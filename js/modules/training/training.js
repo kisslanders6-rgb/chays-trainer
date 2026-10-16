@@ -8,7 +8,7 @@
  *
  * Pour chaque position : l'échiquier se place 3 demi-coups avant, rejoue
  * automatiquement ces trois coups (contexte), puis me rend la main.
- *   - succès : attempts + 1 et lastReviewed mis à jour (failures inchangé → le taux d'erreur baisse)
+ *   - succès : attempts + 1 et planning de révision mis à jour (recordReview, storage.js)
  *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »), on réessaie.
  *
  * Options (persistées, défauts = comportement historique) :
@@ -99,13 +99,15 @@ function initTraining() {
         const eligible = all.filter(_isEligible);
         const total    = eligible.length;
         const weak     = eligible.filter(e => e.failures > 0).length;
+        const due      = eligible.filter(e => isDue(e)).length;
         const sub   = !all.length ? 'Répertoire vide'
                     : !total      ? 'Aucune position dans cette limite'
                     : `${total} position${total > 1 ? 's' : ''} · ${weak ? `${weak} avec erreur${weak > 1 ? 's' : ''}` : 'aucune erreur'}`;
-        return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `onclick="startTraining('${c}')"` : ''}>
+        const dueLine = total ? `<div class="train-card-due ${due ? '' : 'none'}">${due ? `${due} à réviser` : 'Tout est à jour'}</div>` : '';
+        return `<div class="train-card ${total ? '' : 'disabled'}" ${total ? `role="button" tabindex="0" data-action="startTraining" data-arg="${c}"` : 'aria-disabled="true"'}>
             <div class="train-card-icon">${pieceGlyph(c === 'w' ? 'K' : 'k')}</div>
             <div class="train-card-title">${c === 'w' ? 'BLANCS' : 'NOIRS'}</div>
-            <div class="train-card-sub">${sub}</div></div>`;
+            <div class="train-card-sub">${sub}</div>${dueLine}</div>`;
     }).join('') + '</div>';
 }
 
@@ -145,7 +147,7 @@ const TRAIN_AGE_FLOOR   = 0.03;
 const TRAIN_TAU_DAYS    = 3;
 const TRAIN_UNSEEN_DAYS = 30;
 const TRAIN_SHARPNESS   = 1.5;      // > 1 : accentue l'écart entre positions prioritaires et acquises
-const DAY_MS            = 86400000;
+const TRAIN_NOT_DUE     = 0.25;     // facteur appliqué aux positions dont la révision n'est pas encore due
 
 function _ageDays(e, now) {
     return e.lastReviewed ? Math.max(0, (now - e.lastReviewed) / DAY_MS) : TRAIN_UNSEEN_DAYS;
@@ -162,7 +164,7 @@ function _forgetFactor(e, now) {
 }
 
 function _trainingWeight(e, now) {
-    return Math.pow(_failureFactor(e) * _forgetFactor(e, now), TRAIN_SHARPNESS);
+    return Math.pow(_failureFactor(e) * _forgetFactor(e, now), TRAIN_SHARPNESS) * (isDue(e, now) ? 1 : TRAIN_NOT_DUE);
 }
 
 // Probabilités de sortie : poids normalisés sur l'univers. Si le répertoire compte plusieurs
@@ -374,7 +376,7 @@ function showTrainingSolution() {
         if (TRAIN_SOLUTION_PENALTY) {
             entry.attempts++;
             entry.failures++;
-            entry.lastReviewed = Date.now();
+            recordReview(entry, false);
             saveDB();
         }
     }
@@ -437,7 +439,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         if (!revealed) {
             const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
             entry.attempts++;
-            entry.lastReviewed = Date.now();
+            recordReview(entry, true);
             saveDB();
             const after = Math.round(100 * entry.failures / entry.attempts);
             msg = entry.failures === 0 ? '✓ Bien joué ! Toujours à 100% de réussite'
@@ -451,7 +453,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
     } else if (entry && !revealed) {                   // erreur : comptée sur la position exacte, comme en mode « Jouer »
         entry.attempts++;
         entry.failures++;
-        entry.lastReviewed = Date.now();
+        recordReview(entry, false);
         saveDB();
         const pct = Math.round(100 * entry.failures / entry.attempts);
         _rejectMove(to, `✗ Ce n'est pas le bon coup — taux d'erreur : ${pct}%. Réessayez.`);

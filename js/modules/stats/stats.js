@@ -5,6 +5,8 @@
  * partir des erreurs commises dans le menu « Jouer ».
  *   taux d'erreur = failures / attempts
  * Un clic sur une pastille affiche la position exacte sur l'échiquier.
+ * En tête : activité dans le temps (série de jours, 30 derniers jours) d'après le journal
+ * d'activité (storage.js), et nombre de positions dont la révision est due.
  *
  * Trois niveaux, utilisés partout (couleur de la pastille, répartition, filtres) :
  *   maîtrisée      aucune erreur
@@ -71,6 +73,49 @@ function _sortRows(rows) {
     return rows;
 }
 
+// ─── ACTIVITÉ DANS LE TEMPS ───────────────────────────────────────────────────
+const STATS_DAYS = 30;
+
+// Jours consécutifs avec au moins un essai, en remontant depuis aujourd'hui (ou hier si rien aujourd'hui).
+function _streak(act) {
+    let n = 0, t = Date.now();
+    if (!(act[dayStamp(t)] || {}).a) t -= DAY_MS;
+    while ((act[dayStamp(t)] || {}).a) { n++; t -= DAY_MS; }
+    return n;
+}
+
+function _activityHTML(db) {
+    const act  = readActivity();
+    const days = [];
+    for (let i = STATS_DAYS - 1; i >= 0; i--) {
+        const t = Date.now() - i * DAY_MS, d = act[dayStamp(t)] || { a: 0, f: 0 };
+        days.push({ t, a: d.a, f: d.f });
+    }
+    const total = days.reduce((s, d) => s + d.a, 0);
+    const due   = Object.values(db).filter(e => isDue(e)).length;
+    if (!total && !Object.keys(db).length) return '';
+
+    const max  = Math.max(1, ...days.map(d => d.a));
+    const fmt  = t => new Date(t).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    const bars = days.map(d => {
+        const ok = d.a - d.f;
+        return `<div class="act-col" title="${fmt(d.t)} : ${d.a} essai${d.a > 1 ? 's' : ''}${d.f ? `, ${d.f} erreur${d.f > 1 ? 's' : ''}` : ''}">` +
+               `<span class="act-err" style="height:${100 * d.f / max}%"></span><span class="act-ok" style="height:${100 * ok / max}%"></span></div>`;
+    }).join('');
+    const streak = _streak(act);
+    const active = days.filter(d => d.a).length;
+    return `
+        <div class="act-card">
+          <div class="act-head">
+            <div class="act-kpi"><b>${streak}</b> jour${streak > 1 ? 's' : ''} d'affilée</div>
+            <div class="act-kpi"><b>${active}</b>/${STATS_DAYS} jours actifs</div>
+            <div class="act-kpi ${due ? 'due' : ''}"><b>${due}</b> à réviser</div>
+          </div>
+          <div class="act-chart" role="img" aria-label="Essais par jour sur ${STATS_DAYS} jours (tous répertoires)">${bars}</div>
+          <div class="act-legend"><span><i class="act-dot ok"></i>réussites</span><span><i class="act-dot err"></i>erreurs</span><span class="act-note">30 derniers jours · tous répertoires</span></div>
+        </div>`;
+}
+
 function initStats() {
     const body = document.getElementById('stats-body');
     if (!body) return;
@@ -82,9 +127,10 @@ function initStats() {
 
     const db   = readDBFor(currentRepertoire, statsColor);
     const rows = Object.keys(db).map(k => ({ k, e: db[k] })).filter(r => r.e.attempts > 0);
+    const activity = _activityHTML(db);
 
     if (!rows.length) {
-        body.innerHTML = `<div class="empty-tab"><div class="empty-tab-icon">${ico('bar-chart', 'ico-xl')}</div>
+        body.innerHTML = activity + `<div class="empty-tab"><div class="empty-tab-icon">${ico('bar-chart', 'ico-xl')}</div>
             <div>Aucune donnée</div>
             <div class="empty-tab-sub">Jouez votre répertoire « ${escapeHtml(currentRepertoire)} » avec les ${statsColor === 'w' ? 'Blancs' : 'Noirs'} pour voir apparaître vos statistiques.</div></div>`;
         return;
@@ -144,7 +190,7 @@ function initStats() {
         </div>`;
     }).join('');
 
-    body.innerHTML = kpis + bar + filters + sort +
+    body.innerHTML = activity + kpis + bar + filters + sort +
         `<div class="stats-grid">${badges}</div>`;
 }
 

@@ -6,10 +6,11 @@
  *
  * Unité de synchronisation = une clé de stockage (un « document » JSON).
  *   chessTrainer_repertoires     'list'      noms des répertoires
- *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed? }
+ *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due? }
  *   openingOpp_{rép}_{couleur}   'opp'       position → [coups UCI adverses connus]
  *   chessTrainer_trash           'trash'     [{ id, type, deletedAt, … }]
  *   chessTrainer_endgames        'endgames'  exercice → { tries, wins, perfect, best, last }
+ *   chessTrainer_activity        'activity'  jour (AAAA-MM-JJ) → { a: essais, f: erreurs }
  * Tout le reste (thème, sons, pièces, échiquier, options d'entraînement, état de sauvegarde…)
  * reste LOCAL à l'appareil.
  *
@@ -34,6 +35,7 @@ const SyncModel = (function () {
         if (key === 'chessTrainer_repertoires') return 'list';
         if (key === 'chessTrainer_trash')       return 'trash';
         if (key === 'chessTrainer_endgames')    return 'endgames';
+        if (key === 'chessTrainer_activity')    return 'activity';
         if (typeof key === 'string' && key.startsWith('openingDB_'))  return 'db';
         if (typeof key === 'string' && key.startsWith('openingOpp_')) return 'opp';
         return null;
@@ -113,6 +115,9 @@ const SyncModel = (function () {
         if (path) { out.path = path.slice(); out.ply = path.length; }
         const lr = Math.max(num(l.lastReviewed), num(r.lastReviewed));
         if (lr > 0) out.lastReviewed = lr;
+        // Planning de révision : celui du passage le plus récent (égalité → échéance la plus lointaine).
+        const s = [l, r].reduce((x, y) => (num(y.lastReviewed) - num(x.lastReviewed) || num(y.due) - num(x.due) || num(y.interval) - num(x.interval)) > 0 ? y : x);
+        if (num(s.due) > 0) { out.due = s.due; out.interval = num(s.interval); }
         return out;
     }
 
@@ -160,8 +165,16 @@ const SyncModel = (function () {
     }
     const mergeEndgames = (b, l, r) => mergeMap(b, l, r, mergeProgress);
 
+    // ─── Journal d'activité (essais / erreurs par jour) ───────────────────────
+    function mergeDay(b, l, r) {
+        const ba = b ? num(b.a) : 0, bf = b ? num(b.f) : 0;
+        const a = Math.max(num(l.a), num(r.a), num(l.a) + num(r.a) - ba);
+        return { a, f: Math.min(a, Math.max(num(l.f), num(r.f), num(l.f) + num(r.f) - bf)) };
+    }
+    const mergeActivity = (b, l, r) => mergeMap(b, l, r, mergeDay);
+
     // ─── Point d'entrée ───────────────────────────────────────────────────────
-    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames };
+    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity };
 
     // Valeurs déjà décodées (null = absent). Renvoie la valeur fusionnée (null = supprimée).
     function merge(key, base, local, remote) {
