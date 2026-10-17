@@ -399,19 +399,39 @@
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-pawn"/></svg></div>
                 <div><div class="help-title">Jouer</div>
-                    <div class="help-text">Vous jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur (le bouton <svg class="ico"><use href="#i-lightbulb"/></svg> Indice donne le type de pièce).</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
-                <div><div class="help-title">Statistiques</div>
-                    <div class="help-text">Chaque coup de votre répertoire reçoit un <strong>taux d'erreur</strong> (erreurs ÷ essais) calculé depuis les modes Jouer et Entraînement. Cliquez sur une pastille pour revoir la position correspondante.</div></div>
+                    <div class="help-text">Choisissez un répertoire et une couleur, puis jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée ; ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur. <svg class="ico"><use href="#i-lightbulb"/></svg> Indice donne le type de pièce, l'onglet <strong>Arbre</strong> montre toutes vos lignes (et les réponses adverses non couvertes), <strong>Corriger</strong> remplace un coup enregistré, <strong>Lichess</strong> ouvre la position affichée pour l'analyser.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-target"/></svg></div>
                 <div><div class="help-title">Entraînement</div>
-                    <div class="help-text">Révision de <strong>tout votre répertoire</strong> : les positions fragiles ou longtemps oubliées reviennent plus souvent, les coups bien maîtrisés ou vus récemment plus rarement. L'échiquier rejoue les trois derniers coups pour remettre la position en contexte, puis vous cherchez la bonne réponse. Avec « Départ : début de partie », vous rejouez au contraire une ligne entière, du premier coup jusqu'à la fin de la variante. Chaque réussite fait baisser le taux d'erreur ; chaque erreur le fait monter.</div></div>
+                    <div class="help-text"><strong>Révision espacée</strong> : chaque position a une date de révision, qui s'éloigne à chaque réussite et revient vite après une erreur. Les positions à réviser passent en premier, sans que les autres disparaissent. <strong>Départ</strong> : « position ciblée » (l'échiquier rejoue les trois coups précédents) ou « début de partie » (toute une ligne, jusqu'à la fin de la variante). <strong>Exercice</strong> : un coup, une séquence, ou la variante entière. Le bouton Solution montre le coup attendu, sans compter de réussite.</div></div>
             </div>
-            <div class="help-tips">Astuces : glissez-déposez ou cliquez les pièces · clic droit glissé = flèche, clic droit = cercle (<kbd>Maj</kbd> rouge, <kbd>Alt</kbd> bleu, <kbd>Ctrl</kbd> or ; clic gauche pour effacer) · cliquez un coup de la barre pour y revenir · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>Espace</kbd> indice · <kbd>F</kbd> retourner · <kbd>Échap</kbd> fermer · au clavier : <kbd>Tab</kbd> jusqu'à l'échiquier, flèches puis <kbd>Entrée</kbd></div>
+            <div class="help-item">
+                <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
+                <div><div class="help-title">Statistiques</div>
+                    <div class="help-text">Votre activité sur 30 jours (série de jours, réussites et erreurs, positions à réviser), puis un <strong>taux d'erreur</strong> par position, classé en maîtrisé, fragile ou à retravailler. Touchez une pastille pour revoir la position.</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon"><svg class="ico"><use href="#i-crown"/></svg></div>
+                <div><div class="help-title">Finales</div>
+                    <div class="help-text">Des mats élémentaires aux finales de pions (opposition, percée, étude de Réti) et de tours (Lucena, Philidor). L'adversaire répond tout seul et <strong>chaque coup est vérifié par le calcul</strong> : un coup qui laisse échapper le gain, ou qui perd, est signalé et peut être annulé. Filtrez par niveau ou lancez un exercice au hasard.</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon"><svg class="ico"><use href="#i-database"/></svg></div>
+                <div><div class="help-title">Base, PGN et sauvegarde</div>
+                    <div class="help-text">Le panneau <strong>Base</strong> liste et modifie vos coups enregistrés. <strong>PGN</strong> : importez des lignes (variantes comprises) ou exportez votre répertoire pour d'autres logiciels. <strong>Sauvegarde (.json)</strong> : copie complète (statistiques, planning, finales) à télécharger ou restaurer. Les éléments supprimés restent 30 jours dans la <strong>Corbeille</strong>.</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon"><svg class="ico"><use href="#i-shield-check"/></svg></div>
+                <div><div class="help-title">Compte et synchronisation</div>
+                    <div class="help-text">Sans compte, tout reste dans ce navigateur. Avec un compte, vos répertoires, statistiques, révisions, finales, ainsi que le thème de l'échiquier, les pièces et les flèches, sont enregistrés en ligne et <strong>synchronisés entre vos appareils</strong>. Le mode clair / sombre et les sons restent propres à chaque appareil.</div></div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon"><svg class="ico"><use href="#i-settings"/></svg></div>
+                <div><div class="help-title">Paramètres</div>
+                    <div class="help-text">Sons, style des pièces, thème de l'échiquier, style des flèches, et installation de l'application (hors ligne).</div></div>
+            </div>
+            <div class="help-tips">Astuces : glissez-déposez ou cliquez les pièces · clic droit glissé = flèche, clic droit = cercle (<kbd>Maj</kbd> rouge, <kbd>Alt</kbd> bleu, <kbd>Ctrl</kbd> or ; clic gauche pour effacer) · cliquez un coup de la barre pour y revenir · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>Espace</kbd> indice · <kbd>F</kbd> retourner · <kbd>Échap</kbd> fermer · au clavier : <kbd>Tab</kbd> jusqu'à l'échiquier, flèches puis <kbd>Entrée</kbd> · sur téléphone : touchez ou glissez la poignée sous l'échiquier pour agrandir le panneau, et « Plus » pour les autres actions</div>
         </div>
     </div>
 
