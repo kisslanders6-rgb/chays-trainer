@@ -409,8 +409,9 @@ const EG = (function () {
         return best;
     }
 
-    // Recherche bornée (preuve) : le camp blanc, au trait, peut-il forcer une promotion en dame
-    // non prenable en `plies` demi-coups ? Sert à vérifier qu'une défense tient (finales de tours).
+    // Recherche bornée (preuve) : le camp blanc, au trait, peut-il forcer en `plies` demi-coups une
+    // promotion en dame non prenable, ou un mat (y compris par la promotion elle-même) ?
+    // Sert à vérifier qu'une défense tient (finales de tours).
     function forcesPromotion(st, plies) {
         const memo = new Map();
         const key = (s, d) => s.stm + ':' + d + ':' + s.b.join(',');
@@ -424,8 +425,8 @@ const EG = (function () {
                 const pr = x >> 12, to = (x >> 6) & 63;
                 if (pr) {
                     if (pr !== Q) continue;
-                    const rep = legalMoves(make(s, x));
-                    if (rep.length && !rep.some(r => ((r >> 6) & 63) === to)) { res = true; break; }
+                    const ns = make(s, x), rep = legalMoves(ns);
+                    if (rep.length ? !rep.some(r => ((r >> 6) & 63) === to) : inCheck(ns)) { res = true; break; }
                     continue;
                 }
                 if (black(make(s, x), d - 1)) { res = true; break; }
@@ -435,7 +436,8 @@ const EG = (function () {
         };
         const black = (s, d) => {
             const mv = legalMoves(s);
-            if (!mv.length || d <= 0) return false;
+            if (!mv.length) return inCheck(s);                            // mat : gagné ; pat : nulle
+            if (d <= 0) return false;
             const k = key(s, -d);
             if (memo.has(k)) return memo.get(k);
             let all = true;

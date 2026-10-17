@@ -125,12 +125,24 @@ function _egPhilBasic(ns) {                                 // règles + Tour no
 
 // Défense de Philidor (Noirs) : règles canoniques, anticipation de la poussée e5-e6, et garde-fou par
 // recherche (les Blancs ne doivent pas forcer la promotion en 9 demi-coups). null = coup correct.
+// Pion (ou Dame issue de la promotion) éliminé, Blancs au trait : gagnent-ils la Tour noire en la prenant
+// sans que la pièce preneuse soit reprise ? (Tour contre Tour, ou Tour reprise par le roi : nulle.)
+function _egWinsRook(ns) {
+    return EG.legalMoves(ns).some(r => {
+        if (ns.b[EG.mTo(r)] !== -4) return false;
+        const n2 = EG.make(ns, r);
+        return !EG.legalMoves(n2).some(x => EG.mTo(x) === EG.mTo(r));
+    });
+}
+
 function _egPhilidorCheck(st, m) {
     const ns = EG.make(st, m);
     const pawn = ns.b.indexOf(1);
-    if (pawn < 0) {                                           // prise du pion : valable seulement si la Tour n'est pas reprise
-        const back = EG.legalMoves(ns).some(r => ns.b[EG.mTo(r)] < 0 && Math.abs(ns.b[EG.mTo(r)]) !== 6);
-        return back ? { msg: 'La Tour serait reprise par le roi : le pion est protégé.' } : { capture: true };
+    if (pawn < 0) {
+        // Le pion a été pris, ou vient d'être promu : la nouvelle Dame doit disparaître sur-le-champ,
+        // et l'échange qui suit ne doit pas coûter la Tour (ex. …Txe8 Txe8 Rxe8 : nulle).
+        if (ns.b.indexOf(5) >= 0) return { msg: 'La nouvelle Dame doit être prise immédiatement, sinon la partie est perdue.' };
+        return _egWinsRook(ns) ? { msg: 'Les Blancs prendraient votre Tour sans qu\'elle puisse être reprise.' } : { capture: true };
     }
     const basic = _egPhilBasic(ns);
     if (basic) return { msg: basic };
@@ -142,7 +154,7 @@ function _egPhilidorCheck(st, m) {
             const n2 = EG.make(ns, push);
             const ok = EG.legalMoves(n2).some(r => {
                 const n3 = EG.make(n2, r);
-                if (n3.b.indexOf(1) < 0) return !EG.legalMoves(n3).some(x => n3.b[EG.mTo(x)] < 0 && Math.abs(n3.b[EG.mTo(x)]) !== 6);   // prise du pion non reprise
+                if (n3.b.indexOf(1) < 0) return n3.b.indexOf(5) < 0 && !_egWinsRook(n3);      // pion éliminé sans perdre la Tour
                 return !_egPhilBasic(n3) && !EG.forcesPromotion(n3, 5);
             });
             if (!ok) return { msg: 'Après e6, vous n\'auriez plus de défense : placez la Tour et le roi autrement.' };
@@ -294,7 +306,7 @@ function _egJudge(ex, st, m) {
     }
     if (ex.kind === 'rules') {
         const r = _egPhilidorCheck(st, m);
-        if (r && r.capture) return { state: 'success', msg: 'Pion capturé : nulle !' };
+        if (r && r.capture) return { state: 'success', msg: 'Le pion est éliminé : nulle !' };
         if (r) return { state: 'fail', undoable: true, msg: r.msg };
         if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec la défense de Philidor.` };
         return { state: 'continue' };

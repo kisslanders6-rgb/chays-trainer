@@ -105,7 +105,7 @@ const ENDGAME_EXERCISES = [
     {
         id: 'rook-philidor', cat: 'tours', kind: 'rules', goal: 'draw', player: 'b', level: 3, hold: 12,
         title: 'Position de Philidor',
-        fen: '4k3/8/r7/3KP3/8/7R/8/8 b - - 0 1', beta: true,
+        fen: '4k3/8/r7/3KP3/8/7R/8/8 b - - 0 1',
         tips: ['Tant que le pion n\'a pas atteint la 6e rangée, gardez la Tour noire sur la 6e rangée et le roi sur sa dernière rangée.',
                'Dès que le pion avance en e6, passez avec la Tour sur la 1re rangée pour donner des échecs par derrière.'],
         theory: 'Défense de Philidor : la Tour reste sur la 6e rangée (elle interdit au roi blanc d\'avancer) tant que le pion n\'est pas en 6e ; dès qu\'il avance, la Tour passe derrière et donne échec sur échec, le roi noir restant sur sa dernière rangée.'
