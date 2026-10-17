@@ -57,6 +57,25 @@ function egMiniBoard(ex) {
 
 const _egDots = n => '●'.repeat(n) + '○'.repeat(3 - n);
 
+// Filtre du catalogue : 'all' | 'todo' (pas encore réussi sans faute) | '1' | '2' | '3' (niveau).
+let egFilter = 'all';
+
+function _egVisible(prog) {
+    return ENDGAME_EXERCISES.filter(e =>
+        egFilter === 'all' ? true
+      : egFilter === 'todo' ? !(prog[e.id] && prog[e.id].perfect)
+      : e.level === Number(egFilter));
+}
+
+// Exercice au hasard parmi ceux qui sont affichés, en privilégiant ceux qui ne sont pas encore réussis sans faute.
+function startRandomEndgame() {
+    const prog = readEndgameProgress(), list = _egVisible(prog);
+    if (!list.length) return;
+    const fresh = list.filter(e => !(prog[e.id] && prog[e.id].perfect));
+    const pool = fresh.length ? fresh : list;
+    startEndgame(pool[Math.floor(Math.random() * pool.length)].id);
+}
+
 function initEndgame() {
     const panel = document.getElementById('endgame-panel');
     if (!panel) return;
@@ -71,8 +90,16 @@ function initEndgame() {
         <div class="stats-kpi"><span class="stats-kpi-n">${tries}</span><span class="stats-kpi-l">tentative${tries > 1 ? 's' : ''}</span></div>
     </div>`;
 
+    const fb = (id, label) => `<button class="tr-seg-btn ${egFilter === id ? 'active' : ''}" role="radio" aria-checked="${egFilter === id}" data-action="egFilter" data-arg="${id}">${label}</button>`;
+    const visible = _egVisible(prog);
+    html += `<div class="eg-toolbar">
+        <div class="tr-seg" role="radiogroup" aria-label="Filtrer les exercices">${fb('all', 'Tous')}${fb('todo', 'À faire')}${fb('1', 'Niveau 1')}${fb('2', 'Niveau 2')}${fb('3', 'Niveau 3')}</div>
+        <button class="btn btn-primary eg-random" data-action="egRandom" ${visible.length ? '' : 'disabled'}>${ico('skip-forward')} Au hasard</button>
+    </div>`;
+    if (!visible.length) html += '<div class="empty-tab">Tous les exercices de ce filtre sont réussis sans faute. Bravo !</div>';
+
     ENDGAME_CATEGORIES.forEach(cat => {
-        const list = ENDGAME_EXERCISES.filter(e => e.cat === cat.id);
+        const list = visible.filter(e => e.cat === cat.id);
         if (!list.length) return;
         html += `<section class="eg-section"><div class="eg-section-head"><div class="eg-section-title">${escapeHtml(cat.label)}</div><div class="eg-section-desc">${escapeHtml(cat.desc)}</div></div><div class="eg-grid">`;
         list.forEach(ex => {
@@ -265,7 +292,8 @@ function nextEndgame() {
     startEndgame(ENDGAME_EXERCISES[(i + 1) % ENDGAME_EXERCISES.length].id);
 }
 
-registerActions({ startEndgame: id => startEndgame(id), nextEndgame: () => nextEndgame(), retryEndgame: () => retryEndgame(), undoEndgameMove: () => undoEndgameMove() });
+registerActions({ egFilter: f => { egFilter = f; initEndgame(); }, egRandom: () => startRandomEndgame(),
+    startEndgame: id => startEndgame(id), nextEndgame: () => nextEndgame(), retryEndgame: () => retryEndgame(), undoEndgameMove: () => undoEndgameMove() });
 
 // ─── CARTE D'OBJECTIF (panneau de jeu) ────────────────────────────────────────
 function renderEndgameCard() {
