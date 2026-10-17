@@ -1247,7 +1247,12 @@ html[data-board="hache"] .eg-sq.d { background: repeating-linear-gradient(135deg
 html[data-board="hache"] .sq.hl-from, html[data-board="hache"] .sq.hl-to { background: rgba(205, 200, 80, .5) !important; }
 html[data-board="hache"] .sq.hl-selected { background: rgba(190, 180, 60, .65) !important; }
 html[data-board="hache"] .sq.hl-legal::after { background: rgba(0, 0, 0, .38); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .6); }
-.theme-opt[data-board="hache"] .theme-swatch { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
+.theme-opt[data-board="hache"] .theme-swatch {                      /* 2 × 2 cases : claires unies, foncées hachurées */
+    background:
+        conic-gradient(transparent 25%, #d3d3ce 0 50%, transparent 0 75%, #d3d3ce 0),
+        repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px);
+    box-shadow: inset 0 0 0 .5px rgba(50, 50, 50, .55);
+}
 
 /* ─── Pièces « Chrome » : jeu SVG dédié assets/pieces/chrome/ (reflets et biseaux intégrés aux fichiers) ── */
 html[data-piece="chrome"] .piece img, html[data-piece="chrome"] .drag-ghost img, html[data-piece="chrome"] .promo-piece img,
