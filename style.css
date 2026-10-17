@@ -757,6 +757,9 @@ button, .btn, .tree-row, .topnav-tab, .stat-badge, .tr-card { touch-action: mani
     .tree-forget { width: 32px; height: 32px; }
     .side-tab { padding: 11px 10px; }
 
+    /* accueil : marge latérale (le contenu ne touche pas les bords de l'écran) */
+    .home-content { padding-left: 14px; padding-right: 14px; }
+
     /* modales, stats, entraînement, toast */
     .overlay { padding-left: 10px; padding-right: 10px; }
     .panel { padding: 18px 16px; width: 100%; max-width: none; max-height: 100%; }      /* hauteur bornée par la zone visible de l'overlay */
