@@ -240,11 +240,16 @@ function _egLoadPosition() {
         s.budget = ex.goal === 'win' ? Math.ceil(pr.dtw / 2) + 3 : ex.hold;
     } else if (ex.kind === 'script') s.budget = Math.ceil(ex.line.length / 2);
     else if (ex.kind === 'rules')    s.budget = ex.hold;
+    else if (ex.kind === 'pawns')    s.budget = ex.goal === 'win' ? ex.maxMoves : ex.hold;
     else s.budget = ex.maxMoves;
     renderMoves();
     renderBoard();
     renderEndgameCard();
     setStatus(`${egObjective(ex)} — à vous de jouer.`, 'info');
+    if (ex.kind === 'pawns') {                                   // précalcul pendant que le joueur réfléchit
+        const st = _egCur(), warm = () => { try { EG.pawnValue(st, ex.horizon); } catch (e) {} };
+        if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 800 }); else setTimeout(warm, 200);
+    }
 }
 
 function retryEndgame() {
@@ -311,6 +316,7 @@ function _egJudge(ex, st, m) {
         if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec la défense de Philidor.` };
         return { state: 'continue' };
     }
+    if (ex.kind === 'pawns') return _egJudgePawns(ex, st, m, n);
     const info = EG.kpkAfter(st, m);
     if (ex.goal === 'win') {
         if (!info.win) {
@@ -329,6 +335,70 @@ function _egJudge(ex, st, m) {
     if (info.why === 'stalemate') return { state: 'success', msg: 'Pat : nulle !' };
     if (n >= s.budget) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${s.budget} coups sans céder.` };
     return { state: 'continue' };
+}
+
+// Horizon de calcul d'une finale de pions. Exercice de gain : le gain doit tomber dans l'horizon de
+// départ, donc l'horizon restant diminue de deux demi-coups par coup joué (calcul plus court, et un
+// gain trop lent est refusé). Exercice de nulle : horizon constant.
+const _egHorizon = ex => ex.goal === 'win' ? Math.max(3, ex.horizon - 2 * endgameState.moves) : ex.horizon;
+
+// Finales de pions (solveur borné, cf. EG.pawnValue). Gain : le coup doit garder un gain que l'horizon
+// restant suffit à prouver. Nulle : seul un coup dont la perte est PROUVÉE est refusé.
+function _egJudgePawns(ex, st, m, n) {
+    const v = EG.pawnMoveValue(st, m, _egHorizon(ex)), promo = EG.mPromo(m);
+    const after = EG.make(st, m), pc = EG.pawnCount(after.b);
+    if (ex.goal === 'win') {
+        if (v !== 1) return { state: 'fail', undoable: true, msg: promo
+            ? 'Cette promotion ne gagne pas : la Dame est prise, ou l\'adversaire promeut aussitôt.'
+            : 'Ce coup ne gagne pas, ou trop lentement : cherchez la ligne la plus directe.' };
+        if (promo) return { state: 'success', msg: 'Promotion réussie : la position est gagnée.' };
+        if (n > endgameState.budget) return { state: 'fail', undoable: false, msg: 'Le gain est toujours là, mais trop lent : cherchez la ligne la plus directe.' };
+        return { state: 'continue' };
+    }
+    if (v === -1) return { state: 'fail', undoable: true, msg: 'Ce coup perd : l\'adversaire peut maintenant forcer la promotion de son pion.' };
+    if (promo) return { state: 'success', msg: 'Vous promouvez à votre tour : nulle (au moins) !' };
+    if (pc.n === 0) return { state: 'success', msg: 'Plus aucun pion : nulle !' };
+    if (pc.n === 1 && !EG.kpkProbe(after).win && pc.side !== st.stm) return { state: 'success', msg: 'Il ne reste qu\'un pion adverse, et la position est nulle : bien défendu !' };
+    if (n >= endgameState.budget) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${endgameState.budget} coups sans céder.` };
+    return { state: 'continue' };
+}
+
+// Coups « utiles » d'une finale de pions : promotions en Dame seulement (les sous-promotions n'apportent rien ici).
+const _egPawnMoves = st => EG.legalMoves(st).filter(m => !EG.mPromo(m) || EG.mPromo(m) === EG.Q);
+
+// Réponse de l'ordinateur en finale de pions.
+//   Le joueur doit gagner : défense la plus tenace (nulle si elle existe, sinon la perte la plus lointaine).
+//   Le joueur doit annuler : gain s'il existe, sinon le coup qui laisse au joueur le plus de réponses perdantes.
+function _egPawnsReply(ex, st) {
+    const H = _egHorizon(ex), moves = _egPawnMoves(st);
+    if (!moves.length) return null;
+    const scored = moves.map(m => ({ m, v: EG.pawnMoveValue(st, m, H) }));
+    if (ex.goal === 'win') {
+        const hold = scored.filter(x => x.v >= 0);
+        if (hold.length) return hold[0].m;
+        // Perte la plus lointaine ; à deux demi-coups près, une prise (la défense « naturelle ») est préférée.
+        const depth = scored.map(x => ({ m: x.m, d: EG.pawnMoveLossDepth(st, x.m, H), cap: st.b[EG.mTo(x.m)] !== 0 }));
+        const maxD = Math.max(...depth.map(x => x.d));
+        const near = depth.filter(x => x.d >= maxD - 2);
+        return (near.find(x => x.cap) || near.find(x => x.d === maxD)).m;
+    }
+    const wins = scored.filter(x => x.v === 1);
+    if (wins.length) {
+        let best = wins[0].m, bestD = Infinity;
+        for (const x of wins) { const d = EG.pawnMoveWinDepth(st, x.m, H); if (d < bestD) { bestD = d; best = x.m; } }
+        return best;
+    }
+    let best = scored[0].m, bestScore = -Infinity;
+    for (const x of scored) {
+        if (x.v < 0) continue;
+        const ns = EG.make(st, x.m);
+        let traps = 0;
+        for (const r of _egPawnMoves(ns)) if (EG.pawnMoveValue(ns, r, H - 1) === -1) traps++;
+        const push = Math.abs(st.b[EG.mFrom(x.m)]) === EG.P ? 1 : 0;
+        const score = 10 * traps + push;
+        if (score > bestScore) { bestScore = score; best = x.m; }
+    }
+    return best;
 }
 
 function answerEndgameMove(from, to, promo) {
@@ -370,6 +440,7 @@ function _egAiReply() {
     if (ex.kind === 'script')     m = _egParseUci(ex.line[2 * s.moves - 1]);        // réponse de la ligne théorique
     else if (ex.kind === 'rules') m = _egPhilidorWhite(st);                         // Blancs qui cherchent à gagner
     else if (ex.kind === 'mate')  m = EG.searchBest(st, ex.defDepth || 4, me);      // défense du roi seul
+    else if (ex.kind === 'pawns') m = _egPawnsReply(ex, st);                         // solveur de finales de pions
     else if (ex.goal === 'win')   m = EG.kpkDefense(st);                            // défense parfaite (base exacte)
     else                          m = EG.kpkTrapAttack(st);                         // attaque qui tend des pièges
     if (m == null) { _egFinish('Partie terminée.'); return; }
@@ -440,6 +511,25 @@ function endgameHint() {
         const tip = ex.tips[Math.min(s.hintLevel, ex.tips.length - 1)];
         s.hintLevel++;
         setStatus(`Indice : ${tip}`, 'hint');
+        renderEndgameCard();
+        return;
+    }
+    if (ex.kind === 'pawns') {
+        const H = _egHorizon(ex), moves = _egPawnMoves(st);
+        let good;
+        if (ex.goal === 'win') {
+            const wins = moves.filter(m => EG.pawnMoveValue(st, m, H) === 1);
+            let bestD = Infinity;
+            for (const m of wins) { const d = EG.pawnMoveWinDepth(st, m, H); if (d < bestD) { bestD = d; good = m; } }
+        } else good = moves.find(m => EG.pawnMoveValue(st, m, H) >= 0);
+        if (good == null) { s.hints--; return; }
+        const from = EG.mFrom(good), tips = ex.tips || [];
+        let level = s.hintLevel;
+        if (level === 1 && !tips.length) level = 2;
+        if (level === 0)      setStatus(`Indice : déplacez ${PIECE_HINT[(board[from] || '').toUpperCase()] || 'une pièce'}.`, 'hint');
+        else if (level === 1) setStatus(`Indice : ${tips[Math.min(s.moves ? 1 : 0, tips.length - 1)]}`, 'hint');
+        else                  setStatus(`Solution : ${toAlgebraic(from, EG.mTo(good), EG.promoLetter(good))}`, 'hint');
+        s.hintLevel = Math.min(s.hintLevel + 1, 2);
         renderEndgameCard();
         return;
     }

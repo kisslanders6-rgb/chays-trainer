@@ -9,14 +9,19 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  2. CATALOGUE
 // ═══════════════════════════════════════════════════════════════════════════
-// kind  'mate' : mat élémentaire — défense du roi seul par mini-moteur (négamax),
-//                coup du joueur jugé : pat ? pièce abandonnée ? trop lent ?
-//       'kpk'  : roi + pion contre roi — verdict EXACT (base calculée au besoin), défense parfaite.
+// kind  'mate'   : mat élémentaire — défense du roi seul par mini-moteur (négamax),
+//                  coup du joueur jugé : pat ? pièce abandonnée ? trop lent ?
+//       'kpk'    : roi + pion contre roi — verdict EXACT (base calculée au besoin), défense parfaite.
+//       'pawns'  : rois + plusieurs pions — solveur borné (EG.pawnValue) à l'horizon `horizon` (demi-coups).
+//                  N'y figurent que des positions dont les gains tiennent dans l'horizon (vérifié hors ligne
+//                  avec un horizon bien plus long) ; en défense, seul un coup PROUVÉ perdant est refusé.
+//       'script' : ligne théorique imposée (Lucena) ; 'rules' : défense de Philidor (règles + recherche).
 // goal  'mate' | 'win' (promotion inévitable) | 'draw' (nulle : prise du pion, pat, ou `hold` coups tenus)
 // player 'w' | 'b' : le joueur a toujours le trait au départ.
+// solution / unique : coup attendu (UCI) et « un seul coup correct » — contrôlés par endgameSelfTest().
 const ENDGAME_CATEGORIES = [
     { id: 'mats',  label: 'Mats élémentaires', desc: 'Technique pure : confiner le roi et le mater sans pat.' },
-    { id: 'pions', label: 'Finales de pions',  desc: 'Roi + pion contre roi : carré, opposition, cases clés. Verdict exact à chaque coup.' },
+    { id: 'pions', label: 'Finales de pions',  desc: 'Carré, opposition (proche et à distance), cases clés, puis percée et étude de Réti. Chaque coup est vérifié par le calcul.' },
     { id: 'tours', label: 'Finales de tours',  desc: 'Les deux positions fondamentales : Lucena (gagner) et Philidor (annuler).' }
 ];
 
@@ -40,6 +45,33 @@ const ENDGAME_EXERCISES = [
                'Méthode de la boîte : à chaque coup de Tour qui rétrécit la zone, avancez votre roi pour la soutenir.',
                'Quand les rois sont en opposition (une case entre eux), un échec de Tour repousse le roi vers le bord.'],
         theory: 'La technique de la « boîte » : la Tour délimite la zone de fuite, le roi s\'approche, et chaque opposition permet un échec qui rétrécit la boîte jusqu\'au bord. Maximum théorique : 16 coups.'
+    },
+    {
+        id: 'krrk', cat: 'mats', kind: 'mate', goal: 'mate', player: 'w', level: 1,
+        title: 'Deux Tours : le mat de l\'escalier',
+        fen: '8/8/8/4k3/8/8/8/R3K2R w - - 0 1',
+        maxMoves: 12, defDepth: 4,
+        tips: ['Les deux Tours se relaient : l\'une coupe une rangée, l\'autre donne échec sur la rangée suivante.',
+               'Si le roi adverse s\'approche d\'une Tour, éloignez-la à l\'autre bout de sa rangée, sans la laisser en prise.'],
+        theory: 'Le « mat de l\'escalier » : les deux Tours montent tour à tour d\'une rangée et repoussent le roi jusqu\'au bord, où l\'une donne mat pendant que l\'autre coupe la rangée voisine. Le roi attaquant n\'est même pas nécessaire.'
+    },
+    {
+        id: 'kbbk', cat: 'mats', kind: 'mate', goal: 'mate', player: 'w', level: 2,
+        title: 'Roi + deux Fous contre Roi',
+        fen: '8/8/8/4k3/8/8/8/2B1KB2 w - - 0 1',
+        maxMoves: 25, defDepth: 4,
+        tips: ['Côte à côte, les deux Fous forment une barrière de diagonales voisines que le roi adverse ne peut pas franchir.',
+               'Rapprochez votre roi et réduisez la zone vers un coin, sans jamais laisser le roi adverse sans case libre hors échec : ce serait pat.'],
+        theory: 'Deux Fous matent toujours, en vingt coups au plus. Placés côte à côte, ils barrent deux diagonales voisines ; le roi fort vient les soutenir, et le roi adverse est repoussé vers un coin, n\'importe lequel, où tombe le mat.'
+    },
+    {
+        id: 'kbnk', cat: 'mats', kind: 'mate', goal: 'mate', player: 'w', level: 3,
+        title: 'Roi + Fou + Cavalier contre Roi',
+        fen: '8/8/8/4k3/8/8/8/1N2KB2 w - - 0 1',
+        maxMoves: 40, defDepth: 4,
+        tips: ['Le mat n\'est possible que dans un coin de la couleur du Fou : ici a8 ou h1 (cases blanches).',
+               'Repoussez d\'abord le roi vers un bord, puis faites-le glisser vers le bon coin : le Cavalier couvre les cases que le Fou ne peut pas contrôler.'],
+        theory: 'Le plus difficile des mats élémentaires (33 coups au plus). Le roi adverse est d\'abord poussé vers un bord ; s\'il se réfugie dans un coin de la mauvaise couleur, on le chasse vers le bon coin avec la manœuvre en « W » du Cavalier, le Fou et le roi verrouillant les cases de fuite.'
     },
     {
         id: 'kpk-carre', cat: 'pions', kind: 'kpk', goal: 'win', player: 'w', level: 1,
@@ -94,6 +126,38 @@ const ENDGAME_EXERCISES = [
         theory: 'Un pion de colonne a ou h ne gagne pas si le roi défenseur atteint le coin de promotion : le roi attaquant manque de place d\'un côté, et les pats tombent dès que le roi noir touche a8 ou b8.'
     },
     {
+        id: 'kpk-opposition-loin', cat: 'pions', kind: 'kpk', goal: 'win', player: 'w', level: 2,
+        title: 'Opposition à distance',
+        fen: '1k6/8/8/8/8/8/4P3/K7 w - - 0 1', solution: 'a1b2', unique: true,
+        tips: ['Les rois sont loin l\'un de l\'autre : c\'est l\'opposition, et non la vitesse, qui décide.',
+               'Placez votre roi sur la même colonne que le roi noir, avec un nombre impair de cases entre eux.'],
+        theory: 'Un seul coup gagne : 1.Kb2 ! prend l\'opposition à distance (même colonne, cinq cases entre les rois, Noirs au trait). À chaque pas du roi noir, le roi blanc répond par un pas qui conserve cette opposition, jusqu\'à atteindre les cases clés devant son pion. Tout autre premier coup laisse l\'opposition aux Noirs : nulle.'
+    },
+    {
+        id: 'kpk-opposition-loin-def', cat: 'pions', kind: 'kpk', goal: 'draw', player: 'b', level: 2, hold: 10,
+        title: 'Opposition à distance (défense)',
+        fen: '8/8/k7/8/8/8/1K2P3/8 b - - 0 1', solution: 'a6b6', unique: true,
+        tips: ['Le roi blanc menace de gagner les cases clés devant son pion : prenez-lui l\'opposition, même de loin.',
+               'Même colonne que le roi blanc, nombre impair de cases entre les deux rois.'],
+        theory: 'Un seul coup annule : …Kb6 ! prend l\'opposition à distance (colonne b, trois cases entre les rois). Les Noirs la conservent ensuite à chaque coup en revenant vers le pion, et leur roi arrive à temps devant lui. Tout autre coup laisse le roi blanc prendre l\'opposition : le pion passe.'
+    },
+    {
+        id: 'pions-percee', cat: 'pions', kind: 'pawns', goal: 'win', player: 'w', level: 3,
+        title: 'La percée',
+        fen: '6k1/ppp5/8/PPP5/8/8/8/6K1 w - - 0 1', horizon: 11, maxMoves: 8, solution: 'b5b6', unique: true,
+        tips: ['Les rois sont trop loin : un sacrifice peut créer un pion passé que personne ne rattrapera.',
+               'Sacrifiez le pion du milieu ; selon la prise, un second sacrifice libère le pion d\'à côté.'],
+        theory: '1.b6 ! : si 1…cxb6 2.a6 ! bxa6 3.c6, et si 1…axb6 2.c6 ! bxc6 3.a6 — un pion blanc file à dame, hors de portée du roi noir. Tout autre premier coup laisse aux Noirs le temps de bloquer par …b6 : la percée n\'existe plus.'
+    },
+    {
+        id: 'pions-reti', cat: 'pions', kind: 'pawns', goal: 'draw', player: 'w', level: 3, hold: 6,
+        title: 'L\'étude de Réti',
+        fen: '7K/8/k1P5/7p/8/8/8/8 w - - 0 1', horizon: 20, solution: 'h8g7', unique: true,
+        tips: ['Le roi blanc paraît trop loin du pion h… mais un roi peut viser deux objectifs à la fois.',
+               'Marchez en diagonale : vers le pion h et, en même temps, vers votre pion c.'],
+        theory: '1.Kg7 ! h4 2.Kf6 ! : le roi menace à la fois de rattraper le pion h et de soutenir son pion c. Après 2…Kb6 3.Ke5 !, si 3…h3 4.Kd6 h2 5.c7, les deux camps vont à dame : nulle ; si 3…Kxc6 4.Kf4, le roi rattrape le pion h. Sur l\'échiquier, la diagonale est aussi courte que la ligne droite.'
+    },
+    {
         id: 'rook-lucena', cat: 'tours', kind: 'script', goal: 'win', player: 'w', level: 3,
         title: 'Position de Lucena',
         fen: '3K4/3P2k1/8/8/8/8/r7/5R2 w - - 0 1',
@@ -143,11 +207,23 @@ function endgameSelfTest() {
             const ok = EG.legalMoves(st).filter(m => !_egPhilidorCheck(st, m));
             if (!ok.length) problems.push('aucun coup de défense conforme');
         }
+        if (ex.kind === 'pawns') {
+            const v = EG.pawnValue(st, ex.horizon), moves = _egPawnMoves(st);
+            if (ex.goal === 'win' && v !== 1) problems.push(`gain non prouvé à l'horizon ${ex.horizon}`);
+            if (ex.goal === 'draw' && v === -1) problems.push('position perdue pour le joueur');
+            const good = moves.filter(m => ex.goal === 'win' ? EG.pawnMoveValue(st, m, ex.horizon) === 1 : EG.pawnMoveValue(st, m, ex.horizon) >= 0);
+            if (!good.length) problems.push('aucun coup correct');
+            if (ex.solution && !good.some(m => _egUci(m) === ex.solution)) problems.push(`la solution annoncée (${ex.solution}) n'est pas jugée correcte`);
+            if (ex.unique && good.length !== 1) problems.push(`${good.length} coups jugés corrects, un seul attendu`);
+        }
         if (ex.kind === 'kpk') {
             const pr = EG.kpkProbe(st), expectWin = ex.goal === 'win';
             if (pr.invalid) problems.push('position invalide pour la base KPK');
             else if (pr.win !== expectWin) problems.push(`verdict théorique « ${pr.win ? 'gain' : 'nulle'} » ≠ objectif « ${ex.goal} »`);
-            if (EG.kpkMoves(st).filter(x => x.info.win === (ex.goal === 'win')).length === 0) problems.push('aucun coup correct');
+            const good = EG.kpkMoves(st).filter(x => x.info.win === (ex.goal === 'win'));
+            if (!good.length) problems.push('aucun coup correct');
+            if (ex.solution && !good.some(x => _egUci(x.m) === ex.solution)) problems.push(`la solution annoncée (${ex.solution}) n'est pas jugée correcte`);
+            if (ex.unique && good.length !== 1) problems.push(`${good.length} coups jugés corrects, un seul attendu`);
         }
         return { id: ex.id, ok: !problems.length, problems };
     });

@@ -448,8 +448,83 @@ const EG = (function () {
         return white(st, plies);
     }
 
+    // ─── Finales de pions (rois + pions) : recherche bornée avec table de transpositions ─
+    // Valeur pour le camp au trait : 1 gagne, -1 perd, 0 nulle — ou rien de décisif dans l'horizon.
+    //   gain = promotion en Dame qui ne peut pas être prise et sans contre-promotion immédiate
+    //          (Dame contre Dame : comptée nulle), ou mat ; pat = nulle ;
+    //   un seul pion sur l'échiquier : verdict EXACT de la base KPK (sans limite d'horizon).
+    // Les valeurs ±1 sont des preuves ; 0 signifie seulement « pas de gain forcé dans l'horizon ».
+    // D'où l'usage : un coup est déclaré fautif seulement s'il donne une valeur décisive prouvée
+    // à l'adversaire, ou (exercices de gain) s'il perd un gain que l'horizon choisi suffit à voir.
+    let pawnTT = new Map();
+    const PAWN_TT_MAX = 3e6;
+    const pawnKey = st => { let k = st.stm > 0 ? 'w' : 'b'; for (let i = 0; i < 64; i++) if (st.b[i]) k += i.toString(36) + st.b[i]; return k; };
+
+    function pawnCount(b) { let n = 0, side = 0; for (let i = 0; i < 64; i++) if (Math.abs(b[i]) === P) { n++; side = b[i] > 0 ? 1 : -1; } return { n, side }; }
+
+    // Valeur pour le camp qui vient de promouvoir en `to` (ns : adversaire au trait).
+    function afterPromotion(ns, to, depth) {
+        const rep = legalMoves(ns);
+        if (!rep.length) return inCheck(ns) ? 1 : 0;
+        const caps = rep.filter(r => ((r >> 6) & 63) === to);
+        if (caps.length) {                                         // Dame prise : on continue la partie
+            let worst = 1;
+            for (const c of caps) { const v = depth >= 2 ? pawnValue(make(ns, c), depth - 2) : 0; if (v < worst) worst = v; if (worst === -1) break; }
+            return worst;
+        }
+        return legalMoves(ns).some(r => r >> 12) ? 0 : 1;          // contre-promotion immédiate : nulle
+    }
+
+    function pawnValue(st, depth) {
+        const pc = pawnCount(st.b);
+        if (pc.n === 0) return 0;
+        if (pc.n === 1) { const pr = kpkProbe(st); return pr.win ? (pc.side === st.stm ? 1 : -1) : 0; }
+        const k = pawnKey(st), e = pawnTT.get(k);
+        if (e !== undefined && (e.v !== 0 || e.d >= depth)) return e.v;
+        const moves = legalMoves(st);
+        let best;
+        if (!moves.length) best = inCheck(st) ? -1 : 0;
+        else if (depth <= 0) return 0;
+        else {
+            best = -1;
+            const prio = m => (m >> 12 ? 4 : 0) + (Math.abs(st.b[m & 63]) === P ? 2 : 0);
+            moves.sort((a, c) => prio(c) - prio(a));               // promotions et poussées d'abord
+            for (const m of moves) {
+                const pr = m >> 12;
+                if (pr && pr !== Q) continue;
+                const ns = make(st, m);
+                const v = pr ? afterPromotion(ns, (m >> 6) & 63, depth - 1) : -pawnValue(ns, depth - 1);
+                if (v > best) best = v;
+                if (best === 1) break;
+            }
+        }
+        if (pawnTT.size > PAWN_TT_MAX) pawnTT = new Map();
+        pawnTT.set(k, { v: best, d: best === 0 ? depth : Infinity });
+        return best;
+    }
+
+    // Valeur d'un coup pour le camp qui le joue (même convention que pawnValue).
+    function pawnMoveValue(st, m, depth) {
+        const pr = m >> 12, ns = make(st, m);
+        if (pr) return pr === Q ? afterPromotion(ns, (m >> 6) & 63, depth - 1) : -pawnValue(ns, depth - 1);
+        return -pawnValue(ns, depth - 1);
+    }
+
+    // Plus petit horizon (demi-coups) qui prouve le gain du camp au trait après le coup m ; Infinity sinon.
+    function pawnMoveWinDepth(st, m, cap) {
+        for (let d = 1; d <= cap; d++) if (pawnMoveValue(st, m, d) === 1) return d;
+        return Infinity;
+    }
+
+    // Plus petit horizon qui prouve la perte du camp au trait après le coup m (résistance) ; Infinity sinon.
+    function pawnMoveLossDepth(st, m, cap) {
+        for (let d = 1; d <= cap; d++) if (pawnMoveValue(st, m, d) === -1) return d;
+        return Infinity;
+    }
+
     return {
         P, N, B, R, Q, K, LETTER, MATE, forcesPromotion,
+        pawnValue, pawnMoveValue, pawnMoveWinDepth, pawnMoveLossDepth, pawnCount,
         fromFen, fromGlobals, mFrom, mTo, mPromo, mk, promoLetter,
         attacked, inCheck, legalMoves, make, kingSq, piecesOf, dist,
         searchBest, judgeMate,
