@@ -1292,6 +1292,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     transition: background .15s, color .15s, box-shadow .15s;
 }
 .tr-seg-btn:hover { color: var(--text); }
+.tr-seg-note { padding: 7px 13px; font-size: 12.5px; font-weight: 700; color: var(--text-dim); }
 .tr-seg-btn.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
 .tr-seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 

@@ -13,9 +13,13 @@
  *
  * Options (persistées, défauts = comportement historique) :
  *   - Profondeur max  : 0 = illimitée ; sinon seules les positions avec ply <= maxPlies sont tirées.
- *   - Exercice        : seqLen 1 = coup unique ; 3 / 5 = nombre de coups à enchaîner ; 999 = fin de variante.
- *     Après chaque bon coup, l'ordinateur rejoue la réponse adverse enregistrée dans les `path` du
- *     répertoire, et la position suivante est interrogée (erreurs comptées sur la position exacte).
+ *   - Départ          : fromStart 0 = position tirée au sort (ci-dessus) ;
+ *                       1 = ligne complète, de la position initiale jusqu'à la fin de la variante.
+ *   - Exercice        : seqLen 1 = coup unique ; 3 / 5 = nombre de coups à enchaîner ; 999 = fin de variante
+ *                       (sans objet en ligne complète, qui va toujours jusqu'au bout).
+ *     Après chaque bon coup, l'ordinateur rejoue une réponse adverse enregistrée dans les `path` du
+ *     répertoire — de préférence celle qui mène aux positions les plus à réviser — et la position
+ *     suivante est interrogée (erreurs comptées sur la position exacte).
  *   - Solution        : bouton qui surligne le coup attendu ; aucune réussite n'est comptée.
  */
 
@@ -40,11 +44,12 @@ const trainingState = {
 // ─── OPTIONS (persistées) ─────────────────────────────────────────────────────
 
 function _loadTrainingSettings() {
-    const d = { maxPlies: 0, seqLen: 1 };
+    const d = { maxPlies: 0, seqLen: 1, fromStart: 0 };
     try {
         const s = dataStore.getJSON(TRAIN_SETTINGS_KEY, null) || {};
         if (Number.isFinite(s.maxPlies) && s.maxPlies >= 0) d.maxPlies = s.maxPlies;
         if (Number.isFinite(s.seqLen)   && s.seqLen   >= 1) d.seqLen   = s.seqLen;
+        if (s.fromStart === 1) d.fromStart = 1;
     } catch (_) { /* stockage indisponible : valeurs par défaut */ }
     return d;
 }
@@ -109,9 +114,12 @@ function initTraining() {
                 data-action="trainingOption" data-arg="${name}=${v}">${txt}</button>`).join('')}
           </div>
         </div>`;
+    const full = trainingSettings.fromStart === 1;
     const options = '<div class="tr-options">'
+        + seg('Départ', 'fromStart', [[0, 'Position ciblée'], [1, 'Début de partie']], trainingSettings.fromStart)
         + seg('Profondeur', 'maxPlies', [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], trainingSettings.maxPlies)
-        + seg('Exercice', 'seqLen', [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [TRAIN_SEQ_END, 'Variante']], trainingSettings.seqLen)
+        + (full ? '<div class="tr-opt"><span class="tr-opt-label">Exercice</span><div class="tr-seg tr-seg-note">Toute la ligne, jusqu\'à la fin de la variante</div></div>'
+                : seg('Exercice', 'seqLen', [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [TRAIN_SEQ_END, 'Variante']], trainingSettings.seqLen))
         + '</div>';
 
     // ── Bandeau : objectif du jour ──
@@ -158,7 +166,7 @@ function initTraining() {
               ${s.due ? `<span class="tr-badge due"><i class="tr-pulse"></i>${s.due} à réviser</span>` : '<span class="tr-badge ok">À jour</span>'}
               ${badge('weak', s.lv.weak, 'à retravailler')}${badge('fragile', s.lv.fragile, s.lv.fragile > 1 ? 'fragiles' : 'fragile')}
             </div>
-            <div class="tr-cta">${s.due ? 'Réviser maintenant' : `Prochaine révision ${_inLabel(s.next)} · s'entraîner quand même`}<span class="tr-arrow">${ico('chevron-right')}</span></div>
+            <div class="tr-cta">${full ? 'Jouer une ligne complète' : s.due ? 'Réviser maintenant' : `Prochaine révision ${_inLabel(s.next)} · s'entraîner quand même`}<span class="tr-arrow">${ico('chevron-right')}</span></div>
         </div>`;
     }).join('');
 
@@ -288,6 +296,7 @@ function _findPathToKey(key) {
 function nextDrill() {
     stopTraining();
     if (!_trainingPool().length) { setStatus('Aucune position dans ce répertoire.', 'info'); return; }
+    if (trainingSettings.fromStart === 1 && _startFullLine()) return;     // sinon : repli sur une position ciblée
 
     const key   = _pickDrill();
     const entry = openingDB[key];
@@ -364,21 +373,75 @@ function _drillReady() {
     setStatus(`À vous de jouer · ${trainingState.reason}${_seqLabel()}${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
 }
 
+// ─── LIGNE COMPLÈTE (depuis la position initiale) ─────────────────────────────
+// Blancs : la main est rendue tout de suite. Noirs : l'ordinateur joue d'abord un coup du répertoire.
+// Puis la séquence continue jusqu'à la fin de la variante (cf. _continueSequence).
+// Renvoie false si aucune ligne ne part de la position initiale (entrées sans chemin connu).
+function _startFullLine() {
+    trainingState.reason      = 'Ligne complète';
+    trainingState.seq         = { len: TRAIN_SEQ_END, done: 0, assisted: false };
+    trainingState.solutionFor = null;
+    trainingState.busy        = true;
+    _syncSolutionBtn();
+    loadPositionFromPath([]);
+    trainingState.current = trainingState.lastKey = positionKey();
+    if (playerColor === 'w') {
+        if (!openingDB[trainingState.current] || !_isEligible(openingDB[trainingState.current])) return false;
+        _later(_drillReady, 300);
+        return true;
+    }
+    const opp = _pickOppContinuation([]);
+    if (!opp) return false;
+    setStatus('Ligne complète · l\'adversaire commence…', 'info');
+    _playOpponentReply(opp);
+    return true;
+}
+
 // ─── SÉQUENCE : RÉPONSE ADVERSE ENREGISTRÉE ───────────────────────────────────
 
-// Parmi les entrées dont le `path` prolonge la ligne jouée de (coup adverse + mon coup suivant),
-// renvoie au hasard un coup adverse UCI ; null = fin de la variante (ou limite de profondeur).
+// Coups adverses UCI qui prolongent la ligne jouée et mènent à une position de mon répertoire
+// (une entrée dont le `path` vaut ligne + coup adverse + mon coup). Tirage pondéré : chaque branche
+// pèse autant que la position la plus prioritaire qu'elle contient (cf. _trainingWeight), pour
+// guider vers ce qui est à réviser. null = fin de la variante (ou limite de profondeur).
 function _pickOppContinuation(line) {
-    const n = line.length, cand = new Set();
+    const n = line.length, valid = new Set(), weight = new Map(), now = Date.now();
     for (const k in openingDB) {
         const e = openingDB[k], p = e.path;
-        if (!p || p.length !== n + 2 || !_isEligible(e)) continue;
+        if (!p || p.length < n + 2 || !_isEligible(e)) continue;
         let match = true;
         for (let i = 0; i < n; i++) if (p[i] !== line[i]) { match = false; break; }
-        if (match) cand.add(p[n]);
+        if (!match) continue;
+        if (p.length === n + 2) valid.add(p[n]);
+        weight.set(p[n], Math.max(weight.get(p[n]) || 0, _trainingWeight(e, now)));
     }
-    const arr = [...cand];
-    return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
+    const arr = [...valid];
+    if (!arr.length) return null;
+    let r = Math.random() * arr.reduce((s, u) => s + weight.get(u), 0);
+    for (const u of arr) { r -= weight.get(u); if (r <= 0) return u; }
+    return arr[arr.length - 1];
+}
+
+// Joue le coup adverse puis rend la main, ou termine l'exercice si la position atteinte n'est pas
+// au répertoire.
+function _playOpponentReply(opp) {
+    _later(() => {
+        const m   = _parseUci(opp);
+        const san = toAlgebraic(m.from, m.to, m.promo);
+        playMoveSound(m.from, m.to);
+        animateNextMove(m.from, m.to);
+        applyMove(m.from, m.to, m.promo);
+        selected = null; legalMoves = []; hintPiece = null;
+        renderBoard();
+        if (openingDB[positionKey()]) {
+            trainingState.solutionFor = null;
+            trainingState.busy = false;
+            _syncSolutionBtn();
+            setStatus(`Adversaire : ${san} · à vous de jouer${_seqLabel()}`, 'info');
+        } else {
+            setStatus('Fin de la variante.', 'ok');
+            _finishDrill();
+        }
+    }, TRAIN_STEP_MS);
 }
 
 function _finishDrill() {
@@ -391,27 +454,7 @@ function _continueSequence() {
     if (s.done < s.len) {
         const line = moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
         const opp  = _pickOppContinuation(line);
-        if (opp) {
-            _later(() => {
-                const m   = _parseUci(opp);
-                const san = toAlgebraic(m.from, m.to, m.promo);
-                playMoveSound(m.from, m.to);
-                animateNextMove(m.from, m.to);
-                applyMove(m.from, m.to, m.promo);
-                selected = null; legalMoves = []; hintPiece = null;
-                renderBoard();
-                if (openingDB[positionKey()]) {
-                    trainingState.solutionFor = null;
-                    trainingState.busy = false;
-                    _syncSolutionBtn();
-                    setStatus(`Adversaire : ${san} · à vous de jouer${_seqLabel()}`, 'info');
-                } else {
-                    setStatus('Fin de la variante.', 'ok');
-                    _finishDrill();
-                }
-            }, TRAIN_STEP_MS);
-            return;
-        }
+        if (opp) { _playOpponentReply(opp); return; }
         if (s.len > 1) setStatus('✓ Fin de la variante.', 'ok');
     }
     _finishDrill();
