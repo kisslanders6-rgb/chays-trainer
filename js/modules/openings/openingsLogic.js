@@ -5,7 +5,7 @@
  *   - Clics sur l'échiquier, coups de l'adversaire (libres) et du joueur
  *   - Validation contre la base : UNE SEULE réponse par position de mon camp
  *   - Indice textuel (type de pièce), annulation, réinitialisation
- * Panneau de la base : adminPanel.js · Import / export PGN : pgn.js
+ * Import / export : dataPanel.js, pgn.js · Édition des coups : treeView.js (onglet Arbre)
  *
  * Modèle : openingDB[clé] = { move, san, attempts, failures, path?, ply? }
  *   - position inconnue          → le coup devient la référence (attempts 1, failures 0)
@@ -42,6 +42,16 @@ function _applyUciRaw(uci) {
     }
     turn = t === 'w' ? 'b' : 'w';
     return san;
+}
+
+function formatLinePrefix(sans) {
+    if (!sans.length) return '(position de départ)';
+    let out = '';
+    sans.forEach((san, i) => {
+        if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
+        out += san + ' ';
+    });
+    return out.trim();
 }
 
 function _pathToSans(path) {
@@ -457,6 +467,20 @@ function _deleteEntries(keys) {
     return true;
 }
 
+// Supprime l'entrée `key` après confirmation ; propose aussi les branches devenues inaccessibles.
+// onDone(nombre de coups orphelins supprimés en plus) n'est appelé que si la suppression a eu lieu.
+function confirmDeleteEntry(key, message, onDone) {
+    const orphans = findOrphans(key, null);
+    const finish  = extra => { if (_deleteEntries([key].concat(extra))) onDone(extra.length); };
+    if (!orphans.length) {
+        askConfirm(message, () => finish([]));
+    } else {
+        askConfirmChoice(_orphanMessage('suppression', orphans.length),
+            { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
+            () => finish(orphans), () => finish([]));
+    }
+}
+
 // Confirmation à trois issues : cascade / ce coup seulement / annuler.
 function askConfirmChoice(message, labels, onCascade, onSolo) {
     const overlay = document.getElementById('confirm-overlay');
@@ -519,28 +543,18 @@ function undoMove() {
         return positionKey();
     });
 
-    if (!openingDB[key]) {                       // rien d'enregistré (déjà supprimé via « Base »)
+    if (!openingDB[key]) {                       // rien d'enregistré (déjà supprimé depuis l'Arbre)
         performUndo();
         setStatus('Coup annulé.', 'info');
         return;
     }
 
-    const orphans = findOrphans(key, null);
-    const finish  = extra => {
-        if (!_deleteEntries([key].concat(extra))) return;
+    confirmDeleteEntry(key, 'Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ? (Il est conservé 30 jours dans la corbeille.)', extra => {
         performUndo();
         if (typeof refreshTree === 'function') refreshTree();
         setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.'
-            + (extra.length ? ` (${extra.length} branche(s) orpheline(s) nettoyée(s).)` : ''), 'new');
-    };
-
-    if (!orphans.length) {
-        askConfirm('Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ? (Il est conservé 30 jours dans la corbeille.)', () => finish([]));
-    } else {
-        askConfirmChoice(_orphanMessage('suppression', orphans.length),
-            { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
-            () => finish(orphans), () => finish([]));
-    }
+            + (extra ? ` (${extra} branche(s) orpheline(s) nettoyée(s).)` : ''), 'new');
+    });
 }
 
 function performUndo() {

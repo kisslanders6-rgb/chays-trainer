@@ -7,6 +7,9 @@
  * Un clic sur un nœud charge la position APRÈS ce coup, avec la ligne complète dans
  * l'historique : sur un « non couvert », il suffit de jouer sa réponse pour l'enregistrer.
  * Indentation : elle n'augmente que lorsque l'adversaire a plusieurs réponses (variantes).
+ * Édition : le bouton ⋯ d'un de mes coups ouvre « Remplacer » (le coup part à la corbeille et
+ * l'échiquier se place juste avant : le prochain coup joué devient la référence) et « Supprimer ».
+ * Les coups « isolés » (non rattachés à la position de départ) peuvent être envoyés à la corbeille.
  *
  * Deux vues :
  *   « Depuis ici »   : seuls le chemin menant à la position affichée, la position elle-même
@@ -24,6 +27,7 @@ let _treeData  = null;           // arbre construit (invalidé par refreshTree)
 let _treeTimer = null;
 let _syncTimer = null;
 const _expandedBranches = new Set();
+let _treeActionsFor = null;      // chemin (texte) de la ligne dont les actions ⋯ sont ouvertes
 
 const TREE_FOCUS_KEY = 'chessTrainer_treeFocus';
 let _treeFocus = true;
@@ -107,7 +111,7 @@ function buildRepertoireTree() {
     function addMe(key, path, depth) {
         const e  = openingDB[key];
         const mp = path.concat(e.move);
-        const row = { kind: 'me', san: e.san, ply: mp.length, depth, path: mp, key: null,
+        const row = { kind: 'me', san: e.san, ply: mp.length, depth, path: mp, key: null, entryKey: key,
                       attempts: e.attempts, failures: e.failures, ref: seen.has(key) };
         rows.push(row);
         if (row.ref) { row.key = keyAfter(mp); return; }      // transposition : déjà développée plus haut
@@ -121,8 +125,8 @@ function buildRepertoireTree() {
     if (playerColor === 'w') { if (openingDB[initKey]) addMe(initKey, [], 0); }
     else addReplies([], 0, repliesAfter([]).list);            // Noirs : on part des premiers coups adverses
 
-    const total = Object.keys(openingDB).length;
-    return { rows, uncovered, total, isolated: total - seen.size };
+    const isolatedKeys = Object.keys(openingDB).filter(k => !seen.has(k));
+    return { rows, uncovered, total: Object.keys(openingDB).length, isolated: isolatedKeys.length, isolatedKeys };
 }
 
 // ─── POSITION AFFICHÉE ────────────────────────────────────────────────────────
@@ -170,6 +174,35 @@ function _applyFocus(rows, curIdx) {
     }
 }
 
+// ─── ÉDITION DEPUIS L'ARBRE ───────────────────────────────────────────────────
+
+// Remplacer : le coup (et, au choix, ses suites devenues inaccessibles) part à la corbeille, puis
+// l'échiquier se place juste avant : le prochain coup joué devient la nouvelle référence.
+function replaceTreeMove(r) {
+    confirmDeleteEntry(r.entryKey, `Remplacer ${_treeLabel(r)} ? L'ancien coup est conservé 30 jours dans la corbeille ; vous jouerez ensuite le nouveau.`, extra => {
+        _treeActionsFor = null;
+        loadPositionFromPath(r.path.slice(0, -1));
+        renderTree(true);
+        setStatus(`Jouez le nouveau coup à la place de ${r.san}.` + (extra ? ` (${extra} coup(s) orphelin(s) nettoyé(s).)` : ''), 'new');
+    });
+}
+
+function deleteTreeMove(r) {
+    confirmDeleteEntry(r.entryKey, `Placer ${_treeLabel(r)} dans la corbeille ? Il restera restaurable pendant 30 jours.`, extra => {
+        _treeActionsFor = null;
+        renderTree(true);
+        setStatus(`${_treeLabel(r)} supprimé` + (extra ? ` avec ${extra} coup(s) orphelin(s).` : '.') + ' Il reste 30 jours dans la corbeille.', 'info');
+    });
+}
+
+function cleanIsolatedMoves() {
+    const keys = (_treeData && _treeData.isolatedKeys) || [];
+    if (!keys.length) return;
+    askConfirm(`Placer ${keys.length} coup${keys.length > 1 ? 's isolés' : ' isolé'} dans la corbeille ? Ces coups ne sont rattachés à aucune ligne partant de la position de départ. Ils restent restaurables pendant 30 jours.`, () => {
+        if (_deleteEntries(keys)) renderTree(true);
+    });
+}
+
 // ─── RENDU ────────────────────────────────────────────────────────────────────
 
 function _treeLabel(r) {
@@ -190,7 +223,8 @@ function renderTree(rebuild) {
         return;
     }
     if (!t.rows.length) {
-        el.innerHTML = `<div class="tree-empty">Aucune ligne rattachée à la position de départ (${t.total} coup(s) isolé(s)).</div>`;
+        el.innerHTML = `<div class="tree-empty">Aucune ligne rattachée à la position de départ (${t.total} coup(s) isolé(s)).
+            <br><button class="tree-clean" data-clean="1">${ico('trash')} Mettre à la corbeille</button></div>`;
         return;
     }
 
@@ -204,7 +238,7 @@ function renderTree(rebuild) {
         </div>
         <span><i class="tree-dot me"></i> mes coups</span><span><i class="tree-dot opp"></i> adversaire</span>
         ${t.uncovered ? `<span class="tree-warn-text">${ico('alert-triangle')} ${t.uncovered} non couvert${t.uncovered > 1 ? 's' : ''}</span>` : `<span class="tree-ok-text">${ico('check')} Rien de non couvert</span>`}
-        ${t.isolated > 0 ? `<span>${t.isolated} isolé${t.isolated > 1 ? 's' : ''}</span>` : ''}
+        ${t.isolated > 0 ? `<span title="Coups non rattachés à la position de départ">${t.isolated} isolé${t.isolated > 1 ? 's' : ''} <button class="tree-clean" data-clean="1">Nettoyer</button></span>` : ''}
     </div>`;
 
     t.rows.forEach((r, i) => {
@@ -216,13 +250,18 @@ function renderTree(rebuild) {
             lead   = `<button class="tree-caret" data-fold="${i}" aria-label="Replier ou déplier">${r.fold.expanded ? '▾' : '▸'}</button>`;
             if (!r.fold.expanded) badges += `<span class="tree-fold-count">+${r.fold.count}</span>`;
         }
+        const open = r.kind === 'me' && _treeActionsFor === r.path.join(' ');
         if (r.kind === 'me') {
             if (r.ref) badges += '<span class="tree-ref">↪ transposition</span>';
             if (r.attempts && r.failures) badges += `<span class="tree-err">${Math.round(100 * r.failures / r.attempts)}%</span>`;
+            badges += `<button class="tree-more ${open ? 'open' : ''}" data-more="${i}" title="Remplacer ou supprimer ce coup" aria-label="Actions sur ce coup" aria-expanded="${open}">${ico('more-horizontal')}</button>`;
         } else if (!r.covered) {
             badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;
         }
         html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${escapeHtml(_treeLabel(r))}</span>${badges}</div>`;
+        if (open) html += `<div class="tree-actions" style="--d:${r.depth}">
+            <button class="btn btn-tool" data-replace="${i}">${ico('pencil')} Remplacer</button>
+            <button class="btn btn-tool is-danger" data-delete="${i}">${ico('trash')} Supprimer</button></div>`;
     });
     el.innerHTML = html;
 
@@ -272,6 +311,22 @@ document.getElementById('tree-view').addEventListener('click', e => {
         }
         return;
     }
+    const more = e.target.closest('[data-more]');
+    if (more) {
+        const r = _treeRows[Number(more.dataset.more)], p = r && r.path.join(' ');
+        _treeActionsFor = _treeActionsFor === p ? null : p;
+        const el = document.getElementById('tree-view'), st = el.scrollTop;
+        renderTree(false);
+        el.scrollTop = st;
+        return;
+    }
+    const act = e.target.closest('[data-replace],[data-delete]');
+    if (act) {
+        const r = _treeRows[Number(act.dataset.replace ?? act.dataset.delete)];
+        if (r) (act.dataset.replace !== undefined ? replaceTreeMove : deleteTreeMove)(r);
+        return;
+    }
+    if (e.target.closest('[data-clean]')) { cleanIsolatedMoves(); return; }
     const f = e.target.closest('[data-forget]');
     if (f) {
         const r = _treeRows[Number(f.dataset.forget)];

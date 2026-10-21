@@ -32,7 +32,7 @@ js/
   core/               briques communes : utils (échappement HTML, actions data-action), stockage,
                       synchronisation (syncModel, cloudAdapter, cloudClient, auth, syncEngine, accountUI),
                       moteur d'échecs, pièces, icônes, sons, corbeille, sauvegarde, mobile
-  modules/openings/   mode Jouer : logique, échiquier, flèches, arbre, panneau Base, PGN, analyse d'une partie
+  modules/openings/   mode Jouer : logique, échiquier, flèches, arbre (édition des coups), panneau Données, PGN, analyse d'une partie
   modules/training/   entraînement
   modules/stats/      statistiques
   modules/endgame/    finales : noyau (egCore), catalogue (egExercises), séance (endgame)

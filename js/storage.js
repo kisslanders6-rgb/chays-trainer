@@ -411,7 +411,7 @@ function importDBFromFile(event) {
                 // Recharger la base active et l'UI
                 loadDB();
                 renderRepertoireList();
-                renderAdminEntries();
+                if (typeof refreshTree === 'function') refreshTree();
                 alert(`✓ Import réussi : ${count} entrée(s) importée(s) ou mise(s) à jour.`);
             }
         );

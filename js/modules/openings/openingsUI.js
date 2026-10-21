@@ -540,7 +540,7 @@ function _keyboardAllowed(e) {
     if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return false;
     const gs = document.getElementById('game-screen');
     if (!gs || gs.style.display === 'none' || gs.classList.contains('hidden')) return false;
-    return ['admin-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay', 'review-overlay', 'settings-overlay', 'trash-overlay', 'text-overlay']
+    return ['data-overlay', 'confirm-overlay', 'promo-overlay', 'help-overlay', 'pgn-overlay', 'review-overlay', 'settings-overlay', 'trash-overlay', 'text-overlay']
         .every(id => document.getElementById(id).classList.contains('hidden'));
 }
 

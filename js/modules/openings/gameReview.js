@@ -139,13 +139,17 @@ function runGameReview() {
         note('err', 'Cette partie commence depuis une position personnalisée : elle ne peut pas être comparée au répertoire.'); return;
     }
 
-    const same = _reviewColor === playerColor;
+    const same = _reviewColor === playerColor && _gameScreenShown() && gameMode === 'play';   // base en mémoire à jour
     const r = detectDeviation(game.sans, _reviewColor, same ? openingDB : readDBFor(currentRepertoire, _reviewColor),
                               same ? oppSeen : readOppFor(currentRepertoire, _reviewColor));
     if (!r.moves.length) { note('err', `Premier coup illisible ou illégal : <strong>${escapeHtml(r.illegal.san)}</strong>.`); return; }
 
-    // Couleur choisie différente de la couleur affichée : on bascule sur l'autre base du répertoire.
-    if (!same) {
+    // Hors du mode « Jouer » (accueil, entraînement…) : on ouvre une partie de la couleur choisie.
+    // En « Jouer » avec l'autre couleur : on bascule sur l'autre base du répertoire.
+    if (!_gameScreenShown() || gameMode !== 'play') {
+        if (_gameScreenShown()) goHome();
+        startGame(_reviewColor);
+    } else if (!same) {
         playerColor = _reviewColor;
         loadDB();
         showGameScreen(playerColor);
@@ -155,7 +159,6 @@ function runGameReview() {
     const counted = d && d.by === 'me' ? recordReviewMistake(d, _gameSignature(game.headers, game.sans)) : null;
 
     closeGameReview();
-    closeAdmin();
     loadPositionFromPath(r.moves.map(m => m.uci));
     navGo(d ? d.ply : r.moves.length - 1);                 // après le coup déviant ; ◀ = dernière position théorique
 

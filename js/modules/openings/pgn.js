@@ -190,13 +190,24 @@ function importPgnText(text) {
 
 // ─── IMPORT PGN : MODALE ──────────────────────────────────────────────────────
 
+let _pgnColor = 'w';
+
 function showPgnImport() {
-    document.getElementById('pgn-target').textContent =
-        `${currentRepertoire} · ${playerColor === 'w' ? 'Blancs' : 'Noirs'}`;
+    document.getElementById('pgn-target').textContent = currentRepertoire;
+    setPgnColor(playerColor);
     document.getElementById('pgn-text').value = '';
     document.getElementById('pgn-file-name').textContent = '';
     document.getElementById('pgn-result').innerHTML = '';
     document.getElementById('pgn-overlay').classList.remove('hidden');
+}
+
+function setPgnColor(c) {
+    _pgnColor = c;
+    ['w', 'b'].forEach(k => {
+        const b = document.getElementById('pgn-seg-' + k);
+        b.classList.toggle('active', k === c);
+        b.setAttribute('aria-pressed', k === c);
+    });
 }
 
 function closePgnImport() {
@@ -221,6 +232,7 @@ function runPgnImport() {
     const text = document.getElementById('pgn-text').value.trim();
     if (!text) { out.innerHTML = '<div class="pgn-note warn">Collez du PGN ou choisissez un fichier .pgn.</div>'; return; }
 
+    useRepertoireColor(_pgnColor);                     // la base du répertoire / de la couleur visés est chargée
     const r = importPgnText(text);
     const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
     let html = '';
@@ -251,7 +263,6 @@ function runPgnImport() {
         html += '</ul>';
     }
     out.innerHTML = html;
-    renderAdminEntries();
     if (typeof refreshTree === 'function') refreshTree();
 }
 

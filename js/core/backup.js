@@ -138,7 +138,7 @@ function renderBackupStatus() {
             <button class="btn ${urgent ? 'btn-primary' : ''}" data-action="backupExport" title="Fichier .json : répertoires, statistiques, planning de révision, finales">${ico('download')} Télécharger une sauvegarde</button>
             <button class="btn" data-action="importDBPrompt" title="Fusionne un fichier .json avec vos données">${ico('upload')} Restaurer une sauvegarde</button>
           </div>
-          <div class="backup-note">${note} Pour échanger des lignes avec d'autres logiciels, utilisez l'export PGN du panneau Base.</div>
+          <div class="backup-note">${note} Pour échanger des lignes avec d'autres logiciels, utilisez l'export PGN du panneau Données.</div>
         </div>`;
     _fillPersistence();
 }

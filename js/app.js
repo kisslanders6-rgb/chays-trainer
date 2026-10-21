@@ -268,6 +268,7 @@ function repMenuAction(action) {
     else if (action === 'rename') renameRepertoirePrompt(currentRepertoire);
     else if (action === 'delete') deleteRepertoirePrompt(currentRepertoire);   // confirmation + protection de « Général »
     else if (action === 'trash')  showTrash();
+    else if (action === 'data')   showData();
 }
 
 (function initRepMenuDismiss() {
@@ -351,7 +352,7 @@ function goHome(tab) {
     applyModeUI();
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('game-screen').classList.add('hidden');
-    document.getElementById('admin-overlay').classList.add('hidden');
+    document.getElementById('data-overlay').classList.add('hidden');
     document.getElementById('promo-overlay').classList.add('hidden');
     document.getElementById('confirm-overlay').classList.add('hidden');
     document.getElementById('setup-screen').style.display = '';

@@ -210,7 +210,6 @@ function onTrashRestore(id) {
             renderRepertoireList(); initStats(); initTraining();
         } else {
             if (r.rep === currentRepertoire && r.color === playerColor && document.getElementById('game-screen').style.display !== 'none') loadDB();
-            if (!document.getElementById('admin-overlay').classList.contains('hidden')) renderAdminEntries();
             if (typeof refreshTree === 'function') refreshTree();
             initStats(); initTraining();
         }

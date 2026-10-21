@@ -95,6 +95,7 @@
                                 <button class="menu-item" id="rep-menu-rename" role="menuitem" onclick="repMenuAction('rename')"><svg class="ico"><use href="#i-pencil"/></svg> <span id="rep-menu-rename-label">Renommer le répertoire</span></button>
                                 <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
                                 <div class="menu-sep"></div>
+                                <button class="menu-item" role="menuitem" onclick="repMenuAction('data')"><svg class="ico"><use href="#i-database"/></svg> Données (import / export)</button>
                                 <button class="menu-item" role="menuitem" onclick="repMenuAction('trash')"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></button>
                             </div>
                         </div>
@@ -193,9 +194,6 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool tb-more" onclick="showAdmin()" title="Base de données d'ouvertures">
-                                <svg class="ico"><use href="#i-database"/></svg><span class="btn-label">Base</span>
-                            </button>
                             <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Coller le PGN d'une partie jouée pour trouver où elle sort du répertoire">
                                 <svg class="ico"><use href="#i-target"/></svg><span class="btn-label">Partie</span>
                             </button>
@@ -256,30 +254,15 @@
         </div>
     </div>
 
-    <!-- ─── OVERLAY BASE DE DONNÉES ──────────────────────────────────────── -->
-    <div id="admin-overlay" class="overlay hidden">
+    <!-- ─── OVERLAY DONNÉES (import / export) ─────────────────────────────── -->
+    <div id="data-overlay" class="overlay hidden">
         <div class="panel">
             <div class="panel-head">
-                <div class="panel-title"><svg class="ico"><use href="#i-database"/></svg> Base de données d'ouvertures</div>
-                <div class="panel-head-actions">
-                    <button class="panel-x" onclick="showTrash()" data-trash-dot title="Corbeille" aria-label="Corbeille"><svg class="ico"><use href="#i-trash"/></svg></button>
-                    <button class="panel-x" onclick="adminScroll('top')" title="Aller tout en haut" aria-label="Tout en haut"><svg class="ico"><use href="#i-chevron-up"/></svg></button>
-                    <button class="panel-x" onclick="adminScroll('bottom')" title="Aller tout en bas" aria-label="Tout en bas"><svg class="ico"><use href="#i-chevron-down"/></svg></button>
-                    <button class="panel-x" onclick="closeAdmin()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
-                </div>
+                <div class="panel-title"><svg class="ico"><use href="#i-database"/></svg> Données</div>
+                <button class="panel-x" onclick="closeData()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
-            <div class="admin-tabs" id="admin-tabs"></div>
-            <div id="admin-entries"></div>
-            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);margin-top:10px;" onclick="addManualEntry()"><svg class="ico"><use href="#i-plus"/></svg> Ajouter une entrée manuelle</button>
-            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportDB()" title="Fichier .json complet : répertoires, statistiques, planning de révision, finales"><svg class="ico"><use href="#i-download"/></svg> Sauvegarde (.json)</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="importDBPrompt()" title="Fusionne une sauvegarde .json avec vos données"><svg class="ico"><use href="#i-upload"/></svg> Restaurer (.json)</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="showPgnImport()"><svg class="ico"><use href="#i-upload"/></svg> Importer PGN</button>
-                <button class="panel-close" style="border-color:var(--new);color:var(--new);margin-top:0;flex:1;" onclick="exportPgn()" title="Toutes les lignes du répertoire actif, Blancs et Noirs"><svg class="ico"><use href="#i-download"/></svg> Exporter PGN</button>
-                <button class="panel-close" style="border-color:var(--accent);color:var(--accent);margin-top:0;flex:1 1 100%;" onclick="showGameReview()" title="Trouve le premier coup d'une partie jouée qui sort du répertoire"><svg class="ico"><use href="#i-target"/></svg> Analyser une partie (PGN)</button>
-            </div>
+            <div id="data-body"></div>
             <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importDBFromFile(event)" />
-            <button class="panel-close" onclick="closeAdmin()">Fermer</button>
         </div>
     </div>
 
@@ -311,7 +294,14 @@
                 <div class="panel-title"><svg class="ico"><use href="#i-upload"/></svg> Importer un PGN</div>
                 <button class="panel-x" onclick="closePgnImport()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
-            <div class="panel-sub">Import dans : <strong id="pgn-target" style="color:var(--accent)"></strong>. Les variantes (parenthèses) sont importées. Vos coups déjà enregistrés ne sont jamais écrasés.</div>
+            <div class="panel-sub">Répertoire : <strong id="pgn-target" style="color:var(--accent)"></strong>. Les variantes (parenthèses) sont importées. Vos coups déjà enregistrés ne sont jamais écrasés.</div>
+            <div class="review-color">
+                <span>Mes coups sont ceux des</span>
+                <div class="tr-seg" role="group" aria-label="Couleur importée">
+                    <button class="tr-seg-btn" id="pgn-seg-w" onclick="setPgnColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
+                    <button class="tr-seg-btn" id="pgn-seg-b" onclick="setPgnColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
+                </div>
+            </div>
             <div class="pgn-file-row">
                 <button class="btn" onclick="document.getElementById('pgn-file-input').click()"><svg class="ico"><use href="#i-folder-open"/></svg> Choisir un fichier .pgn</button>
                 <span id="pgn-file-name" class="pgn-file-name"></span>
@@ -341,6 +331,7 @@
             <div class="set-section">
                 <div class="set-label" style="margin-bottom:10px;">Sauvegarde et synchronisation</div>
                 <div id="backup-status"></div>
+                <button class="btn data-open-btn" onclick="closeSettings(); showData()"><svg class="ico"><use href="#i-database"/></svg> Données : PGN, analyse d'une partie, corbeille…</button>
             </div>
 
             <div class="set-section hidden" id="install-section">
@@ -443,8 +434,8 @@
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-database"/></svg></div>
-                <div><div class="help-title">Base, PGN et sauvegarde</div>
-                    <div class="help-text">Le panneau <strong>Base</strong> liste et modifie vos coups enregistrés. <strong>PGN</strong> : importez des lignes (variantes comprises) ou exportez votre répertoire pour d'autres logiciels. <strong>Analyser une partie</strong> (bouton <strong>Partie</strong>) : collez le PGN d'une partie jouée ; l'échiquier s'arrête sur le premier coup sorti du répertoire, et si c'est le vôtre, il compte comme une erreur. <strong>Sauvegarde (.json)</strong> : copie complète (statistiques, planning, finales) à télécharger ou restaurer. Les éléments supprimés restent 30 jours dans la <strong>Corbeille</strong>.</div></div>
+                <div><div class="help-title">Arbre, données et sauvegarde</div>
+                    <div class="help-text">L'onglet <strong>Arbre</strong> montre toutes vos lignes ; le bouton ⋯ d'un de vos coups permet de le <strong>remplacer</strong> ou de le <strong>supprimer</strong>. Le panneau <strong>Données</strong> (Paramètres, ou menu ⋮ des répertoires) regroupe la <strong>sauvegarde (.json)</strong> complète (statistiques, planning, finales), l'import et l'export <strong>PGN</strong> (variantes comprises), l'<strong>analyse d'une partie</strong> et la <strong>Corbeille</strong>. Analyser une partie (aussi via le bouton <strong>Partie</strong>) : collez le PGN d'une partie jouée ; l'échiquier s'arrête sur le premier coup sorti du répertoire, et si c'est le vôtre, il compte comme une erreur. Les éléments supprimés restent 30 jours dans la Corbeille.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-shield-check"/></svg></div>
@@ -511,7 +502,7 @@
 <script src="js/core/pieces.js"></script>
 <script src="js/core/chessEngine.js"></script>
 <script src="js/modules/openings/openingsLogic.js"></script>
-<script src="js/modules/openings/adminPanel.js"></script>
+<script src="js/modules/openings/dataPanel.js"></script>
 <script src="js/modules/openings/pgn.js"></script>
 <script src="js/modules/openings/gameReview.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>

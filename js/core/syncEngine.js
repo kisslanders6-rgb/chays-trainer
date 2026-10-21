@@ -90,7 +90,7 @@ const SyncEngine = (function () {
         if (keys.includes('chessTrainer_trash') && typeof updateTrashBadges === 'function') attempt(() => {
             updateTrashBadges(); if (!hidden('trash-overlay') && typeof renderTrash === 'function') renderTrash();
         });
-        if (!hidden('admin-overlay') && typeof renderAdminEntries === 'function') attempt(renderAdminEntries);
+        if (!hidden('data-overlay') && typeof renderDataPanel === 'function') attempt(renderDataPanel);
         if (typeof refreshTree === 'function') attempt(refreshTree);
         if (keys.includes('chessTrainer_prefs') && typeof applySyncedPrefs === 'function') attempt(applySyncedPrefs);
     }
