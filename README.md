@@ -5,6 +5,7 @@ Entraîneur d'échecs en français, sans dépendance ni étape de compilation : 
 - **Jouer** : vous jouez vos coups et ceux de l'adversaire. Dans une position inconnue, votre coup devient l'unique réponse enregistrée. Ensuite, il faut la retrouver.
 - **Entraînement** : les positions fragiles, oubliées ou dont la révision est due reviennent en priorité. L'échiquier rejoue les trois coups précédents pour remettre la position en contexte.
 - **Statistiques** : taux d'erreur par position, activité sur 30 jours, série de jours, révisions dues.
+- **Analyser une partie** : collez le PGN d'une partie jouée (Chess.com, Lichess) ; l'échiquier s'arrête sur le premier coup sorti du répertoire. Votre coup : erreur comptée sur la position. Coup adverse : nouveauté signalée.
 - **Finales** : mats élémentaires, finales de pions (vérifiées par une base exacte roi + pion contre roi) et défense de Philidor.
 - Import et export **PGN** et **JSON**, corbeille de 30 jours, flèches et cercles au clic droit, analyse de la position sur Lichess, mode hors ligne (PWA), synchronisation facultative entre appareils (Supabase).
 
@@ -31,7 +32,7 @@ js/
   core/               briques communes : utils (échappement HTML, actions data-action), stockage,
                       synchronisation (syncModel, cloudAdapter, cloudClient, auth, syncEngine, accountUI),
                       moteur d'échecs, pièces, icônes, sons, corbeille, sauvegarde, mobile
-  modules/openings/   mode Jouer : logique, échiquier, flèches, arbre, panneau Base, PGN
+  modules/openings/   mode Jouer : logique, échiquier, flèches, arbre, panneau Base, PGN, analyse d'une partie
   modules/training/   entraînement
   modules/stats/      statistiques
   modules/endgame/    finales : noyau (egCore), catalogue (egExercises), séance (endgame)

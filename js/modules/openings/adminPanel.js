@@ -2,7 +2,7 @@
  * modules/openings/adminPanel.js
  * ──────────────────────────────────────────────────────────────────────────
  * Panneau « Base de données d'ouvertures » : onglets de répertoire, liste des entrées,
- * modification / suppression / ajout manuel, fermeture des fenêtres Base, PGN et Corbeille.
+ * modification / suppression / ajout manuel, fermeture des fenêtres Base, PGN, Analyse d'une partie et Corbeille.
  */
 
 'use strict';
@@ -171,11 +171,11 @@ function closeAdmin() {
 // ─── OVERLAY BASE : fermeture par clic extérieur et touche Échap ──────────────
 
 (function initOverlayDismiss() {
-    ['admin-overlay', 'pgn-overlay', 'trash-overlay'].forEach(id => {
+    ['admin-overlay', 'pgn-overlay', 'review-overlay', 'trash-overlay'].forEach(id => {
         const overlay = document.getElementById(id);
         overlay.addEventListener('mousedown', e => {
             if (e.target !== overlay) return;
-            if (id === 'pgn-overlay') closePgnImport(); else if (id === 'trash-overlay') closeTrash(); else closeAdmin();
+            if (id === 'pgn-overlay') closePgnImport(); else if (id === 'review-overlay') closeGameReview(); else if (id === 'trash-overlay') closeTrash(); else closeAdmin();
         });
     });
 
@@ -186,6 +186,7 @@ function closeAdmin() {
         if (!hidden('confirm-overlay')) { document.getElementById('confirm-cancel-btn').click(); return; }
         if (!hidden('trash-overlay')) { closeTrash(); return; }
         if (!hidden('pgn-overlay')) { closePgnImport(); return; }
+        if (!hidden('review-overlay')) { closeGameReview(); return; }
         if (!hidden('admin-overlay')) closeAdmin();
     });
 })();

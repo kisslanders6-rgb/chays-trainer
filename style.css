@@ -638,6 +638,7 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .pgn-line { font-size: 12px; color: var(--text-dim); }
 .pgn-list { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
 .pgn-list strong { color: var(--text); }
+.review-color { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 10px; font-size: 13px; color: var(--text-muted); }
 
 /* ─── THÈMES D'ÉCHIQUIER (classique = valeurs par défaut du thème clair/sombre) ─ */
 html[data-board="wood"]  { --board-light: #f0d9b5; --board-dark: #b58863; --board-border: #8a6a4a; }
