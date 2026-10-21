@@ -21,8 +21,8 @@
  *     répertoire — de préférence celle qui mène aux positions les plus à réviser — et la position
  *     suivante est interrogée (erreurs comptées sur la position exacte).
  *   - Solution        : bouton qui surligne le coup attendu ; aucune réussite n'est comptée.
- *   - Blancs et Noirs mélangés : la couleur est tirée au sort à chaque exercice, en proportion du poids
- *     total des positions de chaque couleur (autrement dit : tirage dans l'union des deux répertoires).
+ *   - Blancs et Noirs mélangés : la couleur est tirée à pile ou face avant chaque exercice (chaque variante),
+ *     parmi les couleurs qui ont des positions ; la position est ensuite choisie comme d'habitude.
  */
 
 'use strict';
@@ -175,7 +175,7 @@ function initTraining() {
     const mix = sums.w.total && sums.b.total ? `
         <button class="tr-mix" data-action="startTraining" data-arg="mix">
           <span class="tr-mix-ico">${ico('shuffle')}</span>
-          <span class="tr-mix-txt"><b>Blancs et Noirs mélangés</b><small>La couleur est tirée au sort à chaque exercice · ${due} à réviser au total</small></span>
+          <span class="tr-mix-txt"><b>Blancs et Noirs mélangés</b><small>Pile ou face avant chaque variante · ${due} à réviser au total</small></span>
           <span class="tr-arrow">${ico('chevron-right')}</span>
         </button>` : '';
 
@@ -194,13 +194,10 @@ function _trainingPool() {
     return Object.keys(openingDB).filter(k => _isEligible(openingDB[k]));
 }
 
-// Couleur tirée au sort pour l'exercice suivant (mode mélangé) ; null si aucune position.
+// Couleur tirée à pile ou face pour l'exercice suivant (mode mélangé) ; null si aucune position.
 function _pickTrainingColor() {
-    const now = Date.now();
-    const w = { w: 0, b: 0 };
-    ['w', 'b'].forEach(c => Object.values(readDBFor(currentRepertoire, c)).forEach(e => { if (_isEligible(e)) w[c] += _trainingWeight(e, now); }));
-    if (!w.w && !w.b) return null;
-    return Math.random() * (w.w + w.b) < w.w ? 'w' : 'b';
+    const colors = ['w', 'b'].filter(c => Object.values(readDBFor(currentRepertoire, c)).some(_isEligible));
+    return colors.length ? colors[Math.floor(Math.random() * colors.length)] : null;
 }
 
 // Changement de couleur depuis le badge de la barre du haut (quitte le mode mélangé).
