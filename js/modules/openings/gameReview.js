@@ -20,14 +20,18 @@ const REVIEWED_GAMES_KEY  = 'chessTrainer_reviewedGames';
 const REVIEWED_GAMES_KEEP = 300;
 
 let _reviewColor = 'w';
+let _reviewTab   = 'online';          // onglet ouvert en dernier : « Mes parties en ligne » ou « Coller un PGN »
 
 // ─── LECTURE DE LA PARTIE ─────────────────────────────────────────────────────
 
-// Première partie d'un texte PGN : { headers, sans } (variantes et commentaires ignorés) ; null si aucune.
+// Parties d'un texte PGN : [{ headers, sans }] (variantes et commentaires ignorés).
+function pgnGames(text) {
+    return _pgnSplitGames(_pgnTokenize(text || '')).map(g => ({ headers: g.headers, sans: _pgnParseLine(g.toks, { i: 0 }, true).map(m => m.san) }));
+}
+
+// Première partie d'un texte PGN ; null si aucune.
 function pgnMainLine(text) {
-    const g = _pgnSplitGames(_pgnTokenize(text || ''))[0];
-    if (!g) return null;
-    return { headers: g.headers, sans: _pgnParseLine(g.toks, { i: 0 }, true).map(m => m.san) };
+    return pgnGames(text)[0] || null;
 }
 
 // ─── DÉTECTION DE LA DÉVIATION ────────────────────────────────────────────────
@@ -79,15 +83,16 @@ function _deviationAt(uci, ply, color, db, opp) {
 
 // ─── ERREUR D'OUVERTURE : COMPTAGE (une seule fois par partie) ────────────────
 
-function _gameSignature(headers, sans) {
+function _gameSignature(headers, sans, color = playerColor) {
     const id = headers.Link || headers.Site && /^https?:/.test(headers.Site) && headers.Site
             || [headers.White, headers.Black, headers.Date, headers.UTCTime || headers.EndTime || ''].join('|');
-    return `${currentRepertoire}|${playerColor}|${id}|${sans.length}`;
+    return `${currentRepertoire}|${color}|${id}|${sans.length}`;
 }
 
-// Compte l'erreur sur l'entrée concernée. Renvoie 'counted' | 'already' | 'none' (aucune réponse enregistrée).
-function recordReviewMistake(dev, sig) {
-    const e = openingDB[dev.key];
+// Compte l'erreur sur l'entrée concernée de `db` (base active par défaut ; save l'enregistre).
+// Renvoie 'counted' | 'already' | 'none' (aucune réponse enregistrée).
+function recordReviewMistake(dev, sig, db = openingDB, save = saveDB) {
+    const e = db[dev.key];
     if (!e) return 'none';
     const seen = dataStore.getJSON(REVIEWED_GAMES_KEY, []);
     const list = Array.isArray(seen) ? seen : [];
@@ -95,7 +100,7 @@ function recordReviewMistake(dev, sig) {
     e.attempts++;
     e.failures++;
     recordReview(e, false);
-    saveDB();
+    save();
     list.push(sig);
     dataStore.setJSON(REVIEWED_GAMES_KEY, list.slice(-REVIEWED_GAMES_KEEP));
     return 'counted';
@@ -110,7 +115,7 @@ function showGameReview() {
     document.getElementById('review-result').innerHTML = '';
     _paintReviewColor();
     document.getElementById('review-overlay').classList.remove('hidden');
-    document.getElementById('review-text').focus();
+    setReviewTab(_reviewTab);
 }
 
 function closeGameReview() {
@@ -144,40 +149,36 @@ function runGameReview() {
                               same ? oppSeen : readOppFor(currentRepertoire, _reviewColor));
     if (!r.moves.length) { note('err', `Premier coup illisible ou illégal : <strong>${escapeHtml(r.illegal.san)}</strong>.`); return; }
 
-    // Hors du mode « Jouer » (accueil, entraînement…) : on ouvre une partie de la couleur choisie.
-    // En « Jouer » avec l'autre couleur : on bascule sur l'autre base du répertoire.
-    if (!_gameScreenShown() || gameMode !== 'play') {
-        if (_gameScreenShown()) goHome();
-        startGame(_reviewColor);
-    } else if (!same) {
-        playerColor = _reviewColor;
-        loadDB();
-        showGameScreen(playerColor);
-    }
+    openPlay(_reviewColor);
 
     const d = r.deviation;
     const counted = d && d.by === 'me' ? recordReviewMistake(d, _gameSignature(game.headers, game.sans)) : null;
 
     closeGameReview();
+    showReviewResult(r, counted);
+}
+
+// Place l'échiquier après le coup déviant (toute la partie dans l'historique) et résume le verdict.
+// counted : résultat de recordReviewMistake ('counted' | 'already' | 'none'), ou null.
+function showReviewResult(r, counted) {
+    const d = r.deviation;
     loadPositionFromPath(r.moves.map(m => m.uci));
     navGo(d ? d.ply : r.moves.length - 1);                 // après le coup déviant ; ◀ = dernière position théorique
 
-    const illegal = r.illegal ? ` Coup illisible ou illégal (${r.illegal.san}) : partie lue jusqu'au coup précédent.` : '';   // setStatus : texte brut
+    const illegal = r.illegal ? ` Coup illisible (${r.illegal.san}) : partie lue jusqu'au coup précédent.` : '';
     if (!d) {
-        setStatus(`✓ Aucun coup n'est sorti du répertoire (${r.moves.length} demi-coups lus) : partie 100 % théorique.${illegal}`, 'ok');
+        setStatus('✓ Partie 100 % théorique', 'ok', `Aucun coup n'est sorti du répertoire (${r.moves.length} demi-coups).${illegal}`);
     } else {
         const at = _plyLabel(d.ply, r.moves[d.ply].san);
-        if (d.by === 'me') {
-            setStatus(counted === 'none'
-                ? `Déviation à ${at} : votre répertoire n'a pas encore de réponse ici.${illegal}`
-                : `✗ Erreur d'ouverture à ${at} : ce n'est pas votre coup de répertoire. `
-                  + (counted === 'already' ? 'Partie déjà analysée : erreur non recomptée. ' : 'Erreur comptée. ')
-                  + `◀ pour retrouver le bon coup.${illegal}`,
-                counted === 'none' ? 'info' : 'err');
+        if (d.by === 'me' && counted !== 'none') {
+            setStatus(`✗ Erreur d'ouverture : ${at}`, 'err',
+                (counted === 'already' ? 'Partie déjà analysée : erreur non recomptée. ' : 'Erreur comptée. ') + `◀ pour retrouver le bon coup.${illegal}`);
+        } else if (d.by === 'me') {
+            setStatus(`Hors répertoire : ${at}`, 'info', `Votre répertoire n'a pas encore de réponse ici.${illegal}`);
         } else {
-            setStatus(`Nouveauté adverse à ${at} : `
-                + (d.endOfLine ? 'vous étiez au bout de votre préparation. ' : d.known ? 'réponse déjà repérée, toujours non couverte. ' : 'coup absent de votre répertoire. ')
-                + `Aucune erreur comptée.${illegal}`, 'hint');
+            setStatus(`Nouveauté adverse : ${at}`, 'hint',
+                (d.endOfLine ? 'Vous étiez au bout de votre préparation. ' : d.known ? 'Réponse déjà repérée, toujours non couverte. ' : 'Coup absent de votre répertoire. ')
+                + `Aucune erreur comptée.${illegal}`);
         }
     }
     if (typeof refreshTree === 'function') refreshTree();

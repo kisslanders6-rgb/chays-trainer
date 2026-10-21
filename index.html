@@ -102,6 +102,8 @@
                     </div>
                 </div>
 
+                <div id="resume-slot"></div>
+
                 <div class="color-choice">
                     <div class="color-btn color-btn-w" onclick="startGame('w')">
                         <span class="glyph" data-glyph="K"></span>
@@ -194,7 +196,10 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Coller le PGN d'une partie jouée pour trouver où elle sort du répertoire">
+                            <button class="btn btn-tool tb-more" data-book-btn onclick="toggleBookArrows()" title="Afficher le répertoire en flèches sur l'échiquier (R)" aria-pressed="false">
+                                <svg class="ico"><use href="#i-git-branch"/></svg><span class="btn-label">Flèches</span>
+                            </button>
+                            <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?">
                                 <svg class="ico"><use href="#i-target"/></svg><span class="btn-label">Partie</span>
                             </button>
                             <button class="btn btn-tool tb-more" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
@@ -270,20 +275,42 @@
     <div id="review-overlay" class="overlay hidden">
         <div class="panel">
             <div class="panel-head">
-                <div class="panel-title"><svg class="ico"><use href="#i-target"/></svg> Analyser une partie</div>
+                <div class="panel-title"><svg class="ico"><use href="#i-target"/></svg> Analyser mes parties</div>
                 <button class="panel-x" onclick="closeGameReview()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
-            <div class="panel-sub">Répertoire : <strong id="review-target" style="color:var(--accent)"></strong>. Collez une partie jouée (export PGN de Chess.com ou Lichess) : l'échiquier s'arrête sur le premier coup sorti du répertoire. Si ce coup est le vôtre, il compte comme une erreur sur la position.</div>
-            <div class="review-color">
-                <span>J'avais les</span>
-                <div class="tr-seg" role="group" aria-label="Ma couleur dans cette partie">
-                    <button class="tr-seg-btn" id="review-seg-w" onclick="setReviewColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                    <button class="tr-seg-btn" id="review-seg-b" onclick="setReviewColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
-                </div>
+            <div class="panel-sub">Répertoire : <strong id="review-target" style="color:var(--accent)"></strong>. Chaque partie s'arrête sur le premier coup sorti du répertoire ; si ce coup est le vôtre, il compte comme une erreur (une seule fois par partie).</div>
+            <div class="tr-seg review-tabs" role="tablist">
+                <button class="tr-seg-btn" id="review-tab-online" role="tab" onclick="setReviewTab('online')"><svg class="ico"><use href="#i-download"/></svg> Mes parties en ligne</button>
+                <button class="tr-seg-btn" id="review-tab-paste" role="tab" onclick="setReviewTab('paste')"><svg class="ico"><use href="#i-upload"/></svg> Coller un PGN</button>
             </div>
-            <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
-            <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runGameReview()">Analyser la partie</button>
-            <div id="review-result" class="pgn-result"></div>
+
+            <div id="review-pane-online">
+                <div class="online-form">
+                    <div class="tr-seg" role="group" aria-label="Site">
+                        <button class="tr-seg-btn" id="online-site-chesscom" onclick="setOnlineSite('chesscom')">Chess.com</button>
+                        <button class="tr-seg-btn" id="online-site-lichess" onclick="setOnlineSite('lichess')">Lichess</button>
+                    </div>
+                    <input id="online-user" class="online-input" type="text" placeholder="Votre pseudo" autocomplete="username" spellcheck="false" onkeydown="if (event.key === 'Enter') runOnlineFetch()" aria-label="Pseudo" />
+                    <select id="online-count" class="online-input online-count" aria-label="Nombre de parties">
+                        <option value="10">10 parties</option><option value="20">20 parties</option><option value="50">50 parties</option>
+                    </select>
+                </div>
+                <button class="panel-close" id="online-fetch-btn" style="border-color:var(--ok);color:var(--ok);" onclick="runOnlineFetch()">Récupérer mes parties</button>
+                <div id="online-results" class="pgn-result"></div>
+            </div>
+
+            <div id="review-pane-paste" class="hidden">
+                <div class="review-color">
+                    <span>J'avais les</span>
+                    <div class="tr-seg" role="group" aria-label="Ma couleur dans cette partie">
+                        <button class="tr-seg-btn" id="review-seg-w" onclick="setReviewColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
+                        <button class="tr-seg-btn" id="review-seg-b" onclick="setReviewColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
+                    </div>
+                </div>
+                <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
+                <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runGameReview()">Analyser la partie</button>
+                <div id="review-result" class="pgn-result"></div>
+            </div>
         </div>
     </div>
 
@@ -415,12 +442,12 @@
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-pawn"/></svg></div>
                 <div><div class="help-title">Jouer</div>
-                    <div class="help-text">Choisissez un répertoire et une couleur, puis jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée ; ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur. <svg class="ico"><use href="#i-lightbulb"/></svg> Indice donne le type de pièce, l'onglet <strong>Arbre</strong> montre toutes vos lignes (et les réponses adverses non couvertes), <strong>Corriger</strong> remplace un coup enregistré, <strong>Lichess</strong> ouvre la position affichée pour l'analyser. Le badge <strong>Blancs / Noirs</strong> de la barre du haut change de couleur sans repasser par l'accueil.</div></div>
+                    <div class="help-text">Choisissez un répertoire et une couleur (ou <strong>Reprendre</strong> la dernière partie), puis jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée ; ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur. <strong>Indice</strong> donne le type de pièce ; appuyé une seconde fois, il devient <strong>Solution</strong> et montre le coup (une erreur est comptée). <strong>Flèches</strong> (touche R) affiche votre répertoire sur l'échiquier. L'onglet <strong>Arbre</strong> montre toutes vos lignes et leur maîtrise ; « N non couverts » mène d'un clic à la prochaine réponse adverse sans réponse. <strong>Corriger</strong> remplace un coup enregistré, <strong>Lichess</strong> ouvre la position affichée pour l'analyser. Le badge <strong>Blancs / Noirs</strong> de la barre du haut change de couleur.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-target"/></svg></div>
                 <div><div class="help-title">Entraînement</div>
-                    <div class="help-text"><strong>Révision espacée</strong> : chaque position a une date de révision, qui s'éloigne à chaque réussite et revient vite après une erreur. Les positions à réviser passent en premier, sans que les autres disparaissent. <strong>Départ</strong> : « position ciblée » (l'échiquier rejoue les trois coups précédents) ou « début de partie » (toute une ligne, jusqu'à la fin de la variante). <strong>Exercice</strong> : un coup, une séquence, ou la variante entière. Le bouton Solution montre le coup attendu, sans compter de réussite. <strong>Blancs et Noirs mélangés</strong> tire la couleur à pile ou face avant chaque variante ; le badge de la barre du haut passe d'une couleur à l'autre.</div></div>
+                    <div class="help-text"><strong>Révision espacée</strong> : chaque position a une date de révision, qui s'éloigne à chaque réussite et revient vite après une erreur. Les positions à réviser passent en premier, sans que les autres disparaissent. <strong>Départ</strong> : « position ciblée » (l'échiquier rejoue les trois coups précédents) ou « début de partie » (toute une ligne, jusqu'à la fin de la variante). <strong>Exercice</strong> : un coup, une séquence, ou la variante entière. Indice, puis Solution au second appui, montre le coup attendu, sans compter de réussite. <strong>Blancs et Noirs mélangés</strong> tire la couleur à pile ou face avant chaque variante ; le badge de la barre du haut passe d'une couleur à l'autre.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
@@ -435,7 +462,7 @@
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-database"/></svg></div>
                 <div><div class="help-title">Arbre, données et sauvegarde</div>
-                    <div class="help-text">L'onglet <strong>Arbre</strong> montre toutes vos lignes ; le bouton ⋯ d'un de vos coups permet de le <strong>remplacer</strong> ou de le <strong>supprimer</strong>. Le panneau <strong>Données</strong> (Paramètres, ou menu ⋮ des répertoires) regroupe la <strong>sauvegarde (.json)</strong> complète (statistiques, planning, finales), l'import et l'export <strong>PGN</strong> (variantes comprises), l'<strong>analyse d'une partie</strong> et la <strong>Corbeille</strong>. Analyser une partie (aussi via le bouton <strong>Partie</strong>) : collez le PGN d'une partie jouée ; l'échiquier s'arrête sur le premier coup sorti du répertoire, et si c'est le vôtre, il compte comme une erreur. Les éléments supprimés restent 30 jours dans la Corbeille.</div></div>
+                    <div class="help-text">L'onglet <strong>Arbre</strong> montre toutes vos lignes ; le bouton ⋯ d'un de vos coups permet de le <strong>remplacer</strong> ou de le <strong>supprimer</strong>. Le panneau <strong>Données</strong> (Paramètres, ou menu ⋮ des répertoires) regroupe la <strong>sauvegarde (.json)</strong> complète (statistiques, planning, finales), l'import et l'export <strong>PGN</strong> (variantes comprises), l'<strong>analyse de vos parties</strong> et la <strong>Corbeille</strong>. <strong>Analyser mes parties</strong> (aussi via le bouton <strong>Partie</strong>) : entrez votre pseudo Chess.com ou Lichess pour récupérer vos dernières parties, ou collez un PGN ; l'échiquier s'arrête sur le premier coup sorti du répertoire, et si c'est le vôtre, il compte comme une erreur. Les éléments supprimés restent 30 jours dans la Corbeille.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-shield-check"/></svg></div>
@@ -505,6 +532,7 @@
 <script src="js/modules/openings/dataPanel.js"></script>
 <script src="js/modules/openings/pgn.js"></script>
 <script src="js/modules/openings/gameReview.js"></script>
+<script src="js/modules/openings/onlineGames.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
 <script src="js/modules/openings/treeView.js"></script>
 <script src="js/modules/openings/annotations.js"></script>

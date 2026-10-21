@@ -75,7 +75,8 @@ function _sanForKeyMove(key, uci) {
 
 // Replace l'échiquier (avec historique navigable) après la suite de coups UCI donnée.
 function loadPositionFromPath(moves) {
-    clearErrorFx();                                    // ← ajout
+    clearErrorFx();
+    _resetHint();
     parseFEN(INIT_FEN);
     moveHistory = []; lastFrom = -1; lastTo = -1;
     selected = null; legalMoves = []; hintPiece = null; awaitingPromotion = null;
@@ -233,14 +234,15 @@ function _syncEngineToNavCursor() {
 
 // ─── APPLICATION CENTRALISÉE D'UN COUP (état + rendu) ────────────────────────
 
-function _commitMove(from, to, promo, newDbKey, statusMsg, statusType) {
+function _commitMove(from, to, promo, newDbKey, statusMsg, statusType, statusDetail) {
+    _resetHint();
     playMoveSound(from, to);                // avant applyMove : détecte la capture
     animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
     if (typeof refreshTree === 'function') refreshTree();
     selected = null; legalMoves = []; hintPiece = null;
     resetNavCursor();
-    if (statusMsg) setStatus(statusMsg, statusType || 'info');
+    if (statusMsg) setStatus(statusMsg, statusType || 'info', statusDetail);
     renderBoard();
 }
 
@@ -264,21 +266,21 @@ function executeOpponentMove(from, to, promo) {
     }
     const san = toAlgebraic(from, to, promo);
     if (recordOppReply(positionKey(), moveToStr(from, to, promo))) saveOpp();   // réponse adverse connue
-    _commitMove(from, to, promo, null, `Adversaire : ${san} — à vous de répondre.`, 'info');
+    _commitMove(from, to, promo, null, `Adversaire : ${san}`, 'info', 'À vous de répondre.');
     // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
     if (turn === playerColor && _isTransposition(openingDB[positionKey()])) {
-        setStatus(`Adversaire : ${san} · Transposition détectée — position connue.`, 'info');
+        setStatus(`Adversaire : ${san}`, 'info', 'Transposition : position déjà connue par un autre ordre de coups.');
     }
 }
 
 // ─── COUP DU JOUEUR ───────────────────────────────────────────────────────────
 
-function _rejectMove(toIdx, msg) {
+function _rejectMove(toIdx, msg, detail) {
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
     flashWrong(toIdx);
     playSound('error');
-    setStatus(msg, 'err');
+    setStatus(msg, 'err', detail);
 }
 
 function executePlayerMove(from, to, promo) {
@@ -310,6 +312,11 @@ function executePlayerMove(from, to, promo) {
         noteChange(1);
         _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${san}`, 'new');
 
+    } else if (_solutionKey === key) {
+        // Solution dévoilée : l'erreur est déjà comptée, on ne compte ni réussite ni nouvelle erreur.
+        if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info', 'Aucune réussite comptée.');
+        else _rejectMove(to, "✗ Ce n'est pas le coup de la solution.");
+
     } else if (movStr === entry.move) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
         const transp = _isTransposition(entry);
@@ -325,28 +332,82 @@ function executePlayerMove(from, to, promo) {
         entry.failures++;
         recordReview(entry, false);
         saveDB();
-        _rejectMove(to, "✗ Ce n'est pas le bon coup — réessayez.");
+        _rejectMove(to, '✗ Pas le bon coup', 'Erreur comptée. Réessayez, ou appuyez sur Indice.');
     }
 }
 
-// ─── INDICE (texte : type de pièce à jouer) ───────────────────────────────────
+// ─── INDICE PUIS SOLUTION ─────────────────────────────────────────────────────
+// Un même bouton (et la touche Espace) : 1er appui = indice (type de pièce à jouer), le bouton devient
+// alors « Solution » ; 2e appui = le coup attendu est surligné (halo doré). Dévoiler la solution compte
+// une erreur sur la position, une seule fois ; le coup joué ensuite ne compte pas comme une réussite.
+// Jouer et Entraînement (showTrainingSolution) ; les finales ont leurs propres indices (endgameHint).
 
 const PIECE_HINT = { P: 'un Pion', N: 'un Cavalier', B: 'un Fou', R: 'une Tour', Q: 'une Dame', K: 'le Roi' };
+
+let _hintKey      = null;     // position pour laquelle l'indice a été donné (le bouton affiche alors « Solution »)
+let _solutionKey  = null;     // position dont la solution a été dévoilée en mode Jouer (erreur déjà comptée)
+let _solutionMove = null;     // { key, from, to } : coup surligné par le halo
 
 function showHint() {
     if (gameMode === 'endgame') { endgameHint(); return; }
     if (gameMode === 'preview' || (gameMode === 'training' && trainingState.busy)) return;
+    if (navCursor !== -1) _syncEngineToNavCursor();
     if (turn !== playerColor) {
         setStatus("L'indice n'est disponible que pour vos propres coups.", 'info');
         return;
     }
-    const entry = openingDB[positionKey()];
+    const key   = positionKey();
+    const entry = openingDB[key];
     if (!entry) { setStatus("Aucun indice — cette position n'est pas encore dans la base.", 'info'); return; }
+    if (_hintKey === key) { showSolution(); return; }
+    _hintKey = key;
     const piece = (board[squareToIdx(entry.move.slice(0, 2))] || '').toUpperCase();
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
-    setStatus(`Indice : déplacez ${PIECE_HINT[piece] || 'une pièce'}.`, 'hint');
+    setStatus(`Indice : déplacez ${PIECE_HINT[piece] || 'une pièce'}.`, 'hint', 'Appuyez encore pour voir la solution.');
 }
+
+function showSolution() {
+    if (gameMode === 'training') { showTrainingSolution(); return; }
+    const key   = positionKey();
+    const entry = openingDB[key];
+    if (!entry || turn !== playerColor) return;
+    if (_solutionKey !== key) {
+        _solutionKey = key;
+        entry.attempts++;
+        entry.failures++;
+        recordReview(entry, false);
+        saveDB();
+    }
+    revealSolution(entry);
+    setStatus(`Solution : ${entry.san}`, 'hint', 'Jouez-le pour continuer. Une erreur est comptée sur la position.');
+}
+
+// Surligne le coup de `entry` (pièce + case d'arrivée) avec le halo doré.
+function revealSolution(entry) {
+    selected   = squareToIdx(entry.move.slice(0, 2));
+    legalMoves = [squareToIdx(entry.move.slice(2, 4))];
+    hintPiece  = null;
+    _solutionMove = { key: positionKey(), from: selected, to: legalMoves[0] };
+    renderBoard();
+}
+
+// Appelé à chaque rendu de l'échiquier : libellé Indice / Solution et halo, d'après la position réelle.
+function _syncHintBtn() {
+    const key = positionKey(), m = _solutionMove;
+    const fx  = !!m && m.key === key && navCursor === -1 && selected === m.from && legalMoves.length === 1 && legalMoves[0] === m.to;
+    const el  = document.getElementById('board');
+    if (el) el.classList.toggle('show-solution', fx);
+    const sol = (gameMode === 'play' || gameMode === 'training') && _hintKey === key && turn === playerColor && navCursor === -1;
+    document.querySelectorAll('.tb-hint').forEach(b => {
+        if (b.dataset.sol === String(sol)) return;
+        b.dataset.sol = String(sol);
+        b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>` : `${ico('lightbulb')}<span class="btn-label">Indice</span>`;
+        b.title       = sol ? 'Voir la solution (Espace) — compte une erreur' : 'Indice (Espace)';
+    });
+}
+
+function _resetHint() { _hintKey = null; _solutionKey = null; _solutionMove = null; }
 
 // ─── CONFIRMATION MODALE ──────────────────────────────────────────────────────
 
@@ -532,7 +593,7 @@ function undoMove() {
         if (!openingDB[childKey] && forgetOppReply(posKey, moveToStr(last.from, last.to, last.promo))) saveOpp();
         performUndo();
         if (typeof refreshTree === 'function') refreshTree();
-        setStatus('Coup adverse annulé — choisissez une autre branche.', 'info');
+        setStatus('Coup adverse annulé', 'info', 'Choisissez une autre branche.');
         return;
     }
 
@@ -552,8 +613,8 @@ function undoMove() {
     confirmDeleteEntry(key, 'Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ? (Il est conservé 30 jours dans la corbeille.)', extra => {
         performUndo();
         if (typeof refreshTree === 'function') refreshTree();
-        setStatus('Coup précédent effacé. Jouez le nouveau coup de référence sur l\'échiquier.'
-            + (extra ? ` (${extra} branche(s) orpheline(s) nettoyée(s).)` : ''), 'new');
+        setStatus('Coup effacé', 'new', 'Jouez le nouveau coup de référence.'
+            + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
     });
 }
 
@@ -575,6 +636,7 @@ function performUndo() {
 
 function resetGame() {
     clearErrorFx();
+    _resetHint();
     parseFEN(INIT_FEN);
     moveHistory      = [];
     selected         = null; legalMoves = [];
@@ -584,9 +646,9 @@ function resetGame() {
     resetNavCursor();
     renderMoves();
     if (playerColor === 'w') {
-        setStatus('Nouvelle partie — jouez votre premier coup (Blancs).', 'info');
+        setStatus('Nouvelle partie', 'info', 'Jouez votre premier coup (Blancs).');
     } else {
-        setStatus('Nouvelle partie — jouez le premier coup des Blancs (adversaire).', 'info');
+        setStatus('Nouvelle partie', 'info', 'Jouez le premier coup des Blancs (adversaire).');
     }
     renderBoard();
 }

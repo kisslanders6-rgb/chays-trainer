@@ -10,6 +10,8 @@
  * Édition : le bouton ⋯ d'un de mes coups ouvre « Remplacer » (le coup part à la corbeille et
  * l'échiquier se place juste avant : le prochain coup joué devient la référence) et « Supprimer ».
  * Les coups « isolés » (non rattachés à la position de départ) peuvent être envoyés à la corbeille.
+ * Maîtrise : mes coups sont colorés selon leur niveau (mêmes seuils que les Statistiques) et chaque
+ * départ de variante porte une petite barre : part de coups maîtrisés / fragiles / à retravailler en aval.
  *
  * Deux vues :
  *   « Depuis ici »   : seuls le chemin menant à la position affichée, la position elle-même
@@ -183,7 +185,7 @@ function replaceTreeMove(r) {
         _treeActionsFor = null;
         loadPositionFromPath(r.path.slice(0, -1));
         renderTree(true);
-        setStatus(`Jouez le nouveau coup à la place de ${r.san}.` + (extra ? ` (${extra} coup(s) orphelin(s) nettoyé(s).)` : ''), 'new');
+        setStatus(`Remplacement de ${r.san}`, 'new', 'Jouez le nouveau coup.' + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
     });
 }
 
@@ -191,8 +193,18 @@ function deleteTreeMove(r) {
     confirmDeleteEntry(r.entryKey, `Placer ${_treeLabel(r)} dans la corbeille ? Il restera restaurable pendant 30 jours.`, extra => {
         _treeActionsFor = null;
         renderTree(true);
-        setStatus(`${_treeLabel(r)} supprimé` + (extra ? ` avec ${extra} coup(s) orphelin(s).` : '.') + ' Il reste 30 jours dans la corbeille.', 'info');
+        setStatus(`${_treeLabel(r)} supprimé`, 'info', (extra ? `Avec ${extra} coup(s) orphelin(s). ` : '') + 'Restaurable 30 jours depuis la corbeille.');
     });
+}
+
+// Ouvre la réponse non couverte suivante (dans l'ordre de l'arbre, après la position affichée ; on boucle).
+function gotoNextUncovered() {
+    const rows = _treeRows, cur = _findCurrentIndex(rows);
+    const list = rows.map((r, i) => i).filter(i => rows[i].kind === 'opp' && !rows[i].covered);
+    if (!list.length) return;
+    const i = list.find(i => i > cur) ?? list[0];
+    openTreeNode(i);
+    setStatus(`Non couvert ${list.indexOf(i) + 1}/${list.length} : ${_treeLabel(rows[i])}`, 'hint', 'Jouez votre réponse pour l\'enregistrer.');
 }
 
 function cleanIsolatedMoves() {
@@ -205,6 +217,25 @@ function cleanIsolatedMoves() {
 
 // ─── RENDU ────────────────────────────────────────────────────────────────────
 
+// Niveau de chaque coup (r.lv) et, pour les départs de variantes, répartition des niveaux en aval (r.mix).
+function _computeMastery(rows) {
+    const lvOf = r => !r.attempts ? 'mastered' : typeof _level === 'function' ? _level(r) : (r.failures ? 'weak' : 'mastered');
+    const ps = rows.map(r => r.path.join(' '));
+    rows.forEach(r => { if (r.kind === 'me' && !r.ref) r.lv = lvOf(r); });
+    rows.forEach((r, i) => {
+        if (!(i === 0 || r.branch)) return;
+        const mix = { mastered: 0, fragile: 0, weak: 0 };
+        for (let j = i; j < rows.length && (j === i || ps[j].startsWith(ps[i] + ' ')); j++) if (rows[j].lv) mix[rows[j].lv]++;
+        if (mix.mastered + mix.fragile + mix.weak > 1) r.mix = mix;
+    });
+}
+
+function _masteryBar(mix) {
+    const n = mix.mastered + mix.fragile + mix.weak, pct = Math.round(100 * mix.mastered / n);
+    const segs = ['mastered', 'fragile', 'weak'].filter(l => mix[l]).map(l => `<i class="${l}" style="flex:${mix[l]}"></i>`).join('');
+    return `<span class="tree-mbar" title="Cette variante : ${pct} % de coups maîtrisés (${n} coups${mix.weak ? `, ${mix.weak} à retravailler` : ''})">${segs}</span>`;
+}
+
 function _treeLabel(r) {
     const n = Math.ceil(r.ply / 2);
     return r.ply % 2 === 1 ? `${n}. ${r.san}` : `${n}... ${r.san}`;
@@ -214,7 +245,7 @@ function renderTree(rebuild) {
     const el = document.getElementById('tree-view');
     if (!el) return;
     const scrollTop = el.scrollTop;
-    if (rebuild !== false || !_treeData) _treeData = buildRepertoireTree();
+    if (rebuild !== false || !_treeData) { _treeData = buildRepertoireTree(); _computeMastery(_treeData.rows); }
     const t = _treeData;
     _treeRows = t.rows;
 
@@ -237,13 +268,13 @@ function renderTree(rebuild) {
             <button class="tree-mode ${_treeFocus ? '' : 'active'}" data-mode="all" title="Affiche tout l'arbre">Vue complète</button>
         </div>
         <span><i class="tree-dot me"></i> mes coups</span><span><i class="tree-dot opp"></i> adversaire</span>
-        ${t.uncovered ? `<span class="tree-warn-text">${ico('alert-triangle')} ${t.uncovered} non couvert${t.uncovered > 1 ? 's' : ''}</span>` : `<span class="tree-ok-text">${ico('check')} Rien de non couvert</span>`}
+        ${t.uncovered ? `<button class="tree-warn-text tree-goto" data-goto-uncovered="1" title="Aller à la prochaine réponse non couverte">${ico('alert-triangle')} ${t.uncovered} non couvert${t.uncovered > 1 ? 's' : ''} ${ico('chevron-right')}</button>` : `<span class="tree-ok-text">${ico('check')} Rien de non couvert</span>`}
         ${t.isolated > 0 ? `<span title="Coups non rattachés à la position de départ">${t.isolated} isolé${t.isolated > 1 ? 's' : ''} <button class="tree-clean" data-clean="1">Nettoyer</button></span>` : ''}
     </div>`;
 
     t.rows.forEach((r, i) => {
         if (r.hide) return;
-        const cls = ['tree-row', r.kind, r.branch ? 'branch' : '', r.covered === false ? 'uncovered' : '',
+        const cls = ['tree-row', r.kind, r.branch ? 'branch' : '', r.covered === false ? 'uncovered' : '', r.lv ? 'lv-' + r.lv : '',
                      i === curIdx ? 'current' : '', (!r.reach && _treeFocus) ? 'unreach' : ''].filter(Boolean).join(' ');
         let lead = '', badges = '';
         if (r.fold && r.fold.count > 0) {
@@ -258,7 +289,7 @@ function renderTree(rebuild) {
         } else if (!r.covered) {
             badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;
         }
-        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${escapeHtml(_treeLabel(r))}</span>${badges}</div>`;
+        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${escapeHtml(_treeLabel(r))}</span>${r.mix ? _masteryBar(r.mix) : ''}${badges}</div>`;
         if (open) html += `<div class="tree-actions" style="--d:${r.depth}">
             <button class="btn btn-tool" data-replace="${i}">${ico('pencil')} Remplacer</button>
             <button class="btn btn-tool is-danger" data-delete="${i}">${ico('trash')} Supprimer</button></div>`;
@@ -284,7 +315,7 @@ function openTreeNode(i) {
     if (!r || gameMode !== 'play') return;
     loadPositionFromPath(r.path);
     if (r.kind === 'opp' && !r.covered) {
-        setStatus('Réponse adverse non couverte — jouez votre réponse pour l\'enregistrer.', 'hint');
+        setStatus('Réponse non couverte', 'hint', 'Jouez votre réponse pour l\'enregistrer.');
     } else {
         setStatus(`Position chargée : ${_treeLabel(r)}.`, 'info');
     }
@@ -327,6 +358,7 @@ document.getElementById('tree-view').addEventListener('click', e => {
         return;
     }
     if (e.target.closest('[data-clean]')) { cleanIsolatedMoves(); return; }
+    if (e.target.closest('[data-goto-uncovered]')) { gotoNextUncovered(); return; }
     const f = e.target.closest('[data-forget]');
     if (f) {
         const r = _treeRows[Number(f.dataset.forget)];

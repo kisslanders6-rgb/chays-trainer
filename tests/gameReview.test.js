@@ -7,10 +7,12 @@ const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b)
 const store = {};
 const ctx = {
     console, renderMoves() {}, renderBoard() {}, clearErrorFx() {}, resetNavCursor() {},
-    dataStore: { getJSON: (k, d) => (k in store ? JSON.parse(store[k]) : d), setJSON: (k, v) => { store[k] = JSON.stringify(v); } }
+    dataStore: { getJSON: (k, d) => (k in store ? JSON.parse(store[k]) : d), setJSON: (k, v) => { store[k] = JSON.stringify(v); },
+                 get: k => (k in store ? store[k] : null), set: (k, v) => { store[k] = v; return true; } }
 };
 vm.createContext(ctx);
-for (const f of ['js/core/chessEngine.js', 'js/storage.js', 'js/modules/openings/openingsLogic.js', 'js/modules/openings/pgn.js', 'js/modules/openings/gameReview.js'])
+ctx.registerActions = () => {};
+for (const f of ['js/core/chessEngine.js', 'js/storage.js', 'js/modules/openings/openingsLogic.js', 'js/modules/openings/pgn.js', 'js/modules/openings/gameReview.js', 'js/modules/openings/onlineGames.js'])
     vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
 vm.runInContext('saveDB = function () {};', ctx);
 
@@ -111,6 +113,24 @@ t('erreur comptée une seule fois par partie', () => {
     assert.strictEqual(ctx.recordReviewMistake(r.deviation, sig), 'already');
     const e = ctx.openingDB[r.deviation.key];
     jeq([e.attempts, e.failures, e.interval], [2, 1, 0]);
+});
+
+t('parties en ligne : couleur déduite du pseudo, erreurs comptées une fois, autres parties classées', () => {
+    store['openingDB_Test_w'] = JSON.stringify(repertoire('w', [ITA]));
+    store['openingDB_Test_b'] = JSON.stringify(repertoire('b', ['e2e4 c7c5']));
+    const pgn = `[Site "https://lichess.org/a1"]\n[White "Moi"]\n[Black "x"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 *\n\n`
+              + `[Site "https://lichess.org/a2"]\n[White "y"]\n[Black "moi"]\n\n1. e4 c5 2. Nf3 d6 *\n\n`
+              + `[Site "https://lichess.org/a3"]\n[White "y"]\n[Black "moi"]\n\n1. e4 e5 *\n\n`
+              + `[Site "https://lichess.org/a4"]\n[White "z"]\n[Black "w"]\n\n1. d4 *`;
+    const games = ctx.pgnGames(pgn);
+    assert.strictEqual(games.length, 4);
+    const a = ctx.analyzeOnlineGames(games, 'MOI', 'Test');
+    jeq(a.rows.map(r => r.color + ':' + r.kind), ['w:mistake', 'b:novelty', 'b:mistake']);
+    jeq([a.summary.games, a.summary.mistakes, a.summary.newMistakes, a.summary.skipped], [3, 2, 2, 1]);
+    const c5 = Object.values(JSON.parse(store['openingDB_Test_b']))[0];
+    jeq([c5.attempts, c5.failures], [2, 1]);
+    const again = ctx.analyzeOnlineGames(games, 'moi', 'Test');
+    jeq([again.summary.mistakes, again.summary.newMistakes], [2, 0]);
 });
 
 console.log(`\n${n} tests réussis.`);

@@ -20,7 +20,7 @@
  *     Après chaque bon coup, l'ordinateur rejoue une réponse adverse enregistrée dans les `path` du
  *     répertoire — de préférence celle qui mène aux positions les plus à réviser — et la position
  *     suivante est interrogée (erreurs comptées sur la position exacte).
- *   - Solution        : bouton qui surligne le coup attendu ; aucune réussite n'est comptée.
+ *   - Solution        : 2e appui sur Indice (cf. showHint) ; surligne le coup attendu, aucune réussite comptée.
  *   - Blancs et Noirs mélangés : la couleur est tirée à pile ou face avant chaque exercice (chaque variante),
  *     parmi les couleurs qui ont des positions ; la position est ensuite choisie comme d'habitude.
  */
@@ -338,7 +338,6 @@ function nextDrill() {
     trainingState.busy        = true;
     trainingState.solutionFor = null;
     trainingState.seq         = { len: trainingSettings.seqLen, done: 0, assisted: false };
-    _syncSolutionBtn();
 
     // Chemin absent ou vide : reconstitution via les autres entrées, puis auto-réparation de l'entrée.
     let fullPath = (entry.path && entry.path.length) ? entry.path : null;
@@ -357,7 +356,7 @@ function nextDrill() {
         const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
         const ctx   = fullPath.slice(start, n);
         loadPositionFromPath(fullPath.slice(0, start));
-        setStatus(`Mise en situation… · ${trainingState.reason}`, 'info');
+        setStatus('Mise en situation…', 'info', trainingState.reason);
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
             playMoveSound(m.from, m.to);
@@ -401,8 +400,8 @@ function _drillReady() {
         renderBoard();
     }
     trainingState.busy = false;
-    _syncSolutionBtn();
-    setStatus(`À vous de jouer · ${trainingState.reason}${_seqLabel()}${trainingState.ok ? ` (${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''})` : ''}`, 'info');
+    setStatus(`À vous de jouer${_seqLabel()}`, 'info',
+              trainingState.reason + (trainingState.ok ? ` · ${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''}` : ''));
 }
 
 // ─── LIGNE COMPLÈTE (depuis la position initiale) ─────────────────────────────
@@ -414,7 +413,6 @@ function _startFullLine() {
     trainingState.seq         = { len: TRAIN_SEQ_END, done: 0, assisted: false };
     trainingState.solutionFor = null;
     trainingState.busy        = true;
-    _syncSolutionBtn();
     loadPositionFromPath([]);
     trainingState.current = trainingState.lastKey = positionKey();
     if (playerColor === 'w') {
@@ -467,8 +465,7 @@ function _playOpponentReply(opp) {
         if (openingDB[positionKey()]) {
             trainingState.solutionFor = null;
             trainingState.busy = false;
-            _syncSolutionBtn();
-            setStatus(`Adversaire : ${san} · à vous de jouer${_seqLabel()}`, 'info');
+                    setStatus(`Adversaire : ${san}`, 'info', `À vous de jouer${_seqLabel()}`);
         } else {
             setStatus('Fin de la variante.', 'ok');
             _finishDrill();
@@ -512,53 +509,9 @@ function showTrainingSolution() {
             saveDB();
         }
     }
-    // Surbrillance via la sélection standard : pièce à jouer + case d'arrivée.
-    selected   = squareToIdx(entry.move.slice(0, 2));
-    legalMoves = [squareToIdx(entry.move.slice(2, 4))];
-    hintPiece  = null;
-    trainingState.solutionMove = { from: selected, to: legalMoves[0] };
-    renderBoard();
-    _solutionFx(true);
-    setStatus(`Solution : ${entry.san} — jouez-le pour continuer (aucune réussite comptée).`, 'hint');
+    revealSolution(entry);
+    setStatus(`Solution : ${entry.san}`, 'hint', 'Jouez-le pour continuer (aucune réussite comptée).');
 }
-
-// Bouton « Solution » : créé dans la barre de contrôle (flottant sur ordinateur, intégré à la barre sur mobile).
-function _solutionBtn() {
-    let b = document.getElementById('train-solution-btn');
-    const host = document.querySelector('.board-controls .controls-main') || document.body;
-    if (!b && host) {
-        b = document.createElement('button');
-        b.id        = 'train-solution-btn';
-        b.className = 'btn train-solution-btn';
-        b.innerHTML = `${ico('target')}<span class="btn-label">Solution</span>`;
-        b.style.display = 'none';
-        b.onclick = showTrainingSolution;
-        host.appendChild(b);
-    }
-    return b;
-}
-
-// Classe .show-solution sur #board (halo doré animé) tant que la solution est bien celle affichée.
-function _solutionFx(on) {
-    const el = document.getElementById('board');
-    if (el) el.classList.toggle('show-solution', !!on);
-}
-
-function _solutionFxValid() {
-    const m = trainingState.solutionMove;
-    return !!m && trainingState.solutionFor === positionKey()
-        && selected === m.from && legalMoves.length === 1 && legalMoves[0] === m.to;
-}
-
-function _syncSolutionBtn() {
-    try {
-        const board_ = document.getElementById('board');
-        if (board_ && board_.classList.contains('show-solution') && !_solutionFxValid()) _solutionFx(false);
-        const b = _solutionBtn();
-        if (b) b.style.display = (gameMode === 'training' && !trainingState.busy && turn === playerColor) ? '' : 'none';
-    } catch (_) { /* globals pas encore initialisés */ }
-}
-setInterval(_syncSolutionBtn, 400);   // masque aussi le bouton quand on quitte le mode entraînement
 
 // ─── RÉPONSE DU JOUEUR ────────────────────────────────────────────────────────
 
@@ -568,19 +521,18 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
     const revealed = trainingState.solutionFor === key;
 
     if (entry && movStr === entry.move) {
-        let msg = '✓ Solution jouée — aucune réussite comptée.';
+        let msg = '✓ Solution jouée', detail = 'Aucune réussite comptée.';
         if (!revealed) {
             const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
             entry.attempts++;
             recordReview(entry, true);
             saveDB();
             const after = Math.round(100 * entry.failures / entry.attempts);
-            msg = entry.failures === 0 ? '✓ Bien joué ! Toujours à 100% de réussite'
-                                       : `✓ Bien joué ! Taux d'erreur : ${before}% → ${after}%`;
+            msg    = '✓ Bien joué !';
+            detail = entry.failures === 0 ? 'Toujours à 100 % de réussite.' : `Taux d'erreur : ${before} % → ${after} %`;
         }
         trainingState.busy = true;
-        _syncSolutionBtn();
-        _commitMove(from, to, promo, null, msg, revealed ? 'info' : 'ok');
+        _commitMove(from, to, promo, null, msg, revealed ? 'info' : 'ok', detail);
         trainingState.seq.done++;
         _continueSequence();
     } else if (entry && !revealed) {                   // erreur : comptée sur la position exacte, comme en mode « Jouer »
@@ -589,8 +541,8 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         recordReview(entry, false);
         saveDB();
         const pct = Math.round(100 * entry.failures / entry.attempts);
-        _rejectMove(to, `✗ Ce n'est pas le bon coup — taux d'erreur : ${pct}%. Réessayez.`);
+        _rejectMove(to, '✗ Pas le bon coup', `Taux d'erreur : ${pct} %. Réessayez, ou appuyez sur Indice.`);
     } else {
-        _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution." : "✗ Ce n'est pas le bon coup — réessayez.");
+        _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.');
     }
 }

@@ -9,6 +9,10 @@
  * Les annotations sont liées à la position affichée : elles disparaissent dès qu'elle change.
  * Dessin : un calque SVG posé sur #board (8 × 8 unités, une unité = une case), redessiné par renderBoard().
  *
+ * Flèches du répertoire (mode Jouer, bouton « Flèches », touche R) : dans la position affichée,
+ * mon coup enregistré (vert) ou les réponses adverses connues (bleu : couvertes, rouge : non couvertes),
+ * en semi-transparence pour ne pas les confondre avec les annotations dessinées.
+ *
  * Trois styles (Paramètres → Style des flèches, appSettings.arrowStyle) :
  *   plume     trait effilé qui s'épaissit vers une pointe à encoche, dégradé de transparence (défaut)
  *   contour   silhouette pleine translucide cernée d'un liseré, point d'origine marqué
@@ -163,6 +167,45 @@ function arrowStylePreview(style) {
            _circleShape(2.5, 1.5, 'red', style) + '</svg>';
 }
 
+// ─── FLÈCHES DU RÉPERTOIRE ────────────────────────────────────────────────────
+
+const BOOK_ARROWS_KEY = 'chessTrainer_bookArrows';
+let bookArrows = dataStore.get(BOOK_ARROWS_KEY) === '1';
+
+function toggleBookArrows() {
+    bookArrows = !bookArrows;
+    dataStore.set(BOOK_ARROWS_KEY, bookArrows ? '1' : '0');
+    _syncBookBtn();
+    renderAnnotations();
+    if (gameMode === 'play') setStatus(bookArrows ? 'Flèches du répertoire affichées' : 'Flèches du répertoire masquées', 'info',
+        bookArrows ? 'Vert : votre coup · bleu : réponse couverte · rouge : réponse non couverte.' : '');
+}
+
+function _syncBookBtn() {
+    document.querySelectorAll('[data-book-btn]').forEach(b => { b.classList.toggle('active', bookArrows); b.setAttribute('aria-pressed', bookArrows); });
+}
+
+// Flèches { from, to, color } du répertoire pour la position affichée (navigation comprise).
+function _bookArrowList() {
+    if (!bookArrows || gameMode !== 'play' || typeof displayedFen !== 'function') return [];
+    const out = [];
+    _withEngineSnapshot(() => {
+        parseFEN(displayedFen());
+        const key = positionKey();
+        if (turn === playerColor) {
+            const e = openingDB[key];
+            if (e) out.push({ from: squareToIdx(e.move.slice(0, 2)), to: squareToIdx(e.move.slice(2, 4)), color: 'accent' });
+            return;
+        }
+        const known = oppSeen[key] || [];
+        _forEachChild(uci => {
+            const covered = !!openingDB[positionKey()];
+            if (covered || known.includes(uci)) out.push({ from: squareToIdx(uci.slice(0, 2)), to: squareToIdx(uci.slice(2, 4)), color: covered ? 'blue' : 'red' });
+        });
+    });
+    return out;
+}
+
 // afterBoardRender : appel depuis renderBoard(), `board` est alors la position AFFICHÉE (y compris en navigation).
 function renderAnnotations(afterBoardRender) {
     const b = document.getElementById('board');
@@ -182,13 +225,16 @@ function renderAnnotations(afterBoardRender) {
     }
     const d = _annotDraw;
     const preview = d && d.to !== null && d.to !== d.from ? _arrowSVG(d, true) : '';
-    layer.innerHTML = annotations.circles.map(_circleSVG).join('') + annotations.arrows.map(a => _arrowSVG(a)).join('') + preview;
+    let book = '';
+    try { book = _bookArrowList().map(a => _arrowSVG(a, true)).join(''); } catch (e) { /* position illisible : pas de flèches */ }
+    layer.innerHTML = book + annotations.circles.map(_circleSVG).join('') + annotations.arrows.map(a => _arrowSVG(a)).join('') + preview;
 }
 
 // ─── SOURIS ───────────────────────────────────────────────────────────────────
 (function initAnnotations() {
     const b = document.getElementById('board');
     if (!b) return;
+    _syncBookBtn();
 
     b.addEventListener('pointerdown', e => {
         if (e.pointerType !== 'mouse') return;

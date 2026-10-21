@@ -220,6 +220,7 @@ function renderRepertoireList() {
         `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" role="button" tabindex="0" aria-pressed="${name === currentRepertoire}" data-action="selectRepertoire" data-arg="${escapeHtml(name)}">${escapeHtml(name)}</div>`
     ).join('') + `<div class="repertoire-chip repertoire-chip-new" role="button" tabindex="0" data-action="createRepertoire">+ Nouveau</div>`;
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
+    renderResumeCard();
 }
 
 // Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
@@ -292,7 +293,6 @@ function applyModeUI() {
         el.style.display = el.dataset.modes.split(',').includes(gameMode) ? '' : 'none';
     });
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
-    if (typeof _syncSolutionBtn === 'function') _syncSolutionBtn(); // bouton Solution : entraînement seulement
 }
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
@@ -340,6 +340,57 @@ function switchColor() {
     else if (gameMode === 'training') switchTrainingColor(other);
 }
 
+// ─── REPRENDRE (dernière partie du mode « Jouer ») ─────────────────────────────
+// Répertoire, couleur et ligne jouée sont mémorisés à chaque coup (renderMoves) ; l'accueil propose
+// de les retrouver d'un clic. Propre à cet appareil (non synchronisé).
+
+const LAST_PLAY_KEY = 'chessTrainer_lastPlay';
+
+function saveLastPlay() {
+    if (gameMode !== 'play' || !moveHistory || !moveHistory.length) return;      // une partie vide n'efface pas la précédente
+    dataStore.setJSON(LAST_PLAY_KEY, { rep: currentRepertoire, color: playerColor, path: moveHistory.map(m => moveToStr(m.from, m.to, m.promo)), at: Date.now() });
+}
+
+function _readLastPlay() {
+    const s = dataStore.getJSON(LAST_PLAY_KEY, null);
+    if (!s || !['w', 'b'].includes(s.color) || !Array.isArray(s.path) || !loadRepertoireList().includes(s.rep)) return null;
+    return s;
+}
+
+// Fin de ligne lisible : « … 4. c3 Nf6 5. d4 » (les 5 derniers demi-coups).
+function _lineTail(path) {
+    let sans;
+    try { sans = _pathToSans(path); } catch (e) { return ''; }
+    if (!sans.length) return 'Position de départ';
+    const from = Math.max(0, sans.length - 5);
+    return (from ? '… ' : '') + sans.slice(from).map((s, k) => {
+        const i = from + k;
+        return i % 2 === 0 ? `${i / 2 + 1}. ${s}` : (k === 0 ? `${(i + 1) / 2}... ${s}` : s);
+    }).join(' ');
+}
+
+function renderResumeCard() {
+    const slot = document.getElementById('resume-slot');
+    if (!slot) return;
+    const s = _readLastPlay();
+    slot.innerHTML = !s ? '' : `
+        <button class="resume-card" data-action="resumeLastPlay">
+          <span class="resume-ico">${ico('rotate-ccw')}</span>
+          <span class="resume-txt"><b>Reprendre</b>
+            <small>${escapeHtml(s.rep)} · ${s.color === 'w' ? 'Blancs' : 'Noirs'} · ${escapeHtml(_lineTail(s.path))}</small></span>
+          <span class="tr-arrow">${ico('chevron-right')}</span>
+        </button>`;
+}
+
+function resumeLastPlay() {
+    const s = _readLastPlay();
+    if (!s) { renderResumeCard(); return; }
+    if (s.rep !== currentRepertoire) selectRepertoire(s.rep);
+    startGame(s.color);
+    loadPositionFromPath(s.path);
+    setStatus('Partie reprise', 'info', s.path.length ? 'Vous êtes revenu à la position où vous vous étiez arrêté.' : '');
+}
+
 // ─── RETOUR À L'ACCUEIL ───────────────────────────────────────────────────────
 
 function goHome(tab) {
@@ -363,7 +414,7 @@ function goHome(tab) {
     renderRepertoireList();
 }
 
-registerActions({ setPieceStyle, setArrowStyle, selectRepertoire, createRepertoire: () => createRepertoirePrompt() });
+registerActions({ setPieceStyle, setArrowStyle, selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt() });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 

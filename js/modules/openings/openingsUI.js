@@ -79,6 +79,7 @@ function renderBoard() {
 
     if (focused !== null) { const f = el.querySelector(`.sq[data-idx="${focused}"]`); if (f) f.focus({ preventScroll: true }); }
     if (typeof renderAnnotations === 'function') renderAnnotations(true);
+    if (typeof _syncHintBtn === 'function') _syncHintBtn();
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
 }
 
@@ -134,15 +135,18 @@ function _paintMovesBar(active) {
 
 function renderMoves() {
     _paintMovesBar(navCursor === -1 ? moveHistory.length - 1 : navCursor);
+    if (typeof saveLastPlay === 'function') saveLastPlay();
 }
 
 // ─── BARRE DE STATUT ──────────────────────────────────────────────────────────
 
-function setStatus(msg, type = 'info') {
+// Barre d'état : un titre court, et éventuellement un détail grisé sur une seconde ligne.
+function setStatus(msg, type = 'info', detail = '') {
     const dot  = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
     dot.className  = 'status-dot ' + { ok: 'dot-ok', err: 'dot-err', info: 'dot-info', new: 'dot-new', hint: 'dot-hint' }[type];
-    text.textContent = msg;
+    text.replaceChildren(Object.assign(document.createElement('span'), { className: 'status-title', textContent: msg }));
+    if (detail) text.append(Object.assign(document.createElement('span'), { className: 'status-detail', textContent: detail }));
 }
 
 // ─── NAVIGATION VISUELLE (Précédent / Suivant) ────────────────────────────────
@@ -561,5 +565,8 @@ document.addEventListener('keydown', e => {
         case 'f': case 'F':
             if (e.repeat) return;
             flipBoard(); break;
+        case 'r': case 'R':
+            if (e.repeat || gameMode !== 'play') return;
+            toggleBookArrows(); break;
     }
 });

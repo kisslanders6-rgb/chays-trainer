@@ -48,7 +48,7 @@ function renderDataPanel() {
           <div class="data-grid">
             ${card('dataImportPgn', 'upload', 'Importer un PGN', 'Ajoute des lignes, variantes comprises')}
             ${card('dataExportPgn', 'download', 'Exporter en PGN', 'Blancs et Noirs, toutes les lignes')}
-            ${card('dataReview', 'target', 'Analyser une partie', 'Trouve le premier coup sorti du répertoire')}
+            ${card('dataReview', 'target', 'Analyser mes parties', 'Chess.com, Lichess ou PGN collé : déviations au répertoire')}
             ${card('dataTrash', 'trash', `Corbeille${nTrash ? ` (${nTrash})` : ''}`, 'Éléments supprimés, gardés 30 jours')}
           </div>
         </div>`;
@@ -81,6 +81,17 @@ function useRepertoireColor(color) {
     if (_gameScreenShown()) goHome();
     playerColor = color;
     loadDB();
+}
+
+// Mode « Jouer » avec la couleur voulue (même répertoire), sans perdre la partie en cours si elle convient.
+// Depuis l'accueil ou un autre mode (entraînement, finale…) : une partie neuve est ouverte.
+function openPlay(color) {
+    if (_gameScreenShown() && gameMode === 'play') {
+        if (color !== playerColor) { playerColor = color; loadDB(); showGameScreen(color); }
+        return;
+    }
+    if (_gameScreenShown()) goHome();
+    startGame(color);
 }
 
 // ─── FERMETURE : clic extérieur et touche Échap ───────────────────────────────

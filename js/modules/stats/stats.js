@@ -211,5 +211,5 @@ function openStatsPreview(key) {
         renderBoard();
     }
     const pct = e.attempts ? Math.round(100 * e.failures / e.attempts) : 0;
-    setStatus(`Aperçu · ${_moveLabel(e)} · ${pct}% d'erreur (${e.failures}/${e.attempts})`, 'info');
+    setStatus(`Aperçu · ${_moveLabel(e)}`, 'info', `${pct} % d'erreur (${e.failures}/${e.attempts})`);
 }
