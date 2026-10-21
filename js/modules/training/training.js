@@ -21,6 +21,8 @@
  *     répertoire — de préférence celle qui mène aux positions les plus à réviser — et la position
  *     suivante est interrogée (erreurs comptées sur la position exacte).
  *   - Solution        : bouton qui surligne le coup attendu ; aucune réussite n'est comptée.
+ *   - Blancs et Noirs mélangés : la couleur est tirée au sort à chaque exercice, en proportion du poids
+ *     total des positions de chaque couleur (autrement dit : tirage dans l'union des deux répertoires).
  */
 
 'use strict';
@@ -36,7 +38,7 @@ const TRAIN_SETTINGS_KEY = 'chessTrainer.trainingSettings';
 const TRAIN_SEQ_END      = 999;
 
 const trainingState = {
-    busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '',
+    busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '', mixed: false,
     seq: { len: 1, done: 0, assisted: false },
     solutionFor: null
 };
@@ -170,7 +172,14 @@ function initTraining() {
         </div>`;
     }).join('');
 
-    panel.innerHTML = hero + options + `<div class="tr-cards">${cards}</div>`;
+    const mix = sums.w.total && sums.b.total ? `
+        <button class="tr-mix" data-action="startTraining" data-arg="mix">
+          <span class="tr-mix-ico">${ico('shuffle')}</span>
+          <span class="tr-mix-txt"><b>Blancs et Noirs mélangés</b><small>La couleur est tirée au sort à chaque exercice · ${due} à réviser au total</small></span>
+          <span class="tr-arrow">${ico('chevron-right')}</span>
+        </button>` : '';
+
+    panel.innerHTML = hero + options + `<div class="tr-cards">${cards}</div>` + mix;
 }
 
 registerActions({
@@ -185,7 +194,29 @@ function _trainingPool() {
     return Object.keys(openingDB).filter(k => _isEligible(openingDB[k]));
 }
 
+// Couleur tirée au sort pour l'exercice suivant (mode mélangé) ; null si aucune position.
+function _pickTrainingColor() {
+    const now = Date.now();
+    const w = { w: 0, b: 0 };
+    ['w', 'b'].forEach(c => Object.values(readDBFor(currentRepertoire, c)).forEach(e => { if (_isEligible(e)) w[c] += _trainingWeight(e, now); }));
+    if (!w.w && !w.b) return null;
+    return Math.random() * (w.w + w.b) < w.w ? 'w' : 'b';
+}
+
+// Changement de couleur depuis le badge de la barre du haut (quitte le mode mélangé).
+function switchTrainingColor(color) {
+    if (!Object.values(readDBFor(currentRepertoire, color)).some(_isEligible)) {
+        setStatus(`Aucune position ${color === 'w' ? 'Blancs' : 'Noirs'} à réviser dans ce répertoire.`, 'info');
+        return;
+    }
+    startTraining(color);
+}
+
+// color : 'w' | 'b' | 'mix' (Blancs et Noirs mélangés).
 function startTraining(color) {
+    trainingState.mixed = color === 'mix';
+    if (trainingState.mixed) color = _pickTrainingColor();
+    if (!color) { trainingState.mixed = false; initTraining(); return; }
     playerColor = color;
     gameMode    = 'training';
     loadDB();
@@ -295,6 +326,10 @@ function _findPathToKey(key) {
 
 function nextDrill() {
     stopTraining();
+    if (trainingState.mixed) {
+        const c = _pickTrainingColor();
+        if (c && c !== playerColor) { playerColor = c; loadDB(); showGameScreen(c); }
+    }
     if (!_trainingPool().length) { setStatus('Aucune position dans ce répertoire.', 'info'); return; }
     if (trainingSettings.fromStart === 1 && _startFullLine()) return;     // sinon : repli sur une position ciblée
 

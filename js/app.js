@@ -307,8 +307,14 @@ function showGameScreen(color) {
     gs.style.display = 'flex';
     gs.classList.remove('hidden');
 
-    const badge = document.getElementById('color-badge');
-    badge.innerHTML = `<span class="glyph" data-glyph="${color === 'w' ? 'K' : 'k'}"></span> ${color === 'w' ? 'BLANCS' : 'NOIRS'}`;
+    // Badge de couleur : bouton de changement de couleur en « Jouer » et en Entraînement.
+    const badge  = document.getElementById('color-badge');
+    const mixed  = gameMode === 'training' && typeof trainingState !== 'undefined' && trainingState.mixed;
+    badge.disabled = gameMode !== 'play' && gameMode !== 'training';
+    badge.title    = badge.disabled ? '' : mixed ? 'Blancs et Noirs mélangés — cliquer pour réviser seulement les ' + (color === 'w' ? 'Noirs' : 'Blancs')
+                                              : `Passer aux ${color === 'w' ? 'Noirs' : 'Blancs'}`;
+    badge.innerHTML = `<span class="glyph" data-glyph="${color === 'w' ? 'K' : 'k'}"></span> ${color === 'w' ? 'BLANCS' : 'NOIRS'}`
+                    + (mixed ? ` ${ico('shuffle')}` : badge.disabled ? '' : ` ${ico('arrow-left-right')}`);
     if (typeof refreshGlyphs === 'function') refreshGlyphs();
     badge.className   = 'color-badge ' + (color === 'w' ? 'badge-white' : 'badge-black');
 
@@ -324,6 +330,13 @@ function startGame(color) {
     loadDB();
     showGameScreen(color);
     resetGame();
+}
+
+// Badge de couleur de la barre du haut : même répertoire, autre couleur.
+function switchColor() {
+    const other = playerColor === 'w' ? 'b' : 'w';
+    if (gameMode === 'play') startGame(other);
+    else if (gameMode === 'training') switchTrainingColor(other);
 }
 
 // ─── RETOUR À L'ACCUEIL ───────────────────────────────────────────────────────

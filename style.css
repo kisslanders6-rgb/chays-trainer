@@ -865,6 +865,11 @@ html[data-board="night"][data-theme="light"] {
 .color-badge { border: 1px solid transparent; transition: background-color .2s, color .2s, border-color .2s; }
 .badge-white { background: var(--side-w-bg); color: var(--side-w-fg); border-color: var(--side-w-border); }
 .badge-black { background: var(--side-b-bg); color: var(--side-b-fg); border-color: var(--side-b-border); }
+button.color-badge { font-family: inherit; line-height: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+button.color-badge:not(:disabled):hover { border-color: var(--accent); }
+button.color-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.color-badge:disabled { cursor: default; }
+.color-badge .ico { width: 12px; height: 12px; opacity: .7; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SÉLECTEUR DE STYLE DE PIÈCES (Paramètres)
@@ -1326,6 +1331,13 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .tr-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .tr-card.empty { cursor: default; opacity: .75; box-shadow: none; border-style: dashed; }
 .tr-card.empty:hover { transform: none; border-color: var(--border); }
+.tr-mix { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 16px; padding: 14px 18px; border: 1.5px dashed var(--border); border-radius: 16px; background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, transform .15s; }
+.tr-mix:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tr-mix:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.tr-mix-ico { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 12px; background: var(--bg-inset); color: var(--accent); }
+.tr-mix-ico .ico { width: 20px; height: 20px; }
+.tr-mix-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.tr-mix-txt small { font-size: 12px; color: var(--text-dim); }
 .tr-card-top { display: flex; align-items: center; gap: 12px; }
 .tr-glyph { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--bg-inset); font-size: 38px; flex-shrink: 0; transition: transform .25s; }
 .tr-glyph .glyph { width: 1em; height: 1em; }
