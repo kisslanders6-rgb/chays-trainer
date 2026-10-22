@@ -203,6 +203,13 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         const c3 = boot({ backend: makeBackend(), protocol: 'file:' }); c3.boot();
         assert.strictEqual(c3.run(`Auth.signInWithProvider('google')`).code, 'file');
     });
+    await t('signInWithIdToken (bouton Google) : connecté avec le bon nonce, refusé sinon', async () => {
+        const c2 = boot({ backend: makeBackend() }); c2.boot();
+        const bad = await c2.run(`Auth.signInWithIdToken('google', 'google:g@test.fr:abc', 'autre')`);
+        assert.strictEqual(bad.ok, false); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
+        const ok = await c2.run(`Auth.signInWithIdToken('google', 'google:g@test.fr:abc', 'abc')`);
+        assert.strictEqual(ok.ok, true); assert.strictEqual(c2.run('Auth.user().email'), 'g@test.fr'); assert(c2.events.includes('signed-in'));
+    });
     await t('deleteAccount : compte et documents supprimés côté serveur, déconnexion locale', async () => {
         const be2 = makeBackend(); be2.addUser('del@test.fr', 'motdepasse1');
         const c2 = boot({ backend: be2 }); c2.boot();

@@ -71,6 +71,7 @@
 .account-providers { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
 .account-provider { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; font-size: 14px; font-weight: 700; background: var(--surface); }
 .account-provider-logo { width: 20px; height: 20px; flex: none; }
+.account-gsi { display: flex; justify-content: center; min-height: 44px; }
 .account-or { display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; font-size: 12px; color: var(--text-dim); }
 .account-or::before, .account-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 

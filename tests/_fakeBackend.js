@@ -22,6 +22,13 @@ module.exports = function makeBackend(opts) {
             if (!usr.confirmed) return res(400, { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' });
             return res(200, issue(usr));
         }
+        if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'id_token') {     // jeton « google:<email>:<nonce> »
+            const [prov, email, nonce] = String(body.id_token).split(':');
+            if (body.provider !== 'google' || prov !== 'google' || nonce !== body.nonce) return res(400, { code: 400, error_code: 'bad_jwt', msg: 'Bad ID token' });
+            const usr = users.get(email) || { id: 'u' + (users.size + 1), email, password: null, confirmed: true };
+            users.set(email, usr);
+            return res(200, issue(usr));
+        }
         if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'refresh_token') {
             const usr = refreshOf.get(body.refresh_token);
             if (!usr || globalThis.__refreshDenied) return res(400, { code: 400, error_code: 'refresh_token_not_found', msg: 'Invalid Refresh Token: Refresh Token Not Found' });

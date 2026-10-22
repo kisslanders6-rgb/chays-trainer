@@ -26,6 +26,59 @@ const AccountUI = (function () {
     const SVG_GOOGLE = '<svg class="account-provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
     const PROVIDER_LABEL = { google: 'Google', apple: 'Apple', github: 'GitHub', discord: 'Discord' };
 
+    // ─── Bouton officiel « Se connecter avec Google » (Google Identity Services) ──
+    // La fenêtre Google s'ouvre depuis l'application (son nom et son adresse s'affichent, pas ceux de
+    // Supabase) et renvoie un jeton d'identité transmis à Supabase (Auth.signInWithIdToken).
+    // Nonce : sa forme hachée (SHA-256) va à Google, sa forme brute à Supabase qui compare les deux.
+    // Si le script de Google ne se charge pas (hors ligne, bloqueur), le bouton de redirection reste affiché.
+    const GSI_SRC = 'https://accounts.google.com/gsi/client';
+    let gsi = null;                                       // Promise du chargement du script
+    const gsiClientId = () => (typeof CLOUD_CONFIG !== 'undefined' && CLOUD_CONFIG.googleClientId) || '';
+
+    function loadGsi() {
+        if (gsi) return gsi;
+        gsi = new Promise((resolve, reject) => {
+            if (window.google && google.accounts && google.accounts.id) return resolve();
+            const s = document.createElement('script');
+            s.src = GSI_SRC; s.async = true;
+            s.onload = () => (window.google && google.accounts && google.accounts.id ? resolve() : reject(new Error('gsi')));
+            s.onerror = () => { gsi = null; reject(new Error('gsi')); };
+            document.head.appendChild(s);
+        });
+        return gsi;
+    }
+
+    async function newNonce() {
+        const raw = Array.from(crypto.getRandomValues(new Uint8Array(24)), b => b.toString(16).padStart(2, '0')).join('');
+        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+        return { raw, hashed: Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('') };
+    }
+
+    // Remplace le bouton de redirection par le bouton officiel (à chaque affichage de la vue de connexion).
+    async function mountGoogleButton() {
+        const slot = overlay && $('[data-gsi]');
+        if (!slot || !gsiClientId() || !/^https?:$/.test(location.protocol) || !window.crypto || !crypto.subtle) return;
+        let nonce;
+        try { await loadGsi(); nonce = await newNonce(); } catch (e) { return; }
+        if (!overlay.contains(slot)) return;                 // la vue a changé entre-temps
+        google.accounts.id.initialize({
+            client_id: gsiClientId(), nonce: nonce.hashed, ux_mode: 'popup', auto_select: false,
+            itp_support: true, use_fedcm_for_button: true, context: 'signin',
+            callback: async resp => {
+                setBusy(true);
+                const r = await Auth.signInWithIdToken('google', resp.credential, nonce.raw);
+                setBusy(false);
+                if (!r.ok) { msg(r.message, 'err'); mountGoogleButton(); }      // nouveau nonce pour un nouvel essai
+            }
+        });
+        const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+        const host = document.createElement('div');
+        host.className = 'account-gsi';
+        slot.replaceWith(host);
+        google.accounts.id.renderButton(host, { type: 'standard', theme: dark ? 'filled_black' : 'outline', size: 'large',
+            text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'fr', width: Math.min(400, Math.max(220, host.clientWidth || 320)) });
+    }
+
     const icon = n => (typeof ico === 'function' ? ico(n) : '');
     const esc  = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const SVG_USER = '<svg class="ico" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -99,7 +152,7 @@ const AccountUI = (function () {
         return head('Compte') + `
             <div class="panel-sub">Sans compte, vos données restent uniquement sur cet appareil. Avec un compte, elles sont aussi sauvegardées en ligne et synchronisées entre vos appareils.</div>
             ${providers.length ? `<div class="account-providers">${providers.filter(p => PROVIDER_LABEL[p]).map(p =>
-                `<button class="btn account-provider" data-act="provider:${p}" type="button">${p === 'google' ? SVG_GOOGLE : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
+                `<button class="btn account-provider" data-act="provider:${p}" type="button"${p === 'google' ? ' data-gsi' : ''}>${p === 'google' ? SVG_GOOGLE : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
                 <div class="account-or"><span>ou avec votre e-mail</span></div>` : ''}
             <div class="seg account-seg">
                 <button class="seg-btn ${up ? '' : 'active'}" data-act="mode:signin" type="button">Connexion</button>
@@ -180,6 +233,7 @@ const AccountUI = (function () {
                         : view === 'newpw' ? viewNewPassword() : view === 'chooser' ? viewChooser() : viewAuth();
         const first = panel.querySelector('input');
         if (first && isOpen()) setTimeout(() => first.focus(), 0);
+        if (view === 'auth' && providers.includes('google')) mountGoogleButton();
     }
 
     function open(v) {

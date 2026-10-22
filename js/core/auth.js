@@ -8,6 +8,7 @@
  *   Auth.signIn / signUp / signOut / recover / updatePassword   → { ok, … } ou { ok:false, code, message (FR) }
  *   Auth.providers()        fournisseurs externes activés côté Supabase (ex. ['google']), mis en cache
  *   Auth.signInWithProvider(p)  redirige vers Google…, le retour (#access_token=…) est traité par init()
+ *   Auth.signInWithIdToken(p, jeton, nonce)  connexion avec un jeton d'identité (bouton Google officiel)
  *   Auth.deleteAccount()    supprime le compte et ses données en ligne (fonction delete_my_account)
  *   Auth.refresh()          rafraîchit le jeton (aussi automatique, 60 s avant l'expiration)
  *   Auth.onChange(fn)       fn(événement, données) : signed-in | signed-out | refreshed | expired | notice
@@ -206,6 +207,18 @@ const Auth = (function () {
         return { ok: true };
     }
 
+    // Jeton d'identité obtenu directement auprès du fournisseur (bouton « Se connecter avec Google ») :
+    // Supabase vérifie sa signature, son destinataire (ID client) et le nonce brut.
+    async function signInWithIdToken(provider, idToken, nonce) {
+        const r = await request('/token?grant_type=id_token', { body: { provider, id_token: idToken, nonce } });
+        if (r.error || !r.ok || !r.json.access_token) return failure(r);
+        const s = toSession(r.json);
+        apply(s);
+        const switched = activate(s);
+        emit('signed-in', { session: s, switched, fresh: true });
+        return { ok: true, session: s, switched };
+    }
+
     // Supprime définitivement le compte (et, par cascade, ses documents en ligne), puis déconnecte.
     async function deleteAccount() {
         if (!session) return { ok: false, code: 'no_session', message: 'Vous n\'êtes pas connecté.' };
@@ -276,7 +289,7 @@ const Auth = (function () {
 
     return {
         configured, init, refresh, refreshIfNeeded, signIn, signUp, signOut, recover, updatePassword,
-        providers, signInWithProvider, deleteAccount,
+        providers, signInWithProvider, signInWithIdToken, deleteAccount,
         onChange: fn => { listeners.push(fn); },
         takeNotice: () => { const n = notice; notice = null; return n; },
         session: () => session,
