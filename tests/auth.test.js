@@ -4,13 +4,13 @@ const makeBackend = require('./_fakeBackend.js');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 const jeq = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
-function boot({ backend, mem = new Map(), hash = '', configured = true, protocol = 'https:' } = {}) {
+function boot({ backend, mem = new Map(), hash = '', configured = true, protocol = 'https:', google = '' } = {}) {
     const timers = [];
     const loc = { hash, protocol, pathname: '/app/', search: '', origin: protocol === 'file:' ? 'null' : 'https://chays.test' };
     const ctx = {
         localStorage: { getItem: k => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k),
                         get length() { return mem.size; }, key: i => [...mem.keys()][i] },
-        fetch: backend.fetch, AbortController, URL, URLSearchParams, console,
+        fetch: backend.fetch, AbortController, URL, URLSearchParams, console, crypto: globalThis.crypto, TextEncoder,
         location: loc, history: { replaceState: (a, b, u) => { loc.hash = ''; ctx.__replaced = u; } },
         document: { addEventListener() {} },
         setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; }, clearTimeout: id => { if (timers[id - 1]) timers[id - 1].fn = null; }
@@ -18,7 +18,7 @@ function boot({ backend, mem = new Map(), hash = '', configured = true, protocol
     vm.createContext(ctx);
     const load = f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
     load('js/core/storageAdapter.js'); load('js/core/syncModel.js');
-    vm.runInContext(`const CLOUD_CONFIG = ${configured ? "{ url: 'https://x.supabase.co', anonKey: 'anon' }" : "{ url: '', anonKey: '' }"};`, ctx);
+    vm.runInContext(`const CLOUD_CONFIG = ${configured ? `{ url: 'https://x.supabase.co', anonKey: 'anon', googleClientId: '${google}' }` : "{ url: '', anonKey: '' }"};`, ctx);
     load('js/core/cloudClient.js'); load('js/core/cloudAdapter.js');
     ctx.run = s => vm.runInContext(s, ctx); ctx.mem = mem; ctx.timers = timers; ctx.load = load;
     ctx.events = []; ctx.boot = () => { load('js/core/auth.js'); ctx.run('Auth.onChange((e, d) => globalThis.__ev.push(e))'); };
@@ -209,6 +209,26 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         assert.strictEqual(bad.ok, false); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
         const ok = await c2.run(`Auth.signInWithIdToken('google', 'google:g@test.fr:abc', 'abc')`);
         assert.strictEqual(ok.ok, true); assert.strictEqual(c2.run('Auth.user().email'), 'g@test.fr'); assert(c2.events.includes('signed-in'));
+    });
+    await t('Google direct (OpenID) : aller vers Google avec nonce haché, retour #id_token accepté avec le bon state', async () => {
+        const mem = new Map(), be2 = makeBackend();
+        const c2 = boot({ backend: be2, mem, google: 'cid.apps.googleusercontent.com' }); c2.boot();
+        let went = null; c2.location.assign = u => { went = u; };
+        await c2.run(`Auth.signInWithProvider('google')`);
+        const u = new URL(went), o = JSON.parse(mem.get('chessTrainer_oidc'));
+        assert.strictEqual(u.origin + u.pathname, 'https://accounts.google.com/o/oauth2/v2/auth');
+        jeq([u.searchParams.get('client_id'), u.searchParams.get('response_type'), u.searchParams.get('redirect_uri'), u.searchParams.get('state')],
+            ['cid.apps.googleusercontent.com', 'id_token', 'https://chays.test/app/', o.state]);
+        const hashed = require('crypto').createHash('sha256').update(o.nonce).digest('hex');
+        assert.strictEqual(u.searchParams.get('nonce'), hashed);
+        // Retour : mauvais state → refusé ; bon state → connecté (le faux backend attend le nonce brut)
+        const bad = boot({ backend: be2, mem: new Map(mem), hash: `#id_token=google:g@test.fr:${o.nonce}&state=autre` }); bad.boot();
+        await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(bad.run('Auth.isSignedIn()'), false); assert.strictEqual(bad.run('Auth.takeNotice().kind'), 'error');
+        const ok = boot({ backend: be2, mem, hash: `#id_token=google:g@test.fr:${o.nonce}&state=${o.state}` }); ok.boot();
+        for (let i = 0; i < 4; i++) await new Promise(r => setImmediate(r));
+        assert.strictEqual(ok.run('Auth.isSignedIn()'), true); assert.strictEqual(ok.run('Auth.takeNotice().kind'), 'signed-in');
+        assert.strictEqual(mem.has('chessTrainer_oidc'), false);
     });
     await t('deleteAccount : compte et documents supprimés côté serveur, déconnexion locale', async () => {
         const be2 = makeBackend(); be2.addUser('del@test.fr', 'motdepasse1');

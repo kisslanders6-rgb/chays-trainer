@@ -7,8 +7,11 @@
  *
  *   Auth.signIn / signUp / signOut / recover / updatePassword   → { ok, … } ou { ok:false, code, message (FR) }
  *   Auth.providers()        fournisseurs externes activés côté Supabase (ex. ['google']), mis en cache
- *   Auth.signInWithProvider(p)  redirige vers Google…, le retour (#access_token=…) est traité par init()
- *   Auth.signInWithIdToken(p, jeton, nonce)  connexion avec un jeton d'identité (bouton Google officiel)
+ *   Auth.signInWithProvider(p)  redirige vers le fournisseur ; le retour est traité par init() :
+ *                           Google avec googleClientId (cloudConfig.js) → directement chez Google (OpenID Connect,
+ *                           #id_token=…) : la fenêtre Google affiche l'application, pas l'adresse Supabase ;
+ *                           sinon → via Supabase (#access_token=…)
+ *   Auth.signInWithIdToken(p, jeton, nonce)  connexion avec un jeton d'identité vérifié par Supabase
  *   Auth.deleteAccount()    supprime le compte et ses données en ligne (fonction delete_my_account)
  *   Auth.refresh()          rafraîchit le jeton (aussi automatique, 60 s avant l'expiration)
  *   Auth.onChange(fn)       fn(événement, données) : signed-in | signed-out | refreshed | expired | notice
@@ -198,11 +201,29 @@ const Auth = (function () {
         return providersCache;
     }
 
-    // Quitte la page : Supabase renvoie ensuite vers cette adresse avec #access_token=… (traité par readHash).
+    // Google direct (OpenID Connect, réponse #id_token=…) : nonce et state gardés le temps de l'aller-retour.
+    // Le nonce haché part chez Google, le nonce brut ira à Supabase qui compare les deux (cf. handleLink).
+    const OIDC_KEY = 'chessTrainer_oidc';
+    const hex = buf => Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+    const googleClientId = () => cfg().googleClientId || '';
+
+    async function signInWithGoogleDirect() {
+        const raw   = hex(crypto.getRandomValues(new Uint8Array(24)));
+        const state = hex(crypto.getRandomValues(new Uint8Array(16)));
+        const hashed = hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)));
+        L().set(OIDC_KEY, JSON.stringify({ nonce: raw, state, at: Date.now() }));
+        location.assign('https://accounts.google.com/o/oauth2/v2/auth?client_id=' + enc(googleClientId())
+            + '&redirect_uri=' + enc(location.origin + location.pathname) + '&response_type=id_token'
+            + '&scope=' + enc('openid email profile') + '&nonce=' + hashed + '&state=' + state + '&prompt=select_account');
+        return { ok: true };
+    }
+
+    // Quitte la page : le fournisseur (ou Supabase) renvoie ensuite vers cette adresse (traité par readHash).
     function signInWithProvider(provider) {
         if (!configured()) return { ok: false, code: 'config', message: "Le service de compte n'est pas configuré." };
         if (!/^https?:$/.test(location.protocol))
             return { ok: false, code: 'file', message: "La connexion avec Google n'est possible que depuis l'adresse en ligne de l'application." };
+        if (provider === 'google' && googleClientId() && typeof crypto !== 'undefined' && crypto.subtle) return signInWithGoogleDirect();
         location.assign(api('/authorize?provider=' + enc(provider) + '&redirect_to=' + enc(location.origin + location.pathname)));
         return { ok: true };
     }
@@ -245,8 +266,15 @@ const Auth = (function () {
         if (p.get('error')) {
             const c = p.get('error_code') || p.get('error');
             clean();
+            if (p.get('state')) L().remove('chessTrainer_oidc');
             return { error: c === 'otp_expired' ? 'Ce lien a expiré ou a déjà été utilisé : recommencez la démarche.'
+                          : c === 'access_denied' && p.get('state') ? 'Connexion Google annulée.'
                                                 : (p.get('error_description') || 'Lien invalide.').replace(/\+/g, ' ') };
+        }
+        if (p.get('id_token')) {                                     // retour de Google (OpenID Connect)
+            const h = { type: 'id_token', id_token: p.get('id_token'), state: p.get('state') };
+            clean();
+            return h;
         }
         if (p.get('access_token') && p.get('refresh_token')) {
             const h = { type: p.get('type') || 'signin', access_token: p.get('access_token'), refresh_token: p.get('refresh_token'),
@@ -260,7 +288,19 @@ const Auth = (function () {
     function setNotice(n) { notice = n; emit('notice', n); }
 
     async function handleLink(h) {
-        if (h.error) { setNotice({ kind: 'error', message: h.error }); return; }
+        if (h.error) { L().remove(OIDC_KEY); setNotice({ kind: 'error', message: h.error }); return; }
+        if (h.type === 'id_token') {
+            let o = null;
+            try { o = JSON.parse(L().get(OIDC_KEY)); } catch (e) {}
+            L().remove(OIDC_KEY);
+            if (!o || !o.state || o.state !== h.state || Date.now() - o.at > 600000) {
+                setNotice({ kind: 'error', message: 'Connexion Google interrompue ou expirée : recommencez.' });
+                return;
+            }
+            const r = await signInWithIdToken('google', h.id_token, o.nonce);
+            setNotice(r.ok ? { kind: 'signed-in' } : { kind: 'error', message: r.message });
+            return;
+        }
         const r = await request('/user', { method: 'GET', token: h.access_token });
         if (r.error || !r.ok || !r.json.id) { setNotice({ kind: 'error', message: 'Lien invalide ou expiré : recommencez la démarche.' }); return; }
         const s = { access_token: h.access_token, refresh_token: h.refresh_token, expires_at: h.expires_at, user: { id: r.json.id, email: r.json.email } };

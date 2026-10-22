@@ -71,7 +71,14 @@
 .account-providers { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
 .account-provider { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; font-size: 14px; font-weight: 700; background: var(--surface); }
 .account-provider-logo { width: 20px; height: 20px; flex: none; }
-.account-gsi { display: flex; justify-content: center; min-height: 44px; border-radius: 8px; overflow: hidden; }
+/* Google : pilule sombre, logo dans une pastille blanche (présentation habituelle du bouton Google) */
+.account-provider-google { position: relative; min-height: 48px; padding: 0 44px 0 52px; white-space: nowrap; border-radius: 999px; border: 1px solid #1f1f1f; background: #1f1f1f; color: #fff; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; letter-spacing: .1px; }
+.account-provider-google:hover { background: #2a2a2a; border-color: #2a2a2a; color: #fff; }
+.account-provider-google:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+[data-theme="dark"] .account-provider-google { border-color: #8e918f; background: #131314; }
+[data-theme="dark"] .account-provider-google:hover { background: #1f2020; }
+@media (max-width: 380px) { .account-provider-google { padding-right: 14px; } }
+.account-provider-badge { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; }
 .account-or { display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; font-size: 12px; color: var(--text-dim); }
 .account-or::before, .account-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
