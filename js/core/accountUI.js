@@ -75,8 +75,10 @@ const AccountUI = (function () {
         const host = document.createElement('div');
         host.className = 'account-gsi';
         slot.replaceWith(host);
+        // Forme rectangulaire : le cadre de Google (fond blanc) est alors entièrement couvert, sans coins blancs
+        // autour du bouton personnalisé « Continuer en tant que … » sur le thème sombre.
         google.accounts.id.renderButton(host, { type: 'standard', theme: dark ? 'filled_black' : 'outline', size: 'large',
-            text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'fr', width: Math.min(400, Math.max(220, host.clientWidth || 320)) });
+            text: 'continue_with', shape: 'rectangular', logo_alignment: 'left', locale: 'fr', width: Math.min(400, Math.max(220, host.clientWidth || 320)) });
     }
 
     const icon = n => (typeof ico === 'function' ? ico(n) : '');
@@ -425,6 +427,9 @@ const AccountUI = (function () {
         });
         onNotice(Auth.takeNotice());
         if (Auth.isSignedIn()) ensureIntent();
+        // Le bouton Google est dessiné par Google pour un thème donné : on le redessine quand le thème change.
+        new MutationObserver(() => { if (isOpen() && view === 'auth' && providers.includes('google')) render(); })
+            .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
         Promise.resolve(Auth.providers ? Auth.providers() : []).then(p => {   // boutons « Continuer avec … » dès que la liste est connue
             providers = Array.isArray(p) ? p : [];
             if (providers.length && isOpen() && view === 'auth') render();
