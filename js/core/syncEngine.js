@@ -36,7 +36,7 @@ const SyncEngine = (function () {
 
     // ─── Outils ───────────────────────────────────────────────────────────────
     const coded = (code, extra) => Object.assign(new Error(code), { code }, extra);
-    const errOf = r => coded(r.error || 'server', { status: r.status });
+    const errOf = r => coded(/quota_/.test(r.message || '') ? 'quota' : r.error || 'server', { status: r.status });   // quota : supabase/schema.sql
     const active = () => typeof Auth !== 'undefined' && Auth.isSignedIn() && CloudClient.configured();
     const hhmm = ts => new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
@@ -212,6 +212,7 @@ const SyncEngine = (function () {
         }
         if (code === 'config')  { setStatus('error', 'Service de compte non configuré.'); return { error: code }; }
         if (code === 'storage') { setStatus('error', 'Stockage de l\'appareil plein : synchronisation suspendue.'); return { error: code }; }
+        if (code === 'quota')   { setStatus('error', 'Limite du compte atteinte (500 documents ou 20 Mo) : synchronisation suspendue.'); return { error: code }; }
         const offline = code === 'network';
         setStatus(offline ? 'offline' : 'error', offline ? 'Hors ligne : modifications gardées sur cet appareil.' : 'Erreur de synchronisation : nouvel essai automatique.');
         schedule(BACKOFF[Math.min(backoffIdx++, BACKOFF.length - 1)], true);

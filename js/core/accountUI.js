@@ -5,8 +5,9 @@
  * et sa fenêtre — aucune modification de index.html (hors balises <script>/<link>) ni d'app.js.
  * Rien n'apparaît si le service n'est pas configuré (cloudConfig.js vide).
  *
- * Vues : connexion / création de compte · mot de passe oublié · nouveau mot de passe ·
- *        compte connecté · première synchronisation (choix fusionner / envoyer / récupérer).
+ * Vues : connexion / création de compte (e-mail, ou Google si activé dans Supabase) · mot de passe
+ *        oublié · nouveau mot de passe · compte connecté (dont suppression du compte) ·
+ *        première synchronisation (choix fusionner / envoyer / récupérer).
  *
  * Choix de première synchronisation → SyncIntent (auth.js) + événement window « chays-sync-intent »,
  * consommés par syncEngine.js. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
@@ -21,6 +22,9 @@ const AccountUI = (function () {
     let overlay = null, btn = null;
     let view = 'auth', mode = 'signin', busy = false, switched = false, chooser = null, choosing = false;
     let syncStatus = { level: 'ok', text: 'Connecté' };
+    let providers = [];                                   // fournisseurs externes activés (Auth.providers)
+    const SVG_GOOGLE = '<svg class="account-provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+    const PROVIDER_LABEL = { google: 'Google', apple: 'Apple', github: 'GitHub', discord: 'Discord' };
 
     const icon = n => (typeof ico === 'function' ? ico(n) : '');
     const esc  = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -94,6 +98,9 @@ const AccountUI = (function () {
         const up = mode === 'signup';
         return head('Compte') + `
             <div class="panel-sub">Sans compte, vos données restent uniquement sur cet appareil. Avec un compte, elles sont aussi sauvegardées en ligne et synchronisées entre vos appareils.</div>
+            ${providers.length ? `<div class="account-providers">${providers.filter(p => PROVIDER_LABEL[p]).map(p =>
+                `<button class="btn account-provider" data-act="provider:${p}" type="button">${p === 'google' ? SVG_GOOGLE : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
+                <div class="account-or"><span>ou avec votre e-mail</span></div>` : ''}
             <div class="seg account-seg">
                 <button class="seg-btn ${up ? '' : 'active'}" data-act="mode:signin" type="button">Connexion</button>
                 <button class="seg-btn ${up ? 'active' : ''}" data-act="mode:signup" type="button">Créer un compte</button>
@@ -142,7 +149,8 @@ const AccountUI = (function () {
                 <button class="btn" data-act="signout">Se déconnecter</button>
                 <button class="btn btn-danger" data-act="signout-erase">Se déconnecter et effacer les données de cet appareil</button>
             </div>
-            <div class="set-hint account-note">Se déconnecter garde vos données sur cet appareil (et en ligne). L'effacement ne touche que cet appareil.</div>`;
+            <div class="set-hint account-note">Se déconnecter garde vos données sur cet appareil (et en ligne). L'effacement ne touche que cet appareil.</div>
+            <button class="toast-link account-link account-delete" data-act="delete-account" type="button">Supprimer mon compte…</button>`;
     }
 
     function viewChooser() {
@@ -234,6 +242,21 @@ const AccountUI = (function () {
         if (typeof askConfirm === 'function') askConfirm(text, go); else if (confirm(text)) go();
     }
 
+    // Suppression définitive du compte : double confirmation, les données de cet appareil sont conservées.
+    function onDeleteAccount() {
+        const u = Auth.user() || {};
+        const text = `Supprimer définitivement le compte ${u.email || ''} ? Toutes vos données en ligne seront effacées et ne pourront pas être récupérées. Les données de cet appareil sont conservées.`;
+        const go = async () => {
+            setBusy(true);
+            const r = await Auth.deleteAccount();
+            setBusy(false);
+            if (!r.ok) return msg(r.message, 'err');
+            close();
+            toast('Votre compte a été supprimé. Vos données restent sur cet appareil.');
+        };
+        if (typeof askConfirm === 'function') askConfirm(text, go); else if (confirm(text)) go();
+    }
+
     // ─── Événements ───────────────────────────────────────────────────────────
     async function submit(form) {
         if (busy) return;
@@ -277,6 +300,11 @@ const AccountUI = (function () {
         else if (act === 'sync-now') { if (typeof SyncEngine !== 'undefined') SyncEngine.syncNow(); }
         else if (act === 'signout') onSignOut(false);
         else if (act === 'signout-erase') onSignOut(true);
+        else if (act === 'delete-account') onDeleteAccount();
+        else if (act.startsWith('provider:')) {
+            const r = Auth.signInWithProvider(act.slice(9));
+            if (!r.ok) msg(r.message, 'err');
+        }
         else if (act.startsWith('strategy:')) {
             const s = act.slice(9);
             const run = backupFirst => { applyStrategy(s, backupFirst); view = 'account'; render(); toast(s === 'merge' ? 'Fusion programmée : vos données vont être réunies.' : s === 'upload' ? 'Vos données vont remplacer celles du compte.' : 'Les données du compte vont remplacer celles de cet appareil.'); };
@@ -321,6 +349,7 @@ const AccountUI = (function () {
         if (!n) return;
         if (n.kind === 'recovery') open('newpw');
         else if (n.kind === 'confirmed') toast('Adresse confirmée : vous êtes connecté.');
+        else if (n.kind === 'signed-in') toast('Vous êtes connecté.');
         else if (n.kind === 'error') toast(n.message);
     }
 
@@ -342,6 +371,10 @@ const AccountUI = (function () {
         });
         onNotice(Auth.takeNotice());
         if (Auth.isSignedIn()) ensureIntent();
+        Promise.resolve(Auth.providers ? Auth.providers() : []).then(p => {   // boutons « Continuer avec … » dès que la liste est connue
+            providers = Array.isArray(p) ? p : [];
+            if (providers.length && isOpen() && view === 'auth') render();
+        }).catch(() => {});
     }
 
     function setSyncStatus(level, text) {

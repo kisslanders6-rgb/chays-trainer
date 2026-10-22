@@ -6,6 +6,7 @@
 --  Sécurité : chaque utilisateur ne voit et ne modifie QUE ses lignes (RLS).
 --  Concurrence : `version` est incrémentée par le SERVEUR à chaque mise à jour ; le client écrit
 --  « WHERE version = <celle que j'ai vue> » : si quelqu'un est passé avant, 0 ligne modifiée = conflit.
+--  Quota : 500 documents et 20 Mo par compte. Suppression de compte : fonction delete_my_account().
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create table if not exists public.documents (
@@ -20,29 +21,31 @@ create table if not exists public.documents (
     constraint documents_data_len check (octet_length(data::text) <= 4000000)
 );
 
--- Droits : jamais d'accès anonyme ; connecté = uniquement via les règles RLS ci-dessous.
-revoke all on public.documents from anon;
+-- Droits : jamais d'accès anonyme ; connecté = lire / créer / modifier / supprimer, via les règles RLS
+-- ci-dessous (pas de TRUNCATE, TRIGGER ni REFERENCES : TRUNCATE ignorerait les règles RLS).
+revoke all on public.documents from anon, authenticated;
 grant select, insert, update, delete on public.documents to authenticated;
 
 alter table public.documents enable row level security;
 
+-- (select auth.uid()) : évalué une fois par requête, pas une fois par ligne.
 drop policy if exists documents_select_own on public.documents;
 drop policy if exists documents_insert_own on public.documents;
 drop policy if exists documents_update_own on public.documents;
 drop policy if exists documents_delete_own on public.documents;
 
 create policy documents_select_own on public.documents for select to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 create policy documents_insert_own on public.documents for insert to authenticated
-    with check (auth.uid() = user_id);
+    with check ((select auth.uid()) = user_id);
 create policy documents_update_own on public.documents for update to authenticated
-    using (auth.uid() = user_id) with check (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy documents_delete_own on public.documents for delete to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 -- Versionnage côté serveur : le client ne peut ni tricher sur la version, ni changer de clé / de propriétaire.
 create or replace function public.documents_bump() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
     new.user_id    := old.user_id;
     new.key        := old.key;
@@ -54,3 +57,45 @@ end $$;
 drop trigger if exists documents_bump on public.documents;
 create trigger documents_bump before update on public.documents
     for each row execute function public.documents_bump();
+
+-- Quota par compte (empêche un compte de remplir la base) : le client affiche « Limite du compte atteinte ».
+create or replace function public.documents_quota() returns trigger
+language plpgsql set search_path = '' as $$
+declare
+    n     bigint;
+    total bigint;
+begin
+    select count(*), coalesce(sum(octet_length(d.data::text)), 0) into n, total
+      from public.documents d
+     where d.user_id = new.user_id and d.key <> new.key;
+    if tg_op = 'INSERT' and n >= 500 then
+        raise exception 'quota_documents' using errcode = 'P0001', hint = 'Limite de 500 documents par compte.';
+    end if;
+    if total + octet_length(new.data::text) > 20000000 then
+        raise exception 'quota_size' using errcode = 'P0001', hint = 'Limite de 20 Mo par compte.';
+    end if;
+    return new;
+end $$;
+
+drop trigger if exists documents_quota on public.documents;
+create trigger documents_quota before insert or update of data on public.documents
+    for each row execute function public.documents_quota();
+
+revoke all on function public.documents_bump()  from public, anon, authenticated;
+revoke all on function public.documents_quota() from public, anon, authenticated;
+
+-- Suppression de son propre compte (« Supprimer mon compte » dans l'application) :
+-- l'utilisateur et, par cascade, tous ses documents. Seul un utilisateur connecté peut l'appeler, pour lui-même.
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+    uid uuid := auth.uid();
+begin
+    if uid is null then
+        raise exception 'not_authenticated' using errcode = '42501';
+    end if;
+    delete from auth.users where id = uid;
+end $$;
+
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;

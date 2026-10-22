@@ -48,6 +48,10 @@ Les données restent dans le navigateur (`localStorage`). Toutes les lectures et
 1. Créez un projet Supabase, puis exécutez `supabase/schema.sql` dans l'éditeur SQL.
 2. Renseignez `url` et `anonKey` dans `js/core/cloudConfig.js`. Cette clé est publique : la sécurité repose sur les règles RLS du schéma. N'y mettez jamais la clé `service_role`.
 3. Pour vérifier la connexion, ouvrez `tests/cloud-smoke.html` (servi en HTTP).
+4. Authentication → URL Configuration : mettez l'adresse de l'application (ex. `https://chays-trainer.vercel.app`) en « Site URL » et dans « Redirect URLs ».
+5. Connexion avec Google (facultatif) : Authentication → Sign In / Providers → Google, avec un identifiant OAuth créé dans Google Cloud Console. Le bouton « Continuer avec Google » apparaît dès que le fournisseur est activé.
+
+Le schéma limite chaque compte à 500 documents et 20 Mo, et fournit `delete_my_account()` (bouton « Supprimer mon compte »).
 
 Sont synchronisés : répertoires, statistiques et planning de révision, corbeille, progression des finales, journal d'activité, ainsi que le thème de l'échiquier, le style des pièces et celui des flèches (le choix le plus récent l'emporte). Le mode clair / sombre et les sons restent propres à chaque appareil.
 

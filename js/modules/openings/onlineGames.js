@@ -14,7 +14,7 @@
 'use strict';
 
 const ONLINE_PREFS_KEY = 'chessTrainer_onlineAccount';
-const ONLINE_COUNTS    = [10, 20, 50];
+const ONLINE_COUNTS    = [5, 10, 20, 50];
 
 let _online = { busy: false, rows: null, summary: null, error: '' };
 

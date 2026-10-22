@@ -6,6 +6,9 @@
  * compte connecté, rien n'est installé : l'application reste en stockage local pur.
  *
  *   Auth.signIn / signUp / signOut / recover / updatePassword   → { ok, … } ou { ok:false, code, message (FR) }
+ *   Auth.providers()        fournisseurs externes activés côté Supabase (ex. ['google']), mis en cache
+ *   Auth.signInWithProvider(p)  redirige vers Google…, le retour (#access_token=…) est traité par init()
+ *   Auth.deleteAccount()    supprime le compte et ses données en ligne (fonction delete_my_account)
  *   Auth.refresh()          rafraîchit le jeton (aussi automatique, 60 s avant l'expiration)
  *   Auth.onChange(fn)       fn(événement, données) : signed-in | signed-out | refreshed | expired | notice
  *   Auth.takeNotice()       message issu d'un lien d'e-mail (confirmation, réinitialisation, lien expiré)
@@ -183,6 +186,44 @@ const Auth = (function () {
         return r.error || !r.ok ? failure(r) : { ok: true };
     }
 
+    // ─── Fournisseurs externes (Google…) ──────────────────────────────────────
+    let providersCache = null;
+    async function providers() {
+        if (providersCache) return providersCache;
+        const r = await request('/settings', { method: 'GET' });
+        if (r.error || !r.ok) return [];
+        const ext = r.json.external || {};
+        providersCache = Object.keys(ext).filter(k => ext[k] === true && k !== 'email' && k !== 'phone');
+        return providersCache;
+    }
+
+    // Quitte la page : Supabase renvoie ensuite vers cette adresse avec #access_token=… (traité par readHash).
+    function signInWithProvider(provider) {
+        if (!configured()) return { ok: false, code: 'config', message: "Le service de compte n'est pas configuré." };
+        if (!/^https?:$/.test(location.protocol))
+            return { ok: false, code: 'file', message: "La connexion avec Google n'est possible que depuis l'adresse en ligne de l'application." };
+        location.assign(api('/authorize?provider=' + enc(provider) + '&redirect_to=' + enc(location.origin + location.pathname)));
+        return { ok: true };
+    }
+
+    // Supprime définitivement le compte (et, par cascade, ses documents en ligne), puis déconnecte.
+    async function deleteAccount() {
+        if (!session) return { ok: false, code: 'no_session', message: 'Vous n\'êtes pas connecté.' };
+        await refreshIfNeeded();
+        let res;
+        try {
+            res = await fetch(cfg().url.replace(/\/+$/, '') + '/rest/v1/rpc/delete_my_account', {
+                method: 'POST', body: '{}',
+                headers: { apikey: cfg().anonKey, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }
+            });
+        } catch (e) { return { ok: false, code: 'network', message: 'Connexion impossible : vérifiez votre réseau.' }; }
+        if (!res.ok) return { ok: false, code: 'server', message: `La suppression a échoué (${res.status}). Réessayez plus tard.` };
+        apply(null);
+        uninstallSyncingAdapter();
+        emit('signed-out', { deleted: true });
+        return { ok: true };
+    }
+
     // ─── Liens reçus par e-mail (#access_token=… confirmation / réinitialisation, #error=… lien expiré) ──
     function readHash() {
         if (typeof location === 'undefined' || !location.hash || location.hash.length < 2) return null;
@@ -213,7 +254,7 @@ const Auth = (function () {
         apply(s);
         const switched = activate(s);
         emit('signed-in', { session: s, switched, fresh: true });
-        setNotice({ kind: h.type === 'recovery' ? 'recovery' : 'confirmed' });
+        setNotice({ kind: h.type === 'recovery' ? 'recovery' : h.type === 'signup' ? 'confirmed' : 'signed-in' });
     }
 
     // ─── Démarrage ────────────────────────────────────────────────────────────
@@ -235,6 +276,7 @@ const Auth = (function () {
 
     return {
         configured, init, refresh, refreshIfNeeded, signIn, signUp, signOut, recover, updatePassword,
+        providers, signInWithProvider, deleteAccount,
         onChange: fn => { listeners.push(fn); },
         takeNotice: () => { const n = notice; notice = null; return n; },
         session: () => session,

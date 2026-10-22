@@ -35,6 +35,13 @@ module.exports = function makeBackend(opts) {
             users.set(body.email, usr);
             return res(200, opts.confirmEmail ? { id: usr.id, email: usr.email } : issue(usr));
         }
+        if (p === '/auth/v1/settings') return res(200, { external: Object.assign({ email: true, google: false }, opts.external) });
+        if (p === '/rest/v1/rpc/delete_my_account') {                       // supabase/schema.sql : compte et documents supprimés
+            if (!who) return res(401, { message: 'JWT expired' });
+            users.delete(who.email); docs.delete(who.id);
+            [...sessions].forEach(([k, v]) => { if (v === who) sessions.delete(k); });
+            return res(204);
+        }
         if (p === '/auth/v1/logout') { sessions.delete(bearer); return res(204); }
         if (p === '/auth/v1/recover') return res(200, {});
         if (p === '/auth/v1/user') {

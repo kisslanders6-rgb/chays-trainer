@@ -183,6 +183,35 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         c2.boot(); const nt = c2.run('Auth.takeNotice()');
         assert.strictEqual(nt.kind, 'error'); assert.match(nt.message, /expiré/); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
     });
+    await t('retour de Google (#access_token sans type) : connecté, notice « signed-in »', async () => {
+        const be2 = makeBackend(); const usr = be2.addUser('g@test.fr', 'x'); const tok = be2.token(usr);
+        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600&provider_token=abc` });
+        c2.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(c2.run('Auth.isSignedIn()'), true); assert.strictEqual(c2.run('Auth.takeNotice().kind'), 'signed-in');
+    });
+    await t('fournisseurs : seuls ceux activés côté Supabase sont proposés', async () => {
+        const c2 = boot({ backend: makeBackend({ external: { google: true, github: false } }) }); c2.boot();
+        jeq(await c2.run('Auth.providers()'), ['google']);
+        const c3 = boot({ backend: makeBackend() }); c3.boot();
+        jeq(await c3.run('Auth.providers()'), []);
+    });
+    await t('signInWithProvider : redirection vers /authorize, refusée hors http(s)', async () => {
+        const c2 = boot({ backend: makeBackend() }); c2.boot();
+        let went = null; c2.location.assign = u => { went = u; };
+        assert.strictEqual(c2.run(`Auth.signInWithProvider('google')`).ok, true);
+        assert.strictEqual(went, 'https://x.supabase.co/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent('https://chays.test/app/'));
+        const c3 = boot({ backend: makeBackend(), protocol: 'file:' }); c3.boot();
+        assert.strictEqual(c3.run(`Auth.signInWithProvider('google')`).code, 'file');
+    });
+    await t('deleteAccount : compte et documents supprimés côté serveur, déconnexion locale', async () => {
+        const be2 = makeBackend(); be2.addUser('del@test.fr', 'motdepasse1');
+        const c2 = boot({ backend: be2 }); c2.boot();
+        await c2.run(`Auth.signIn('del@test.fr', 'motdepasse1')`);
+        const r = await c2.run('Auth.deleteAccount()');
+        assert.strictEqual(r.ok, true); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
+        assert.strictEqual(be2.users.has('del@test.fr'), false); assert(c2.events.includes('signed-out'));
+        assert.strictEqual((await c2.run('Auth.deleteAccount()')).code, 'no_session');
+    });
     await t('updatePassword sans session → erreur claire', async () => {
         const c2 = boot({ backend: makeBackend() }); c2.boot();
         assert.strictEqual((await c2.run(`Auth.updatePassword('abcdefgh')`)).code, 'no_session');
