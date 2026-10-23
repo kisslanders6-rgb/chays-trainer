@@ -4,14 +4,15 @@
  * Sortie de l'écran de lancement (#splash, index.html ; animation : css/splash.css).
  * L'animation démarre seule au premier affichage (classe « splashing » posée dans le <head>) ;
  * ce script décide seulement QUAND sortir :
- *   - pas avant la fin de la suspension (animation spHold de l'overlay, ≈ 1,55 s) : rien n'est coupé
+ *   - pas avant la fin de la suspension (animation spHold de l'overlay, 2 s) : rien n'est coupé
  *     si l'application est prête instantanément ;
  *   - pas avant que l'application soit prête : DOMContentLoaded (logos teintés, pièces, onglet ?tab=),
- *     puis chargement complet et police Inter, ces deux-là plafonnés à 2,6 s ;
+ *     puis chargement complet et polices (Inter, Fraunces, IBM Plex Mono), ces deux-là plafonnés à 2,6 s ;
  *   - quoi qu'il arrive au plus tard à 4,5 s : un réseau lent ne bloque jamais l'accès.
- * Pendant la sortie (≈ 0,45 s), <html class="splash-out"> : la barre système reprend la couleur du
- * thème (themeColor.js) et #app monte légèrement. Onglet en arrière-plan (horloge des animations
- * suspendue) : retrait direct par minuteur.
+ * Sortie : atterrissage (js/core/introTimeline.js, ≈ 1,3 s) — la pièce et la signature volent jusqu'à
+ * la barre du haut et l'accueil monte en cascade. Mouvement réduit ou barre introuvable : fondu de 0,45 s.
+ * Pendant la sortie, <html class="splash-out"> : la barre système reprend la couleur du thème
+ * (themeColor.js). Onglet en arrière-plan (horloge des animations suspendue) : retrait par minuteur.
  */
 
 'use strict';
@@ -24,6 +25,7 @@
     const READY_CAP = 2600;                       // ms depuis le début de la navigation
     const MAX_SHOWN = 4500;
     const EXIT_MS   = 450;
+    const LAND_MS   = 1400;
     const until = ms => new Promise(r => setTimeout(r, Math.max(0, ms - performance.now())));
     const cssAnim = name => splash.getAnimations().find(a => a.animationName === name);
 
@@ -33,13 +35,21 @@
         if (done) return;
         done = true;
         root.classList.remove('splashing', 'splash-out');
-        splash.remove();
+        splash.remove();                                      // le vrai logo apparaît sous la copie volante
+        if (typeof IntroTimeline !== 'undefined') IntroTimeline.release();
     }
 
     function leave() {
         if (left) return;
         left = true;
         root.classList.add('splash-out');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const flight = !reduce && typeof IntroTimeline !== 'undefined' ? IntroTimeline.land(splash) : null;
+        if (flight) {
+            flight.then(finish, finish);
+            setTimeout(finish, LAND_MS + 400);
+            return;
+        }
         splash.classList.add('is-leaving');
         const exit = cssAnim('spExit');
         if (exit) exit.finished.then(finish, finish);

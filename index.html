@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="dark" lang="fr">
+<html data-theme="light" lang="fr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -32,15 +32,18 @@
     </script>
     <link rel="stylesheet" href="css/splash.css" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/home.css" />
     <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
-<!-- Écran de lancement (css/splash.css, js/core/splash.js). Première image = écran système de la PWA
-     (icône maskable) ; le logo, copie d'assets/brand/chays-logo.svg, est posé exactement dessus puis tracé. -->
+<!-- Écran de lancement (css/splash.css, js/core/splash.js, js/core/introTimeline.js). Première image = écran
+     système de la PWA (icône maskable) ; la pièce (calque #piece d'assets/brand/chays-logo.svg) est posée exactement
+     dessus puis tracée, la signature s'écrit, puis les deux s'envolent vers la barre du haut. -->
 <div id="splash" class="splash" aria-hidden="true">
+    <div class="sp-veil"></div>
     <img class="sp-handoff" src="assets/icons/icon-maskable-512.png" alt="" width="240" height="240" />
     <div class="sp-stage">
-    <svg class="sp-logo" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+    <svg class="sp-logo sp-piece" viewBox="186 34 140 320" aria-hidden="true" focusable="false">
       <g id="piece">
         <g id="socle" stroke-width="5">
           <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="380" data-fill="820" d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
@@ -59,25 +62,8 @@
           <path id="gravure-trait" class="grave" pathLength="1" data-t="640" data-d="460" data-from="encre" data-swap="900" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
         </g>
       </g>
-      <g id="texte">
-        <g id="texte-chays" stroke-width="7.5">
-          <path id="chays-1-c" class="trait" pathLength="1" data-t="1250" data-d="300" d="M178.1 392 A17.5 20 0 1 0 178.1 416"/>
-          <path id="chays-2-h" class="trait" pathLength="1" data-t="1310" data-d="300" d="M194.1 384 V424 M223.3 384 V424 M194.1 404 H223.3"/>
-          <path id="chays-3-a" class="trait" pathLength="1" data-t="1370" data-d="300" d="M239.3 424 L256.3 384 L273.3 424 M246.1 411.2 H266.5"/>
-          <path id="chays-4-y" class="trait" pathLength="1" data-t="1430" data-d="300" d="M289.3 384 L305.7 404 L322 384 M305.7 404 V424"/>
-          <path id="chays-5-s" class="trait" pathLength="1" data-t="1490" data-d="300" d="M365.2 390.4 C359.2 383.2 339.6 384 339.1 394.4 C338.5 404.8 365.2 402.4 365.2 413.6 C365.2 424.8 343.4 424.8 338 417.6"/>
-        </g>
-        <g id="texte-trainer" stroke-width="3.6">
-          <path id="trainer-1-t" class="laiton" pathLength="1" data-t="1480" data-d="220" d="M180.2 440 H191.9 M186 440 V456"/>
-          <path id="trainer-2-r" class="laiton" pathLength="1" data-t="1520" data-d="220" d="M205.9 456 V440 H211.9 C215.7 440 216.8 442.2 216.8 444.5 C216.8 446.7 215.7 449 211.9 449 H205.9 M211.4 449 L216.8 456"/>
-          <path id="trainer-3-a" class="laiton" pathLength="1" data-t="1560" data-d="220" d="M230.8 456 L237.3 440 L243.8 456 M233.4 450.9 H241.2"/>
-          <path id="trainer-4-i" class="laiton" pathLength="1" data-t="1600" data-d="220" d="M257.8 440 V456"/>
-          <path id="trainer-5-n" class="laiton" pathLength="1" data-t="1640" data-d="220" d="M271.8 456 V440 L283.3 456 V440"/>
-          <path id="trainer-6-e" class="laiton" pathLength="1" data-t="1680" data-d="220" d="M306.9 440 H297.3 V456 H306.9 M297.3 448 H305"/>
-          <path id="trainer-7-r" class="laiton" pathLength="1" data-t="1720" data-d="220" d="M320.9 456 V440 H326.9 C330.7 440 331.8 442.2 331.8 444.5 C331.8 446.7 330.7 449 326.9 449 H320.9 M326.3 449 L331.8 456"/>
-        </g>
-      </g>
     </svg>
+    <span class="ct-wm sp-wm"><span class="ct-wm-1">Chays</span><span class="ct-wm-2">Trainer</span></span>
     </div>
 </div>
 <script>
@@ -98,7 +84,7 @@
     })();
 </script>
 
-<!-- Emblème Chays Trainer (assets/brand/chays-logo.svg), réutilisé par <use> : barre du haut et accueil -->
+<!-- Pièce de l'emblème (assets/brand/chays-logo.svg, calque #piece), réutilisée par <use> dans la barre du haut -->
 <svg class="ct-sprite" aria-hidden="true" focusable="false" width="0" height="0">
   <defs>
     <g id="ct-piece">
@@ -119,25 +105,6 @@
     <path class="grave" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
     </g>
     </g>
-    <g id="ct-texte">
-    <g stroke-width="7.5">
-    <path class="trait" d="M178.1 392 A17.5 20 0 1 0 178.1 416"/>
-    <path class="trait" d="M194.1 384 V424 M223.3 384 V424 M194.1 404 H223.3"/>
-    <path class="trait" d="M239.3 424 L256.3 384 L273.3 424 M246.1 411.2 H266.5"/>
-    <path class="trait" d="M289.3 384 L305.7 404 L322 384 M305.7 404 V424"/>
-    <path class="trait" d="M365.2 390.4 C359.2 383.2 339.6 384 339.1 394.4 C338.5 404.8 365.2 402.4 365.2 413.6 C365.2 424.8 343.4 424.8 338 417.6"/>
-    </g>
-    <g stroke-width="3.6">
-    <path class="laiton" d="M180.2 440 H191.9 M186 440 V456"/>
-    <path class="laiton" d="M205.9 456 V440 H211.9 C215.7 440 216.8 442.2 216.8 444.5 C216.8 446.7 215.7 449 211.9 449 H205.9 M211.4 449 L216.8 456"/>
-    <path class="laiton" d="M230.8 456 L237.3 440 L243.8 456 M233.4 450.9 H241.2"/>
-    <path class="laiton" d="M257.8 440 V456"/>
-    <path class="laiton" d="M271.8 456 V440 L283.3 456 V440"/>
-    <path class="laiton" d="M306.9 440 H297.3 V456 H306.9 M297.3 448 H305"/>
-    <path class="laiton" d="M320.9 456 V440 H326.9 C330.7 440 331.8 442.2 331.8 444.5 C331.8 446.7 330.7 449 326.9 449 H320.9 M326.3 449 L331.8 456"/>
-    </g>
-    </g>
-    <g id="ct-logo"><use href="#ct-piece"/><use href="#ct-texte"/></g>
   </defs>
 </svg>
 
@@ -152,7 +119,7 @@
             <!-- Logo unique avec filtre CSS adaptatif -->
             <div class="topnav-brand" onclick="goHome()" title="Accueil">
                 <svg id="logo-nav" class="topnav-brand-piece" viewBox="186 34 140 320" role="img" aria-label="Chays Trainer"><use href="#ct-piece"/></svg>
-                <svg class="topnav-brand-logo-img" viewBox="140 376 232 86" aria-hidden="true" focusable="false"><use href="#ct-texte"/></svg>
+                <span class="ct-wm topnav-wm" aria-hidden="true"><span class="ct-wm-1">Chays</span><span class="ct-wm-2">Trainer</span></span>
             </div>
 
             <!-- Tabs écran d'accueil -->
@@ -201,13 +168,14 @@
         <div class="home-content">
 
             <!-- Onglet Jouer -->
-            <div id="home-tab-play" class="home-tab">
-                <div class="setup-logo">
-                    <svg class="setup-logo-combined" viewBox="136 30 240 436" role="img" aria-label="Chays Trainer"><use href="#ct-logo"/></svg>
+            <div id="home-tab-play" class="home-tab home-play">
+                <div class="home-hero" data-stagger>
+                    <span class="home-greet" id="home-greet">Bonjour</span>
+                    <h1 class="home-title">Quelle couleur aujourd'hui&nbsp;?</h1>
                 </div>
 
-                <div class="repertoire-select">
-                    <div class="repertoire-select-label">Répertoire de travail</div>
+                <div class="repertoire-select" data-stagger>
+                    <div class="repertoire-select-label">Répertoire</div>
                     <div class="repertoire-row">
                         <div class="repertoire-list" id="repertoire-list"></div>
                         <div class="menu-wrap">
@@ -226,18 +194,21 @@
                     </div>
                 </div>
 
-                <div id="resume-slot"></div>
-
-                <div class="color-choice">
-                    <div class="color-btn color-btn-w" onclick="startGame('w')">
-                        <span class="glyph" data-glyph="K"></span>
-                        <div class="color-label">BLANCS</div>
-                    </div>
-                    <div class="color-btn color-btn-b" onclick="startGame('b')">
-                        <span class="glyph" data-glyph="k"></span>
-                        <div class="color-label">NOIRS</div>
-                    </div>
+                <div class="home-cards">
+                    <button class="home-card is-white" type="button" onclick="startGame('w')" data-stagger>
+                        <span class="home-card-head"><span class="home-card-name">Blancs</span><span class="home-card-meta" id="home-meta-w"></span></span>
+                        <span class="glyph home-card-piece" data-glyph="K"></span>
+                        <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                    </button>
+                    <button class="home-card is-black" type="button" onclick="startGame('b')" data-stagger>
+                        <span class="home-card-head"><span class="home-card-name">Noirs</span><span class="home-card-meta" id="home-meta-b"></span></span>
+                        <span class="glyph home-card-piece" data-glyph="k"></span>
+                        <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                    </button>
                 </div>
+
+                <div id="resume-slot" data-stagger></div>
+                <div class="home-stats" id="home-stats" data-stagger></div>
             </div>
 
             <!-- Onglet Statistiques -->
@@ -671,6 +642,7 @@
 <script src="js/core/accountUI.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>
+<script src="js/core/introTimeline.js"></script>
 <script src="js/core/splash.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -38,22 +38,22 @@
     --shadow-sm: 0 2px 12px rgba(40,60,20,0.07);
 }
 
-/* ─── THÈME SOMBRE (bleu nuit) ───────────────────────────────────────────────
+/* ─── THÈME SOMBRE (vert nuit, « Nocturne ») ─────────────────────────────────
    Attention : dans ce projet, data-theme="light" désigne le thème SOMBRE (historique).
    Élévation : fond (--bg) < cartes (--surface) < fenêtres et menus (--bg-elevated), chaque niveau
    un cran plus clair ; bordures à faible contraste ; reflet clair d'un pixel en haut des surfaces. */
 [data-theme="light"] {
-    --bg: #0c1018;
-    --bg-elevated: #182030;
-    --bg-inset: #080b11;
-    --surface: #121925;
-    --surface-hover: #19222f;
-    --border: #222b3a;
-    --border-strong: #33405a;
+    --bg: #0f1711;
+    --bg-elevated: #1b271d;
+    --bg-inset: #0a100b;
+    --surface: #141e16;
+    --surface-hover: #1a261c;
+    --border: #243126;
+    --border-strong: #35473a;
 
-    --text: #e8edf6;
-    --text-muted: #a3aec0;
-    --text-dim: #7a879b;
+    --text: #ece6d6;
+    --text-muted: #a9b2a0;
+    --text-dim: #7f8a77;
 
     --accent: #4f8a3c;
     --accent-bright: #6eae55;
@@ -67,13 +67,13 @@
 
     --board-light: #ecdab8;
     --board-dark: #7a9e5a;
-    --board-border: #263042;
+    --board-border: #263a2a;
 
     --shadow: 0 14px 36px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .03);
     color-scheme: dark;
 }
-[data-theme="light"] .overlay { background: rgba(4, 7, 13, .68); }
+[data-theme="light"] .overlay { background: rgba(5, 9, 6, .7); }
 [data-theme="light"] .panel, [data-theme="light"] .menu { border-color: var(--border-strong); }
 [data-theme="light"] #board { box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
 [data-theme="light"] .btn-primary, [data-theme="light"] .tr-hero-n { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
@@ -1521,7 +1521,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 /* ─── EMBLÈME (assets/brand/chays-logo.svg) ──────────────────────────────── */
 /* Classes du logo maître ; couleurs par variables, en négatif crème dans le thème sombre. */
 :root                { --ct-encre: #2f4a26; --ct-laiton: #b08d48; --ct-grave: #f3ecd9; --ct-fond: #f5f5f3; }
-[data-theme="light"] { --ct-encre: #e9e2cf; --ct-laiton: #d2b06a; --ct-grave: #121925; }
+[data-theme="light"] { --ct-encre: #ece6d6; --ct-laiton: #c9a75e; --ct-grave: #141e16; }
 .ct-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .trait  { fill: none; stroke: var(--ct-encre); stroke-linecap: round; stroke-linejoin: round; }
 .plein  { fill: var(--ct-encre); stroke: var(--ct-encre); stroke-linejoin: round; }

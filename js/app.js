@@ -20,7 +20,7 @@ let gameMode    = 'play';   // 'play' | 'preview' | 'training'
 
 function loadTheme() {
     const saved = dataStore.get(THEME_STORAGE_KEY);
-    const theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    const theme = (saved === 'light' || saved === 'dark') ? saved : 'light';      // par défaut : sombre (« Nocturne »)
     document.documentElement.setAttribute('data-theme', theme);
 }
 
@@ -221,7 +221,33 @@ function renderRepertoireList() {
     ).join('') + `<div class="repertoire-chip repertoire-chip-new" role="button" tabindex="0" data-action="createRepertoire">+ Nouveau</div>`;
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
     renderResumeCard();
+    renderHomeSummary();
 }
+
+// ─── ACCUEIL : SALUTATION, POSITIONS PAR COULEUR, CHIFFRES DU RÉPERTOIRE ──────
+
+function renderHomeSummary() {
+    const greet = document.getElementById('home-greet');
+    if (!greet) return;
+    const h = new Date().getHours();
+    greet.textContent = h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour';
+    const w = Object.values(readDBFor(currentRepertoire, 'w')), b = Object.values(readDBFor(currentRepertoire, 'b'));
+    const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+    document.getElementById('home-meta-w').textContent = w.length ? pl(w.length, 'position', 'positions') : 'Aucune position';
+    document.getElementById('home-meta-b').textContent = b.length ? pl(b.length, 'position', 'positions') : 'Aucune position';
+    const now = Date.now(), all = w.concat(b);
+    const due = all.filter(e => isDue(e, now)).length;
+    const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
+    document.getElementById('home-stats').innerHTML = !all.length ? '' :
+        `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
+}
+
+// Cartes Blancs / Noirs : la lumière suit le pointeur (variables --mx / --my, css/home.css).
+document.querySelectorAll('.home-card').forEach(card => card.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    card.style.setProperty('--my', `${e.clientY - r.top}px`);
+}));
 
 // Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
 function deleteRepertoirePrompt(name) {

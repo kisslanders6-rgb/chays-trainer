@@ -1,38 +1,41 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    css/splash.css — écran de lancement (overlay #splash d'index.html)
    ───────────────────────────────────────────────────────────────────────────
-   Affiché seulement si <html class="splashing"> (script du <head>). Palette FIXE, identique dans
-   les deux thèmes : celle de l'icône (assets/brand/chays-icone.svg) et de manifest.json
-   (background_color), pour que la première image soit exactement l'écran système de la PWA.
+   Affiché seulement si <html class="splashing"> (script du <head>). Palette FIXE au départ, celle de
+   l'icône et de manifest.json (background_color), pour que la première image soit exactement l'écran
+   système de la PWA ; elle glisse vers les couleurs du thème pendant le vol (js/core/introTimeline.js).
 
-   Le logo (copie en ligne d'assets/brand/chays-logo.svg) est tracé par le petit script qui suit
-   l'overlay, d'après ses attributs data-t / data-d / data-fill / data-from. Ici : la mise en scène.
-     0         icône de l'écran système, au pixel près (.sp-handoff : même PNG, 240 px, centrée) ;
-               la pièce du logo est posée exactement dessus (logo 262 px, décalé de 31,8 px)
-     0–0,8 s   le contour se trace par-dessus la pièce de l'écran système, qui s'efface (0,3 → 0,8)
-     0,8–1,4 s remplissage, gravure crème, plinthe ; la scène remonte pour centrer le logo complet
-     1,25–2 s  signature CHAYS puis TRAINER
-     2,1 s     fin de la suspension (spHold) : la sortie attend aussi que l'app soit prête
-     + 0,45 s  sortie : l'overlay s'efface, la scène monte et grandit légèrement (classe .is-leaving)
+     0          icône de l'écran système, au pixel près (.sp-handoff : même PNG, 240 px, centrée) ;
+                la pièce (.sp-piece, 71,7 × 163,9 px) est posée exactement dessus
+     0–1,3 s    la pièce se trace par-dessus l'icône, qui s'efface (0,3 → 0,8), puis se remplit
+     1,05–1,75  la scène remonte pour centrer pièce + signature ; la signature s'écrit (1,08 → 1,86)
+     2 s        fin de la suspension (spHold) : la sortie attend aussi que l'app soit prête
+     + 1,3 s    atterrissage : vol vers la barre du haut, voile qui s'efface, accueil en cascade
    ═══════════════════════════════════════════════════════════════════════════ */
+
+@property --ct-encre  { syntax: '<color>'; inherits: true; initial-value: #2f4a26; }
+@property --ct-grave  { syntax: '<color>'; inherits: true; initial-value: #f3ecd9; }
+@property --ct-laiton { syntax: '<color>'; inherits: true; initial-value: #b08d48; }
 
 :root {
     --sp-bg: #f5f5f3;                             /* = #fond de l'icône = manifest background_color */
     --sp-ease-out: cubic-bezier(.16, 1, .3, 1);
     --sp-ease-exit: cubic-bezier(.4, 0, .2, 1);
+    --sp-shift: 37.4px;                           /* (hauteur de la signature + écart) / 2 : pièce centrée au départ */
 }
 
 .splash { display: none; }
 html.splashing { background: var(--sp-bg); }
 .splashing .splash {
-    --ct-encre: #2f4a26; --ct-laiton: #b08d48; --ct-grave: #f3ecd9;    /* indépendant du thème de l'app */
     position: fixed; inset: 0; z-index: 1000;
     display: flex; align-items: center; justify-content: center;
-    background: var(--sp-bg);
     pointer-events: none;
-    animation: spHold 2.1s linear both;           /* minuteur visuel, lu par splash.js */
+    animation: spHold 2s linear both;             /* minuteur visuel, lu par splash.js */
 }
 @keyframes spHold { from { opacity: 1; } to { opacity: 1; } }
+.splashing #logo-nav, .splashing .topnav-wm { visibility: hidden; }     /* les cibles gardent leur place */
+
+.sp-veil { position: absolute; inset: 0; background: var(--sp-bg); }
 
 /* Icône de l'écran système : même image, même taille (240 px), même centre. */
 .sp-handoff {
@@ -42,27 +45,32 @@ html.splashing { background: var(--sp-bg); }
 }
 @keyframes spHandoff { from { opacity: 1; } to { opacity: 0; } }
 
-/* Scène : le logo complet, d'abord décalé pour que sa pièce recouvre celle de l'icône */
+/* Scène : la pièce, puis la signature ; d'abord décalée pour que la pièce recouvre celle de l'icône */
 .sp-stage {
+    --ct-encre: #2f4a26; --ct-grave: #f3ecd9; --ct-laiton: #b08d48;
     position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
     animation: spCenter .7s var(--sp-ease-out) 1.05s both;
-    will-change: transform, opacity;
 }
-@keyframes spCenter { from { transform: translateY(31.8px); } to { transform: none; } }
-.sp-logo { display: block; width: 262px; height: 262px; overflow: visible; }
+@keyframes spCenter { from { transform: translateY(var(--sp-shift)); } to { transform: none; } }
+.sp-piece { display: block; width: 71.7px; height: 163.9px; overflow: visible; }
+.sp-piece, .sp-wm { transform-origin: 0 0; will-change: transform, opacity; backface-visibility: hidden; }
+.sp-wm { --wm-size: 40px; }
+.sp-wm .ct-wm-1 { animation: spWrite .64s var(--sp-ease-out) 1.08s both; }
+.sp-wm .ct-wm-2 { animation: spRise .52s var(--sp-ease-out) 1.34s both; }
+@keyframes spWrite { from { clip-path: inset(-15% 100% -15% 0); } to { clip-path: inset(-15% -2% -15% 0); } }
+@keyframes spRise  { from { opacity: 0; transform: translateY(.4em); } to { opacity: 1; transform: none; } }
 
-/* ─── Sortie ─── */
+/* ─── Sortie sans vol (mouvement réduit, ou barre du haut introuvable) ─── */
 .splashing .splash.is-leaving { animation: spExit .45s var(--sp-ease-exit) forwards; }
 .splash.is-leaving .sp-stage  { animation: spLift .45s var(--sp-ease-exit) forwards; }
 @keyframes spExit { from { opacity: 1; } to { opacity: 0; } }
 @keyframes spLift { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-16px) scale(1.04); } }
-.splash-out #app { animation: spAppIn .42s var(--sp-ease-out) both; }
-@keyframes spAppIn { from { transform: translateY(10px); } to { transform: none; } }
 
-/* ─── Mouvement réduit : logo complet immobile (le script ne trace rien), puis simple fondu ─── */
+/* ─── Mouvement réduit : logo complet immobile (aucun tracé), puis simple fondu ─── */
 @media (prefers-reduced-motion: reduce) {
     .splashing .splash { animation-duration: .7s; }
     .sp-handoff { display: none; }
-    .sp-stage, .splash.is-leaving .sp-stage, .splash-out #app { animation: none; }
+    .sp-stage, .sp-wm .ct-wm-1, .sp-wm .ct-wm-2, .splash.is-leaving .sp-stage { animation: none; }
     .splashing .splash.is-leaving { animation-duration: .25s; }
 }

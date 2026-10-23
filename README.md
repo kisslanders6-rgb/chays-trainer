@@ -25,7 +25,10 @@ puis ouvrez <http://localhost:8080>. La commande `npm start` fait la même chose
 index.html            page unique ; l'ordre des <script> compte (dépendances)
 style.css             styles de l'application
 css/account.css       fenêtre « Compte »
+css/home.css          signature (Fraunces + IBM Plex Mono), barre du haut, accueil « Nocturne » (sombre) / « Studio » (clair)
+css/splash.css        écran de lancement
 sw.js                 service worker : cache construit à partir d'index.html
+js/core/splash.js     moment de sortie de l'écran de lancement ; introTimeline.js : vol du logo vers la barre du haut
 js/
   app.js              navigation, thème, paramètres, répertoires, fenêtres de saisie
   storage.js          répertoires, bases d'ouvertures, répétition espacée, journal d'activité, import/export JSON
