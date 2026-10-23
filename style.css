@@ -6,36 +6,37 @@
     --font-mono: 'SF Mono', 'Consolas', 'Menlo', monospace;
 }
 
-/* ─── THÈME CLAIR (par défaut) ────────────────────────────────────────────── */
+/* ─── THÈME CLAIR « Papier » (data-theme="dark", nom historique) ────────────
+   Le jour de Nocturne : papier crème, surfaces ivoire, encre sapin, laiton miel, ombres chaudes. */
 :root, [data-theme="dark"] {
-    --bg: #f2f3f0;
-    --bg-elevated: #ffffff;
-    --bg-inset: #e8ebe4;
-    --surface: #ffffff;
-    --surface-hover: #f5f6f2;
-    --border: #dde0d8;
-    --border-strong: #c4c9bb;
+    --bg: #f4f2eb;
+    --bg-elevated: #fffdf8;
+    --bg-inset: #ebe7dc;
+    --surface: #fffdf8;
+    --surface-hover: #f8f5ec;
+    --border: #e2ddcf;
+    --border-strong: #cfc7b3;
 
-    --text: #1e2318;
-    --text-muted: #5a6350;
-    --text-dim: #8a9480;
+    --text: #1f2a1a;
+    --text-muted: #5f6656;
+    --text-dim: #8c917f;
 
-    --accent: #3d5c2e;
-    --accent-bright: #4e7339;
-    --accent-dim: #6a8c56;
-    --accent-text: #ffffff;
+    --accent: #2f4a26;
+    --accent-bright: #3d5c2e;
+    --accent-dim: #5f7a4b;
+    --accent-text: #fffdf8;
 
     --ok: #3d8c5e;
-    --err: #c0392b;
-    --info: #3d5c2e;
-    --new: #2f78a8;
+    --err: #b4412f;
+    --info: #2f4a26;
+    --new: #2f6f96;
 
     --board-light: #ecdab8;
     --board-dark: #7a9e5a;
-    --board-border: #c8d4b8;
+    --board-border: #d8cfb8;
 
-    --shadow: 0 8px 32px rgba(40,60,20,0.10);
-    --shadow-sm: 0 2px 12px rgba(40,60,20,0.07);
+    --shadow: 0 1px 2px rgba(47, 40, 20, .06), 0 14px 32px -16px rgba(47, 40, 20, .3);
+    --shadow-sm: 0 1px 2px rgba(47, 40, 20, .06), 0 6px 16px -10px rgba(47, 40, 20, .2);
 }
 
 /* ─── THÈME SOMBRE (vert nuit, « Nocturne ») ─────────────────────────────────
@@ -1520,7 +1521,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 
 /* ─── EMBLÈME (assets/brand/chays-logo.svg) ──────────────────────────────── */
 /* Classes du logo maître ; couleurs par variables, en négatif crème dans le thème sombre. */
-:root                { --ct-encre: #2f4a26; --ct-laiton: #b08d48; --ct-grave: #f3ecd9; --ct-fond: #f5f5f3; }
+:root                { --ct-encre: #2f4a26; --ct-laiton: #a8843f; --ct-grave: #f3ecd9; --ct-fond: #f5f5f3; }
 [data-theme="light"] { --ct-encre: #ece6d6; --ct-laiton: #c9a75e; --ct-grave: #141e16; }
 .ct-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .trait  { fill: none; stroke: var(--ct-encre); stroke-linecap: round; stroke-linejoin: round; }

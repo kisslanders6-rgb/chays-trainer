@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="css/splash.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/screens.css" />
     <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
@@ -214,7 +215,7 @@
             <!-- Onglet Statistiques -->
             <div id="home-tab-stats" class="home-tab hidden">
                 <div class="tab-title"><svg class="ico"><use href="#i-bar-chart"/></svg> Statistiques</div>
-                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer » et « Entraînement ». Cliquez sur une pastille pour revoir la position.</div>
+                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer » et « Entraînement ». Vos positions sont regroupées par ligne d'ouverture, les plus fragiles en tête ; touchez une position pour la revoir.</div>
                 <div class="repertoire-list"></div>
                 <div class="seg">
                     <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
@@ -548,7 +549,7 @@
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
                 <div><div class="help-title">Statistiques</div>
-                    <div class="help-text">Votre activité sur 30 jours (série de jours, réussites et erreurs, positions à réviser), puis un <strong>taux d'erreur</strong> par position, classé en maîtrisé, fragile ou à retravailler. Touchez une pastille pour revoir la position.</div></div>
+                    <div class="help-text">Votre activité sur 30 jours (série de jours, réussites et erreurs, positions à réviser), puis un <strong>taux d'erreur</strong> par position, classé en maîtrisé, fragile ou à retravailler. Les positions sont regroupées par ligne d'ouverture (les 4 premiers demi-coups) : ouvrez une ligne pour voir ses coups, touchez-en un pour revoir la position.</div></div>
             </div>
             <div class="help-item">
                 <div class="help-icon"><svg class="ico"><use href="#i-crown"/></svg></div>

@@ -1,14 +1,16 @@
 /**
  * modules/stats/stats.js
  * ──────────────────────────────────────────────────────────────────────────
- * Module Statistiques : une pastille par position de mon camp, calculée à
- * partir des erreurs commises dans le menu « Jouer ».
+ * Module Statistiques : les positions de mon camp, regroupées par ligne d'ouverture (les
+ * STATS_LINE_PLIES premiers demi-coups du chemin enregistré), les lignes les plus fragiles en tête.
+ * Chaque ligne montre sa répartition par niveau et ses révisions dues ; ouverte, elle liste ses
+ * positions en lignes compactes, des plus fragiles aux plus sûres.
  *   taux d'erreur = failures / attempts
- * Un clic sur une pastille affiche la position exacte sur l'échiquier.
+ * Un clic sur une position affiche la position exacte sur l'échiquier.
  * En tête : activité dans le temps (série de jours, 30 derniers jours) d'après le journal
  * d'activité (storage.js), et nombre de positions dont la révision est due.
  *
- * Trois niveaux, utilisés partout (couleur de la pastille, répartition, filtres) :
+ * Trois niveaux, utilisés partout (couleur des positions, répartition, filtres) :
  *   maîtrisée      aucune erreur
  *   fragile        taux d'erreur ≤ STATS_FRAGILE_MAX
  *   à retravailler taux d'erreur >  STATS_FRAGILE_MAX
@@ -17,6 +19,8 @@
 'use strict';
 
 const STATS_FRAGILE_MAX = 0.34;
+const STATS_LINE_PLIES  = 4;       // profondeur du regroupement par ligne
+const STATS_LINE_ROWS   = 30;      // positions affichées par ligne avant « Afficher les autres »
 
 const _LEVELS = {
     mastered: { label: 'Maîtrisées',     color: 'var(--ok)' },
@@ -26,7 +30,9 @@ const _LEVELS = {
 
 let statsColor  = 'w';
 let statsFilter = 'all';     // 'all' | 'mastered' | 'fragile' | 'weak'
-let statsSort   = 'worst';   // 'worst' (pires d'abord) | 'line' (ordre du répertoire)
+let statsOpen   = null;      // lignes ouvertes (Set de clés) ; null : la plus fragile s'ouvre
+let statsAll    = new Set(); // lignes dont toutes les positions sont affichées
+let statsScope  = '';        // répertoire + couleur : les lignes ouvertes se réinitialisent quand il change
 
 function setStatsColor(c) {
     statsColor = c;
@@ -38,8 +44,8 @@ function setStatsFilter(f) {
     initStats();
 }
 
-function setStatsSort(s) {
-    statsSort = s;
+function toggleStatsLine(key) {
+    if (statsOpen.has(key)) statsOpen.delete(key); else statsOpen.add(key);
     initStats();
 }
 
@@ -61,17 +67,21 @@ function _moveLabel(e) {
     return e.ply % 2 === 1 ? `${n}. ${e.san}` : `${n}... ${e.san}`;
 }
 
-function _sortRows(rows) {
-    if (statsSort === 'line') {
-        rows.sort((a, b) => (a.e.ply || 1e9) - (b.e.ply || 1e9));
-    } else {
-        rows.sort((a, b) =>
-            (b.e.failures / b.e.attempts) - (a.e.failures / a.e.attempts)
-            || b.e.attempts - a.e.attempts
-            || (a.e.ply || 0) - (b.e.ply || 0));
+// Ligne d'ouverture d'une position : clé (premiers demi-coups UCI) et libellé lisible (« 1. e4 c5 2. Nf3 d6 »).
+const _lineLabels = {};
+function _lineOf(e) {
+    if (!e.path || !e.path.length) return { key: '', label: 'Autres positions' };
+    if (e.path.length - 1 < STATS_LINE_PLIES) return { key: '#debut', label: 'Premiers coups' };
+    const pre = e.path.slice(0, STATS_LINE_PLIES);
+    const key = pre.join(' ');
+    if (!(key in _lineLabels)) {
+        try { _lineLabels[key] = formatLinePrefix(_pathToSans(pre)); } catch (err) { _lineLabels[key] = key; }
     }
-    return rows;
+    return { key, label: _lineLabels[key] };
 }
+
+// Plus fragiles d'abord : taux d'erreur, puis nombre d'essais, puis ordre du coup.
+const _byWorst = (a, b) => (b.e.failures / b.e.attempts) - (a.e.failures / a.e.attempts) || b.e.attempts - a.e.attempts || (a.e.ply || 0) - (b.e.ply || 0);
 
 // ─── ACTIVITÉ DANS LE TEMPS ───────────────────────────────────────────────────
 const STATS_DAYS = 30;
@@ -144,18 +154,16 @@ function initStats() {
     const success = Math.round(100 * (totA - totF) / totA);
 
     if (statsFilter !== 'all' && !counts[statsFilter]) statsFilter = 'all';   // le filtre actif s'est vidé
+    const now = Date.now(), due = rows.filter(r => isDue(r.e, now)).length;
 
-    // ── Résumé : trois chiffres + barre de répartition ──
-    const kpis = `
-        <div class="stats-kpis">
-          <div class="stats-kpi"><span class="stats-kpi-n">${success}%</span><span class="stats-kpi-l">de réussite</span></div>
-          <div class="stats-kpi"><span class="stats-kpi-n">${rows.length}</span><span class="stats-kpi-l">position${rows.length > 1 ? 's' : ''} jouée${rows.length > 1 ? 's' : ''}</span></div>
-          <div class="stats-kpi"><span class="stats-kpi-n">${totA}</span><span class="stats-kpi-l">essai${totA > 1 ? 's' : ''}</span></div>
-        </div>`;
-    const bar = '<div class="stats-bar" role="img" aria-label="Répartition des positions par niveau">' +
-        Object.keys(_LEVELS).filter(l => counts[l]).map(l =>
-            `<span class="stats-bar-seg" style="--c:${_LEVELS[l].color};flex:${counts[l]}" title="${_LEVELS[l].label} : ${counts[l]}"></span>`).join('') +
-        '</div>';
+    // ── Résumé : quatre chiffres + barre de répartition ──
+    const kpi = (n, l) => `<div class="stats-kpi"><span class="stats-kpi-n">${n}</span><span class="stats-kpi-l">${l}</span></div>`;
+    const kpis = '<div class="stats-kpis st-kpis">' + kpi(success + ' %', 'de réussite')
+        + kpi(rows.length, `position${rows.length > 1 ? 's' : ''} jouée${rows.length > 1 ? 's' : ''}`)
+        + kpi(due, 'à réviser') + kpi(counts.weak, 'à retravailler') + '</div>';
+    const barOf = list => Object.keys(_LEVELS).map(l => { const n = list.filter(r => r.lv === l).length;
+        return n ? `<span class="stats-bar-seg" style="--c:${_LEVELS[l].color};flex:${n}" title="${_LEVELS[l].label} : ${n}"></span>` : ''; }).join('');
+    const bar = `<div class="stats-bar" role="img" aria-label="Répartition des positions par niveau">${barOf(rows)}</div>`;
 
     // ── Filtres (la légende de la barre sert de filtre) ──
     const chip = (id, label, n, color) =>
@@ -166,35 +174,54 @@ function initStats() {
         Object.keys(_LEVELS).map(l => counts[l] ? chip(l, _LEVELS[l].label, counts[l], _LEVELS[l].color) : '').join('') +
         '</div>';
 
-    const sort = `
-        <div class="seg seg-sm" role="group" aria-label="Tri">
-          <button class="seg-btn ${statsSort === 'worst' ? 'active' : ''}" data-action="statsSort" data-arg="worst">Pires d'abord</button>
-          <button class="seg-btn ${statsSort === 'line'  ? 'active' : ''}" data-action="statsSort" data-arg="line">Ordre du répertoire</button>
-        </div>`;
+    // ── Lignes d'ouverture ──
+    const scope = currentRepertoire + '|' + statsColor;
+    if (scope !== statsScope) { statsScope = scope; statsOpen = null; statsAll = new Set(); }
+    const groups = {};
+    rows.filter(r => statsFilter === 'all' || r.lv === statsFilter).forEach(r => {
+        const { key, label } = _lineOf(r.e);
+        (groups[key] = groups[key] || { key, label, items: [] }).items.push(r);
+    });
+    const share = (g, l) => g.items.filter(r => r.lv === l).length / g.items.length;
+    const list = Object.values(groups).sort((a, b) =>
+        share(b, 'weak') - share(a, 'weak') || share(b, 'fragile') - share(a, 'fragile') || b.items.length - a.items.length);
+    if (!statsOpen || (statsOpen.size && ![...statsOpen].some(k => groups[k]))) {     // première vue, ou lignes ouvertes disparues
+        statsOpen = new Set(list.length ? [list[0].key] : []);
+    }
 
-    // ── Pastilles ──
-    const shown = _sortRows(rows.filter(r => statsFilter === 'all' || r.lv === statsFilter));
-    const badges = shown.map(({ k, e, lv }) => {
-        const rate  = e.failures / e.attempts;
-        const pct   = Math.round(rate * 100);
-        const ok    = e.failures === 0;
-        const label = ok ? '100%' : pct + '%';
-        const sub   = ok ? 'de réussite' : "d'erreur";
-        return `
-        <div class="stat-badge" style="--c:${_statColor(rate)};--p:${ok ? 100 : pct}" role="button" tabindex="0" data-action="statsPreview" data-arg="${escapeHtml(k)}" title="${_LEVELS[lv].label} · voir la position">
-          <div class="stat-ring"><div class="stat-ring-inner">
-            <span class="stat-pct">${label}</span><span class="stat-lbl">${sub}</span>
-          </div></div>
-          <div class="stat-move">${escapeHtml(_moveLabel(e))}</div>
-          <div class="stat-n">${e.failures} erreur${e.failures > 1 ? 's' : ''} / ${e.attempts} essai${e.attempts > 1 ? 's' : ''}</div>
-        </div>`;
+    const lines = list.map(g => {
+        const open = statsOpen.has(g.key), items = g.items.slice().sort(_byWorst);
+        const mastery = Math.round(100 * share(g, 'mastered')), gDue = items.filter(r => isDue(r.e, now)).length;
+        const shown = open ? (statsAll.has(g.key) ? items : items.slice(0, STATS_LINE_ROWS)) : [];
+        const rowsHTML = shown.map(({ k, e, lv }) => {
+            const rate = e.failures / e.attempts, d = isDue(e, now);
+            return `<div class="st-row" role="button" tabindex="0" style="--c:${_LEVELS[lv].color}" data-action="statsPreview" data-arg="${escapeHtml(k)}" title="${_LEVELS[lv].label} · voir la position">
+                <span class="st-move">${escapeHtml(_moveLabel(e))}</span>
+                <span class="st-rate" aria-hidden="true"><i style="width:${Math.max(4, Math.round(rate * 100))}%"></i></span>
+                <span class="st-n">${e.failures}/${e.attempts}</span>
+                <span class="st-due ${d ? 'on' : ''}" title="${d ? 'À réviser' : 'Pas encore due'}"></span></div>`;
+        }).join('');
+        const more = open && items.length > shown.length
+            ? `<button class="st-more" data-action="statsMore" data-arg="${escapeHtml(g.key)}">Afficher les ${items.length - shown.length} autres positions</button>` : '';
+        return `<section class="st-line ${open ? 'open' : ''}">
+            <button class="st-line-head" aria-expanded="${open}" data-action="statsLine" data-arg="${escapeHtml(g.key)}">
+                <span class="st-line-name">${escapeHtml(g.label)}</span>
+                <span class="stats-bar st-line-bar" aria-hidden="true">${barOf(g.items)}</span>
+                <span class="st-line-meta">${g.items.length} pos. · ${mastery} %${gDue ? ` · <b>${gDue} à réviser</b>` : ''}${ico('chevron-right')}</span>
+            </button>
+            ${open ? `<div class="st-rows">${rowsHTML}${more}</div>` : ''}
+        </section>`;
     }).join('');
 
-    body.innerHTML = activity + kpis + bar + filters + sort +
-        `<div class="stats-grid">${badges}</div>`;
+    body.innerHTML = activity + kpis + bar + filters + `<div class="st-lines">${lines}</div>`;
 }
 
-registerActions({ statsFilter: f => setStatsFilter(f), statsSort: s => setStatsSort(s), statsPreview: k => openStatsPreview(k) });
+registerActions({
+    statsFilter: f => setStatsFilter(f),
+    statsLine: k => toggleStatsLine(k),
+    statsMore: k => { statsAll.add(k); initStats(); },
+    statsPreview: k => openStatsPreview(k)
+});
 
 // Aperçu en lecture seule de la position AVANT mon coup.
 function openStatsPreview(key) {
