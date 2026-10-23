@@ -3,8 +3,8 @@
    ───────────────────────────────────────────────────────────────────────────
    Typographie : Fraunces (nom) + IBM Plex Mono (TRAINER, chiffres, notation), chargées par style.css.
    Accueil « Nocturne » dans le thème sombre (data-theme="light", nom historique) ; « Studio » dans le
-   clair. Couleurs dérivées de l'échiquier actif (--board-*, style.css) : cartes Blancs / Noirs aux teintes
-   exactes des cases claires / sombres, filets et repères en --board-accent. Les blocs [data-stagger]
+   clair. Couleurs dérivées de l'échiquier actif (--board-*, --theme-*, style.css) : cartes Blancs / Noirs
+   « Velours » (chacune écrit dans la teinte de l'autre), filets et repères en --board-accent. Les blocs [data-stagger]
    montent en cascade à la fin de la cinématique (js/core/introTimeline.js).
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -13,23 +13,27 @@
     --font-note: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
     --ease-out: cubic-bezier(.16, 1, .3, 1);
 
-    /* Cartes : case claire (Blancs) et case sombre (Noirs) de l'échiquier actif */
-    --card-w-bg: var(--board-light);
-    --card-w-ink: var(--board-on-light);
-    --card-w-line: color-mix(in srgb, var(--board-dark) 35%, var(--board-light));
-    --card-b-bg: var(--board-dark);
-    --card-b-ink: var(--board-on-dark);
-    --card-b-line: color-mix(in srgb, var(--board-dark) 80%, #000);
-    --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, .14), transparent 60%);
-    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 2px rgba(0, 0, 0, .06), 0 18px 34px -22px rgba(0, 0, 0, .45);
-    --card-light: rgba(255, 255, 255, .3);
-    --card-piece-shadow: drop-shadow(0 10px 12px rgba(0, 0, 0, .18));
+    /* Cartes « Velours » : chaque carte écrit dans la teinte de l'autre (contraste fort sur tout échiquier) */
+    --card-w-bg: var(--theme-light-refined);
+    --card-w-ink: var(--theme-dark-deep);
+    --card-w-line: color-mix(in oklab, var(--theme-dark-deep) 14%, var(--theme-light-refined));
+    --card-w-sheen: linear-gradient(165deg, rgba(255, 255, 255, .35), transparent 60%);
+    --card-b-bg: var(--theme-dark-deep);
+    --card-b-ink: var(--theme-light-refined);
+    --card-b-line: color-mix(in oklab, var(--theme-light-refined) 12%, var(--theme-dark-deep));
+    --card-b-sheen: linear-gradient(165deg, rgba(255, 255, 255, .07), transparent 60%);
+    --card-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 1px 2px rgba(0, 0, 0, .06), 0 18px 34px -22px rgba(0, 0, 0, .45);
+    --card-piece-shadow: drop-shadow(0 10px 12px rgba(0, 0, 0, .2));
 }
 [data-theme="light"] {
-    --card-b-line: color-mix(in srgb, var(--board-dark) 75%, #fff);
-    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 24px 40px -24px rgba(0, 0, 0, .8);
+    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 24px 40px -24px rgba(0, 0, 0, .85);
     --card-piece-shadow: drop-shadow(0 10px 10px rgba(0, 0, 0, .35));
 }
+
+/* Taille du damier révélé au survol (animable) */
+@property --reveal-x { syntax: '<percentage>'; inherits: false; initial-value: 120%; }
+@property --reveal-y { syntax: '<percentage>'; inherits: false; initial-value: 80%; }
 
 /* ─── Signature ─────────────────────────────────────────────────────────────
    Une seule structure (deux lignes, tailles en em) pour le splash et la barre du haut :
@@ -45,7 +49,7 @@
     margin-top: .2em;
     font-family: var(--font-note); font-weight: 500; font-size: .27em;
     letter-spacing: .46em; margin-right: -.46em;          /* compense l'approche finale */
-    text-transform: uppercase; color: color-mix(in srgb, var(--ct-encre) 72%, transparent);
+    text-transform: uppercase; color: var(--ct-laiton);
 }
 
 /* ─── Barre du haut ─── */
@@ -94,28 +98,28 @@
 /* Cartes Blancs / Noirs */
 .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .home-card {
-    --mx: 50%; --my: 0%;
     position: relative; isolation: isolate; overflow: hidden;
     display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
     aspect-ratio: 4 / 5; padding: 16px; border-radius: 22px;
     font: inherit; text-align: left; cursor: pointer;
     transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out), border-color .3s;
 }
-.home-card.is-white { color: var(--card-w-ink); background: var(--card-sheen), var(--card-w-bg); border: 1px solid var(--card-w-line); }
-.home-card.is-black { color: var(--card-b-ink); background: var(--card-sheen), var(--card-b-bg); border: 1px solid var(--card-b-line); }
+.home-card.is-white { --grain: .11; color: var(--card-w-ink); background: var(--card-w-sheen), var(--card-w-bg); border: 1px solid var(--card-w-line); }
+.home-card.is-black { --grain: .22; color: var(--card-b-ink); background: var(--card-b-sheen), var(--card-b-bg); border: 1px solid var(--card-b-line); }
 .home-card { box-shadow: var(--card-shadow); }
-.home-card::before {        /* échiquier ton sur ton, estompé depuis le coin */
+.home-card::before {        /* échiquier ton sur ton (encre de la carte), estompé depuis le coin ; s'étend au survol */
     content: ''; position: absolute; inset: 0; z-index: -1; opacity: .06;
     background: repeating-conic-gradient(currentColor 0 25%, transparent 0 50%) 0 0 / 22px 22px;
-    -webkit-mask: radial-gradient(120% 80% at 100% 0%, #000, transparent 60%);
-            mask: radial-gradient(120% 80% at 100% 0%, #000, transparent 60%);
+    -webkit-mask: radial-gradient(var(--reveal-x) var(--reveal-y) at 100% 0%, #000, transparent 60%);
+            mask: radial-gradient(var(--reveal-x) var(--reveal-y) at 100% 0%, #000, transparent 60%);
+    transition: opacity .45s var(--ease-out), --reveal-x .55s var(--ease-out), --reveal-y .55s var(--ease-out);
 }
-.home-card::after {         /* lumière qui suit le pointeur (js/app.js) */
-    content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity .35s;
-    background: radial-gradient(220px circle at var(--mx) var(--my), var(--card-light), transparent 65%);
+.home-card::after {         /* grain fin, plus marqué sur Noirs */
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: var(--card-grain); opacity: var(--grain); mix-blend-mode: overlay;
 }
-.home-card:hover { transform: translateY(-3px); border-color: var(--board-accent); }
-.home-card:hover::after { opacity: 1; }
+.home-card:hover { transform: translateY(-3px); }
+.home-card:hover::before { opacity: .14; --reveal-x: 220%; --reveal-y: 160%; }
 .home-card:active { transform: translateY(-1px) scale(.985); transition-duration: .12s; }
 .home-card:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 3px; }
 .home-card-head { display: flex; flex-direction: column; gap: 3px; }
@@ -141,6 +145,6 @@
 .home-stats b { display: block; font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-card, .home-card-piece, .home-card-foot .ico { transition: none; }
+    .home-card, .home-card::before, .home-card-piece, .home-card-foot .ico { transition: none; }
     .home-card:hover, .home-card:hover .home-card-piece { transform: none; }
 }

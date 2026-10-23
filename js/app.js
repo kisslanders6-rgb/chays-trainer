@@ -242,13 +242,6 @@ function renderHomeSummary() {
         `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
 }
 
-// Cartes Blancs / Noirs : la lumière suit le pointeur (variables --mx / --my, css/home.css).
-document.querySelectorAll('.home-card').forEach(card => card.addEventListener('pointermove', e => {
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    card.style.setProperty('--my', `${e.clientY - r.top}px`);
-}));
-
 // Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
 function deleteRepertoirePrompt(name) {
     if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être supprimé.'); return; }

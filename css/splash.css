@@ -2,8 +2,8 @@
    css/splash.css — écran de lancement (overlay #splash d'index.html)
    ───────────────────────────────────────────────────────────────────────────
    Affiché seulement si <html class="splashing"> (script du <head>). Fond fixe, celui de l'icône et de
-   manifest.json (background_color), pour enchaîner sur l'écran système de la PWA ; le logo prend les deux
-   teintes de l'échiquier actif (version claire), puis glisse vers celles du thème pendant le vol
+   manifest.json (background_color), pour enchaîner sur l'écran système de la PWA ; la couleur dominante du
+   logo est celle de l'échiquier actif (version claire), puis glisse vers celles du thème pendant le vol
    (js/core/introTimeline.js).
 
      0          icône de l'écran système, au pixel près (.sp-handoff : même PNG, 240 px, centrée) ;
@@ -14,8 +14,9 @@
      + 1,3 s    atterrissage : vol vers la barre du haut, voile qui s'efface, accueil en cascade
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@property --ct-encre { syntax: '<color>'; inherits: true; initial-value: #7a9e5a; }
-@property --ct-grave { syntax: '<color>'; inherits: true; initial-value: #ecdab8; }
+@property --ct-encre  { syntax: '<color>'; inherits: true; initial-value: #2f4a26; }
+@property --ct-grave  { syntax: '<color>'; inherits: true; initial-value: #f3ecd9; }
+@property --ct-laiton { syntax: '<color>'; inherits: true; initial-value: #b08d48; }
 
 :root {
     --sp-bg: #f5f5f3;                             /* = #fond de l'icône = manifest background_color */
@@ -47,7 +48,7 @@ html.splashing { background: var(--sp-bg); }
 
 /* Scène : la pièce, puis la signature ; d'abord décalée pour que la pièce recouvre celle de l'icône */
 .sp-stage {
-    --ct-encre: var(--board-deep); --ct-grave: var(--board-light);      /* version claire du logo, sur fond clair */
+    --ct-encre: var(--logo-deep); --ct-grave: #f3ecd9; --ct-laiton: #b08d48;     /* version claire du logo, sur fond clair */
     position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 16px;
     animation: spCenter .7s var(--sp-ease-out) 1.05s both;

@@ -28,7 +28,7 @@ const IntroTimeline = (function () {
         home: 560, homeStep: 70,        // blocs [data-stagger] de l'onglet affiché
         enterDur: 560
     };
-    const COLORS = ['--ct-encre', '--ct-grave'];
+    const COLORS = ['--ct-encre', '--ct-grave', '--ct-laiton'];
     let running = [];
 
     function anim(el, keyframes, options) {
