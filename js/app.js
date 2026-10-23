@@ -242,6 +242,9 @@ function renderHomeSummary() {
         `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
 }
 
+// iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).
+document.addEventListener('touchstart', () => {}, { passive: true });
+
 // Suppression protégée : « Général » est intouchable, confirmation, puis corbeille (30 jours).
 function deleteRepertoirePrompt(name) {
     if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être supprimé.'); return; }

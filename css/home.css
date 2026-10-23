@@ -57,7 +57,7 @@
 .topnav-wm { --wm-size: 17px; }
 .topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); position: relative; }
 .topnav-tab.active::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1.5px; border-radius: 1px; background: var(--board-accent); }
-.topnav-tab:hover { background: transparent; color: var(--text); }
+@media (hover: hover) { .topnav-tab:hover { background: transparent; color: var(--text); } }
 @media (min-width: 1200px) { .topnav-wm { --wm-size: 20px; } }
 @media (max-width: 599px)  { .topnav-wm { --wm-size: 14px; } .topnav-tab.active::after { left: 14px; right: 14px; } }
 
@@ -89,7 +89,7 @@
 #home-tab-play .repertoire-row::before { display: none; }
 #home-tab-play .repertoire-list { justify-content: flex-start; }
 .repertoire-chip { padding: 7px 2px; margin-right: 14px; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--text-muted); font-weight: 500; position: relative; }
-.repertoire-chip:hover { color: var(--text); border: 0; transform: none; }
+@media (hover: hover) { .repertoire-chip:hover { color: var(--text); border: 0; transform: none; } }
 .repertoire-chip.active { background: none; color: var(--text); font-weight: 600; }
 .repertoire-chip.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 1.5px; background: var(--board-accent); }
 .repertoire-chip-new { color: var(--board-accent); border: 0; }
@@ -118,22 +118,22 @@
     content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background: var(--card-grain); opacity: var(--grain); mix-blend-mode: overlay;
 }
-.home-card:hover { transform: translateY(-3px); }
-.home-card:hover::before { opacity: .14; --reveal-x: 220%; --reveal-y: 160%; }
+@media (hover: hover) { .home-card:hover { transform: translateY(-3px); } }
+@media (hover: hover) { .home-card:hover::before { opacity: .14; --reveal-x: 220%; --reveal-y: 160%; } }
 .home-card:active { transform: translateY(-1px) scale(.985); transition-duration: .12s; }
 .home-card:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 3px; }
 .home-card-head { display: flex; flex-direction: column; gap: 3px; }
 .home-card-name { font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 1.05; }
 .home-card-meta { font-family: var(--font-note); font-size: 11px; opacity: .72; }
 .home-card-piece { align-self: center; width: 1em; height: 1em; font-size: clamp(64px, 17vw, 96px); transition: transform .5s var(--ease-out); filter: var(--card-piece-shadow); }
-.home-card:hover .home-card-piece { transform: translateY(-4px) scale(1.04); }
+@media (hover: hover) { .home-card:hover .home-card-piece { transform: translateY(-4px) scale(1.04); } }
 .home-card-foot { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; }
 .home-card-foot .ico { width: 16px; height: 16px; transition: transform .35s var(--ease-out); }
-.home-card:hover .home-card-foot .ico { transform: translateX(3px); }
+@media (hover: hover) { .home-card:hover .home-card-foot .ico { transform: translateX(3px); } }
 
 /* Reprendre */
 #home-tab-play .resume-card { width: 100%; margin: 0; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); box-shadow: none; border-radius: 16px; }
-#home-tab-play .resume-card:hover { transform: none; border-color: var(--board-accent); box-shadow: none; }
+@media (hover: hover) { #home-tab-play .resume-card:hover { transform: none; border-color: var(--board-accent); box-shadow: none; } }
 #home-tab-play .resume-ico { background: transparent; color: var(--board-accent); border: 1px solid var(--border); border-radius: 50%; }
 #home-tab-play .resume-txt b { font-weight: 600; }
 #home-tab-play .resume-txt small { font-family: var(--font-note); }
@@ -146,5 +146,5 @@
 
 @media (prefers-reduced-motion: reduce) {
     .home-card, .home-card::before, .home-card-piece, .home-card-foot .ico { transition: none; }
-    .home-card:hover, .home-card:hover .home-card-piece { transform: none; }
+    @media (hover: hover) { .home-card:hover, .home-card:hover .home-card-piece { transform: none; } }
 }

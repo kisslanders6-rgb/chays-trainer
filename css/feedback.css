@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   css/feedback.css — retour visuel des éléments interactifs (chargée en dernier)
+   ───────────────────────────────────────────────────────────────────────────
+   Survol : uniquement avec un vrai pointeur. Toutes les règles :hover du projet sont encadrées par
+   @media (hover: hover) : au doigt, aucun survol ne reste « collé » après un appui.
+   Appui (:active) : instantané à l'enfoncement, relâché en douceur, même vocabulaire partout :
+     contrôles compacts (boutons, puces, segments)  léger enfoncement (scale)
+     lignes et éléments de menu                      voile ton sur ton
+     liens texte                                     atténuation
+   Le logo de la barre du haut (retour à l'accueil) n'a volontairement aucun retour.
+   iOS n'active :active qu'avec un écouteur touchstart sur le document (js/app.js).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --press-scale: .965;
+    --press-veil: color-mix(in srgb, var(--text) 7%, transparent);
+    --hover-veil: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+/* Pas de rectangle de surbrillance système au tap : le retour est dessiné ici */
+:where(button, a[href], [role="button"], [data-action], [onclick], summary, select) {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* ─── Appui ─────────────────────────────────────────────────────────────────
+   Par défaut, tout élément cliquable s'enfonce légèrement ; l'emporte sur les survols (même spécificité,
+   feuille chargée après). Exclus : les cartes qui ont leur propre :active, et les boutons positionnés
+   par transform (œil du mot de passe). */
+:where(button, [role="button"], [data-action], [onclick]):not(:disabled, .topnav-brand, .home-card, .tr-card, .account-eye):active {
+    transform: scale(var(--press-scale));
+    transition-duration: .05s;
+}
+
+/* Lignes et menus : un voile plutôt qu'un rétrécissement (pleine largeur) */
+:is(.st-row, .st-line-head, .st-more, .tree-row, .menu-item, .online-row, .move-token, .sheet-handle):not(:disabled):active {
+    transform: none;
+    background-color: var(--press-veil);
+    transition-duration: .05s;
+}
+
+/* Liens texte et icônes posées dans un champ : atténuation */
+:is(.toast-link, .account-link, .tree-goto, .repertoire-chip-new, .account-eye):active {
+    transform: none;
+    opacity: .55;
+    transition-duration: .05s;
+}
+
+/* Puces et segments : l'appui se lit aussi dans la couleur, même sur l'option déjà active */
+:is(.seg-btn, .tr-seg-btn, .tree-mode, .trs-color, .trs-chip, .stats-chip, .side-tab, .topnav-tab, .repertoire-chip):not(:disabled):active {
+    color: var(--text);
+}
+:is(.seg-btn, .tr-seg-btn, .tree-mode):not(.active):not(:disabled):active { background-color: var(--press-veil); }
+
+/* ─── Survol des éléments qui n'en avaient pas ──────────────────────────── */
+@media (hover: hover) {
+    /* Segments (Statistiques : Blancs / Noirs, Entraînement : profondeur, départ…, arbre : modes) */
+    :is(.seg-btn, .tr-seg-btn, .tree-mode):not(.active):not(:disabled):hover { color: var(--text); background-color: var(--hover-veil); }
+
+    /* Entraînement : couleur de la séance et réglages repliables */
+    .trs-color:not(.active):hover,
+    .trs-chip:not(.open):hover { color: var(--text); border-color: var(--border-strong); }
+    .trs-chip:hover .ico { color: var(--text); }
+
+    /* Petits boutons sans cadre */
+    .toast-x:hover, .account-eye:hover { color: var(--text); }
+    :is(.toast-link, .account-link):hover { text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    .sheet-handle:hover span { background: var(--border-strong); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :where(button, [role="button"], [data-action], [onclick]):not(.account-eye):active { transform: none; }
+}

@@ -17,7 +17,7 @@
     width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 120px auto; align-items: center; gap: 12px;
     padding: 12px 14px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
 }
-.st-line-head:hover { background: var(--surface-hover); }
+@media (hover: hover) { .st-line-head:hover { background: var(--surface-hover); } }
 .st-line-head:focus-visible { outline: 2px solid var(--board-accent); outline-offset: -2px; }
 .st-line-name { min-width: 0; font-family: var(--font-note); font-weight: 500; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-line-bar { height: 8px; gap: 2px; }
@@ -37,7 +37,7 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 .st-row:last-child { border-bottom: 0; }
-.st-row:hover { background: var(--surface-hover); }
+@media (hover: hover) { .st-row:hover { background: var(--surface-hover); } }
 .st-row:focus-visible { outline: 2px solid var(--board-accent); outline-offset: -2px; }
 .st-move { font-family: var(--font-note); font-weight: 500; white-space: nowrap; }
 .st-rate { height: 5px; border-radius: 3px; background: var(--bg-inset); overflow: hidden; }
@@ -46,7 +46,7 @@
 .st-due { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--board-accent); }
 .st-due.on { background: var(--board-accent); }
 .st-more { width: 100%; padding: 10px 14px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--board-accent); font: inherit; font-size: 12.5px; font-weight: 600; text-align: left; cursor: pointer; }
-.st-more:hover { background: var(--surface-hover); }
+@media (hover: hover) { .st-more:hover { background: var(--surface-hover); } }
 
 /* ─── Entraînement : séance du jour ─── */
 .trs-hero {
@@ -105,7 +105,7 @@
 .egp-node.done .eg-mini { border-color: var(--board-accent); }
 .egp-node.perfect .eg-mini { box-shadow: 0 0 0 4px color-mix(in srgb, var(--board-accent) 25%, transparent); }
 .egp-node.next .eg-mini { border-color: var(--accent-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-bright) 22%, transparent); }
-.egp-node:hover .eg-mini { transform: translateY(-3px); }
+@media (hover: hover) { .egp-node:hover .eg-mini { transform: translateY(-3px); } }
 .egp-node:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 4px; border-radius: 12px; }
 .egp-node b { font-size: 11.5px; font-weight: 600; line-height: 1.25; }
 .egp-st { font-family: var(--font-note); font-size: 10.5px; color: var(--text-dim); }
@@ -114,5 +114,5 @@
 
 @media (prefers-reduced-motion: reduce) {
     .egp-node .eg-mini, .st-line-meta .ico, .trs-chip .ico { transition: none; }
-    .egp-node:hover .eg-mini { transform: none; }
+    @media (hover: hover) { .egp-node:hover .eg-mini { transform: none; } }
 }
