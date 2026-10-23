@@ -1,12 +1,17 @@
 /**
  * core/splash.js
  * ──────────────────────────────────────────────────────────────────────────
- * Écran de lancement (#splash, index.html). Affiché par le script du <head> une fois par session
- * d'onglet (<html class="splashing">). Dès que l'application est montée, le logo central glisse et
- * rétrécit jusqu'à sa place exacte dans la barre du haut (#logo-nav, technique FLIP : position
- * mesurée, animation en transform seulement) pendant que le voile se dissipe.
- * Mouvement réduit, logo de barre invisible ou Web Animations absent : simple fondu.
- * Plafond : quoi qu'il arrive, l'écran disparaît au plus tard 2,5 s après le chargement du script.
+ * Sortie de l'écran de lancement (#splash, index.html ; animation : css/splash.css).
+ * L'animation démarre seule au premier affichage (classe « splashing » posée dans le <head>) ;
+ * ce script décide seulement QUAND sortir :
+ *   - pas avant la fin de la suspension (animation spHold de l'overlay, ≈ 1,55 s) : rien n'est coupé
+ *     si l'application est prête instantanément ;
+ *   - pas avant que l'application soit prête : DOMContentLoaded (logos teintés, pièces, onglet ?tab=),
+ *     puis chargement complet et police Inter, ces deux-là plafonnés à 2,6 s ;
+ *   - quoi qu'il arrive au plus tard à 4,5 s : un réseau lent ne bloque jamais l'accès.
+ * Pendant la sortie (≈ 0,45 s), <html class="splash-out"> : la barre système reprend la couleur du
+ * thème (themeColor.js) et #app monte légèrement. Onglet en arrière-plan (horloge des animations
+ * suspendue) : retrait direct par minuteur.
  */
 
 'use strict';
@@ -15,51 +20,48 @@
     const root = document.documentElement;
     if (!root.classList.contains('splashing')) return;
     const splash = document.getElementById('splash');
-    let done = false;
-    const anims = [];
 
-    // Arrêt du plafond (onglet en arrière-plan : l'horloge des animations est suspendue) : rien ne doit
-    // rester figé, notamment le fondu d'entrée de #app.
+    const READY_CAP = 2600;                       // ms depuis le début de la navigation
+    const MAX_SHOWN = 4500;
+    const EXIT_MS   = 450;
+    const until = ms => new Promise(r => setTimeout(r, Math.max(0, ms - performance.now())));
+    const cssAnim = name => splash.getAnimations().find(a => a.animationName === name);
+
+    let left = false, done = false;
+
     function finish() {
         if (done) return;
         done = true;
-        anims.forEach(a => a.cancel());
-        root.classList.remove('splashing');
-        if (splash) splash.remove();
-    }
-    const failsafe = setTimeout(finish, 2500);
-
-    function run() {
-        const veil   = splash && splash.querySelector('.splash-veil');
-        const logo   = splash && splash.querySelector('.splash-logo');
-        const target = document.getElementById('logo-nav');
-        if (!veil || !logo || typeof logo.animate !== 'function') return finish();
-
-        const end = () => { clearTimeout(failsafe); finish(); };
-        const from = logo.getBoundingClientRect();
-        const to   = target ? target.getBoundingClientRect() : null;
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (reduce || !to || !to.width || !from.width) {
-            const fade = splash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, easing: 'ease-out', fill: 'forwards' });
-            anims.push(fade);
-            fade.onfinish = end;
-            return;
-        }
-
-        const s = to.width / from.width;
-        const move = logo.animate([
-            { transform: 'none' },
-            { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${s})`, borderRadius: (7 / s) + 'px' }
-        ], { duration: 600, easing: 'cubic-bezier(.6, 0, .2, 1)', fill: 'forwards' });
-        anims.push(move, veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320, delay: 220, easing: 'ease-out', fill: 'forwards' }));
-        const app = document.getElementById('app');
-        if (app) anims.push(app.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 300, easing: 'ease-out', fill: 'backwards' }));
-        move.onfinish = end;
+        root.classList.remove('splashing', 'splash-out');
+        splash.remove();
     }
 
-    // Après les autres gestionnaires DOMContentLoaded (logos teintés, pièces, onglet ?tab=), puis
-    // deux images : la mise en page de la barre est alors définitive.
-    const start = () => requestAnimationFrame(() => requestAnimationFrame(run));
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+    function leave() {
+        if (left) return;
+        left = true;
+        root.classList.add('splash-out');
+        splash.classList.add('is-leaving');
+        const exit = cssAnim('spExit');
+        if (exit) exit.finished.then(finish, finish);
+        setTimeout(finish, EXIT_MS + 250);
+    }
+
+    if (!splash) { root.classList.remove('splashing'); return; }
+
+    const hold = cssAnim('spHold');
+    const held = hold ? hold.finished.catch(() => {}) : Promise.resolve();
+
+    const domReady = new Promise(r => {
+        if (document.readyState !== 'loading') r();
+        else document.addEventListener('DOMContentLoaded', () => setTimeout(r, 0), { once: true });   // après les autres gestionnaires
+    });
+    const loaded = new Promise(r => {
+        if (document.readyState === 'complete') r();
+        else window.addEventListener('load', r, { once: true });
+    });
+    const fonts = document.fonts && document.fonts.ready ? document.fonts.ready.catch(() => {}) : Promise.resolve();
+    const ready = domReady.then(() => Promise.race([Promise.all([loaded, fonts]), until(READY_CAP)]));
+
+    Promise.all([held, ready]).then(() => requestAnimationFrame(leave));
+    until(MAX_SHOWN).then(leave);
 })();

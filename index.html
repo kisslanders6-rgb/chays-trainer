@@ -14,20 +14,45 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="64x64" href="assets/icons/favicon-64.png" />
     <!-- Thème appliqué avant le premier affichage (sinon éclair du thème clair) ; écran de lancement
-         une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://). -->
+         une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://).
+         Pendant le lancement, la barre système prend le fond de l'écran de lancement (#f5f5f3, comme
+         l'écran système de la PWA) ; themeColor.js repasse à la couleur du thème à la sortie. -->
     <script>
         (function () {
             var d = document.documentElement;
             try { var t = localStorage.getItem('chessTrainer_theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
-            try { if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) { d.classList.add('splashing'); sessionStorage.setItem('chays_splash', '1'); } } catch (e) {}
+            try {
+                if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) {
+                    d.classList.add('splashing');
+                    sessionStorage.setItem('chays_splash', '1');
+                    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#f5f5f3';
+                }
+            } catch (e) {}
         })();
     </script>
+    <link rel="stylesheet" href="css/splash.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
-<!-- Écran de lancement : le logo rejoint sa place dans la barre du haut (js/core/splash.js) -->
-<div id="splash" class="splash" aria-hidden="true"><div class="splash-veil"></div><span class="splash-logo"></span></div>
+<!-- Écran de lancement (css/splash.css, js/core/splash.js). Première image = écran système de la PWA :
+     l'icône maskable au centre, puis le roi du logo se dessine et la signature apparaît. -->
+<div id="splash" class="splash" aria-hidden="true">
+    <img class="sp-handoff" src="assets/icons/icon-maskable-512.png" alt="" width="240" height="240" />
+    <div class="sp-stage">
+        <svg class="sp-king" viewBox="70 0 116 256" focusable="false">
+            <path class="sp-line sp-fill"  pathLength="1" style="--t:.06s;--d:.74s" d="M114 114 C111 140 117 166 111 188 C107 202 94 212 86 222 C81 229 80 236 80 243 H176 C176 236 175 229 170 222 C162 212 149 202 145 188 C139 166 145 140 142 114 Z" />
+            <path class="sp-line sp-fill"  pathLength="1" style="--t:.16s;--d:.6s"  d="M96 42 C110 54 120 57 128 51 C136 57 146 54 160 42 C152 58 148 72 146 86 H110 C108 72 104 58 96 42 Z" />
+            <path class="sp-line sp-draw sp-cross" pathLength="1" style="--t:.3s;--d:.45s" d="M128 8 V40 M114 22 H142" />
+            <path class="sp-line sp-gold"  pathLength="1" style="--t:.38s;--d:.42s" d="M102 92 a26 6.5 0 1 0 52 0 a26 6.5 0 1 0 -52 0" />
+            <path class="sp-line sp-gold"  pathLength="1" style="--t:.44s;--d:.36s" d="M110 106 a18 4.5 0 1 0 36 0 a18 4.5 0 1 0 -36 0" />
+            <path class="sp-line sp-gold"  pathLength="1" style="--t:.5s;--d:.3s"  d="M86 232 H170" />
+            <path class="sp-line sp-swirl" pathLength="1" style="--t:.36s;--d:.44s" d="M146 96 C162 104 146 118 132 126 C116 136 112 158 124 172 C136 186 154 186 150 202 C146 216 118 218 96 224" />
+        </svg>
+        <span class="sp-word"></span>
+        <svg class="sp-rule" viewBox="0 0 56 4" focusable="false"><path pathLength="1" d="M1 2 H55" /></svg>
+    </div>
+</div>
 
 <!-- Sprite d'icônes : doit être chargé en premier, avant tout contenu qui référence <use href="#i-…"> -->
 <script src="js/core/icons.js"></script>
