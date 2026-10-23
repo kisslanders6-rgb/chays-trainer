@@ -346,8 +346,8 @@ const AccountUI = (function () {
         btn = document.createElement('button');
         btn.id = 'account-btn'; btn.className = 'theme-toggle'; btn.type = 'button'; btn.innerHTML = SVG_USER_BTN;
         btn.onclick = () => open();
-        const right = document.querySelector('.topnav-right');
-        if (right) right.insertBefore(btn, right.firstChild); else document.body.appendChild(btn);
+        const pill = document.querySelector('.topnav-pill') || document.querySelector('.topnav-right');
+        if (pill) pill.insertBefore(btn, pill.firstChild); else document.body.appendChild(btn);
     }
 
     function onNotice(n) {
