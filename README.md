@@ -69,7 +69,7 @@ Les tests couvrent les règles de fusion de la synchronisation, le client Supaba
 ## Maintenance
 
 - **Images** : si vous remplacez une image existante (pièces, textures, logos), incrémentez `VERSION` dans `sw.js` pour que le cache se mette à jour. Le code (HTML, JS, CSS) est toujours rechargé depuis le réseau quand c'est possible.
-- **Logos** : après avoir modifié un logo teinté, lancez `sh scripts/build-logo-data.sh`. Ce script régénère la copie embarquée utilisée quand `index.html` est ouvert directement depuis le disque.
+- **Identité** : le logo maître est `assets/brand/chays-logo.svg` (calques `#piece` : socle, corps, couronne, gravure ; `#texte` : CHAYS, TRAINER), l'icône `assets/brand/chays-icone.svg`. Après une modification de l'icône, lancez `swift scripts/export-icons.swift` (macOS) pour régénérer les PNG d'`assets/icons/`, puis incrémentez `VERSION` dans `sw.js`. Le logo est aussi copié en ligne dans `index.html` (écran de lancement et emblème de la barre du haut / de l'accueil). L'ancienne identité « Ch » est archivée dans `assets/archive/identite-ch-2026-10/`.
 - **Nouveau script** : ajoutez-le dans `index.html`. Le service worker le mettra en cache automatiquement.
 
 ## Crédits

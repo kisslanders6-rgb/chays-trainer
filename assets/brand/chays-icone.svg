@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titre">
+  <title id="titre">Chays Trainer — icône</title>
+  <desc>Icône maskable : le roi seul, centré dans la zone sûre.</desc>
+  <defs>
+  <style>
+    .trait  { fill: none; stroke: var(--ct-encre, #2f4a26); stroke-linecap: round; stroke-linejoin: round; }
+    .plein  { fill: var(--ct-encre, #2f4a26); stroke: var(--ct-encre, #2f4a26); stroke-linejoin: round; }
+    .laiton { fill: none; stroke: var(--ct-laiton, #b08d48); stroke-linecap: round; stroke-linejoin: round; }
+    .grave  { fill: none; stroke: var(--ct-grave, #f3ecd9); stroke-linecap: round; stroke-linejoin: round; }
+    .fond   { fill: var(--ct-fond, #f5f5f3); }
+  </style>
+  </defs>
+  <rect id="fond" class="fond" width="512" height="512"/>
+  <g id="piece">
+    <g id="socle" stroke-width="5">
+      <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="380" data-fill="820" d="M193.5 395.9 H318.5 C324.2 404.4 327 414.3 327 424.3 H185 C185 414.3 187.8 404.4 193.5 395.9 Z"/>
+      <path id="socle-plinthe" class="laiton" pathLength="1" data-t="1000" data-d="300" d="M204.9 410.1 H307.1"/>
+    </g>
+    <g id="corps" stroke-width="5">
+      <path id="corps-fut" class="plein" pathLength="1" data-t="120" data-d="640" data-fill="820" d="M236.1 241.1 C231.9 280.9 240.4 317.8 231.9 349 C227.6 366 216.2 378.8 204.9 388.8 H307.1 C295.8 378.8 284.4 366 280.1 349 C271.6 317.8 280.1 280.9 275.9 241.1 Z"/>
+    </g>
+    <g id="couronne" stroke-width="5">
+      <path id="couronne-tete" class="plein" pathLength="1" data-t="360" data-d="480" data-fill="860" d="M209.1 138.9 C229 155.9 243.2 160.2 256 150.2 C268.8 160.2 283 155.9 302.9 138.9 C291.5 161.6 284.4 181.4 281.6 201.3 H230.4 C227.6 181.4 220.5 161.6 209.1 138.9 Z"/>
+      <path id="anneau-haut" class="laiton" pathLength="1" data-t="560" data-d="380" d="M219.1 211.3 A36.9 9.2 0 1 0 292.9 211.3 A36.9 9.2 0 1 0 219.1 211.3"/>
+      <path id="anneau-bas" class="laiton" pathLength="1" data-t="620" data-d="340" d="M230.4 231.2 A25.6 6.4 0 1 0 281.6 231.2 A25.6 6.4 0 1 0 230.4 231.2"/>
+      <path id="croix" class="laiton" pathLength="1" data-t="760" data-d="320" d="M256 87.7 V136 M237.5 107.6 H274.5"/>
+    </g>
+    <g id="gravure" stroke-width="4">
+      <path id="gravure-trait" class="grave" pathLength="1" data-t="640" data-d="460" data-from="encre" data-swap="900" d="M281.6 216.9 C304.3 228.3 281.6 248.2 261.7 259.6 C239 273.8 233.3 303.6 250.3 323.4 C267.4 343.3 290.1 343.3 285.8 364.6 C283 377.4 256 381.7 233.3 383.1"/>
+    </g>
+  </g>
+</svg>

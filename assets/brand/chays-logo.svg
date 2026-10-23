@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titre">
+  <title id="titre">Chays Trainer</title>
+  <desc>Roi plein vert sapin, anneaux et plinthe laiton, trait gravé crème ; signature CHAYS / TRAINER.</desc>
+  <defs>
+  <style>
+    .trait  { fill: none; stroke: var(--ct-encre, #2f4a26); stroke-linecap: round; stroke-linejoin: round; }
+    .plein  { fill: var(--ct-encre, #2f4a26); stroke: var(--ct-encre, #2f4a26); stroke-linejoin: round; }
+    .laiton { fill: none; stroke: var(--ct-laiton, #b08d48); stroke-linecap: round; stroke-linejoin: round; }
+    .grave  { fill: none; stroke: var(--ct-grave, #f3ecd9); stroke-linecap: round; stroke-linejoin: round; }
+    .fond   { fill: var(--ct-fond, #f5f5f3); }
+  </style>
+  </defs>
+  <g id="piece">
+    <g id="socle" stroke-width="5">
+      <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="380" data-fill="820" d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
+      <path id="socle-plinthe" class="laiton" pathLength="1" data-t="1000" data-d="300" d="M209.2 334.9 H302.8"/>
+    </g>
+    <g id="corps" stroke-width="5">
+      <path id="corps-fut" class="plein" pathLength="1" data-t="120" data-d="640" data-fill="820" d="M237.8 180.2 C233.9 216.6 241.7 250.4 233.9 279 C230 294.6 219.6 306.3 209.2 315.4 H302.8 C292.4 306.3 282 294.6 278.1 279 C270.3 250.4 278.1 216.6 274.2 180.2 Z"/>
+    </g>
+    <g id="couronne" stroke-width="5">
+      <path id="couronne-tete" class="plein" pathLength="1" data-t="360" data-d="480" data-fill="860" d="M213.1 86.6 C231.3 102.2 244.3 106.1 256 97 C267.7 106.1 280.7 102.2 298.9 86.6 C288.5 107.4 282 125.6 279.4 143.8 H232.6 C230 125.6 223.5 107.4 213.1 86.6 Z"/>
+      <path id="anneau-haut" class="laiton" pathLength="1" data-t="560" data-d="380" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
+      <path id="anneau-bas" class="laiton" pathLength="1" data-t="620" data-d="340" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
+      <path id="croix" class="laiton" pathLength="1" data-t="760" data-d="320" d="M256 39.8 V84 M239.1 58 H272.9"/>
+    </g>
+    <g id="gravure" stroke-width="4">
+      <path id="gravure-trait" class="grave" pathLength="1" data-t="640" data-d="460" data-from="encre" data-swap="900" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
+    </g>
+  </g>
+  <g id="texte">
+    <g id="texte-chays" stroke-width="7.5">
+      <path id="chays-1-c" class="trait" pathLength="1" data-t="1250" data-d="300" d="M178.1 392 A17.5 20 0 1 0 178.1 416"/>
+      <path id="chays-2-h" class="trait" pathLength="1" data-t="1310" data-d="300" d="M194.1 384 V424 M223.3 384 V424 M194.1 404 H223.3"/>
+      <path id="chays-3-a" class="trait" pathLength="1" data-t="1370" data-d="300" d="M239.3 424 L256.3 384 L273.3 424 M246.1 411.2 H266.5"/>
+      <path id="chays-4-y" class="trait" pathLength="1" data-t="1430" data-d="300" d="M289.3 384 L305.7 404 L322 384 M305.7 404 V424"/>
+      <path id="chays-5-s" class="trait" pathLength="1" data-t="1490" data-d="300" d="M365.2 390.4 C359.2 383.2 339.6 384 339.1 394.4 C338.5 404.8 365.2 402.4 365.2 413.6 C365.2 424.8 343.4 424.8 338 417.6"/>
+    </g>
+    <g id="texte-trainer" stroke-width="3.6">
+      <path id="trainer-1-t" class="laiton" pathLength="1" data-t="1480" data-d="220" d="M180.2 440 H191.9 M186 440 V456"/>
+      <path id="trainer-2-r" class="laiton" pathLength="1" data-t="1520" data-d="220" d="M205.9 456 V440 H211.9 C215.7 440 216.8 442.2 216.8 444.5 C216.8 446.7 215.7 449 211.9 449 H205.9 M211.4 449 L216.8 456"/>
+      <path id="trainer-3-a" class="laiton" pathLength="1" data-t="1560" data-d="220" d="M230.8 456 L237.3 440 L243.8 456 M233.4 450.9 H241.2"/>
+      <path id="trainer-4-i" class="laiton" pathLength="1" data-t="1600" data-d="220" d="M257.8 440 V456"/>
+      <path id="trainer-5-n" class="laiton" pathLength="1" data-t="1640" data-d="220" d="M271.8 456 V440 L283.3 456 V440"/>
+      <path id="trainer-6-e" class="laiton" pathLength="1" data-t="1680" data-d="220" d="M306.9 440 H297.3 V456 H306.9 M297.3 448 H305"/>
+      <path id="trainer-7-r" class="laiton" pathLength="1" data-t="1720" data-d="220" d="M320.9 456 V440 H326.9 C330.7 440 331.8 442.2 331.8 444.5 C331.8 446.7 330.7 449 326.9 449 H320.9 M326.3 449 L331.8 456"/>
+    </g>
+  </g>
+</svg>
