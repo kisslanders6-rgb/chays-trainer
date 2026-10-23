@@ -8,7 +8,8 @@
  * Uniquement transform, opacity et propriétés de couleur déclarées avec @property (css/splash.css).
  *
  * API (appelée par splash.js) :
- *   IntroTimeline.land(splash) → Promise résolue quand tout est en place, ou null si impossible
+ *   IntroTimeline.land(splash) → Promise résolue quand tout est en place (true) ou annulée par
+ *                                release() (false) — jamais rejetée —, ou null si impossible
  *   IntroTimeline.release()    → annule les animations restantes (après le retrait du splash)
  */
 
@@ -88,7 +89,8 @@ const IntroTimeline = (function () {
         cascade([...(tabs ? tabs.querySelectorAll('.topnav-tab') : []), ...document.querySelectorAll('.topnav-right > *')], T.tabs, T.tabsStep);
         cascade(document.querySelectorAll('.home-tab:not(.hidden) [data-stagger]'), T.home, T.homeStep);
 
-        return Promise.all(running.map(a => a.finished)).then(() => {});
+        // Une animation annulée rejette `finished` (AbortError) : on le transforme en résultat.
+        return Promise.all(running.map(a => a.finished)).then(() => true, () => false);
     }
 
     function release() {
