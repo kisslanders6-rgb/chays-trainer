@@ -294,9 +294,32 @@ function repMenuAction(action) {
     else if (action === 'data')   showData();
 }
 
+// Menu « ⋯ » de la barre du haut (petit téléphone : Aide et Thème y sont rangés, css/home.css).
+function closeNavMenu() {
+    const m = document.getElementById('nav-menu'), b = document.getElementById('nav-menu-btn');
+    if (m) m.classList.add('hidden');
+    if (b) b.setAttribute('aria-expanded', 'false');
+}
+
+function toggleNavMenu() {
+    const m = document.getElementById('nav-menu');
+    if (!m.classList.contains('hidden')) { closeNavMenu(); return; }
+    m.classList.remove('hidden');
+    document.getElementById('nav-menu-btn').setAttribute('aria-expanded', 'true');
+}
+
+function navMenuAction(action) {
+    closeNavMenu();
+    if (action === 'help')       showHelp();
+    else if (action === 'theme') toggleTheme();
+}
+
 (function initRepMenuDismiss() {
-    document.addEventListener('pointerdown', e => { if (!e.target.closest('.menu-wrap')) closeRepMenu(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRepMenu(); });
+    document.addEventListener('pointerdown', e => {
+        if (!e.target.closest('#rep-menu, #rep-menu-btn')) closeRepMenu();
+        if (!e.target.closest('#nav-menu-wrap')) closeNavMenu();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeRepMenu(); closeNavMenu(); } });
 })();
 
 function selectRepertoire(name) {

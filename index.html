@@ -130,15 +130,14 @@
                 <span class="ct-wm topnav-wm" aria-hidden="true"><span class="ct-wm-1">Chays</span><span class="ct-wm-2">Trainer</span></span>
             </div>
 
-            <!-- Tabs écran d'accueil -->
+            <!-- Onglets de l'accueil : dans la barre sur grand écran, en barre fixe en bas sous 900 px
+                 (css/home.css). Les séparateurs sont dessinés en CSS entre deux onglets ; l'icône ne
+                 s'affiche que dans la barre du bas. -->
             <div class="topnav-tabs" id="topnav-tabs-setup">
-                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')">Jouer</div>
-                <div class="topnav-sep"></div>
-                <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')">Statistiques</div>
-                <div class="topnav-sep"></div>
-                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')">Entraînement</div>
-                <div class="topnav-sep"></div>
-                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')">Finales</div>
+                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-crown"/></svg><span>Jouer</span></div>
+                <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
+                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-target"/></svg><span>Entraînement</span></div>
+                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-pawn"/></svg><span>Finales</span></div>
             </div>
 
             <!-- Meta dans l'écran de jeu -->
@@ -157,16 +156,26 @@
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
                 </button>
-                <button class="theme-toggle" onclick="showHelp()" title="Comment ça marche ?" aria-label="Aide">
+                <button class="theme-toggle topnav-secondary" onclick="showHelp()" title="Comment ça marche ?" aria-label="Aide">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                 </button>
-                <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème" aria-label="Changer de thème">
+                <button class="theme-toggle topnav-secondary" onclick="toggleTheme()" title="Changer de thème" aria-label="Changer de thème">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
                 </button>
+                <!-- Petit téléphone (< 480 px) : Aide et Thème passent dans ce menu -->
+                <div class="menu-wrap topnav-more" id="nav-menu-wrap">
+                    <button class="theme-toggle" id="nav-menu-btn" onclick="toggleNavMenu()" title="Plus" aria-label="Plus d'actions" aria-haspopup="true" aria-expanded="false">
+                        <svg class="ico" aria-hidden="true"><use href="#i-more-horizontal"/></svg>
+                    </button>
+                    <div class="menu hidden" id="nav-menu" role="menu">
+                        <button class="menu-item" role="menuitem" onclick="navMenuAction('help')"><svg class="ico"><use href="#i-info"/></svg> Comment ça marche ?</button>
+                        <button class="menu-item" role="menuitem" onclick="navMenuAction('theme')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Changer de thème</button>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>

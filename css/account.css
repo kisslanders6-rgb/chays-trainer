@@ -4,9 +4,9 @@
 
 /* Bouton « Compte » de la barre du haut + pastille d'état */
 #account-btn { position: relative; }
-#account-btn.has-session::after {
-    content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px;
-    border-radius: 50%; background: var(--ok); border: 2px solid var(--surface);
+#account-btn.has-session::after {           /* dans le coin du bouton : ne déborde jamais sur le voisin */
+    content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 2px var(--bg-inset); pointer-events: none;
 }
 #account-btn[data-sync="busy"]::after  { background: #d9a21b; }
 #account-btn[data-sync="offline"]::after { background: var(--text-dim); }

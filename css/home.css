@@ -52,14 +52,65 @@
     text-transform: uppercase; color: var(--ct-laiton);
 }
 
-/* ─── Barre du haut ─── */
+/* ─── Barre du haut ─────────────────────────────────────────────────────────
+   ≥ 900 px  une ligne : logo, onglets centrés séparés par des filets, actions.
+   < 900 px  les onglets deviennent une barre fixe en bas (icône + libellé, à portée de pouce) ;
+             la barre du haut garde le logo complet et les actions. En partie, la barre du bas
+             disparaît (#topnav-tabs-setup masqué par app.js) et le plateau garde toute la hauteur.
+   < 480 px  Aide et Thème passent dans le menu « ⋯ » (toggleNavMenu, js/app.js). */
 .topnav-brand { gap: 10px; }
 .topnav-wm { --wm-size: 17px; }
-.topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); position: relative; }
-.topnav-tab.active::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1.5px; border-radius: 1px; background: var(--board-accent); }
+.topnav-tabs { --tab-px: 16px; align-self: stretch; align-items: stretch; gap: 0; min-width: 0; }
+.topnav-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 6px;
+    padding: 0 var(--tab-px); border: 0; border-radius: 0; background: none;
+}
+.topnav-tab .ico { display: none; width: 20px; height: 20px; flex: none; }
+/* Séparateur dessiné par chaque onglet qui en suit un autre : centré, jamais orphelin */
+.topnav-tab + .topnav-tab::before {
+    content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 16px; margin-top: -8px; background: var(--border);
+}
+.topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); font-weight: 600; }
+.topnav-tab.active::after {
+    content: ''; position: absolute; left: var(--tab-px); right: var(--tab-px); bottom: -1px;
+    height: 2px; border-radius: 1px; background: var(--board-accent);
+}
 @media (hover: hover) { .topnav-tab:hover { background: transparent; color: var(--text); } }
-@media (min-width: 1200px) { .topnav-wm { --wm-size: 20px; } }
-@media (max-width: 599px)  { .topnav-wm { --wm-size: 14px; } .topnav-tab.active::after { left: 14px; right: 14px; } }
+.topnav-meta, .topnav-meta .repertoire-pill { min-width: 0; }
+.topnav-more { display: none; }
+
+@media (min-width: 1200px) { .topnav-wm { --wm-size: 20px; } .topnav-tabs { --tab-px: 22px; } }
+@media (min-width: 1440px) { .topnav-tabs { --tab-px: 26px; } }
+@media (max-width: 1099px) { .topnav-tabs { --tab-px: 12px; } .topnav-inner { gap: 12px; } }
+
+@media (max-width: 899px) {
+    .topnav-inner { padding: 0 14px; }
+    .topnav-brand { margin-right: auto; }
+    #topnav-tabs-setup {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+        height: calc(62px + env(safe-area-inset-bottom, 0px));
+        padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
+        justify-content: space-around;
+        background: var(--surface); border-top: 1px solid var(--border);
+        box-shadow: 0 -1px 12px rgba(40, 60, 20, .08);
+    }
+    .topnav-tab { flex: 1; flex-direction: column; justify-content: center; gap: 5px; padding: 0 4px; font-size: 11px; letter-spacing: .2px; }
+    .topnav-tab .ico { display: block; }
+    .topnav-tab + .topnav-tab::before { height: 24px; margin-top: -12px; }
+    .topnav-tab.active::after { top: -1px; bottom: auto; left: 30%; right: 30%; }
+    /* Le contenu et les toasts ne passent pas sous la barre du bas */
+    .setup-screen { padding-bottom: calc(62px + 24px + env(safe-area-inset-bottom, 0px)); }
+    body:has(#setup-screen:not(.hidden)) .toast { bottom: calc(62px + 12px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 479px) {
+    .topnav-inner { padding: 0 10px 0 12px; gap: 8px; }
+    .topnav-wm { --wm-size: 15px; }
+    .topnav-brand svg { height: 34px; }
+    .topnav-right { gap: 6px; }
+    .topnav-secondary { display: none; }
+    .topnav-more { display: block; }
+    .topnav:has(#topnav-tabs-game:not([style*="none"])) .topnav-wm { display: none; }   /* partie : place au répertoire */
+}
 
 /* Titres d'onglets dans la nouvelle typographie */
 .tab-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; font-size: 24px; }
