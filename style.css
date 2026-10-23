@@ -1521,3 +1521,40 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 }
 @keyframes sheetIn { from { transform: translateY(40%); opacity: .6; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .side-panel.open { animation: none; } }
+
+/* ─── HORS LIGNE (js/core/network.js) ────────────────────────────────────── */
+.net-banner { position: sticky; z-index: 190; display: flex; justify-content: center; padding: 6px 16px; font-size: 12.5px; font-weight: 600; line-height: 1.4; text-align: center; color: var(--text); background: color-mix(in srgb, #d9a21b 16%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, #d9a21b 40%, transparent); animation: netIn .2s ease-out; }
+.net-banner span { display: inline-flex; align-items: center; gap: 8px; }
+.net-banner span::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: #d9a21b; }
+.net-banner[data-kind="back"] { background: color-mix(in srgb, var(--ok) 14%, var(--surface)); border-bottom-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.net-banner[data-kind="back"] span::before { background: var(--ok); }
+@keyframes netIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.net-note { display: none; }
+.is-offline .net-note { display: block; }
+.is-offline [data-needs-network]:not(form) { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.is-offline .sk-online { display: none; }
+.net-toast { z-index: 600; border-color: #d9a21b; }      /* au-dessus des fenêtres (.overlay : 500) */
+@media (prefers-reduced-motion: reduce) { .net-banner { animation: none; } }
+
+/* ─── SQUELETTES DE CHARGEMENT ───────────────────────────────────────────── */
+/* .sk : bloc gris animé ; les gabarits reprennent les classes du vrai composant (ex. .online-row). */
+.sk { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--bg-inset) 0%, var(--bg-inset) 35%, var(--surface-hover) 50%, var(--bg-inset) 65%, var(--bg-inset) 100%); background-size: 300% 100%; animation: skShimmer 1.4s ease-in-out infinite; }
+@keyframes skShimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sk-line  { height: 11px; max-width: 100%; }
+.sk-small { height: 8px; width: 34%; margin-top: 6px; }
+.sk-glyph { width: 22px; height: 22px; flex: none; border-radius: 50%; }
+.sk-pill  { flex: none; width: 30%; height: 22px; border-radius: 10px; }
+.sk-btn   { height: 44px; width: 100%; border-radius: 12px; }
+.sk-row   { cursor: default; }
+.sk-row:hover { border-color: var(--border); }
+[data-theme="light"] .sk { background-image: linear-gradient(90deg, var(--surface-hover) 0%, var(--surface-hover) 35%, var(--border) 50%, var(--surface-hover) 65%, var(--surface-hover) 100%); }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ─── ÉCRAN DE LANCEMENT (js/core/splash.js) ─────────────────────────────── */
+/* Affiché seulement si <html class="splashing"> (script du <head>) : peint dès le premier affichage. */
+.splash { display: none; }
+.splashing .splash { display: block; position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
+.splash-veil { position: absolute; inset: 0; background: var(--bg); }
+.splash-logo { position: absolute; left: 50%; top: 50%; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 18px; background-color: var(--logo-color); -webkit-mask: url("assets/chlogo.png") center / contain no-repeat; mask: url("assets/chlogo.png") center / contain no-repeat; transform-origin: 0 0; will-change: transform; }
+.splashing #logo-nav { visibility: hidden; }

@@ -6,13 +6,14 @@
  *   - Code (HTML / JS / CSS / manifest) : réseau d'abord, cache en secours
  *     → en ligne, tu as toujours la dernière version déployée.
  *   - Images (pièces, textures, logos) : cache d'abord, rafraîchi en arrière-plan.
+ *   - Police Inter (Google Fonts) : cache d'abord, mise en cache à la première visite en ligne.
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  *
  * Liste de mise en cache : construite à l'installation à partir des balises src / href d'index.html
  * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
  * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v10';
+const VERSION = 'v11';
 const CACHE   = 'chays-trainer-' + VERSION;
 
 const EXTRA = [
@@ -49,6 +50,9 @@ self.addEventListener('activate', e => {
     );
 });
 
+// Polices Google : la feuille (fonts.googleapis.com) et les fichiers (fonts.gstatic.com) ne changent pas.
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+
 function isCode(req) {
     if (req.mode === 'navigate') return true;
     return /\.(?:html|js|css|json)$/.test(new URL(req.url).pathname);
@@ -58,7 +62,16 @@ self.addEventListener('fetch', e => {
     const req = e.request;
     if (req.method !== 'GET') return;
     const url = new URL(req.url);
-    if (url.origin !== self.location.origin) return;            // polices Google, etc. : on ne s'en mêle pas
+    if (FONT_HOSTS.includes(url.hostname)) {                    // police Inter : cache d'abord, pour l'avoir hors ligne
+        e.respondWith(
+            caches.match(req).then(hit => hit || fetch(req).then(res => {
+                if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+                return res;
+            }))
+        );
+        return;
+    }
+    if (url.origin !== self.location.origin) return;            // API Chess.com / Lichess / Supabase : on ne s'en mêle pas
 
     if (isCode(req)) {
         e.respondWith(

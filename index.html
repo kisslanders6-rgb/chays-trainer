@@ -13,10 +13,22 @@
     <title>Chays Trainer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="64x64" href="assets/icons/favicon-64.png" />
+    <!-- Thème appliqué avant le premier affichage (sinon éclair du thème clair) ; écran de lancement
+         une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://). -->
+    <script>
+        (function () {
+            var d = document.documentElement;
+            try { var t = localStorage.getItem('chessTrainer_theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
+            try { if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) { d.classList.add('splashing'); sessionStorage.setItem('chays_splash', '1'); } } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
+<!-- Écran de lancement : le logo rejoint sa place dans la barre du haut (js/core/splash.js) -->
+<div id="splash" class="splash" aria-hidden="true"><div class="splash-veil"></div><span class="splash-logo"></span></div>
+
 <!-- Sprite d'icônes : doit être chargé en premier, avant tout contenu qui référence <use href="#i-…"> -->
 <script src="js/core/icons.js"></script>
 
@@ -202,7 +214,7 @@
                             <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?">
                                 <svg class="ico"><use href="#i-target"/></svg><span class="btn-label">Partie</span>
                             </button>
-                            <button class="btn btn-tool tb-more" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                            <button class="btn btn-tool tb-more" data-needs-network onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
                                 <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
                             </button>
                             <!-- Mobile : les actions .tb-more passent dans ce menu pour que chaque bouton garde une largeur confortable -->
@@ -230,7 +242,7 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool" onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                            <button class="btn btn-tool" data-needs-network onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
                                 <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
                             </button>
                         </div>
@@ -295,7 +307,8 @@
                         <option value="5">5 parties</option><option value="10">10 parties</option><option value="20">20 parties</option><option value="50">50 parties</option>
                     </select>
                 </div>
-                <button class="panel-close" id="online-fetch-btn" style="border-color:var(--ok);color:var(--ok);" onclick="runOnlineFetch()">Récupérer mes parties</button>
+                <div class="pgn-note info net-note">Hors ligne : la récupération des parties reviendra avec la connexion. L'onglet « Coller un PGN » fonctionne sans Internet.</div>
+                <button class="panel-close" id="online-fetch-btn" data-needs-network style="border-color:var(--ok);color:var(--ok);" onclick="runOnlineFetch()">Récupérer mes parties</button>
                 <div id="online-results" class="pgn-result"></div>
             </div>
 
@@ -514,6 +527,7 @@
 
 <!-- ─── SCRIPTS (ordre de dépendance ; icons.js est chargé en tête de <body>) ─── -->
 <script src="js/core/utils.js"></script>
+<script src="js/core/network.js"></script>
 <script src="js/core/storageAdapter.js"></script>
 <script src="js/core/syncModel.js"></script>
 <script src="js/core/cloudConfig.js"></script>
@@ -545,5 +559,6 @@
 <script src="js/core/accountUI.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>
+<script src="js/core/splash.js"></script>
 </body>
 </html>

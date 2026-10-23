@@ -129,6 +129,7 @@ async function runOnlineFetch() {
     const count = Number(document.getElementById('online-count').value) || 20;
     const p     = { ..._onlinePrefs(), user, count };
     if (!user) { _online.error = 'Entrez votre pseudo.'; _renderOnlineResults(); return; }
+    if (typeof Net !== 'undefined' && !Net.online()) { _online.error = 'Hors ligne : la récupération des parties a besoin d\'Internet.'; _renderOnlineResults(); return; }
     _saveOnlinePrefs(p);
     _online = { busy: true, rows: null, summary: null, error: '' };
     renderOnlinePane();
@@ -154,9 +155,23 @@ const _ONLINE_KIND = {
     theory:  { cls: 'ok',   label: '100 % théorique' }
 };
 
+// Squelette calqué sur .online-summary et .online-row (6 lignes au plus : la liste dépasse rarement l'écran).
+function _onlineSkeleton(count) {
+    const widths = [58, 44, 66, 50, 38, 62];
+    const rows = widths.slice(0, Math.min(count, widths.length)).map(w => `<div class="online-row sk-row" aria-hidden="true">
+            <span class="sk sk-glyph"></span>
+            <span class="online-main"><span class="sk sk-line" style="width:${w}%"></span><span class="sk sk-line sk-small"></span></span>
+            <span class="sk sk-pill"></span>
+          </div>`).join('');
+    return `<span class="sr-only">Récupération et analyse des parties…</span>
+        <div class="online-summary" aria-hidden="true"><span class="sk sk-line" style="width:180px"></span></div>
+        <div class="online-list">${rows}</div>`;
+}
+
 function _renderOnlineResults() {
     const box = document.getElementById('online-results');
-    if (_online.busy) { box.innerHTML = '<div class="pgn-note info">Récupération et analyse des parties…</div>'; return; }
+    box.setAttribute('aria-busy', String(_online.busy));
+    if (_online.busy) { box.innerHTML = _onlineSkeleton(Number(document.getElementById('online-count').value) || 20); return; }
     if (_online.error) { box.innerHTML = `<div class="pgn-note err">${escapeHtml(_online.error)}</div>`; return; }
     if (!_online.rows) { box.innerHTML = ''; return; }
     const s  = _online.summary, pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;

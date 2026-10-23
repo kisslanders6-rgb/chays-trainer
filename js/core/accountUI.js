@@ -22,7 +22,7 @@ const AccountUI = (function () {
     let overlay = null, btn = null;
     let view = 'auth', mode = 'signin', busy = false, switched = false, chooser = null, choosing = false;
     let syncStatus = { level: 'ok', text: 'Connecté' };
-    let providers = [];                                   // fournisseurs externes activés (Auth.providers)
+    let providers = [], providersReady = false;           // fournisseurs externes activés (Auth.providers) ; Ready = liste connue
     const SVG_GOOGLE = '<svg class="account-provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
     const PROVIDER_LABEL = { google: 'Google', apple: 'Apple', github: 'GitHub', discord: 'Discord' };
 
@@ -32,6 +32,8 @@ const AccountUI = (function () {
     const SVG_USER_BTN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const $ = sel => overlay.querySelector(sel);
     const isOpen = () => overlay && !overlay.classList.contains('hidden');
+    const isOnline = () => typeof Net === 'undefined' || Net.online();
+    const OFFLINE_NOTE = '<div class="pgn-note info net-note">Hors ligne : connexion au compte impossible pour l\'instant. Vos données restent utilisables sur cet appareil.</div>';
 
     // ─── Petits outils ────────────────────────────────────────────────────────
     function toast(text) {
@@ -98,18 +100,20 @@ const AccountUI = (function () {
         const up = mode === 'signup';
         return head('Compte') + `
             <div class="panel-sub">Sans compte, vos données restent uniquement sur cet appareil. Avec un compte, elles sont aussi sauvegardées en ligne et synchronisées entre vos appareils.</div>
+            ${OFFLINE_NOTE}
+            ${!providersReady && isOnline() ? '<div class="account-providers sk-online" aria-hidden="true"><span class="sk sk-btn"></span></div><div class="account-or sk-online" aria-hidden="true"><span class="sk sk-line" style="width:140px"></span></div>' : ''}
             ${providers.length ? `<div class="account-providers">${providers.filter(p => PROVIDER_LABEL[p]).map(p =>
-                `<button class="btn account-provider account-provider-${p}" data-act="provider:${p}" type="button">${p === 'google' ? `<span class="account-provider-badge">${SVG_GOOGLE}</span>` : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
+                `<button class="btn account-provider account-provider-${p}" data-needs-network data-act="provider:${p}" type="button">${p === 'google' ? `<span class="account-provider-badge">${SVG_GOOGLE}</span>` : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
                 <div class="account-or"><span>ou avec votre e-mail</span></div>` : ''}
             <div class="seg account-seg">
                 <button class="seg-btn ${up ? '' : 'active'}" data-act="mode:signin" type="button">Connexion</button>
                 <button class="seg-btn ${up ? 'active' : ''}" data-act="mode:signup" type="button">Créer un compte</button>
             </div>
-            <form class="account-form" data-form="auth" novalidate>
+            <form class="account-form" data-form="auth" data-needs-network novalidate>
                 <label class="account-field"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="username" required></label>
                 ${pwField(up ? 'new-password' : 'current-password')}
                 <div class="account-msg" role="status" aria-live="polite"></div>
-                <button class="btn btn-primary account-submit" type="submit">${up ? 'Créer mon compte' : 'Se connecter'}</button>
+                <button class="btn btn-primary account-submit" type="submit" data-needs-network>${up ? 'Créer mon compte' : 'Se connecter'}</button>
                 ${up ? '<div class="set-hint">8 caractères minimum.</div>' : '<button type="button" class="toast-link account-link" data-act="view:recover">Mot de passe oublié ?</button>'}
             </form>`;
     }
@@ -117,10 +121,10 @@ const AccountUI = (function () {
     function viewRecover() {
         return head('Mot de passe oublié') + `
             <div class="panel-sub">Saisissez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.</div>
-            <form class="account-form" data-form="recover" novalidate>
+            <form class="account-form" data-form="recover" data-needs-network novalidate>
                 <label class="account-field"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="username" required></label>
                 <div class="account-msg" role="status" aria-live="polite"></div>
-                <button class="btn btn-primary account-submit" type="submit">Envoyer le lien</button>
+                <button class="btn btn-primary account-submit" type="submit" data-needs-network>Envoyer le lien</button>
                 <button type="button" class="toast-link account-link" data-act="view:auth">Retour à la connexion</button>
             </form>`;
     }
@@ -128,10 +132,10 @@ const AccountUI = (function () {
     function viewNewPassword() {
         return head('Nouveau mot de passe') + `
             <div class="panel-sub">Choisissez votre nouveau mot de passe.</div>
-            <form class="account-form" data-form="newpw" novalidate>
+            <form class="account-form" data-form="newpw" data-needs-network novalidate>
                 ${pwField('new-password', 'Nouveau mot de passe')}
                 <div class="account-msg" role="status" aria-live="polite"></div>
-                <button class="btn btn-primary account-submit" type="submit">Enregistrer</button>
+                <button class="btn btn-primary account-submit" type="submit" data-needs-network>Enregistrer</button>
             </form>`;
     }
 
@@ -143,14 +147,15 @@ const AccountUI = (function () {
                 <div><div class="account-email">${esc(u.email || '')}</div>
                 <div class="account-sync" data-level="${esc(syncStatus.level)}"><span class="account-sync-dot"></span><span id="account-sync-text">${esc(syncStatus.text)}</span></div></div>
             </div>
+            <div class="pgn-note info net-note">Hors ligne : vos modifications seront synchronisées au retour de la connexion.</div>
             <div class="account-msg" role="status" aria-live="polite"></div>
             <div class="account-actions">
-                <button class="btn btn-primary" data-act="sync-now">Synchroniser maintenant</button>
+                <button class="btn btn-primary" data-act="sync-now" data-needs-network>Synchroniser maintenant</button>
                 <button class="btn" data-act="signout">Se déconnecter</button>
                 <button class="btn btn-danger" data-act="signout-erase">Se déconnecter et effacer les données de cet appareil</button>
             </div>
             <div class="set-hint account-note">Se déconnecter garde vos données sur cet appareil (et en ligne). L'effacement ne touche que cet appareil.</div>
-            <button class="toast-link account-link account-delete" data-act="delete-account" type="button">Supprimer mon compte…</button>`;
+            <button class="toast-link account-link account-delete" data-act="delete-account" data-needs-network type="button">Supprimer mon compte…</button>`;
     }
 
     function viewChooser() {
@@ -371,10 +376,18 @@ const AccountUI = (function () {
         });
         onNotice(Auth.takeNotice());
         if (Auth.isSignedIn()) ensureIntent();
-        Promise.resolve(Auth.providers ? Auth.providers() : []).then(p => {   // boutons « Continuer avec … » dès que la liste est connue
+        loadProviders();
+        if (typeof Net !== 'undefined') Net.onChange(on => { if (on && !providersReady) loadProviders(); });
+    }
+
+    // Boutons « Continuer avec … » dès que la liste est connue ; hors ligne, nouvel essai au retour de la connexion.
+    function loadProviders() {
+        if (!isOnline()) return;
+        Promise.resolve(Auth.providers ? Auth.providers() : []).then(p => {
             providers = Array.isArray(p) ? p : [];
-            if (providers.length && isOpen() && view === 'auth') render();
-        }).catch(() => {});
+            providersReady = providers.length > 0 || isOnline();
+            if (isOpen() && view === 'auth') render();
+        }).catch(() => { providersReady = true; if (isOpen() && view === 'auth') render(); });
     }
 
     function setSyncStatus(level, text) {
