@@ -77,7 +77,7 @@ function startRandomEndgame() {
 }
 
 // Écran « Parcours » : chaque catégorie est un chemin d'exercices (ordre du catalogue, déjà rangé par
-// difficulté) ; le trait se dore à mesure qu'on avance et le prochain exercice est signalé. Rien n'est verrouillé.
+// difficulté) ; le trait se colore à mesure qu'on avance et le prochain exercice est signalé. Rien n'est verrouillé.
 function initEndgame() {
     const panel = document.getElementById('endgame-panel');
     if (!panel) return;

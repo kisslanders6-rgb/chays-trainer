@@ -3,38 +3,32 @@
    ───────────────────────────────────────────────────────────────────────────
    Typographie : Fraunces (nom) + IBM Plex Mono (TRAINER, chiffres, notation), chargées par style.css.
    Accueil « Nocturne » dans le thème sombre (data-theme="light", nom historique) ; « Studio » dans le
-   clair. Les blocs [data-stagger] montent en cascade à la fin de la cinématique (js/core/introTimeline.js).
+   clair. Couleurs dérivées de l'échiquier actif (--board-*, style.css) : cartes Blancs / Noirs aux teintes
+   exactes des cases claires / sombres, filets et repères en --board-accent. Les blocs [data-stagger]
+   montent en cascade à la fin de la cinématique (js/core/introTimeline.js).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
     --font-display: 'Fraunces', 'Georgia', serif;
     --font-note: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
-    --laiton: #a8843f;
     --ease-out: cubic-bezier(.16, 1, .3, 1);
 
-    /* Studio : cartes ivoire et sapin */
-    --card-w-bg: linear-gradient(165deg, #fffdf8 0%, #efe9da 100%);
-    --card-w-ink: #1f2a1a;
-    --card-w-line: rgba(176, 141, 72, .38);
-    --card-b-bg: linear-gradient(165deg, #3a5a2e 0%, #1f3219 100%);
-    --card-b-ink: #f3ecd9;
-    --card-b-line: rgba(217, 189, 126, .45);
-    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 1px 2px rgba(31, 42, 26, .06), 0 18px 34px -22px rgba(31, 42, 26, .5);
-    --card-light: rgba(255, 255, 255, .38);
+    /* Cartes : case claire (Blancs) et case sombre (Noirs) de l'échiquier actif */
+    --card-w-bg: var(--board-light);
+    --card-w-ink: var(--board-on-light);
+    --card-w-line: color-mix(in srgb, var(--board-dark) 35%, var(--board-light));
+    --card-b-bg: var(--board-dark);
+    --card-b-ink: var(--board-on-dark);
+    --card-b-line: color-mix(in srgb, var(--board-dark) 80%, #000);
+    --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, .14), transparent 60%);
+    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 2px rgba(0, 0, 0, .06), 0 18px 34px -22px rgba(0, 0, 0, .45);
+    --card-light: rgba(255, 255, 255, .3);
     --card-piece-shadow: drop-shadow(0 10px 12px rgba(0, 0, 0, .18));
 }
 [data-theme="light"] {
-    --laiton: #c9a75e;
-    /* Nocturne : verre dépoli, filet laiton, halo */
-    --card-w-bg: linear-gradient(160deg, rgba(236, 230, 214, .16), rgba(236, 230, 214, .04));
-    --card-w-ink: #ece6d6;
-    --card-w-line: rgba(201, 167, 94, .26);
-    --card-b-bg: linear-gradient(160deg, rgba(236, 230, 214, .08), rgba(236, 230, 214, .02));
-    --card-b-ink: #ece6d6;
-    --card-b-line: rgba(201, 167, 94, .26);
-    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 24px 40px -24px rgba(0, 0, 0, .8);
-    --card-light: rgba(201, 167, 94, .22);
-    --card-piece-shadow: drop-shadow(0 0 16px rgba(201, 167, 94, .28)) drop-shadow(0 10px 10px rgba(0, 0, 0, .4));
+    --card-b-line: color-mix(in srgb, var(--board-dark) 75%, #fff);
+    --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 24px 40px -24px rgba(0, 0, 0, .8);
+    --card-piece-shadow: drop-shadow(0 10px 10px rgba(0, 0, 0, .35));
 }
 
 /* ─── Signature ─────────────────────────────────────────────────────────────
@@ -51,14 +45,14 @@
     margin-top: .2em;
     font-family: var(--font-note); font-weight: 500; font-size: .27em;
     letter-spacing: .46em; margin-right: -.46em;          /* compense l'approche finale */
-    text-transform: uppercase; color: var(--ct-laiton);
+    text-transform: uppercase; color: color-mix(in srgb, var(--ct-encre) 72%, transparent);
 }
 
 /* ─── Barre du haut ─── */
 .topnav-brand { gap: 10px; }
 .topnav-wm { --wm-size: 17px; }
 .topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); position: relative; }
-.topnav-tab.active::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1.5px; border-radius: 1px; background: var(--laiton); }
+.topnav-tab.active::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1.5px; border-radius: 1px; background: var(--board-accent); }
 .topnav-tab:hover { background: transparent; color: var(--text); }
 @media (min-width: 1200px) { .topnav-wm { --wm-size: 20px; } }
 @media (max-width: 599px)  { .topnav-wm { --wm-size: 14px; } .topnav-tab.active::after { left: 14px; right: 14px; } }
@@ -66,12 +60,13 @@
 /* Titres d'onglets dans la nouvelle typographie */
 .tab-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; font-size: 24px; }
 
-/* ─── Fond de l'accueil Nocturne : halo laiton et échiquier fantôme ─── */
+/* ─── Fond de l'accueil Nocturne : halo et échiquier fantôme aux teintes de l'échiquier ───
+   Sur toute la largeur de la fenêtre (.setup-screen n'a pas de largeur maximale) ; trame centrée. */
 [data-theme="light"] .setup-screen::before {
     content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background:
-        radial-gradient(90% 55% at 50% 0%, rgba(201, 167, 94, .10), transparent 70%),
-        repeating-conic-gradient(rgba(236, 230, 214, .03) 0 25%, transparent 0 50%) 0 0 / 44px 44px;
+        radial-gradient(90% 55% at 50% 0%, color-mix(in srgb, var(--board-accent) 12%, transparent), transparent 70%),
+        repeating-conic-gradient(color-mix(in srgb, var(--board-light) 4%, transparent) 0 25%, transparent 0 50%) 50% 0 / 44px 44px;
     -webkit-mask: linear-gradient(#000 0%, rgba(0, 0, 0, .4) 50%, transparent 85%);
             mask: linear-gradient(#000 0%, rgba(0, 0, 0, .4) 50%, transparent 85%);
 }
@@ -81,10 +76,10 @@
 .home-content:has(#home-tab-play:not(.hidden)) { justify-content: flex-start; }
 #home-tab-play.home-play { max-width: 480px; align-items: stretch; text-align: left; gap: 22px; }
 .home-hero { display: flex; flex-direction: column; gap: 6px; }
-.home-greet { font-family: var(--font-note); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--laiton); }
+.home-greet { font-family: var(--font-note); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--board-accent); }
 .home-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 6vw, 40px); line-height: 1.06; letter-spacing: -.012em; color: var(--text); text-wrap: balance; }
 
-/* Répertoires : puces sans cadre, l'active soulignée de laiton (aussi dans Statistiques et Entraînement) */
+/* Répertoires : puces sans cadre, l'active soulignée d'accent (aussi dans Statistiques et Entraînement) */
 #home-tab-play .repertoire-select { gap: 4px; }
 #home-tab-play .repertoire-select-label { font-family: var(--font-note); font-weight: 500; letter-spacing: .12em; font-size: 11px; }
 #home-tab-play .repertoire-row::before { display: none; }
@@ -92,9 +87,9 @@
 .repertoire-chip { padding: 7px 2px; margin-right: 14px; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--text-muted); font-weight: 500; position: relative; }
 .repertoire-chip:hover { color: var(--text); border: 0; transform: none; }
 .repertoire-chip.active { background: none; color: var(--text); font-weight: 600; }
-.repertoire-chip.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 1.5px; background: var(--laiton); }
-.repertoire-chip-new { color: var(--laiton); border: 0; }
-.repertoire-chip:focus-visible { outline: 2px solid var(--laiton); outline-offset: 3px; border-radius: 4px; }
+.repertoire-chip.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 1.5px; background: var(--board-accent); }
+.repertoire-chip-new { color: var(--board-accent); border: 0; }
+.repertoire-chip:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 3px; border-radius: 4px; }
 
 /* Cartes Blancs / Noirs */
 .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -106,10 +101,9 @@
     font: inherit; text-align: left; cursor: pointer;
     transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out), border-color .3s;
 }
-.home-card.is-white { color: var(--card-w-ink); background: var(--card-w-bg); border: 1px solid var(--card-w-line); }
-.home-card.is-black { color: var(--card-b-ink); background: var(--card-b-bg); border: 1px solid var(--card-b-line); }
+.home-card.is-white { color: var(--card-w-ink); background: var(--card-sheen), var(--card-w-bg); border: 1px solid var(--card-w-line); }
+.home-card.is-black { color: var(--card-b-ink); background: var(--card-sheen), var(--card-b-bg); border: 1px solid var(--card-b-line); }
 .home-card { box-shadow: var(--card-shadow); }
-[data-theme="light"] .home-card { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .home-card::before {        /* échiquier ton sur ton, estompé depuis le coin */
     content: ''; position: absolute; inset: 0; z-index: -1; opacity: .06;
     background: repeating-conic-gradient(currentColor 0 25%, transparent 0 50%) 0 0 / 22px 22px;
@@ -120,10 +114,10 @@
     content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity .35s;
     background: radial-gradient(220px circle at var(--mx) var(--my), var(--card-light), transparent 65%);
 }
-.home-card:hover { transform: translateY(-3px); border-color: var(--laiton); }
+.home-card:hover { transform: translateY(-3px); border-color: var(--board-accent); }
 .home-card:hover::after { opacity: 1; }
 .home-card:active { transform: translateY(-1px) scale(.985); transition-duration: .12s; }
-.home-card:focus-visible { outline: 2px solid var(--laiton); outline-offset: 3px; }
+.home-card:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 3px; }
 .home-card-head { display: flex; flex-direction: column; gap: 3px; }
 .home-card-name { font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 1.05; }
 .home-card-meta { font-family: var(--font-note); font-size: 11px; opacity: .72; }
@@ -135,8 +129,8 @@
 
 /* Reprendre */
 #home-tab-play .resume-card { width: 100%; margin: 0; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); box-shadow: none; border-radius: 16px; }
-#home-tab-play .resume-card:hover { transform: none; border-color: var(--laiton); box-shadow: none; }
-#home-tab-play .resume-ico { background: transparent; color: var(--laiton); border: 1px solid var(--border); border-radius: 50%; }
+#home-tab-play .resume-card:hover { transform: none; border-color: var(--board-accent); box-shadow: none; }
+#home-tab-play .resume-ico { background: transparent; color: var(--board-accent); border: 1px solid var(--border); border-radius: 50%; }
 #home-tab-play .resume-txt b { font-weight: 600; }
 #home-tab-play .resume-txt small { font-family: var(--font-note); }
 #resume-slot:empty { display: none; }

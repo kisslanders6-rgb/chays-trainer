@@ -28,7 +28,7 @@ const IntroTimeline = (function () {
         home: 560, homeStep: 70,        // blocs [data-stagger] de l'onglet affiché
         enterDur: 560
     };
-    const COLORS = ['--ct-encre', '--ct-grave', '--ct-laiton'];
+    const COLORS = ['--ct-encre', '--ct-grave'];
     let running = [];
 
     function anim(el, keyframes, options) {
@@ -53,7 +53,7 @@ const IntroTimeline = (function () {
         ], options);
     }
 
-    // Palette fixe du splash → couleurs du thème lues sur la cible.
+    // Version claire du logo (splash) → couleurs du thème lues sur la cible.
     function recolor(el, target, options) {
         const from = getComputedStyle(el), to = getComputedStyle(target);
         const kf = [{}, {}];

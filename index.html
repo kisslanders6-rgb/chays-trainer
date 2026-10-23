@@ -21,6 +21,11 @@
         (function () {
             var d = document.documentElement;
             try { var t = localStorage.getItem('chessTrainer_theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
+            try {       // thème d'échiquier dès la première image : le logo et l'accueil en dérivent (settings.js le revalide)
+                var p = JSON.parse(localStorage.getItem('chessTrainer_prefs') || '{}') || {}, s = JSON.parse(localStorage.getItem('chessTrainer_settings') || '{}') || {};
+                var b = (p.boardTheme && p.boardTheme.v) || s.boardTheme;
+                if (typeof b === 'string' && /^[a-z]+$/.test(b)) d.setAttribute('data-board', b);
+            } catch (e) {}
             try {
                 if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) {
                     d.classList.add('splashing');
@@ -48,16 +53,16 @@
       <g id="piece">
         <g id="socle" stroke-width="5">
           <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="380" data-fill="820" d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
-          <path id="socle-plinthe" class="laiton" pathLength="1" data-t="1000" data-d="300" d="M209.2 334.9 H302.8"/>
+          <path id="socle-plinthe" class="grave" pathLength="1" data-t="1000" data-d="300" d="M209.2 334.9 H302.8"/>
         </g>
         <g id="corps" stroke-width="5">
           <path id="corps-fut" class="plein" pathLength="1" data-t="120" data-d="640" data-fill="820" d="M237.8 180.2 C233.9 216.6 241.7 250.4 233.9 279 C230 294.6 219.6 306.3 209.2 315.4 H302.8 C292.4 306.3 282 294.6 278.1 279 C270.3 250.4 278.1 216.6 274.2 180.2 Z"/>
         </g>
         <g id="couronne" stroke-width="5">
           <path id="couronne-tete" class="plein" pathLength="1" data-t="360" data-d="480" data-fill="860" d="M213.1 86.6 C231.3 102.2 244.3 106.1 256 97 C267.7 106.1 280.7 102.2 298.9 86.6 C288.5 107.4 282 125.6 279.4 143.8 H232.6 C230 125.6 223.5 107.4 213.1 86.6 Z"/>
-          <path id="anneau-haut" class="laiton" pathLength="1" data-t="560" data-d="380" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
-          <path id="anneau-bas" class="laiton" pathLength="1" data-t="620" data-d="340" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
-          <path id="croix" class="laiton" pathLength="1" data-t="760" data-d="320" d="M256 39.8 V84 M239.1 58 H272.9"/>
+          <path id="anneau-haut" class="trait" pathLength="1" data-t="560" data-d="380" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
+          <path id="anneau-bas" class="trait" pathLength="1" data-t="620" data-d="340" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
+          <path id="croix" class="trait" pathLength="1" data-t="760" data-d="320" d="M256 39.8 V84 M239.1 58 H272.9"/>
         </g>
         <g id="gravure" stroke-width="4">
           <path id="gravure-trait" class="grave" pathLength="1" data-t="640" data-d="460" data-from="encre" data-swap="900" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
@@ -75,12 +80,13 @@
         if (!document.documentElement.classList.contains('splashing') || !sp || !sp.animate
             || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         var DRAW = 'cubic-bezier(.65, 0, .35, 1)', SOFT = 'cubic-bezier(.4, 0, .2, 1)';
+        var encre = getComputedStyle(sp.querySelector('.sp-stage')).getPropertyValue('--ct-encre').trim();
         sp.querySelectorAll('.sp-logo [pathLength]').forEach(function (el) {
             el.style.strokeDasharray = '1 1';
             el.animate([{ strokeDashoffset: 1, opacity: 0 }, { opacity: 1, offset: .02 }, { strokeDashoffset: 0, opacity: 1 }],
                        { duration: +el.dataset.d, delay: +el.dataset.t, easing: DRAW, fill: 'both' });
             if (el.dataset.fill) el.animate([{ fillOpacity: 0 }, { fillOpacity: 1 }], { duration: 520, delay: +el.dataset.fill, easing: SOFT, fill: 'both' });
-            if (el.dataset.from) el.animate([{ stroke: '#2f4a26' }, { stroke: getComputedStyle(el).stroke }], { duration: 480, delay: +el.dataset.swap, easing: SOFT, fill: 'both' });
+            if (el.dataset.from) el.animate([{ stroke: encre }, { stroke: getComputedStyle(el).stroke }], { duration: 480, delay: +el.dataset.swap, easing: SOFT, fill: 'both' });
         });
     })();
 </script>
@@ -91,16 +97,16 @@
     <g id="ct-piece">
     <g stroke-width="5">
     <path class="plein" d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
-    <path class="laiton" d="M209.2 334.9 H302.8"/>
+    <path class="grave" d="M209.2 334.9 H302.8"/>
     </g>
     <g stroke-width="5">
     <path class="plein" d="M237.8 180.2 C233.9 216.6 241.7 250.4 233.9 279 C230 294.6 219.6 306.3 209.2 315.4 H302.8 C292.4 306.3 282 294.6 278.1 279 C270.3 250.4 278.1 216.6 274.2 180.2 Z"/>
     </g>
     <g stroke-width="5">
     <path class="plein" d="M213.1 86.6 C231.3 102.2 244.3 106.1 256 97 C267.7 106.1 280.7 102.2 298.9 86.6 C288.5 107.4 282 125.6 279.4 143.8 H232.6 C230 125.6 223.5 107.4 213.1 86.6 Z"/>
-    <path class="laiton" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
-    <path class="laiton" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
-    <path class="laiton" d="M256 39.8 V84 M239.1 58 H272.9"/>
+    <path class="trait" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
+    <path class="trait" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
+    <path class="trait" d="M256 39.8 V84 M239.1 58 H272.9"/>
     </g>
     <g stroke-width="4">
     <path class="grave" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>

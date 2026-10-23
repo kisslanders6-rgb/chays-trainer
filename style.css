@@ -7,7 +7,7 @@
 }
 
 /* ─── THÈME CLAIR « Papier » (data-theme="dark", nom historique) ────────────
-   Le jour de Nocturne : papier crème, surfaces ivoire, encre sapin, laiton miel, ombres chaudes. */
+   Le jour de Nocturne : papier crème, surfaces ivoire, encre sapin, ombres chaudes. */
 :root, [data-theme="dark"] {
     --bg: #f4f2eb;
     --bg-elevated: #fffdf8;
@@ -338,7 +338,7 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 .move-num { color: var(--text-dim); }
 
 /* ─── SETUP SCREEN ───────────────────────────────────────────────────────── */
-.setup-screen { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100vh - 56px); width: 100%; max-width: 1280px; margin: 0 auto; gap: 0; padding-top: 48px; }
+.setup-screen { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100vh - 56px); width: 100%; gap: 0; padding-top: 48px; }     /* pleine largeur (fond) ; .home-content borne le contenu */
 
 .home-content { width: 100%; max-width: 720px; display: flex; flex-direction: column; align-items: center; gap: 28px; text-align: center; flex: 1; justify-content: center; }
 .home-tab { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 28px; }
@@ -866,6 +866,19 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
     --side-b-border: var(--board-dark);
     --side-glow:     color-mix(in srgb, var(--board-dark) 45%, transparent);
     --side-sheen:    linear-gradient(145deg, rgba(255,255,255,.16), transparent 55%);
+
+    /* Teintes globales de l'interface (logo, cartes de l'accueil, filets, repères) :
+         --board-light / --board-dark  cases claires / sombres, exactes
+         --board-deep    case sombre, assombrie seulement si elle est trop pâle pour porter un trait (Glace)
+         --board-accent  case sombre ramenée à une clarté lisible sur le fond (remplace l'ancien laiton)
+         --board-on-dark / --board-on-light  encre lisible posée sur une case sombre / claire */
+    --board-deep:     oklch(from var(--board-dark) min(l, .66) c h);
+    --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
+    --board-on-dark:  oklch(from var(--board-dark) clamp(.24, (.68 - l) * 1000, .97) calc(c * .35) h);
+    --board-on-light: color-mix(in srgb, var(--board-dark) 22%, #120d04);
+}
+[data-theme="light"] {
+    --board-accent:   oklch(from var(--board-dark) max(l, .74) c h);
 }
 
 /* 2. Accents par thème d'échiquier — mode clair (data-theme="dark" dans ce projet)
@@ -1520,13 +1533,13 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 @media (prefers-reduced-motion: reduce) { .side-panel.open { animation: none; } }
 
 /* ─── EMBLÈME (assets/brand/chays-logo.svg) ──────────────────────────────── */
-/* Classes du logo maître ; couleurs par variables, en négatif crème dans le thème sombre. */
-:root                { --ct-encre: #2f4a26; --ct-laiton: #a8843f; --ct-grave: #f3ecd9; --ct-fond: #f5f5f3; }
-[data-theme="light"] { --ct-encre: #ece6d6; --ct-laiton: #c9a75e; --ct-grave: #141e16; }
+/* Classes du logo maître, aux deux teintes de l'échiquier actif : silhouette en case sombre et gravure en
+   case claire ; inversé dans le thème sombre (silhouette claire sur fond nuit). */
+:root                { --ct-encre: var(--board-deep);  --ct-grave: var(--board-light); --ct-fond: #f5f5f3; }
+[data-theme="light"] { --ct-encre: var(--board-light); --ct-grave: var(--board-deep); }
 .ct-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .trait  { fill: none; stroke: var(--ct-encre); stroke-linecap: round; stroke-linejoin: round; }
 .plein  { fill: var(--ct-encre); stroke: var(--ct-encre); stroke-linejoin: round; }
-.laiton { fill: none; stroke: var(--ct-laiton); stroke-linecap: round; stroke-linejoin: round; }
 .grave  { fill: none; stroke: var(--ct-grave); stroke-linecap: round; stroke-linejoin: round; }
 .fond   { fill: var(--ct-fond); }
 
