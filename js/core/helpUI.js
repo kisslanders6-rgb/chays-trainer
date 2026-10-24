@@ -27,9 +27,10 @@ const HELP_GUIDES = [
         '<strong>Départ</strong> : position ciblée (l’échiquier rejoue les trois coups précédents) ou début de partie.',
         '<strong>Profondeur</strong> et <strong>exercice</strong> (1, 3 ou 5 coups, ou toute la variante) se règlent sous la séance, ou dans Paramètres › Jeu et entraînement.'], 'tab:training'],
     ['stats', 'bar-chart', 'Statistiques', 'Ce que vous maîtrisez, ce qui reste fragile', [
-        'Votre activité sur 30 jours : série de jours, réussites, erreurs, positions à réviser.',
-        'Un <strong>taux d’erreur</strong> par position, classé en maîtrisé, fragile ou à retravailler.',
-        'Les positions sont regroupées par ligne d’ouverture (les 4 premiers demi-coups) : ouvrez une ligne, touchez un coup pour revoir la position.'], 'tab:stats'],
+        '<strong>Réviser maintenant</strong> lance sur l’échiquier les positions dues du répertoire et de la couleur choisis ; chaque coup compte comme un essai.',
+        'Six niveaux par position : à retravailler, fragile, en progrès, solide, à confirmer (moins de 3 essais) et maîtrisée. Le bouton <strong>i</strong> en donne les seuils.',
+        'Les positions sont regroupées par <strong>ouverture nommée</strong> ; chacune se révise (▶) ou s’affiche en aperçu, le coup attendu masqué.',
+        'La régularité (série, calendrier, réussite par semaine) compte tous les répertoires.'], 'tab:stats'],
     ['endgame', 'pawn', 'Finales', 'Des mats élémentaires aux finales de tours', [
         'Mats élémentaires, finales de pions (opposition, percée, étude de Réti) et de tours (Lucena, Philidor).',
         'L’adversaire répond tout seul et <strong>chaque coup est vérifié par le calcul</strong> : un coup qui laisse échapper le gain, ou qui perd, est signalé et peut être annulé.',

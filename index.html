@@ -231,15 +231,19 @@
             </div>
 
             <!-- Onglet Statistiques -->
+            <!-- Barre de contexte collante (répertoire, couleur, aide), puis le contenu rendu par stats.js -->
             <div id="home-tab-stats" class="home-tab hidden">
-                <div class="tab-title"><svg class="ico"><use href="#i-bar-chart"/></svg> Statistiques</div>
-                <div class="tab-sub">Vos performances par position, d'après les erreurs commises dans « Jouer » et « Entraînement ». Vos positions sont regroupées par ligne d'ouverture, les plus fragiles en tête ; touchez une position pour la revoir.</div>
-                <div class="repertoire-list"></div>
-                <div class="seg">
-                    <button class="seg-btn active" id="stats-seg-w" onclick="setStatsColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                    <button class="seg-btn" id="stats-seg-b" onclick="setStatsColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
+                <div class="st-scope">
+                    <label class="st-rep"><span>Répertoire</span><select id="stats-rep" data-change="statsRep" aria-label="Répertoire"></select></label>
+                    <div class="seg st-seg" role="group" aria-label="Couleur">
+                        <button class="seg-btn active" id="stats-seg-w" data-action="statsColor" data-arg="w" aria-pressed="true"><span class="glyph" data-glyph="K"></span> Blancs</button>
+                        <button class="seg-btn" id="stats-seg-b" data-action="statsColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
+                        <button class="seg-btn" id="stats-seg-all" data-action="statsColor" data-arg="all" aria-pressed="false">Les deux</button>
+                    </div>
+                    <button class="st-info-btn" id="stats-info-btn" data-action="statsInfo" aria-expanded="false" aria-controls="stats-info" title="Comment lire ces statistiques" aria-label="Comment lire ces statistiques"><svg class="ico"><use href="#i-info"/></svg></button>
+                    <div class="st-info" id="stats-info" role="note" hidden></div>
                 </div>
-                <div id="stats-body" class="stats-body"></div>
+                <div id="stats-body" class="st-body"></div>
             </div>
 
             <!-- Onglet Entraînement ciblé -->
@@ -291,8 +295,11 @@
                             <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
                                 <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
                             </button>
-                            <button class="btn btn-primary btn-grow" data-modes="preview" onclick="goHome('stats')">
+                            <button class="btn btn-grow" data-modes="preview" onclick="goHome('stats')">
                                 <svg class="ico"><use href="#i-arrow-left"/></svg><span class="btn-label"><span class="desktop-only">Statistiques</span><span class="mobile-only">Stats</span></span>
+                            </button>
+                            <button class="btn btn-primary btn-grow" data-modes="preview" onclick="trainStatsPreview()" title="Jouer le coup de cette position (compte comme un essai)">
+                                <svg class="ico"><use href="#i-play"/></svg><span class="btn-label">S'entraîner</span>
                             </button>
                             <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
@@ -328,7 +335,7 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool is-exit" onclick="goHome('training')" title="Quitter l'entraînement">
+                            <button class="btn btn-tool is-exit" onclick="quitTraining()" title="Quitter l'entraînement">
                                 <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
                             </button>
                         </div>
@@ -543,6 +550,7 @@
 <script src="js/modules/openings/openingsUI.js"></script>
 <script src="js/modules/openings/treeView.js"></script>
 <script src="js/modules/openings/annotations.js"></script>
+<script src="js/modules/stats/openingNames.js"></script>
 <script src="js/modules/stats/stats.js"></script>
 <script src="js/modules/training/training.js"></script>
 <script src="js/modules/endgame/egCore.js"></script>

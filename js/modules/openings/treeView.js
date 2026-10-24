@@ -11,7 +11,7 @@
  * l'échiquier se place juste avant : le prochain coup joué devient la référence) et « Supprimer ».
  * Les coups « isolés » (non rattachés à la position de départ) peuvent être envoyés à la corbeille.
  * Maîtrise : mes coups sont colorés selon leur niveau (mêmes seuils que les Statistiques) et chaque
- * départ de variante porte une petite barre : part de coups maîtrisés / fragiles / à retravailler en aval.
+ * départ de variante porte une petite barre : répartition des niveaux des coups en aval (cf. STATS_LEVELS, stats.js).
  *
  * Deux vues :
  *   « Depuis ici »   : seuls le chemin menant à la position affichée, la position elle-même
@@ -219,20 +219,21 @@ function cleanIsolatedMoves() {
 
 // Niveau de chaque coup (r.lv) et, pour les départs de variantes, répartition des niveaux en aval (r.mix).
 function _computeMastery(rows) {
-    const lvOf = r => !r.attempts ? 'mastered' : typeof _level === 'function' ? _level(r) : (r.failures ? 'weak' : 'mastered');
     const ps = rows.map(r => r.path.join(' '));
-    rows.forEach(r => { if (r.kind === 'me' && !r.ref) r.lv = lvOf(r); });
+    rows.forEach(r => { if (r.kind === 'me' && !r.ref) r.lv = _level(r); });
     rows.forEach((r, i) => {
         if (!(i === 0 || r.branch)) return;
-        const mix = { mastered: 0, fragile: 0, weak: 0 };
-        for (let j = i; j < rows.length && (j === i || ps[j].startsWith(ps[i] + ' ')); j++) if (rows[j].lv) mix[rows[j].lv]++;
-        if (mix.mastered + mix.fragile + mix.weak > 1) r.mix = mix;
+        const mix = {};
+        STATS_LEVEL_ORDER.forEach(l => { mix[l] = 0; });
+        let n = 0;
+        for (let j = i; j < rows.length && (j === i || ps[j].startsWith(ps[i] + ' ')); j++) if (rows[j].lv) { mix[rows[j].lv]++; n++; }
+        if (n > 1) r.mix = mix;
     });
 }
 
 function _masteryBar(mix) {
-    const n = mix.mastered + mix.fragile + mix.weak, pct = Math.round(100 * mix.mastered / n);
-    const segs = ['mastered', 'fragile', 'weak'].filter(l => mix[l]).map(l => `<i class="${l}" style="flex:${mix[l]}"></i>`).join('');
+    const n = STATS_LEVEL_ORDER.reduce((s, l) => s + mix[l], 0), pct = Math.round(100 * mix.mastered / n);
+    const segs = STATS_LEVEL_ORDER.filter(l => mix[l]).map(l => `<i class="lv-${l}" style="flex:${mix[l]}"></i>`).join('');
     return `<span class="tree-mbar" title="Cette variante : ${pct} % de coups maîtrisés (${n} coups${mix.weak ? `, ${mix.weak} à retravailler` : ''})">${segs}</span>`;
 }
 

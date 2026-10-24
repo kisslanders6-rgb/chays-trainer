@@ -23,6 +23,10 @@
  *   - Solution        : 2e appui sur Indice (cf. showHint) ; surligne le coup attendu, aucune réussite comptée.
  *   - Blancs et Noirs mélangés : la couleur est tirée à pile ou face avant chaque exercice (chaque variante),
  *     parmi les couleurs qui ont des positions ; la position est ensuite choisie comme d'habitude.
+ *
+ * Révision ciblée (startReviewQueue, lancée depuis l'onglet Statistiques) : une liste de positions précises,
+ * posées une fois chacune dans l'ordre, en coup unique ; les essais comptent comme ci-dessus. À la fin
+ * (ou avec « Quitter »), retour à l'onglet d'origine.
  */
 
 'use strict';
@@ -40,7 +44,8 @@ const TRAIN_SEQ_END      = 999;
 const trainingState = {
     busy: false, timers: [], lastKey: null, current: null, ok: 0, reason: '', mixed: false,
     seq: { len: 1, done: 0, assisted: false },
-    solutionFor: null
+    solutionFor: null,
+    queue: null, queueTotal: 0, queueClean: 0, erred: false, returnTab: null    // révision ciblée
 };
 
 // ─── OPTIONS (persistées) ─────────────────────────────────────────────────────
@@ -87,8 +92,9 @@ function stopTraining() {
 function _trainingSummary(color) {
     const all = Object.values(readDBFor(currentRepertoire, color));
     const pool = all.filter(_isEligible), now = Date.now();
-    const lv = { mastered: 0, fragile: 0, weak: 0 };
-    pool.forEach(e => { lv[e.attempts ? _level(e) : 'mastered']++; });
+    const lv = {};
+    STATS_LEVEL_ORDER.forEach(l => { lv[l] = 0; });
+    pool.forEach(e => { lv[_level(e)]++; });
     const due  = pool.filter(e => isDue(e, now)).length;
     const next = pool.length && !due ? Math.min(...pool.map(dueOf)) : 0;
     return { all: all.length, total: pool.length, due, next, lv,
@@ -193,8 +199,8 @@ function initTraining() {
     const forecast = `<div class="trs-bars" role="img" aria-label="Révisions prévues sur 7 jours">${days.map((d, i) =>
         `<div title="${d.n} révision${d.n > 1 ? 's' : ''}"><span class="trs-bar-n">${d.n || ''}</span><i class="${i ? '' : 'today'}" style="height:${Math.round(100 * d.n / max)}%"></i><span>${dayName(d.t, i)}</span></div>`).join('')}</div>`;
     const mastery = sides.map(c => {
-        const sm = sums[c], seg = ['mastered', 'fragile', 'weak'].filter(l => sm.lv[l]).map(l => `<i class="tr-bar-seg ${l}" style="flex:${sm.lv[l]}"></i>`).join('');
-        return `<div class="trs-mastery"><span>${c === 'w' ? 'Blancs' : 'Noirs'}</span><span class="tr-bar">${seg}</span><b>${sm.mastery} %</b></div>`;
+        const sm = sums[c];
+        return `<div class="trs-mastery"><span>${c === 'w' ? 'Blancs' : 'Noirs'}</span>${levelBarHTML(sm.lv, 'tr-bar')}<b>${sm.mastery} %</b></div>`;
     }).join('');
     const plan = `
         <section class="trs-plan">
@@ -238,6 +244,8 @@ function switchTrainingColor(color) {
 
 // color : 'w' | 'b' | 'mix' (Blancs et Noirs mélangés).
 function startTraining(color) {
+    trainingState.queue = null;
+    trainingState.returnTab = null;
     trainingState.mixed = color === 'mix';
     if (trainingState.mixed) color = _pickTrainingColor();
     if (!color) { trainingState.mixed = false; initTraining(); return; }
@@ -249,6 +257,45 @@ function startTraining(color) {
     trainingState.lastKey = null;
     showGameScreen(color);
     nextDrill();
+}
+
+// Révision ciblée : items = [{ color, key }] dans l'ordre voulu ; returnTab = onglet rouvert à la fin.
+function startReviewQueue(items, returnTab) {
+    const queue = items.filter(it => readDBFor(currentRepertoire, it.color)[it.key]);
+    if (!queue.length) return;
+    trainingState.mixed      = false;
+    trainingState.queue      = queue;
+    trainingState.queueTotal = queue.length;
+    trainingState.queueClean = 0;
+    trainingState.returnTab  = returnTab || 'training';
+    trainingState.ok         = 0;
+    trainingState.lastKey    = null;
+    playerColor = queue[0].color;
+    gameMode    = 'training';
+    loadDB();
+    showGameScreen(playerColor);
+    nextDrill();
+}
+
+function _nextQueued() {
+    const q = trainingState.queue;
+    while (q.length) {
+        const item = q.shift();
+        if (item.color !== playerColor) { playerColor = item.color; loadDB(); showGameScreen(item.color); }
+        if (openingDB[item.key]) { _startDrill(item.key, 1); return; }
+    }
+    const n = trainingState.queueTotal, clean = trainingState.queueClean, back = trainingState.returnTab;
+    trainingState.queue = null;
+    setStatus(`Révision terminée · ${clean}/${n} du premier coup`, 'ok', 'Retour à l\'onglet ' + (back === 'stats' ? 'Statistiques' : 'Entraînement') + '…');
+    _later(() => goHome(back), 1800);
+}
+
+// Bouton « Quitter » de l'entraînement : retour à l'onglet d'où la séance a été lancée.
+function quitTraining() {
+    const back = trainingState.returnTab || 'training';
+    trainingState.queue = null;
+    trainingState.returnTab = null;
+    goHome(back);
 }
 
 // ─── POIDS DE TIRAGE (répétition espacée, sélection probabiliste continue) ──
@@ -350,6 +397,7 @@ function _findPathToKey(key) {
 
 function nextDrill() {
     stopTraining();
+    if (trainingState.queue) { _nextQueued(); return; }
     if (trainingState.mixed) {
         const c = _pickTrainingColor();
         if (c && c !== playerColor) { playerColor = c; loadDB(); showGameScreen(c); }
@@ -357,14 +405,19 @@ function nextDrill() {
     if (!_trainingPool().length) { setStatus('Aucune position dans ce répertoire.', 'info'); return; }
     if (trainingSettings.fromStart === 1 && _startFullLine()) return;     // sinon : repli sur une position ciblée
 
-    const key   = _pickDrill();
+    _startDrill(_pickDrill(), trainingSettings.seqLen);
+}
+
+// Pose la position `key` (mise en situation puis main rendue) ; seqLen = coups à enchaîner.
+function _startDrill(key, seqLen) {
     const entry = openingDB[key];
+    trainingState.erred       = false;
     trainingState.current     = key;
     trainingState.reason      = _drillReason(entry);
     trainingState.lastKey     = key;
     trainingState.busy        = true;
     trainingState.solutionFor = null;
-    trainingState.seq         = { len: trainingSettings.seqLen, done: 0, assisted: false };
+    trainingState.seq         = { len: seqLen, done: 0, assisted: false };
 
     // Chemin absent ou vide : reconstitution via les autres entrées, puis auto-réparation de l'entrée.
     let fullPath = (entry.path && entry.path.length) ? entry.path : null;
@@ -404,6 +457,7 @@ function nextDrill() {
 
 function _seqLabel() {
     const s = trainingState.seq;
+    if (trainingState.queue) return trainingState.queueTotal > 1 ? ` · ${trainingState.queueTotal - trainingState.queue.length}/${trainingState.queueTotal}` : '';
     if (s.len <= 1) return '';
     return ` · coup ${s.done + 1}${s.len < TRAIN_SEQ_END ? '/' + s.len : ''}`;
 }
@@ -501,7 +555,11 @@ function _playOpponentReply(opp) {
 }
 
 function _finishDrill() {
-    if (!trainingState.seq.assisted) { trainingState.ok++; playSound('success'); }
+    if (!trainingState.seq.assisted) {
+        trainingState.ok++;
+        if (trainingState.queue && !trainingState.erred) trainingState.queueClean++;
+        playSound('success');
+    }
     _later(nextDrill, 1400);
 }
 
@@ -567,6 +625,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         entry.failures++;
         recordReview(entry, false);
         saveDB();
+        trainingState.erred = true;
         const pct = Math.round(100 * entry.failures / entry.attempts);
         _rejectMove(to, '✗ Pas le bon coup', `Taux d'erreur : ${pct} %. Réessayez, ou appuyez sur Indice.`);
         noteMistake(key);

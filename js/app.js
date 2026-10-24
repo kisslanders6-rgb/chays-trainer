@@ -248,7 +248,7 @@ function showGameScreen(color) {
     // Badge de couleur : bouton de changement de couleur en « Jouer » et en Entraînement.
     const badge  = document.getElementById('color-badge');
     const mixed  = gameMode === 'training' && typeof trainingState !== 'undefined' && trainingState.mixed;
-    badge.disabled = gameMode !== 'play' && gameMode !== 'training';
+    badge.disabled = (gameMode !== 'play' && gameMode !== 'training') || (gameMode === 'training' && !!trainingState.queue);   // révision ciblée : couleur imposée
     badge.title    = badge.disabled ? '' : mixed ? 'Blancs et Noirs mélangés — cliquer pour réviser seulement les ' + (color === 'w' ? 'Noirs' : 'Blancs')
                                               : `Passer aux ${color === 'w' ? 'Noirs' : 'Blancs'}`;
     badge.innerHTML = `<span class="glyph" data-glyph="${color === 'w' ? 'K' : 'k'}"></span> ${color === 'w' ? 'BLANCS' : 'NOIRS'}`

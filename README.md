@@ -4,7 +4,7 @@ Entraîneur d'échecs en français, sans dépendance ni étape de compilation : 
 
 - **Jouer** : vous jouez vos coups et ceux de l'adversaire. Dans une position inconnue, votre coup devient l'unique réponse enregistrée. Ensuite, il faut la retrouver.
 - **Entraînement** : les positions fragiles, oubliées ou dont la révision est due reviennent en priorité. L'échiquier rejoue les trois coups précédents pour remettre la position en contexte.
-- **Statistiques** : taux d'erreur par position, activité sur 30 jours, série de jours, révisions dues.
+- **Statistiques** : révisions dues avec lancement direct sur l'échiquier, maîtrise en six niveaux, points faibles, positions regroupées par ouverture nommée, régularité (série, calendrier, réussite par semaine).
 - **Analyser mes parties** : récupère vos dernières parties Chess.com ou Lichess (pseudo, API publiques) ou un PGN collé ; chaque partie s'arrête sur le premier coup sorti du répertoire. Votre coup : erreur comptée sur la position. Coup adverse : nouveauté signalée.
 - **Finales** : mats élémentaires, finales de pions (vérifiées par une base exacte roi + pion contre roi) et défense de Philidor.
 - Import et export **PGN** et **JSON**, corbeille de 30 jours, flèches et cercles au clic droit, analyse de la position sur Lichess, mode hors ligne (PWA), synchronisation facultative entre appareils (Supabase).
