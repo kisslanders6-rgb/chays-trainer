@@ -246,7 +246,8 @@ function _timedTick() {
 }
 
 // Fin de séance (ou « Quitter » en cours de séance) : bilan, puis retour à l'onglet d'origine.
-function _endSession(early) {
+// stay : l'écran de jeu est quitté par ailleurs (logo, barre du haut) : bilan gardé, aucune navigation.
+function _endSession(early, stay) {
     const S = trainingState.session;
     if (!S) return;
     const first = [...S.results.values()];
@@ -269,7 +270,8 @@ function _endSession(early) {
     stopTraining();
     _renderSessionBar();
     const back = summary.returnTab;
-    if (back === 'training') trainingState.lastSummary = summary;
+    if (back === 'training' && (rows.length || !stay)) trainingState.lastSummary = summary;
+    if (stay) return;
     if (early || !rows.length) { goHome(back); return; }
     const msg = summary.kind === 'timed' ? `Temps écoulé · ${summary.score} bon${summary.score > 1 ? 's' : ''} coup${summary.score > 1 ? 's' : ''}`
         : `Séance terminée · ${summary.ok}/${summary.total} du premier coup`;
@@ -278,6 +280,15 @@ function _endSession(early) {
 }
 
 // Bouton « Quitter » : bilan de ce qui a été joué (séance guidée), puis retour à l'onglet d'origine.
+// Écran de jeu quitté sans « Quitter » (logo, pilule du répertoire, Données…) : la séance en cours
+// est close, son bilan gardé, pour que le mode libre et le badge de couleur ne la voient plus.
+function abandonSession() {
+    const S = trainingState.session;
+    if (!S) return;
+    if (S.results.size) _endSession(true, true);
+    else _clearSession();
+}
+
 function quitTraining() {
     const S = trainingState.session;
     if (S && S.results.size) { _endSession(true); return; }

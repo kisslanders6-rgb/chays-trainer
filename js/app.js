@@ -334,6 +334,7 @@ function resumeLastPlay() {
 function goHome(tab) {
     closeRepMenu();
     if (typeof stopTraining === 'function') stopTraining();
+    if (typeof abandonSession === 'function') abandonSession();
     if (typeof stopEndgame === 'function') stopEndgame();
     if (typeof setSheetOpen === 'function') setSheetOpen(false);
     if (typeof closeToolbarMore === 'function') closeToolbarMore();
