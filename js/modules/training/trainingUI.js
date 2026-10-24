@@ -115,8 +115,8 @@ function initTraining() {
         const b = document.getElementById('training-seg-' + c);
         if (b) { b.classList.toggle('active', c === _trColor); b.setAttribute('aria-pressed', c === _trColor); }
     });
-    const sel = document.getElementById('training-rep');
-    if (sel) sel.innerHTML = loadRepertoireList().map(n => `<option value="${escapeHtml(n)}"${n === currentRepertoire ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+    const rep = document.getElementById('training-rep');
+    if (rep) rep.innerHTML = repertoireDropdownHTML('trainingRep');
 
     const rows = _trRows(), now = Date.now();
     const summary = _trSummaryHTML(trainingState.lastSummary);
@@ -220,7 +220,7 @@ function _startLine(line) {
 
 registerActions({
     trainingColor: c => { _trColor = c; _trLineOpen = false; initTraining(); },
-    trainingRep: (_, el) => { if (el.value !== currentRepertoire) selectRepertoire(el.value); },
+    trainingRep: name => { if (name !== currentRepertoire) selectRepertoire(name); },
     trainingEx: kind => { if (kind !== 'line') trainingState.lastSummary = null; startTrainingExercise(kind); },
     trainingLine: i => { const o = _trOpenings()[Number(i)]; if (o) _startLine({ color: o.color, path: o.path, name: o.name }); },
     trainingReplayLine: () => { const s = trainingState.lastSummary; if (s && s.line) _startLine(s.line); },

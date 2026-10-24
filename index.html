@@ -234,7 +234,7 @@
             <!-- Barre de contexte collante (répertoire, couleur, aide), puis le contenu rendu par stats.js -->
             <div id="home-tab-stats" class="home-tab hidden">
                 <div class="st-scope">
-                    <label class="st-rep"><span>Répertoire</span><select id="stats-rep" data-change="statsRep" aria-label="Répertoire"></select></label>
+                    <div class="st-rep" id="stats-rep"></div>
                     <div class="seg st-seg" role="group" aria-label="Couleur">
                         <button class="seg-btn active" id="stats-seg-w" data-action="statsColor" data-arg="w" aria-pressed="true"><span class="glyph" data-glyph="K"></span> Blancs</button>
                         <button class="seg-btn" id="stats-seg-b" data-action="statsColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
@@ -250,7 +250,7 @@
             <!-- Barre de contexte collante (répertoire, couleur), puis le menu d'exercices rendu par trainingUI.js -->
             <div id="home-tab-training" class="home-tab hidden">
                 <div class="st-scope">
-                    <label class="st-rep"><span>Répertoire</span><select id="training-rep" data-change="trainingRep" aria-label="Répertoire"></select></label>
+                    <div class="st-rep" id="training-rep"></div>
                     <div class="seg st-seg" role="group" aria-label="Couleur">
                         <button class="seg-btn" id="training-seg-w" data-action="trainingColor" data-arg="w" aria-pressed="false"><span class="glyph" data-glyph="K"></span> Blancs</button>
                         <button class="seg-btn" id="training-seg-b" data-action="trainingColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
@@ -534,6 +534,7 @@
 <!-- ─── SCRIPTS (ordre de dépendance ; icons.js est chargé en tête de <body>) ─── -->
 <script src="js/core/utils.js"></script>
 <script src="js/core/panelKit.js"></script>
+<script src="js/core/dropdown.js"></script>
 <script src="js/core/network.js"></script>
 <script src="js/core/storageAdapter.js"></script>
 <script src="js/core/syncModel.js"></script>

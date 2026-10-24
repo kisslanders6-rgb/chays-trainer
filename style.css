@@ -1021,6 +1021,44 @@ button.color-badge:disabled { cursor: default; }
 
 .seg-sm .seg-btn { padding: 5px 14px; font-size: 12px; }
 
+/* Menu déroulant (js/core/dropdown.js) : bouton en pilule, liste en carte surélevée */
+.dd { position: relative; display: inline-flex; min-width: 0; }
+.dd-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px 0 14px;
+    border: 1.5px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm);
+    color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s;
+}
+@media (hover: hover) { .dd-btn:hover { border-color: var(--border-strong); } }
+.dd.open .dd-btn { border-color: var(--board-accent); }
+.dd-btn:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
+.dd-label { font-family: var(--font-note); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+.dd-value { min-width: 0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-btn > .ico { width: 14px; height: 14px; flex: none; color: var(--text-dim); transition: transform .2s; }
+.dd.open .dd-btn > .ico { transform: rotate(180deg); }
+.dd-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 120; min-width: max(100%, 220px); max-width: min(320px, calc(100vw - 32px));
+    max-height: 320px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow);
+    animation: dd-in .14s ease-out;
+}
+.dd-end .dd-menu { left: auto; right: 0; }
+@keyframes dd-in { from { opacity: 0; transform: translateY(-4px); } }
+.dd-opt {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px;
+    border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.dd-opt-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dd-opt-text small { font-size: 11.5px; color: var(--text-dim); }
+.dd-opt[aria-selected="true"] { font-weight: 650; }
+.dd-opt > .ico { width: 15px; height: 15px; flex: none; color: var(--board-accent); }
+@media (hover: hover) { .dd-opt:hover { background: var(--surface-hover); } }
+.dd-opt:focus-visible { outline: none; background: var(--surface-hover); box-shadow: inset 0 0 0 1.5px var(--board-accent); }
+.dd-foot { justify-content: flex-start; color: var(--board-accent); font-weight: 600; }
+.dd-foot > .ico { color: inherit; }
+.dd-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+.dd-sm .dd-btn { height: 32px; padding: 0 10px 0 12px; border-radius: 10px; font-size: 12.5px; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .dd-menu { animation: none; } .dd-btn > .ico { transition: none; } }
+
 @media (max-width: 599px) {
     .stats-chip  { padding: 9px 14px; }
     .seg-sm .seg-btn { padding: 8px 12px; }

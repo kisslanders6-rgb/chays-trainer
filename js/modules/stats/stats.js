@@ -234,11 +234,10 @@ function _regularityHTML() {
         const area = `${line}L${x(end.i).toFixed(1)},${H - pb}L${x(pts[0].i).toFixed(1)},${H - pb}Z`;
         const grid = [lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - pr + 4}" y="${y(v) + 3}">${Math.round(v)} %</text>`).join('');
         const startLbl = new Date(_dayStart(monday, -7 * (STATS_TREND_WEEKS - 1))).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-        chart = `<div class="st-trend"><span class="st-sub">Réussite par semaine</span>
+        chart = `<div class="st-trend"><span class="st-sub st-trend-h"><span>Réussite par semaine</span><b>${end.v} % cette semaine</b></span>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Réussite par semaine sur ${STATS_TREND_WEEKS} semaines, ${end.v} % cette semaine">
               ${grid}<path class="ar" d="${area}"/><path class="ln" d="${line}"/>
               ${pts.map(p => `<circle class="pt${p === end ? ' end' : ''}" cx="${x(p.i)}" cy="${y(p.v)}" r="${p === end ? 3.5 : 2.5}"/>`).join('')}
-              <text class="vl" x="${x(end.i) - 5}" y="${y(end.v) - 8}" text-anchor="end">${end.v} %</text>
               <text class="ax" x="${x(0)}" y="${H - 4}">${startLbl}</text><text class="ax" x="${x(STATS_TREND_WEEKS - 1)}" y="${H - 4}" text-anchor="end">cette sem.</text>
             </svg></div>`;
     }
@@ -266,10 +265,8 @@ function _renderStatsScope() {
         const seg = document.getElementById('stats-seg-' + c);
         if (seg) { seg.classList.toggle('active', c === statsColor); seg.setAttribute('aria-pressed', c === statsColor); }
     });
-    const sel = document.getElementById('stats-rep');
-    if (sel) {
-        sel.innerHTML = loadRepertoireList().map(n => `<option value="${escapeHtml(n)}"${n === currentRepertoire ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
-    }
+    const rep = document.getElementById('stats-rep');
+    if (rep) rep.innerHTML = repertoireDropdownHTML('statsRep');
     const info = document.getElementById('stats-info');
     if (info && !info.innerHTML) {
         info.innerHTML = `<p>Chaque position est celle où c'est à vous de jouer. Les chiffres viennent de vos coups dans « Jouer » et « Entraînement ».</p>
@@ -368,8 +365,8 @@ function initStats() {
     const chips = [['all', 'Toutes', rows.length], ...STATS_LEVEL_ORDER.map(l => [l, STATS_LEVELS[l].label, counts[l]])].map(([id, label, n]) =>
         `<button class="stats-chip ${statsFilter === id ? 'active' : ''} ${id === 'all' ? 'all' : 'lv-' + id}" aria-pressed="${statsFilter === id}" data-action="statsFilter" data-arg="${id}" ${n ? '' : 'disabled'}>
             ${id === 'all' ? '' : _lvMark(id)}${label} <b>${n}</b></button>`).join('');
-    const sortSel = `<label class="st-sort"><span>Trier</span> <select data-change="statsSort" aria-label="Trier les ouvertures">${[['weak', 'Plus fragiles'], ['due', 'Plus de révisions dues'], ['order', 'Ordre des coups'], ['size', 'Plus de positions']]
-        .map(([v, t]) => `<option value="${v}"${statsSort === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
+    const sortSel = dropdownHTML({ label: 'Trier', aria: 'Trier les ouvertures', value: statsSort, action: 'statsSort', cls: 'dd-sm dd-end st-sort',
+        options: [['weak', 'Plus fragiles'], ['due', 'Plus de révisions dues'], ['order', 'Ordre des coups'], ['size', 'Plus de positions']] });
 
     const lines = list.map(g => {
         const open = statsOpen.has(g.key), items = g.items.slice().sort(_byWorst);
@@ -438,7 +435,7 @@ function startStatsReview(kind) {
 
 registerActions({
     statsColor: c => setStatsColor(c),
-    statsRep: (_, el) => { if (el.value !== currentRepertoire) selectRepertoire(el.value); },
+    statsRep: name => { if (name !== currentRepertoire) selectRepertoire(name); },
     statsFilter: f => { statsFilter = (f !== 'all' && statsFilter === f) ? 'all' : f; initStats(); },
     statsLegend: f => {
         statsFilter = statsFilter === f ? 'all' : f;
@@ -447,7 +444,7 @@ registerActions({
         const sec = document.getElementById('stats-lines');
         if (sec && statsFilter !== 'all') sec.scrollIntoView({ block: 'start', behavior: 'smooth' });
     },
-    statsSort: (_, el) => { statsSort = el.value; initStats(); },
+    statsSort: v => { statsSort = v; initStats(); },
     statsLine: k => { if (statsOpen.has(k)) statsOpen.delete(k); else statsOpen.add(k); initStats(); },
     statsMore: k => { statsAll.add(k); initStats(); },
     statsInfo: () => {
