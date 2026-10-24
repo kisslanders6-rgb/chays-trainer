@@ -9,7 +9,7 @@
 // ─── IMPORT PGN ───────────────────────────────────────────────────────────────
 // Lecture d'un PGN (ligne principale + variantes imbriquées) et fusion dans la base
 // du répertoire/couleur actifs :
-//   - coup de MON camp : créé s'il n'existe pas (attempts 1, failures 0, lastReviewed now) ;
+//   - coup de MON camp : créé s'il n'existe pas (comme dans « Jouer » : à réviser dès la prochaine séance) ;
 //     identique → rien ; différent → CONFLIT : l'entrée existante est conservée et le reste
 //     de cette ligne est ignoré (il dépendrait d'un coup que le répertoire n'a pas retenu).
 //   - coup ADVERSE : jamais stocké — il ouvre simplement une branche (la position suivante).
@@ -110,8 +110,8 @@ function _resolveSan(raw) {
     return moveToStr(from, dest, promo);
 }
 
-function _engineState()    { return { board: board.slice(), turn, castlingRights: { ...castlingRights }, enPassant }; }
-function _restoreEngine(s) { board = s.board.slice(); turn = s.turn; castlingRights = { ...s.castlingRights }; enPassant = s.enPassant; }
+const _engineState   = () => Chess.snapshot();             // à n'utiliser que dans un calcul isolé (Chess.isolated)
+const _restoreEngine = s => Chess.load(s);
 
 // Traite un coup AVANT son application. Renvoie 'new' | 'same' | 'conflict' | 'opp'.
 function _importPgnMove(uci, path, ctx) {
@@ -125,8 +125,7 @@ function _importPgnMove(uci, path, ctx) {
     const san = toAlgebraic(from, to, promo);
 
     if (!e) {
-        const np = path.concat(uci);
-        openingDB[key] = { move: uci, san, attempts: 1, failures: 0, path: np, ply: np.length, lastReviewed: Date.now() };
+        openingDB[key] = newEntry(uci, san, path.concat(uci));
         ctx.added++;
         return 'new';
     }
@@ -289,23 +288,18 @@ function _pgnTree(db) {
 
 const _pgnNum = (ply, force) => ply % 2 === 0 ? `${ply / 2 + 1}. ` : (force ? `${Math.floor(ply / 2) + 1}... ` : '');
 
-// Coups depuis `node` (le moteur est dans la position de `node`), au format PGN avec variantes.
-function _pgnMovetext(node, ply, forceNum) {
+// Coups depuis `node` (position `pos`), au format PGN avec variantes.
+function _pgnMovetext(node, pos, ply, forceNum) {
     const kids = [...node.kids.entries()].sort((a, b) => b[1].size - a[1].size);
     if (!kids.length) return '';
-    const before = _engineState();
     const [mainUci, mainNode] = kids[0];
-    const out = _pgnNum(ply, forceNum) + _applyUciRaw(mainUci);
-    const afterMain = _engineState();
+    const out = _pgnNum(ply, forceNum) + Chess.san(pos, mainUci);
     let vars = '';
     kids.slice(1).forEach(([uci, child]) => {
-        _restoreEngine(before);
-        const san  = _applyUciRaw(uci);
-        const rest = _pgnMovetext(child, ply + 1, false);
-        vars += ` (${_pgnNum(ply, true)}${san}${rest ? ' ' + rest : ''})`;
+        const rest = _pgnMovetext(child, Chess.play(pos, uci), ply + 1, false);
+        vars += ` (${_pgnNum(ply, true)}${Chess.san(pos, uci)}${rest ? ' ' + rest : ''})`;
     });
-    _restoreEngine(afterMain);
-    const rest = _pgnMovetext(mainNode, ply + 1, !!vars);
+    const rest = _pgnMovetext(mainNode, Chess.play(pos, mainUci), ply + 1, !!vars);
     return out + vars + (rest ? ' ' + rest : '');
 }
 
@@ -329,7 +323,7 @@ function repertoirePgn(rep) {
         const t = _pgnTree(readDBFor(rep, color));
         skipped += t.skipped;
         if (!t.root.kids.size) return;
-        const moves = _withEngineSnapshot(() => { parseFEN(INIT_FEN); return _pgnMovetext(t.root, 0, false); });
+        const moves = _pgnMovetext(t.root, Chess.start(), 0, false);
         const side  = color === 'w' ? 'Blancs' : 'Noirs';
         pgn += `[Event "${tag(`Répertoire ${rep} (${side})`)}"]\n[Site "Chays Trainer"]\n[Date "${date}"]\n` +
                `[White "${color === 'w' ? tag(rep) : '?'}"]\n[Black "${color === 'b' ? tag(rep) : '?'}"]\n[Result "*"]\n\n` +

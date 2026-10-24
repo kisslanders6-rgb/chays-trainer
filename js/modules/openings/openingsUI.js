@@ -82,6 +82,7 @@ function renderBoard() {
 
     if (focused !== null) { const f = el.querySelector(`.sq[data-idx="${focused}"]`); if (f) f.focus({ preventScroll: true }); }
     if (typeof renderAnnotations === 'function') renderAnnotations(true);
+    if (typeof renderFreqPanel === 'function') renderFreqPanel();          // onglet « Adversaire » : position affichée
     if (typeof _syncHintBtn === 'function') _syncHintBtn();
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
 }
@@ -459,7 +460,7 @@ function _beginDrag(d) {
     d.zoom = _zoomOf(g, d.size);                        // ramène px écran → px CSS sous body { zoom }
     g.style.width = g.style.height = d.size / d.zoom + 'px';
     document.body.classList.add('dragging');
-    try { _boardEl.setPointerCapture(d.pid); } catch (e) {}
+    try { _boardEl.setPointerCapture(d.pid); } catch (e) { /* pointeur déjà relâché */ }
 
     d.ghost  = g;
     d.active = true;
@@ -473,7 +474,7 @@ function _endDrag(e, cancelled) {
 
     if (d.ghost) d.ghost.remove();
     document.body.classList.remove('dragging');
-    try { _boardEl.releasePointerCapture(d.pid); } catch (err) {}
+    try { _boardEl.releasePointerCapture(d.pid); } catch (err) { /* déjà relâché */ }
     document.querySelectorAll('#board .drag-source, #board .hl-drop')
         .forEach(el => el.classList.remove('drag-source', 'hl-drop'));
     _lastDragEnd = performance.now();

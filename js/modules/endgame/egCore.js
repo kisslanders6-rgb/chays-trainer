@@ -460,7 +460,13 @@ const EG = (function () {
     const PAWN_TT_MAX = 3e6;
     const pawnKey = st => { let k = st.stm > 0 ? 'w' : 'b'; for (let i = 0; i < 64; i++) if (st.b[i]) k += i.toString(36) + st.b[i]; return k; };
 
-    function pawnCount(b) { let n = 0, side = 0; for (let i = 0; i < 64; i++) if (Math.abs(b[i]) === P) { n++; side = b[i] > 0 ? 1 : -1; } return { n, side }; }
+    // pieces : pièces autres que rois et pions (cavalier ou fou des finales de pièces mineures) ; la base KPK
+    // ne s'applique qu'en leur absence.
+    function pawnCount(b) {
+        let n = 0, side = 0, pieces = 0;
+        for (let i = 0; i < 64; i++) { const t = Math.abs(b[i]); if (t === P) { n++; side = b[i] > 0 ? 1 : -1; } else if (t && t !== K) pieces++; }
+        return { n, side, pieces };
+    }
 
     // Valeur pour le camp qui vient de promouvoir en `to` (ns : adversaire au trait).
     function afterPromotion(ns, to, depth) {
@@ -472,13 +478,20 @@ const EG = (function () {
             for (const c of caps) { const v = depth >= 2 ? pawnValue(make(ns, c), depth - 2) : 0; if (v < worst) worst = v; if (worst === -1) break; }
             return worst;
         }
-        return legalMoves(ns).some(r => r >> 12) ? 0 : 1;          // contre-promotion immédiate : nulle
+        if (rep.some(r => r >> 12)) return 0;                      // contre-promotion immédiate : nulle
+        // Fourchette (cavalier, fou) : un échec qui attaque aussi la Dame non protégée lui coûte la vie.
+        const side = -ns.stm;
+        for (const r of rep) {
+            const rs = make(ns, r);
+            if (inCheck(rs) && attacked(rs.b, to, ns.stm) && !attacked(rs.b, to, side)) return 0;
+        }
+        return 1;
     }
 
     function pawnValue(st, depth) {
         const pc = pawnCount(st.b);
         if (pc.n === 0) return 0;
-        if (pc.n === 1) { const pr = kpkProbe(st); return pr.win ? (pc.side === st.stm ? 1 : -1) : 0; }
+        if (pc.n === 1 && !pc.pieces) { const pr = kpkProbe(st); return pr.win ? (pc.side === st.stm ? 1 : -1) : 0; }
         const k = pawnKey(st), e = pawnTT.get(k);
         if (e !== undefined && (e.v !== 0 || e.d >= depth)) return e.v;
         const moves = legalMoves(st);

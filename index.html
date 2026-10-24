@@ -379,9 +379,11 @@
                         <div class="side-tabs" data-modes="play">
                             <button class="side-tab active" id="side-tab-moves" onclick="showSideTab('moves')">Coups</button>
                             <button class="side-tab" id="side-tab-tree" onclick="showSideTab('tree')"><svg class="ico"><use href="#i-git-branch"/></svg> Arbre</button>
+                            <button class="side-tab" id="side-tab-freq" onclick="showSideTab('freq')" title="Coups les plus joués par vos adversaires et sur Lichess"><svg class="ico"><use href="#i-bar-chart"/></svg> Adversaire</button>
                         </div>
                         <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
                         <div class="tree-view hidden" id="tree-view"></div>
+                        <div class="tree-view freq-view hidden" id="freq-view" aria-live="polite"></div>
                     </div>
                 </div>
 
@@ -478,6 +480,12 @@
         <button class="toast-x" onclick="hideBackupToast()" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
     </div>
 
+    <!-- ─── ERREUR VISIBLE (reportError, js/core/utils.js) ────────────────── -->
+    <div id="error-toast" class="toast toast-error hidden" role="alert">
+        <span id="error-toast-text"></span>
+        <button class="toast-x" data-action="hideErrorToast" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+
     <!-- ─── OVERLAY PARAMÈTRES ────────────────────────────────────────────── -->
     <!-- Paramètres : fenêtre à rubriques construite par js/core/settingsUI.js -->
     <div id="settings-overlay" class="overlay hidden"></div>
@@ -498,6 +506,11 @@
     <!-- ─── OVERLAY AIDE ──────────────────────────────────────────────────── -->
     <!-- Aide : fenêtre à rubriques construite par js/core/helpUI.js -->
     <div id="help-overlay" class="overlay hidden"></div>
+
+    <!-- Présentation de premier lancement : js/core/onboarding.js -->
+    <div id="onboarding-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+        <div class="panel ob-box" id="onboarding-box"></div>
+    </div>
 
     <!-- ─── OVERLAY CONFIRMATION ─────────────────────────────────────────── -->
     <div id="confirm-overlay" class="overlay hidden">
@@ -557,6 +570,7 @@
 <script src="js/modules/openings/pgn.js"></script>
 <script src="js/modules/openings/gameReview.js"></script>
 <script src="js/modules/openings/onlineGames.js"></script>
+<script src="js/modules/openings/moveStats.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
 <script src="js/modules/openings/treeView.js"></script>
 <script src="js/modules/openings/annotations.js"></script>
@@ -570,6 +584,7 @@
 <script src="js/app.js"></script>
 <script src="js/core/settingsUI.js"></script>
 <script src="js/core/helpUI.js"></script>
+<script src="js/core/onboarding.js"></script>
 <script src="js/core/accountUI.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>

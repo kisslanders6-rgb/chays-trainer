@@ -71,10 +71,7 @@ function _deviationAt(uci, ply, color, db, opp) {
         if (e && e.move === uci) return null;
         return { ply, by: 'me', key, expected: e ? { uci: e.move, san: e.san } : null };
     }
-    const before = _engineState();
-    _applyUciRaw(uci);
-    const covered = !!db[positionKey()];
-    _restoreEngine(before);
+    const covered = !!db[Chess.key(Chess.play(Chess.snapshot(), uci))];
     if (covered) return null;
     let endOfLine = true;
     _forEachChild(() => { if (db[positionKey()]) endOfLine = false; });
@@ -150,6 +147,7 @@ function runGameReview() {
     if (!r.moves.length) { note('err', `Premier coup illisible ou illégal : <strong>${escapeHtml(r.illegal.san)}</strong>.`); return; }
 
     openPlay(_reviewColor);
+    recordGameFrequencies([game], () => _reviewColor);                 // onglet « Adversaire » (une fois par partie)
 
     const d = r.deviation;
     const counted = d && d.by === 'me' ? recordReviewMistake(d, _gameSignature(game.headers, game.sans)) : null;

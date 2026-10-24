@@ -49,7 +49,7 @@ const Net = (function () {
         if (v === online) return;
         online = v;
         apply(false);
-        listeners.forEach(fn => { try { fn(online); } catch (e) {} });
+        listeners.forEach(fn => { try { fn(online); } catch (e) { reportError('réseau : écouteur', e); } });
     }
 
     function blockedToast() {

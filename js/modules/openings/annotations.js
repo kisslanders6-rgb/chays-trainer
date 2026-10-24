@@ -243,7 +243,7 @@ function renderAnnotations(afterBoardRender) {
         const sq = _squareAt(e.clientX, e.clientY);
         if (sq === null) return;
         _annotDraw = { from: sq, to: sq, color: _annotColor(e) };
-        try { b.setPointerCapture(e.pointerId); } catch (err) {}
+        try { b.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ }
     });
 
     b.addEventListener('pointermove', e => {

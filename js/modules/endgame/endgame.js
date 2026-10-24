@@ -168,7 +168,7 @@ function initEndgame() {
     panel.innerHTML = `<div class="st-now">${hero}${summary}</div>${paths}`;
 
     // Précalcule la base KPK pendant que l'utilisateur choisit (≈ 0,25 s).
-    const warm = () => { try { EG.buildKpk(); } catch (e) {} };
+    const warm = () => { try { EG.buildKpk(); } catch (e) { reportError('finales : préparation de la base roi + pion', e); } };
     if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 1500 }); else setTimeout(warm, 400);
 }
 
@@ -238,6 +238,56 @@ function _egPhilidorCheck(st, m) {
     if (EG.forcesPromotion(ns, 7)) return { msg: 'Ce coup perd : les Blancs peuvent forcer la promotion du pion.' };
     return null;
 }
+
+// Défense de Vancura (Noirs, pion blanc de la colonne a en 6e, Tour blanche devant lui) : règles canoniques
+// + garde-fou par recherche, comme Philidor. null = coup correct.
+//   - le roi noir reste dans le coin (g7, h7, g8, h8) : ailleurs, Th8 ! puis Th7+ enfile le roi et la Tour ;
+//   - tant que le pion est en 6e, la Tour noire l'attaque de côté depuis la 6e rangée, sauf pour donner échec
+//     (quand le roi blanc vient soutenir son pion, les échecs viennent par derrière) ;
+//   - le pion en 7e : la Tour passe derrière lui, sur la colonne a.
+const _VANCURA_KING = [54, 55, 62, 63];
+
+// Règles seules (aucune recherche) : message, { capture: true }, ou null.
+function _egVancuraBasic(st, m) {
+    const ns = EG.make(st, m);
+    const pawn = ns.b.indexOf(1), rook = ns.b.indexOf(-4);
+    if (pawn < 0) {
+        if (ns.b.indexOf(5) >= 0) return { msg: 'La nouvelle Dame doit être prise immédiatement, sinon la partie est perdue.' };
+        return _egWinsRook(ns) ? { msg: 'Les Blancs prendraient votre Tour sans qu\'elle puisse être reprise.' } : { capture: true };
+    }
+    if (rook < 0) return { msg: 'Sans Tour, le pion passe : la partie est perdue.' };
+    if (ns.b.indexOf(4) < 0) return { capture: true, note: 'La Tour blanche est tombée : nulle au moins !' };
+    if (EG.attacked(ns.b, rook, 1) && !EG.attacked(ns.b, rook, -1)) return { msg: 'Votre Tour est en prise : elle serait perdue.' };
+    const bk = EG.kingSq(ns.b, -1), pr = pawn >> 3, check = EG.inCheck(ns);
+    if (!_VANCURA_KING.includes(bk)) return { msg: 'Vancura : le roi reste dans le coin (g7 ou h7). Ailleurs, Th8 ! puis Th7+ enfile votre roi et votre Tour.' };
+    if (EG.mFrom(m) !== EG.kingSq(st.b, -1) && !check) {
+        if (pr === 5 && (rook >> 3) !== 5) return { msg: 'Vancura : la Tour attaque le pion de côté, depuis la 6e rangée (ou donne échec).' };
+        if (pr === 6 && (rook & 7) !== 0) return { msg: 'Le pion est en 7e : placez la Tour derrière lui, sur la colonne a.' };
+    }
+    return null;
+}
+
+function _egVancuraCheck(st, m) {
+    const basic = _egVancuraBasic(st, m);
+    if (basic) return basic;
+    // Une réponse blanche ne doit pas vous laisser sans aucun coup conforme (Tour coincée loin de la colonne a…).
+    const ns = EG.make(st, m);
+    const stuck = EG.legalMoves(ns).some(r => {
+        const n3 = EG.make(ns, r);
+        if (n3.b.indexOf(1) < 0) return false;
+        return !EG.legalMoves(n3).some(x => { const b = _egVancuraBasic(n3, x); return !b || b.capture; });
+    });
+    if (stuck) return { msg: 'Après la réponse des Blancs, vous n\'auriez plus de défense : gardez la Tour loin du roi blanc, prête à revenir sur la colonne a.' };
+    if (EG.forcesPromotion(ns, 7)) return { msg: 'Ce coup perd : les Blancs peuvent forcer la promotion du pion.' };
+    return null;
+}
+
+// Défenses à règles : vérification du coup et réponse des Blancs, selon l'exercice (ex.rules).
+const _EG_RULES = {
+    philidor: { check: (st, m) => _egPhilidorCheck(st, m), name: 'la défense de Philidor' },
+    vancura:  { check: (st, m) => _egVancuraCheck(st, m),  name: 'la défense de Vancura' }
+};
+const _egRules = ex => _EG_RULES[ex.rules || 'philidor'];
 
 // Les Blancs poussent, doublent sur la 7e, donnent échec : un adversaire qui « essaie » vraiment.
 function _egPhilidorWhite(st) {
@@ -322,7 +372,7 @@ function _egLoadPosition() {
     renderEndgameCard();
     setStatus(`${egObjective(ex)} — à vous de jouer.`, 'info');
     if (ex.kind === 'pawns') {                                   // précalcul pendant que le joueur réfléchit
-        const st = _egCur(), warm = () => { try { EG.pawnValue(st, ex.horizon); } catch (e) {} };
+        const st = _egCur(), warm = () => { try { EG.pawnValue(st, ex.horizon); } catch (e) { reportError('finales : préparation du calcul', e); } };
         if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 800 }); else setTimeout(warm, 200);
     }
 }
@@ -386,10 +436,10 @@ function _egJudge(ex, st, m) {
         return { state: 'continue' };
     }
     if (ex.kind === 'rules') {
-        const r = _egPhilidorCheck(st, m);
-        if (r && r.capture) return { state: 'success', msg: 'Le pion est éliminé : nulle !' };
+        const r = _egRules(ex).check(st, m);
+        if (r && r.capture) return { state: 'success', msg: r.note || 'Le pion est éliminé : nulle !' };
         if (r) return { state: 'fail', undoable: true, msg: r.msg };
-        if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec la défense de Philidor.` };
+        if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec ${_egRules(ex).name}.` };
         return { state: 'continue' };
     }
     if (ex.kind === 'pawns') return _egJudgePawns(ex, st, m, n);
@@ -434,7 +484,7 @@ function _egJudgePawns(ex, st, m, n) {
     if (v === -1) return { state: 'fail', undoable: true, msg: 'Ce coup perd : l\'adversaire peut maintenant forcer la promotion de son pion.' };
     if (promo) return { state: 'success', msg: 'Vous promouvez à votre tour : nulle (au moins) !' };
     if (pc.n === 0) return { state: 'success', msg: 'Plus aucun pion : nulle !' };
-    if (pc.n === 1 && !EG.kpkProbe(after).win && pc.side !== st.stm) return { state: 'success', msg: 'Il ne reste qu\'un pion adverse, et la position est nulle : bien défendu !' };
+    if (pc.n === 1 && !pc.pieces && !EG.kpkProbe(after).win && pc.side !== st.stm) return { state: 'success', msg: 'Il ne reste qu\'un pion adverse, et la position est nulle : bien défendu !' };
     if (n >= endgameState.budget) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${endgameState.budget} coups sans céder.` };
     return { state: 'continue' };
 }
@@ -633,5 +683,5 @@ function endgameHint() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { _egPhilidorCheck, _egPhilidorWhite };
+    module.exports = { _egPhilidorCheck, _egPhilidorWhite, _egVancuraCheck };
 }

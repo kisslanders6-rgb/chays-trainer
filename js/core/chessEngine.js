@@ -42,7 +42,28 @@ function squareToName(sq)    { return 'abcdefgh'[sq % 8] + (Math.floor(sq / 8) +
 function squareToIdx(name)   { const c = name.charCodeAt(0) - 97, r = parseInt(name[1]) - 1; return r * 8 + c; }
 function moveToStr(from, to, promo) { return squareToName(from) + squareToName(to) + (promo || '').toLowerCase(); }
 
-// ─── CLEF DE POSITION (FEN simplifié pour la base d'ouvertures) ───────────────
+// ─── CLEF DE POSITION (base d'ouvertures) ─────────────────────────────────────
+// « pièces trait roques passant », comme les quatre premiers champs d'un FEN. La case de prise en
+// passant n'est notée que si une prise y est réellement jouable : sinon deux positions identiques
+// auraient des clés différentes. Ancien format (avant 2026-10) : « pièces trait » (cf. upgradeKey).
+
+function castlingField() {
+    const cr = (castlingRights.K && board[4] === 'K' && board[7] === 'R' ? 'K' : '') +
+               (castlingRights.Q && board[4] === 'K' && board[0] === 'R' ? 'Q' : '') +
+               (castlingRights.k && board[60] === 'k' && board[63] === 'r' ? 'k' : '') +
+               (castlingRights.q && board[60] === 'k' && board[56] === 'r' ? 'q' : '');
+    return cr || '-';
+}
+
+function enPassantField() {
+    if (enPassant < 0) return '-';
+    const pawn = turn === 'w' ? 'P' : 'p', r = Math.floor(enPassant / 8) + (turn === 'w' ? -1 : 1);
+    for (const dc of [-1, 1]) {
+        const c = enPassant % 8 + dc;
+        if (inBounds(r, c) && board[r * 8 + c] === pawn && getLegalMoves(r * 8 + c).includes(enPassant)) return squareToName(enPassant);
+    }
+    return '-';
+}
 
 function positionKey() {
     let rows = [];
@@ -56,7 +77,18 @@ function positionKey() {
         if (empty) row += empty;
         rows.push(row);
     }
-    return rows.join('/') + ' ' + turn;
+    return rows.join('/') + ' ' + turn + ' ' + castlingField() + ' ' + enPassantField();
+}
+
+const isLegacyKey = k => typeof k === 'string' && k.trim().split(/\s+/).length === 2;
+
+// Clé au format actuel pour une clé de l'ancien format : roques déduits des pièces sur leurs
+// cases d'origine, sans prise en passant (meilleure estimation sans l'historique des coups).
+function upgradeKey(k) {
+    if (!isLegacyKey(k)) return k;
+    const s = { board: board.slice(), turn, castlingRights: { ...castlingRights }, enPassant };
+    try { parseFEN(k); return positionKey(); }
+    finally { board = s.board; turn = s.turn; castlingRights = s.castlingRights; enPassant = s.enPassant; }
 }
 
 // ─── ANALYSE FEN ──────────────────────────────────────────────────────────────
@@ -271,21 +303,54 @@ function applyMoveRaw(from, to) {
 }
 
 // ─── NOTATION ALGÉBRIQUE ──────────────────────────────────────────────────────
+// SAN standard : lettre de la pièce, colonne et / ou rangée de départ si une autre pièce du même
+// type peut aller sur la même case (Nce4, R1a2, Qh4e1), « + » pour un échec et « # » pour un mat.
+// À appeler AVANT d'appliquer le coup ; la position est laissée intacte.
+
+function _sanDisambiguation(from, to) {
+    const p = board[from];
+    const rivals = [];
+    for (let i = 0; i < 64; i++) if (i !== from && board[i] === p && getLegalMoves(i).includes(to)) rivals.push(i);
+    if (!rivals.length) return '';
+    const file = 'abcdefgh'[from % 8], rank = String(Math.floor(from / 8) + 1);
+    if (rivals.every(i => i % 8 !== from % 8)) return file;
+    if (rivals.every(i => Math.floor(i / 8) !== Math.floor(from / 8))) return rank;
+    return file + rank;
+}
+
+function _sanCheckSuffix(from, to, promo) {
+    const s = { board: board.slice(), castlingRights: { ...castlingRights }, enPassant };
+    const color = isWhite(board[from]) ? 'w' : 'b', enemy = color === 'w' ? 'b' : 'w';
+    try {
+        applyMoveRaw(from, to);
+        if (promo) board[to] = color === 'w' ? promo.toUpperCase() : promo.toLowerCase();
+        else if (board[to].toUpperCase() === 'P' && (Math.floor(to / 8) === 7 || Math.floor(to / 8) === 0)) board[to] = color === 'w' ? 'Q' : 'q';
+        const king = findKing(enemy);
+        if (king < 0 || !isSquareAttacked(king, color)) return '';
+        for (let i = 0; i < 64; i++) {
+            if (board[i] && isWhite(board[i]) === (enemy === 'w') && getLegalMoves(i).length) return '+';
+        }
+        return '#';
+    } finally { board = s.board; castlingRights = s.castlingRights; enPassant = s.enPassant; }
+}
 
 function toAlgebraic(from, to, promo) {
     const files = 'abcdefgh';
     const p    = board[from];
     const type = p ? p.toUpperCase() : '';
+    if (!p) return squareToName(from) + squareToName(to);
     let s = '';
+    const capture = (board[to] && !sameColor(p, board[to])) || (type === 'P' && to === enPassant);
     if (type === 'K' && Math.abs((to % 8) - (from % 8)) === 2) {
-        return (to % 8) > 4 ? 'O-O' : 'O-O-O';
+        s = (to % 8) > 4 ? 'O-O' : 'O-O-O';
+    } else {
+        if (type !== 'P') s += type + (type === 'K' ? '' : _sanDisambiguation(from, to));
+        else if (capture) s += files[from % 8];
+        if (capture) s += 'x';
+        s += files[to % 8] + (Math.floor(to / 8) + 1);
+        if (promo) s += '=' + promo.toUpperCase();
     }
-    if (type !== 'P') s += type;
-    else if ((board[to] && !sameColor(p, board[to])) || to === enPassant) s += files[from % 8];
-    if ((board[to] && !sameColor(p, board[to])) || to === enPassant) s += 'x';
-    s += files[to % 8] + (Math.floor(to / 8) + 1);
-    if (promo) s += '=' + promo.toUpperCase();
-    return s;
+    return s + _sanCheckSuffix(from, to, promo);
 }
 
 // ─── DÉTECTION PROMOTION ──────────────────────────────────────────────────────
@@ -320,3 +385,58 @@ function applyMove(from, to, promo, newDbKey) {
     turn = turn === 'w' ? 'b' : 'w';
     renderMoves();
 }
+
+// ─── API SANS ÉTAT PARTAGÉ (Chess) ────────────────────────────────────────────
+// L'état global ci-dessus (board, turn…) est celui de la partie AFFICHÉE. Tout calcul sur une autre position
+// passe par Chess : ses fonctions prennent une position { board, turn, castling, ep } et n'en modifient aucune,
+// et l'état affiché est rétabli même si le calcul échoue (isolated).
+//   Chess.start() · Chess.fromFen(fen) · Chess.replay(chemin UCI[, départ]) → position
+//   Chess.play(pos, uci) → nouvelle position · Chess.san(pos, uci) · Chess.key(pos) · Chess.legalMoves(pos) → [uci]
+//   Chess.isolated(fn) : fn peut manipuler l'état global, il est restauré ensuite.
+
+const Chess = (function () {
+    const snapshot = () => ({ board: board.slice(), turn, castling: { ...castlingRights }, ep: enPassant });
+    function load(pos) { board = pos.board.slice(); turn = pos.turn; castlingRights = { ...pos.castling }; enPassant = pos.ep; }
+    function isolated(fn) {
+        const s = snapshot();
+        try { return fn(); } finally { load(s); }
+    }
+    const at = (pos, fn) => isolated(() => { load(pos); return fn(); });
+
+    const parseUci = u => ({ from: squareToIdx(u.slice(0, 2)), to: squareToIdx(u.slice(2, 4)), promo: u[4] || null });
+
+    // Joue un coup UCI sur l'état global (sans historique) ; promotion en Dame si non précisée.
+    function playRaw(uci) {
+        const { from, to, promo } = parseUci(uci);
+        const t = turn;
+        applyMoveRaw(from, to);
+        const r = Math.floor(to / 8);
+        if (board[to] && board[to].toUpperCase() === 'P' && (r === 7 || r === 0)) {
+            const p = promo || 'q';
+            board[to] = t === 'w' ? p.toUpperCase() : p.toLowerCase();
+        }
+        turn = t === 'w' ? 'b' : 'w';
+    }
+
+    function legalHere() {
+        const out = [];
+        for (let from = 0; from < 64; from++) {
+            const p = board[from];
+            if (!p || isWhite(p) !== (turn === 'w')) continue;
+            for (const to of getLegalMoves(from)) {
+                (isPromotion(from, to) ? ['q', 'r', 'b', 'n'] : ['']).forEach(pr => out.push(moveToStr(from, to, pr)));
+            }
+        }
+        return out;
+    }
+
+    const fromFen = fen => isolated(() => { parseFEN(fen); return snapshot(); });
+    const start   = () => fromFen(INIT_FEN);
+    const play    = (pos, uci) => at(pos, () => { playRaw(uci); return snapshot(); });
+    const san     = (pos, uci) => at(pos, () => { const m = parseUci(uci); return toAlgebraic(m.from, m.to, m.promo); });
+    const key     = pos => at(pos, positionKey);
+    const legalMoves = pos => at(pos, legalHere);
+    const replay  = (path, from) => path.reduce((pos, u) => play(pos, u), from || start());
+
+    return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, replay };
+})();

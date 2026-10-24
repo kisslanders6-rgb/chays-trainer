@@ -120,6 +120,12 @@ function normalizeEntry(e) {
     return out;   // l'ancien champ `alt` est volontairement abandonné
 }
 
+// Nouveau coup du répertoire (Jouer, import PGN) : rien n'est encore compté, et il est dû tout de suite
+// pour être proposé dès la prochaine séance d'Entraînement.
+function newEntry(move, san, path) {
+    return { move, san, attempts: 0, failures: 0, path, ply: path.length, due: Date.now(), interval: 0 };
+}
+
 function normalizeDB(db) {
     const out = {};
     if (!db || typeof db !== 'object') return out;
@@ -131,12 +137,103 @@ function normalizeDB(db) {
 function readDBFor(rep, color) {
     const raw = dataStore.get(dbKeyFor(rep, color));
     if (!raw) return {};
-    try { return normalizeDB(JSON.parse(raw)); } catch (e) { return {}; }
+    try { return upgradeDBKeys(normalizeDB(JSON.parse(raw))); } catch (e) { reportError('lecture de la base ' + dbKeyFor(rep, color), e); return {}; }
+}
+
+// ─── CLÉS DE POSITION : ANCIEN FORMAT ─────────────────────────────────────────
+// Jusqu'en octobre 2026, une clé valait « pièces trait » ; elle vaut désormais « pièces trait roques passant »
+// (cf. positionKey). Les anciennes clés sont converties à la lecture : d'après le chemin de l'entrée quand il
+// est connu (exact), sinon d'après la position seule (upgradeKey). Les données d'un appareil pas encore mis à
+// jour, reçues par la synchronisation, passent par le même chemin.
+// En cas de doublon, une clé déjà au nouveau format l'emporte, puis l'entrée revue le plus récemment.
+
+const _legacyPart = k => k.split(' ', 2).join(' ');
+const _engineReady = () => typeof Chess !== 'undefined';
+const _hasLegacyKeys = o => _engineReady() && Object.keys(o).some(isLegacyKey);
+
+// Clés des positions avant et après le dernier coup d'un chemin UCI.
+function _pathEndKeys(path) {
+    const pos = Chess.replay(path.slice(0, -1));
+    return { before: Chess.key(pos), after: Chess.key(Chess.play(pos, path[path.length - 1])) };
+}
+
+function upgradeDBKeys(db) {
+    if (!_hasLegacyKeys(db)) return db;
+    const legacy = Object.keys(db).filter(isLegacyKey);
+    const out = {};
+    Object.keys(db).forEach(k => { if (!isLegacyKey(k)) out[k] = db[k]; });
+    const fromLegacy = new Set();
+    legacy.forEach(k => {
+        const e = db[k];
+        let nk = null;
+        if (e.path) { try { const b = _pathEndKeys(e.path).before; if (_legacyPart(b) === k) nk = b; } catch (err) { /* chemin illisible : estimation d'après la position */ } }
+        nk = nk || upgradeKey(k);
+        const cur = out[nk];
+        if (cur && (!fromLegacy.has(nk) || (cur.lastReviewed || 0) >= (e.lastReviewed || 0))) return;
+        out[nk] = e;
+        fromLegacy.add(nk);
+    });
+    return out;
+}
+
+// Réponses adverses connues : la position (adversaire au trait) suit l'un de mes coups ; le chemin de cette
+// entrée donne la clé exacte.
+function upgradeOppKeys(opp, db) {
+    if (!_hasLegacyKeys(opp)) return opp;
+    const exact = {};
+    Object.values(db).forEach(e => {
+        if (!e.path) return;
+        try { const a = _pathEndKeys(e.path).after; exact[_legacyPart(a)] = a; } catch (err) { /* chemin illisible : estimation d'après la position */ }
+    });
+    const out = {};
+    Object.keys(opp).forEach(k => {
+        const nk = isLegacyKey(k) ? (exact[k] || upgradeKey(k)) : k;
+        out[nk] = Array.from(new Set((out[nk] || []).concat(opp[k])));
+    });
+    return out;
+}
+
+// Migration au démarrage, une fois par appareil et par version des données : toutes les bases de tous les
+// répertoires sont réécrites au format actuel (clés) et leurs notations recalculées (SAN avec
+// désambiguïsation, « + » et « # »).
+const DATA_VERSION_KEY = 'chessTrainer_dataVersion';
+const DATA_VERSION     = 2;
+
+function _sanForKey(key, uci) {
+    const pos = Chess.fromFen(key);
+    return pos.board[squareToIdx(uci.slice(0, 2))] ? Chess.san(pos, uci) : null;
+}
+
+// Notation recalculée depuis la position (clé) et le coup UCI ; un coup impossible garde son ancien SAN.
+function refreshSans(db) {
+    Object.keys(db).forEach(k => { try { db[k].san = _sanForKey(k, db[k].move) || db[k].san; } catch (e) { reportError('notation de ' + k, e); } });
+    return db;
+}
+
+function migrateStoredData() {
+    if (Number(dataStore.get(DATA_VERSION_KEY)) >= DATA_VERSION || !_engineReady()) return;
+    let ok = true;
+    loadRepertoireList().forEach(rep => ['w', 'b'].forEach(c => {
+        const raw = dataStore.get(dbKeyFor(rep, c));
+        if (raw) {
+            const db = readDBFor(rep, c);
+            refreshSans(db);
+            const next = JSON.stringify(db);
+            if (next !== raw && !dataStore.set(dbKeyFor(rep, c), next)) ok = false;
+        }
+        const oraw = dataStore.get(oppKeyFor(rep, c));
+        if (oraw) {
+            const next = JSON.stringify(readOppFor(rep, c));
+            if (next !== oraw && !dataStore.set(oppKeyFor(rep, c), next)) ok = false;
+        }
+    }));
+    if (ok) dataStore.set(DATA_VERSION_KEY, String(DATA_VERSION));
+    else reportError('migration des données', new Error('stockage plein'), { notify: true });
 }
 
 // ─── RÉPÉTITION ESPACÉE ET JOURNAL D'ACTIVITÉ ─────────────────────────────────
-// Chaque passage sur une position (Jouer ou Entraînement) appelle recordReview() APRÈS la mise à jour
-// de ses compteurs. Planning (inspiré de SM-2) :
+// Chaque passage sur une position en Entraînement appelle recordReview() APRÈS la mise à jour de ses compteurs
+// (« Jouer » ne compte rien : cf. openingsLogic.js ; une erreur relevée dans une vraie partie compte aussi). Planning (inspiré de SM-2) :
 //   - réussite alors que la révision était due : intervalle × REVIEW_GROWTH (1 jour la première fois),
 //     plafonné à REVIEW_MAX_DAYS ; une réussite anticipée ne change pas l'échéance ;
 //   - erreur : intervalle remis à zéro, la position redevient due dans REVIEW_RETRY_MS.
@@ -219,11 +316,11 @@ function readOppFor(rep, color) {
     if (o && typeof o === 'object') {
         Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(u => typeof u === 'string'); });
     }
-    return out;
+    return _hasLegacyKeys(out) ? upgradeOppKeys(out, readDBFor(rep, color)) : out;
 }
 
 function saveOpp() {
-    dataStore.setJSON(oppKeyFor(currentRepertoire, playerColor), oppSeen);
+    return dataStore.setJSON(oppKeyFor(currentRepertoire, playerColor), oppSeen);
 }
 
 function recordOppReply(posKey, uci) {                 // renvoie true si nouveau (l'appelant appelle saveOpp)
@@ -287,7 +384,7 @@ function loadDB() {
 }
 
 function saveDB() {
-    dataStore.set(getDBKey(), JSON.stringify(openingDB));
+    return dataStore.set(getDBKey(), JSON.stringify(openingDB));
 }
 
 // ─── EXPORT / IMPORT JSON ─────────────────────────────────────────────────────
@@ -312,12 +409,14 @@ function exportDB() {
             const key = dbKeyFor(rep, col);
             const raw = dataStore.get(key);
             if (raw) {
-                try { exportData.databases[key] = JSON.parse(raw); } catch (e) {}
+                try { exportData.databases[key] = JSON.parse(raw); }
+                catch (e) { reportError('export de ' + key, e, { notify: true, message: `La base « ${rep} » (${col === 'w' ? 'Blancs' : 'Noirs'}) est illisible : elle manque dans la sauvegarde.` }); }
             }
             const okey = oppKeyFor(rep, col);
             const oraw = dataStore.get(okey);
             if (oraw) {
-                try { exportData.opponents[okey] = JSON.parse(oraw); } catch (e) {}
+                try { exportData.opponents[okey] = JSON.parse(oraw); }
+                catch (e) { reportError('export de ' + okey, e); }        // facultatif : la sauvegarde reste utilisable
             }
         });
     });
@@ -378,8 +477,9 @@ function importDBFromFile(event) {
                     try {
                         const raw = dataStore.get(key);
                         if (raw) existing = JSON.parse(raw);
-                    } catch (err) {}
-                    const merged = Object.assign({}, normalizeDB(existing), normalizeDB(entries));
+                    } catch (err) { reportError('lecture de ' + key + ' avant import', err); }
+                    // Une sauvegarde ancienne a des clés et des notations de l'ancien format : converties avant fusion.
+                    const merged = refreshSans(Object.assign({}, upgradeDBKeys(normalizeDB(existing)), upgradeDBKeys(normalizeDB(entries))));
                     if (dataStore.set(key, JSON.stringify(merged))) count += Object.keys(entries).length;
                 });
                 // Réponses adverses connues : union avec l'existant

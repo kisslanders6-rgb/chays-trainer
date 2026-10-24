@@ -52,7 +52,7 @@ const Auth = (function () {
 
     let session = null, refreshTimer = null, refreshing = null, notice = null;
     const listeners = [];
-    const emit = (ev, data) => listeners.forEach(fn => { try { fn(ev, data); } catch (e) {} });
+    const emit = (ev, data) => listeners.forEach(fn => { try { fn(ev, data); } catch (e) { reportError('auth : écouteur ' + ev, e); } });
 
     // ─── Réseau ───────────────────────────────────────────────────────────────
     async function request(path, opts) {
@@ -67,7 +67,7 @@ const Auth = (function () {
                                                   body: body === undefined ? undefined : JSON.stringify(body) });
             const text = await res.text();
             let json = {};
-            if (text) { try { json = JSON.parse(text); } catch (e) {} }
+            if (text) { try { json = JSON.parse(text); } catch (e) { /* réponse non JSON : traitée par le code HTTP */ } }
             return { ok: res.ok, status: res.status, json };
         } catch (e) {
             return { error: 'network' };
@@ -282,7 +282,7 @@ const Auth = (function () {
     function readHash() {
         if (typeof location === 'undefined' || !location.hash || location.hash.length < 2) return null;
         const p = new URLSearchParams(location.hash.slice(1));
-        const clean = () => { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} };
+        const clean = () => { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* adresse laissée telle quelle */ } };
         if (p.get('error')) {
             const c = p.get('error_code') || p.get('error');
             clean();
@@ -311,7 +311,7 @@ const Auth = (function () {
         if (h.error) { L().remove(OIDC_KEY); setNotice({ kind: 'error', message: h.error }); return; }
         if (h.type === 'id_token') {
             let o = null;
-            try { o = JSON.parse(L().get(OIDC_KEY)); } catch (e) {}
+            try { o = JSON.parse(L().get(OIDC_KEY)); } catch (e) { /* illisible : aucune connexion en cours */ }
             L().remove(OIDC_KEY);
             if (!o || !o.state || o.state !== h.state || Date.now() - o.at > 600000) {
                 setNotice({ kind: 'error', message: 'Connexion Google interrompue ou expirée : recommencez.' });
@@ -334,7 +334,7 @@ const Auth = (function () {
     function init() {
         if (!configured()) return;
         let s = null;
-        try { s = JSON.parse(L().get(SESSION_KEY)); } catch (e) {}
+        try { s = JSON.parse(L().get(SESSION_KEY)); } catch (e) { /* illisible : déconnecté */ }
         if (s && s.access_token && s.refresh_token && s.user && s.user.id) {
             session = s;                                              // restauration synchrone : le suivi des modifications démarre tout de suite
             if (typeof CloudClient !== 'undefined') CloudClient.setSession(s);

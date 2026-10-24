@@ -33,7 +33,7 @@ const CloudClient = (function () {
                 if (!id) { id = 'd' + Math.random().toString(36).slice(2, 10); LocalStorageAdapter.set('chessTrainer_deviceId', id); }
                 return id;
             }
-        } catch (e) {}
+        } catch (e) { /* stockage interdit : appareil anonyme */ }
         return 'unknown';
     }
 
@@ -53,7 +53,7 @@ const CloudClient = (function () {
                                                            body: body === undefined ? undefined : JSON.stringify(body) });
             const text = await res.text();
             let json = null;
-            if (text) { try { json = JSON.parse(text); } catch (e) {} }
+            if (text) { try { json = JSON.parse(text); } catch (e) { /* réponse non JSON : traitée par le code HTTP */ } }
             return { status: res.status, ok: res.ok, json };
         } catch (e) {
             return { error: 'network' };

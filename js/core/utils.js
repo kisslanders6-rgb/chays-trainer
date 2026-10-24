@@ -6,6 +6,7 @@
  *   registerActions({})  actions déclenchées par data-action dans le HTML généré :
  *                          <button data-action="startEndgame" data-arg="kq-k">…</button>
  *                        → UI_ACTIONS.startEndgame('kq-k', élément, événement)
+ *   reportError(ctx, e)  erreur tracée en console ; avec { notify: true }, message visible (cf. plus bas)
  * Le HTML généré ne contient ainsi aucun code (pas d'onclick="…" construit par concaténation) :
  * une valeur venue de l'utilisateur, d'un import ou de la synchro ne peut pas devenir du script.
  * À charger avant les autres modules.
@@ -34,6 +35,30 @@ document.addEventListener('keydown', e => {                 // éléments non-bo
         _runAction(e, 'action');
     }
 });
+
+// ─── ERREURS ──────────────────────────────────────────────────────────────────
+// Une erreur attendue sans conséquence (stockage interdit en navigation privée, JSON illisible remplacé par
+// une valeur par défaut) se commente sur place. Toute autre erreur passe par reportError : trace en console,
+// et, quand l'utilisateur risque de perdre quelque chose (notify), message visible jusqu'à fermeture.
+
+function reportError(context, err, opts = {}) {
+    try { console.warn(`[Chays Trainer] ${context}`, err); } catch (e) { /* console indisponible */ }
+    if (!opts.notify) return;
+    const box = document.getElementById('error-toast');
+    if (!box) return;
+    document.getElementById('error-toast-text').textContent = opts.message || `Problème pendant : ${context}.`;
+    box.classList.remove('hidden');
+}
+
+function hideErrorToast() {
+    const box = document.getElementById('error-toast');
+    if (box) box.classList.add('hidden');
+}
+
+registerActions({ hideErrorToast });
+
+// Message commun quand le navigateur refuse une écriture (stockage plein ou interdit).
+const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).";
 
 // ─── NOTATION DES COUPS ───────────────────────────────────────────────────────
 // Les coups sont stockés en notation anglaise (N B R Q K). formatSan(san, couleur) les affiche selon le

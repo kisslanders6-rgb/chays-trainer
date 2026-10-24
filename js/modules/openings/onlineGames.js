@@ -6,7 +6,8 @@
  *   - la couleur jouée est déduite du pseudo (en-têtes White / Black) ;
  *   - chaque partie passe par detectDeviation (gameReview.js) avec la base de cette couleur ;
  *   - une erreur d'ouverture est comptée tout de suite, une seule fois par partie (recordReviewMistake) ;
- *   - un clic sur une partie ouvre « Jouer » sur la position après le coup déviant (showReviewResult).
+ *   - un clic sur une partie ouvre « Jouer » sur la position après le coup déviant (showReviewResult) ;
+ *   - les réponses adverses alimentent les fréquences de l'onglet « Adversaire » (moveStats.js).
  * Seules les parties d'échecs classiques depuis la position initiale sont retenues.
  * Le pseudo, le site et le nombre de parties sont mémorisés sur l'appareil.
  */
@@ -138,6 +139,7 @@ async function runOnlineFetch() {
     try {
         const games = p.site === 'lichess' ? await fetchLichessGames(user, count) : await fetchChesscomGames(user, count);
         const res   = analyzeOnlineGames(games, user);
+        recordGameFrequencies(games, g => _userColor(g.headers, user));      // onglet « Adversaire » (une fois par partie)
         _online.rows = res.rows; _online.summary = res.summary;
         if (_gameScreenShown() && gameMode === 'play') loadDB();             // erreurs comptées : base active rechargée
         if (typeof refreshTree === 'function') refreshTree();

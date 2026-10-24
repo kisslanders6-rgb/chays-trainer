@@ -142,7 +142,8 @@ function renderHomeSummary() {
     const now = Date.now(), all = w.concat(b);
     const due = all.filter(e => isDue(e, now)).length;
     const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
-    document.getElementById('home-stats').innerHTML = !all.length ? '' :
+    // Répertoire vide : à la place des chiffres, par où commencer.
+    document.getElementById('home-stats').innerHTML = !all.length ? `<p class="home-empty">${ico('lightbulb')}<span><b>Par où commencer ?</b> Choisissez une couleur et jouez une première ligne, en jouant aussi les coups de l’adversaire. Vous avez déjà vos lignes ? <button type="button" class="toast-link" data-action="homeImportPgn">Importez un PGN</button>.</span></p>` :
         `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
     // Objectif quotidien (Paramètres › Jeu et entraînement) : positions jouées aujourd'hui, tous répertoires.
     const today = (readActivity()[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
@@ -353,13 +354,14 @@ function goHome(tab) {
     renderRepertoireList();
 }
 
-registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt() });
+registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt(), homeImportPgn: () => showPgnImport() });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 
 (function init() {
     document.getElementById('game-screen').style.display = 'none';
     loadTheme();
+    migrateStoredData();                    // clés de position et notations au format actuel (une fois par appareil)
     purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
     updateTrashBadges();

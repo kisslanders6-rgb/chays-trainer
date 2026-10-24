@@ -22,7 +22,8 @@
 const ENDGAME_CATEGORIES = [
     { id: 'mats',  label: 'Mats élémentaires', desc: 'Technique pure : confiner le roi et le mater sans pat.' },
     { id: 'pions', label: 'Finales de pions',  desc: 'Carré, opposition (proche et à distance), cases clés, puis percée et étude de Réti. Chaque coup est vérifié par le calcul.' },
-    { id: 'tours', label: 'Finales de tours',  desc: 'Les deux positions fondamentales : Lucena (gagner) et Philidor (annuler).' }
+    { id: 'mineures', label: 'Pièces mineures', desc: 'Cavalier contre pion, Fou de la mauvaise couleur : savoir annuler avec moins de matériel. Chaque coup est vérifié par le calcul.' },
+    { id: 'tours', label: 'Finales de tours',  desc: 'Les positions fondamentales : Lucena (gagner), Philidor et Vancura (annuler).' }
 ];
 
 const ENDGAME_EXERCISES = [
@@ -158,6 +159,22 @@ const ENDGAME_EXERCISES = [
         theory: '1.Kg7 ! h4 2.Kf6 ! : le roi menace à la fois de rattraper le pion h et de soutenir son pion c. Après 2…Kb6 3.Ke5 !, si 3…h3 4.Kd6 h2 5.c7, les deux camps vont à dame : nulle ; si 3…Kxc6 4.Kf4, le roi rattrape le pion h. Sur l\'échiquier, la diagonale est aussi courte que la ligne droite.'
     },
     {
+        id: 'mineur-cavalier', cat: 'mineures', kind: 'pawns', goal: 'draw', player: 'b', level: 2, hold: 8,
+        title: 'Le cavalier contre le pion',
+        fen: '8/8/1P6/8/5k2/3n4/8/K7 b - - 0 1', horizon: 8,
+        tips: ['Le pion est à deux pas de la promotion et votre roi est loin : seul le cavalier peut encore l\'arrêter.',
+               'Placez le cavalier sur une case d\'où il contrôle b7 ou b8, et gardez-le hors de portée du roi blanc.'],
+        theory: 'Seuls les coups de cavalier vers c5, e5 ou b4 annulent : de là, il contrôle b7 ou rejoint c6 à temps pour couvrir b8. Un coup de roi, même vers le pion, laisse 1.b7 et 2.b8=D. Ensuite, le cavalier tient la case de promotion jusqu\'au retour du roi noir.'
+    },
+    {
+        id: 'mineur-fou-couleur', cat: 'mineures', kind: 'pawns', goal: 'draw', player: 'b', level: 2, hold: 8,
+        title: 'Le Fou de la mauvaise couleur',
+        fen: '8/8/4k3/7P/8/8/2K5/3B4 b - - 0 1', horizon: 8,
+        tips: ['Le Fou blanc circule sur les cases blanches ; la case de promotion h8 est noire : il ne pourra jamais la contrôler.',
+               'Courez vers le coin h8. Une fois votre roi devant le pion, rien ne peut l\'en déloger.'],
+        theory: 'Roi, Fou et pion de la colonne h contre roi : si le Fou ne contrôle pas la case de promotion, le roi défenseur installé en h8 (ou g7–h8) annule toujours. Il suffit de rejoindre le coin à temps : …Rf7, …Rf6, …Re7 ou …Rf5 y parviennent ; s\'éloigner (…Rd6, …Rd5…) laisse le pion passer.'
+    },
+    {
         id: 'rook-lucena', cat: 'tours', kind: 'script', goal: 'win', player: 'w', level: 3,
         title: 'Position de Lucena',
         fen: '3K4/3P2k1/8/8/8/8/r7/5R2 w - - 0 1',
@@ -173,6 +190,15 @@ const ENDGAME_EXERCISES = [
         tips: ['Tant que le pion n\'a pas atteint la 6e rangée, gardez la Tour noire sur la 6e rangée et le roi sur sa dernière rangée.',
                'Dès que le pion avance en e6, passez avec la Tour sur la 1re rangée pour donner des échecs par derrière.'],
         theory: 'Défense de Philidor : la Tour reste sur la 6e rangée (elle interdit au roi blanc d\'avancer) tant que le pion n\'est pas en 6e ; dès qu\'il avance, la Tour passe derrière et donne échec sur échec, le roi noir restant sur sa dernière rangée.'
+    },
+    {
+        id: 'rook-vancura', cat: 'tours', kind: 'rules', rules: 'vancura', goal: 'draw', player: 'b', level: 3, hold: 12,
+        title: 'Position de Vancura',
+        fen: 'R7/6k1/P4r2/8/2K5/8/8/8 b - - 0 1',
+        tips: ['Le roi noir reste en g7 ou h7 : ailleurs, Th8 ! suivi de Th7+ enfile le roi et la Tour.',
+               'La Tour attaque le pion de côté, depuis la 6e rangée ; si le roi blanc vient le soutenir, donnez-lui échec par derrière.',
+               'Quand le pion arrive en 7e, la Tour passe derrière lui, sur la colonne a.'],
+        theory: 'Défense de Vancura (pion de la colonne a en 6e, Tour blanche devant lui) : la Tour noire attaque le pion de côté, ce qui attache la Tour blanche à sa défense, et le roi noir reste dans le coin g7–h7. Quand le roi blanc approche, il reçoit des échecs ; quand le pion avance en 7e, la Tour noire se place derrière lui. Les Blancs ne peuvent pas progresser.'
     }
 ];
 
@@ -204,7 +230,7 @@ function endgameSelfTest() {
             });
         }
         if (ex.kind === 'rules') {
-            const ok = EG.legalMoves(st).filter(m => !_egPhilidorCheck(st, m));
+            const ok = EG.legalMoves(st).filter(m => !_egRules(ex).check(st, m));
             if (!ok.length) problems.push('aucun coup de défense conforme');
         }
         if (ex.kind === 'pawns') {

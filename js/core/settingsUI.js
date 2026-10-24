@@ -57,6 +57,7 @@ function _settingRows() {
               min: 5, max: 50, step: 5, out: v => `${v} positions` },
             { group: 'Révision espacée', kind: 'seg', key: 'rhythm', label: 'Rythme des révisions', hint: 'Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent.',
               opts: [['soft', 'Doux'], ['std', 'Standard'], ['intense', 'Intensif']] },
+            { group: 'Révision espacée', kind: 'toggle', key: 'freqWeight', label: 'Prioriser les lignes fréquentes', hint: 'Les positions où vos adversaires (ou les joueurs Lichess) vous amènent le plus souvent sortent plus souvent. Sans données, rien ne change.' },
             { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:fromStart', label: 'D’où partir', hint: 'Juste avant la position tirée, ou du premier coup de la ligne.', opts: [[0, 'Position ciblée'], [1, 'Début de partie']], value: k.fromStart },
             { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:maxPlies', label: 'Jusqu’où dans l’ouverture', hint: 'Seules les positions jusqu’à ce coup sont tirées.', opts: [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], value: k.maxPlies },
             { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:seqLen', label: 'Coups à enchaîner', hint: 'Après votre coup, l’adversaire répond et vous continuez.', opts: [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [999, 'Variante']], value: k.seqLen },

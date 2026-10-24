@@ -52,7 +52,7 @@ function updateInstallRow() {
 async function installApp() {
     if (!_installEvent) return;
     _installEvent.prompt();
-    try { await _installEvent.userChoice; } catch (e) {}
+    try { await _installEvent.userChoice; } catch (e) { /* installation annulée */ }
     _installEvent = null;
     updateInstallRow();
 }

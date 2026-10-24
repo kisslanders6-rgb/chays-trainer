@@ -9,6 +9,7 @@
  *   - updateBackupIndicators()   pastille sur le bouton ⚙ de la barre du haut
  *   - checkBackupOnStart()       rappel au lancement (au plus une fois par jour)
  *   - requestPersistence()       demande au navigateur de ne pas purger le stockage
+ *   - storageUsage()             part du stockage du navigateur occupée (alerte au lancement au-delà de 80 %)
  *
  * Avec un compte connecté (synchronisation active), les données sont aussi enregistrées en ligne :
  * la carte l'indique, et ni rappel ni pastille ne poussent à télécharger un fichier — la sauvegarde
@@ -38,13 +39,17 @@ function _countPositions() {
     return n;
 }
 
-// Poids approximatif des données de l'application dans le stockage (en Ko).
-function _dataSizeKb() {
+// Poids des données de l'application dans le stockage. Les navigateurs limitent le stockage local à environ
+// 5 millions de caractères par site (copies de synchronisation comprises) ; au-delà, plus rien ne s'enregistre.
+const STORAGE_LIMIT_CHARS = 5000000;
+const STORAGE_WARN_RATIO  = 0.8;
+
+function storageUsage() {
     let chars = 0;
     dataStore.keys().forEach(k => {
         if (/^(openingDB_|openingOpp_|chessTrainer_)/.test(k)) chars += k.length + (dataStore.get(k) || '').length;
     });
-    return Math.max(1, Math.round(chars * 2 / 1024));
+    return { chars, kb: Math.max(1, Math.round(chars * 2 / 1024)), ratio: chars / STORAGE_LIMIT_CHARS };
 }
 
 function _agoLabel(ts) {
@@ -123,6 +128,7 @@ function renderBackupStatus() {
     const box = document.getElementById('backup-status');
     if (!box) return;
     const st     = getBackupStatus();
+    const use    = storageUsage();
     const urgent = st.level === 'warn' || st.level === 'danger';
     const icon   = st.level === 'ok' || st.level === 'synced' ? 'shield-check' : st.level === 'empty' ? 'info' : 'shield-alert';
     const note   = st.level === 'synced'
@@ -139,7 +145,7 @@ function renderBackupStatus() {
             </div>
           </div>
           <div class="backup-meta">
-            <span>${ico('database')} ${st.total} position${st.total > 1 ? 's' : ''} · ${_dataSizeKb()} Ko</span>
+            <span${use.ratio >= STORAGE_WARN_RATIO ? ' class="backup-full"' : ''}>${ico('database')} ${st.total} position${st.total > 1 ? 's' : ''} · ${use.kb} Ko · ${Math.max(1, Math.round(100 * use.ratio))} % du stockage</span>
             <span id="backup-persist"></span>
           </div>
           <div class="backup-actions">
@@ -164,16 +170,32 @@ async function _fillPersistence() {
 }
 
 async function requestPersistence() {
-    try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+    try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) { /* facultatif : le navigateur peut refuser */ }
     renderBackupStatus();
+}
+
+// Demandée une seule fois par appareil, dès que le répertoire vaut d'être protégé (certains navigateurs
+// posent alors la question à l'utilisateur).
+const PERSIST_ASKED_KEY = 'chessTrainer_persistAsked';
+
+async function _autoPersist(total) {
+    if (total < BACKUP_MIN_POSITIONS || dataStore.get(PERSIST_ASKED_KEY) || !navigator.storage || !navigator.storage.persisted) return;
+    try { if (await navigator.storage.persisted()) return; } catch (e) { return; /* non pris en charge */ }
+    dataStore.set(PERSIST_ASKED_KEY, '1');
+    requestPersistence();
 }
 
 // ─── RAPPEL AU LANCEMENT ──────────────────────────────────────────────────────
 // Un rappel au plus toutes les 24 h, et seulement si l'état est « warn » ou « danger ».
+// Stockage presque plein : message à chaque lancement (sinon les prochains coups ne s'enregistreront plus).
 
 function checkBackupOnStart() {
     updateBackupIndicators();
     const st = getBackupStatus();
+    _autoPersist(st.total);
+    const use = storageUsage();
+    if (use.ratio >= STORAGE_WARN_RATIO) reportError('stockage presque plein', new Error(`${Math.round(100 * use.ratio)} %`), { notify: true,
+        message: `Le stockage du navigateur est rempli à ${Math.round(100 * use.ratio)} % : bientôt, plus rien ne pourra s'enregistrer. Exportez une sauvegarde, puis videz la corbeille ou supprimez les répertoires inutiles.` });
     if (!backupReminderDue(st)) return;
     const last = Number(dataStore.get(BACKUP_NAG_KEY)) || 0;
     if (Date.now() - last < _BK_DAY_MS) return;

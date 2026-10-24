@@ -354,8 +354,10 @@ function _forgetFactor(e, now) {
     return TRAIN_AGE_FLOOR + (1 - Math.exp(-_ageDays(e, now) / TRAIN_TAU_DAYS));
 }
 
+// freqFactor (moveStats.js) : une position où l'adversaire arrive souvent sort plus souvent (option Paramètres).
 function _trainingWeight(e, now) {
-    return Math.pow(_failureFactor(e) * _forgetFactor(e, now), TRAIN_SHARPNESS) * (isDue(e, now) ? 1 : TRAIN_NOT_DUE);
+    const freq = typeof freqFactor === 'function' ? freqFactor(e, playerColor) : 1;
+    return Math.pow(_failureFactor(e) * _forgetFactor(e, now), TRAIN_SHARPNESS) * (isDue(e, now) ? 1 : TRAIN_NOT_DUE) * freq;
 }
 
 // Probabilités de sortie : poids normalisés sur l'univers. Si le répertoire compte plusieurs

@@ -7,10 +7,11 @@
  *   - Indice textuel (type de pièce), annulation, réinitialisation
  * Import / export : dataPanel.js, pgn.js · Édition des coups : treeView.js (onglet Arbre)
  *
- * Modèle : openingDB[clé] = { move, san, attempts, failures, path?, ply? }
- *   - position inconnue          → le coup devient la référence (attempts 1, failures 0)
- *   - bon coup                   → attempts + 1
- *   - mauvais coup (refusé)      → attempts + 1 et failures + 1, réponse non dévoilée
+ * Modèle : openingDB[clé] = { move, san, attempts, failures, path?, ply?, due? }
+ *   - position inconnue          → le coup devient la référence (attempts 0, due = maintenant : il sera
+ *                                  proposé dès la prochaine séance d'Entraînement)
+ *   - bon coup / mauvais coup    → verdict affiché, mais RIEN n'est compté : seul l'Entraînement fait
+ *                                  évoluer les statistiques et le planning de révision (newEntry, storage.js)
  * Aucune profondeur maximale : l'arbre se prolonge tant que des coups sont joués.
  */
 
@@ -18,29 +19,14 @@
 
 // ─── OUTILS MOTEUR (sans effet sur l'affichage) ───────────────────────────────
 
-function _parseUci(u) {
-    return { from: squareToIdx(u.slice(0, 2)), to: squareToIdx(u.slice(2, 4)), promo: u[4] || null };
-}
-
-function _withEngineSnapshot(fn) {
-    const s = { board: board.slice(), turn, castlingRights: { ...castlingRights }, enPassant };
-    try { return fn(); }
-    finally { board = s.board; turn = s.turn; castlingRights = s.castlingRights; enPassant = s.enPassant; }
-}
+const _parseUci = u => Chess.parseUci(u);
+const _withEngineSnapshot = fn => Chess.isolated(fn);       // calcul sur une autre position que celle affichée
 
 // Joue un coup UCI sur l'état brut du moteur (sans historique) et renvoie son SAN.
 function _applyUciRaw(uci) {
     const { from, to, promo } = _parseUci(uci);
     const san = toAlgebraic(from, to, promo);
-    const t   = turn;
-    applyMoveRaw(from, to);
-    if (promo) board[to] = t === 'w' ? promo.toUpperCase() : promo.toLowerCase();
-    else if (board[to] && board[to].toUpperCase() === 'P') {
-        const r2 = Math.floor(to / 8);
-        if (r2 === 7) board[to] = 'Q';
-        if (r2 === 0) board[to] = 'q';
-    }
-    turn = t === 'w' ? 'b' : 'w';
+    Chess.playRaw(uci);
     return san;
 }
 
@@ -55,9 +41,8 @@ function formatLinePrefix(sans) {
 }
 
 function _pathToSans(path) {
-    const sans = [];
-    _withEngineSnapshot(() => { parseFEN(INIT_FEN); path.forEach(u => sans.push(_applyUciRaw(u))); });
-    return sans;
+    let pos = Chess.start();
+    return path.map(u => { const san = Chess.san(pos, u); pos = Chess.play(pos, u); return san; });
 }
 
 // SAN d'un coup UCI depuis une clé de position ; null si le coup est impossible.
@@ -310,34 +295,24 @@ function executePlayerMove(from, to, promo) {
 
     if (!entry) {
         // Position inconnue → ce coup devient l'unique réponse de référence.
-        const path = pathNow.concat(movStr);
-        openingDB[key] = { move: movStr, san, attempts: 1, failures: 0, path, ply: path.length };
-        recordReview(openingDB[key], true);
+        openingDB[key] = newEntry(movStr, san, pathNow.concat(movStr));
         saveDB();
         noteChange(1);
         _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${formatSan(san, turn)}`, 'new');
 
     } else if (_solutionKey === key) {
-        // Solution dévoilée : l'erreur est déjà comptée, on ne compte ni réussite ni nouvelle erreur.
-        if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info', 'Aucune réussite comptée.');
+        if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info');
         else _rejectMove(to, "✗ Ce n'est pas le coup de la solution.");
 
     } else if (movStr === entry.move) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
         const transp = _isTransposition(entry);
-        entry.attempts++;
-        recordReview(entry, true);
-        if (!entry.path) { entry.path = pathNow.concat(movStr); entry.ply = entry.path.length; }
-        saveDB();
+        if (!entry.path) { entry.path = pathNow.concat(movStr); entry.ply = entry.path.length; saveDB(); }
         _commitMove(from, to, promo, null, transp ? '✓ Correct ! (transposition)' : '✓ Correct !', 'ok');
 
     } else {
         // Mauvais coup : refusé, la bonne réponse n'est pas dévoilée.
-        entry.attempts++;
-        entry.failures++;
-        recordReview(entry, false);
-        saveDB();
-        _rejectMove(to, '✗ Pas le bon coup', 'Erreur comptée. Réessayez, ou appuyez sur Indice.');
+        _rejectMove(to, '✗ Pas le bon coup', 'Réessayez, ou appuyez sur Indice.');
         noteMistake(key);
     }
 }
@@ -360,7 +335,7 @@ function noteMistake(key) {
 const PIECE_HINT = { P: 'un Pion', N: 'un Cavalier', B: 'un Fou', R: 'une Tour', Q: 'une Dame', K: 'le Roi' };
 
 let _hintKey      = null;     // position pour laquelle l'indice a été donné (le bouton affiche alors « Solution »)
-let _solutionKey  = null;     // position dont la solution a été dévoilée en mode Jouer (erreur déjà comptée)
+let _solutionKey  = null;     // position dont la solution a été dévoilée en mode Jouer
 let _solutionMove = null;     // { key, from, to } : coup surligné par le halo
 
 function showHint() {
@@ -387,15 +362,9 @@ function showSolution() {
     const key   = positionKey();
     const entry = openingDB[key];
     if (!entry || turn !== playerColor) return;
-    if (_solutionKey !== key) {
-        _solutionKey = key;
-        entry.attempts++;
-        entry.failures++;
-        recordReview(entry, false);
-        saveDB();
-    }
+    _solutionKey = key;
     revealSolution(entry);
-    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer. Une erreur est comptée sur la position.');
+    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer.');
 }
 
 // Surligne le coup de `entry` (pièce + case d'arrivée) avec le halo doré.
@@ -418,7 +387,7 @@ function _syncHintBtn() {
         if (b.dataset.sol === String(sol)) return;
         b.dataset.sol = String(sol);
         b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>` : `${ico('lightbulb')}<span class="btn-label">Indice</span>`;
-        b.title       = sol ? 'Voir la solution (Espace) — compte une erreur' : 'Indice (Espace)';
+        b.title       = sol ? `Voir la solution (Espace)${gameMode === 'training' ? ' — compte une erreur' : ''}` : 'Indice (Espace)';
     });
 }
 
@@ -596,6 +565,15 @@ function askConfirmChoice(message, labels, onCascade, onSolo) {
 //   d'origine est effacée, on revient à cette position et le prochain coup joué
 //   devient la nouvelle réponse de référence (attempts 1, failures 0).
 
+// Clé de la position d'avant un coup de l'historique (roques et prise en passant compris).
+function _keyBeforeMove(m) {
+    return _withEngineSnapshot(() => {
+        board = m.boardBefore.slice(); turn = m.turnBefore;
+        castlingRights = { ...m.castlingBefore }; enPassant = m.epBefore;
+        return positionKey();
+    });
+}
+
 function undoMove() {
     if (moveHistory.length === 0) { setStatus('Aucun coup à annuler.', 'info'); return; }
 
@@ -604,7 +582,7 @@ function undoMove() {
     if (last.turnBefore !== playerColor) {
         // Réponse adverse annulée : on l'oublie si elle ne mène à rien dans le répertoire.
         const childKey = positionKey();
-        const posKey   = _withEngineSnapshot(() => { board = last.boardBefore.slice(); turn = last.turnBefore; return positionKey(); });
+        const posKey   = _keyBeforeMove(last);
         if (!openingDB[childKey] && forgetOppReply(posKey, moveToStr(last.from, last.to, last.promo))) saveOpp();
         performUndo();
         if (typeof refreshTree === 'function') refreshTree();
@@ -613,11 +591,7 @@ function undoMove() {
     }
 
     // Clé de la position AVANT mon coup (celle de l'entrée à effacer).
-    const key = _withEngineSnapshot(() => {
-        board = last.boardBefore.slice();
-        turn  = last.turnBefore;
-        return positionKey();
-    });
+    const key = _keyBeforeMove(last);
 
     if (!openingDB[key]) {                       // rien d'enregistré (déjà supprimé depuis l'Arbre)
         performUndo();

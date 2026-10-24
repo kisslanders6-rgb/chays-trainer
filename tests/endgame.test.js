@@ -59,4 +59,27 @@ t('finales de pions : la percée ne se gagne que par 1.b6, Réti ne s\'annule qu
     }
 });
 
+t('pièces mineures : seuls les coups qui ne perdent pas sont acceptés (cavalier, Fou de la mauvaise couleur)', () => {
+    for (const [id, want] of [['mineur-cavalier', ['d3b4', 'd3c5', 'd3e5']], ['mineur-fou-couleur', ['e6e7', 'e6f5', 'e6f6', 'e6f7']]]) {
+        const ex = ENDGAME_BY_ID[id], st = EG.fromFen(ex.fen);
+        const ok = EG.legalMoves(st).filter(m => EG.pawnMoveValue(st, m, ex.horizon) >= 0).map(_egUci).sort();
+        jeq(ok, want, id);
+    }
+});
+
+t('fourchette : une Dame promue qu\'un cavalier prend par échec double ne compte pas comme un gain', () => {
+    // b8=D ?? Nd7+ puis Nxb8 : la promotion n'est pas gagnante.
+    const st = EG.fromFen('8/1P6/5K2/2n5/8/8/8/7k w - - 0 1');
+    assert.strictEqual(EG.pawnMoveValue(st, _egParseUci('b7b8q'), 2), 0);
+    const quiet = EG.fromFen('8/1P6/8/8/8/8/6n1/K5k1 w - - 0 1');                // cavalier trop loin : gain
+    assert.strictEqual(EG.pawnMoveValue(quiet, _egParseUci('b7b8q'), 2), 1);
+});
+
+t('Vancura : roi hors du coin, Tour qui quitte la 6e ou échange perdant refusés ; attaque latérale acceptée', () => {
+    const ex = ENDGAME_BY_ID['rook-vancura'], st = EG.fromFen(ex.fen);
+    const verdict = u => ctx._egVancuraCheck(st, _egParseUci(u));
+    ['f6b6', 'f6e6', 'g7h7'].forEach(u => assert.strictEqual(verdict(u), null, u));
+    ['g7f7', 'f6f8', 'f6a6'].forEach(u => assert(verdict(u) && verdict(u).msg, u));
+});
+
 console.log(`\n${n} tests réussis.`);

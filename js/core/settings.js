@@ -49,6 +49,7 @@ const SYNCED_PREFS = {
     // Révisions et notation
     dailyGoal:  { ok: v => Number.isInteger(v) && v >= 5 && v <= 50, def: 10 },
     rhythm:     { ok: _oneOf(['soft', 'std', 'intense']), def: 'std' },
+    freqWeight: { ok: _bool, def: true },
     notation:   { ok: _oneOf(['fr', 'en', 'fig']), def: 'fr' },
     backupReminder: { ok: _oneOf(['never', 'weekly', 'monthly']), def: 'weekly' },
     // Profil
@@ -172,7 +173,7 @@ function setThemeMode(mode) {
 }
 
 if (typeof matchMedia === 'function') {
-    try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyThemeMode(); }); } catch (e) {}
+    try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyThemeMode(); }); } catch (e) { /* navigateur ancien : thème système lu au chargement seulement */ }
 }
 
 // Recopie mode et sons dans les préférences synchronisées (option « syncLooks »).

@@ -63,7 +63,7 @@ const AccountUI = (function () {
         LocalStorageAdapter.keys().forEach(k => {
             const kind = SyncModel.kindOf(k);
             if (!kind) return;
-            let v = null; try { v = JSON.parse(LocalStorageAdapter.get(k)); } catch (e) {}
+            let v = null; try { v = JSON.parse(LocalStorageAdapter.get(k)); } catch (e) { /* illisible : compté comme vide */ }
             if (kind === 'db' && v && typeof v === 'object') positions += Object.keys(v).length;
             else if (kind === 'list' && Array.isArray(v)) reps = v.length;
             else if ((kind === 'trash' && Array.isArray(v) && v.length) || (kind === 'endgames' && v && Object.keys(v).length)) other = true;
@@ -354,7 +354,10 @@ const AccountUI = (function () {
     // ─── Première synchronisation ─────────────────────────────────────────────
     function applyStrategy(strategy, backupFirst) {
         const u = Auth.user(); if (!u) return;
-        if (backupFirst) { try { if (typeof exportDB === 'function') exportDB(); } catch (e) {} }   // sauvegarde locale, seulement si demandée
+        if (backupFirst) {                                                    // sauvegarde locale, seulement si demandée
+            try { if (typeof exportDB === 'function') exportDB(); }
+            catch (e) { reportError('sauvegarde avant synchronisation', e, { notify: true, message: 'La sauvegarde locale a échoué : la synchronisation n\'a pas été lancée. Réessayez, ou exportez depuis Données.' }); return; }
+        }
         SyncIntent.set({ user: u.id, strategy, at: Date.now() });
         if (strategy !== 'download') SyncMeta.markAllDirty();
         window.dispatchEvent(new CustomEvent('chays-sync-intent', { detail: { strategy, user: u.id } }));

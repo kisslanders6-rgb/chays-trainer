@@ -20,8 +20,9 @@ const HELP_GUIDES = [
     ['play', 'crown', 'Jouer', 'Construire et réviser un répertoire', [
         'Choisissez un <strong>répertoire</strong> et une <strong>couleur</strong>, ou <strong>reprenez</strong> la dernière partie.',
         'Jouez vos coups <strong>et</strong> ceux de l’adversaire pour explorer la branche voulue.',
-        'Dans une position inconnue, votre coup devient l’<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un autre coup est refusé et compté comme erreur.',
-        '<strong>Indice</strong> (Espace) montre la pièce à jouer ; un second appui dévoile le coup et compte une erreur.'], 'tab:play'],
+        'Dans une position inconnue, votre coup devient l’<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un autre coup est refusé.',
+        '<strong>Indice</strong> (Espace) montre la pièce à jouer ; un second appui dévoile le coup.',
+        'Jouer sert à <strong>construire</strong> : rien n’y est compté. Un nouveau coup est proposé dès la prochaine séance d’Entraînement, qui seule fait évoluer statistiques et révisions.'], 'tab:play'],
     ['training', 'target', 'Entraînement', 'Des exercices qui finissent par un bilan', [
         'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur. <strong>Révision du jour</strong> pose toutes les positions dues.',
         'Autres exercices : <strong>Points faibles</strong>, <strong>Ligne complète</strong> (une ouverture du premier coup au bout de la variante), <strong>À confirmer</strong>, <strong>Contre-la-montre</strong> (3 minutes) et <strong>Mode libre</strong> (tirage sans fin).',
@@ -33,7 +34,7 @@ const HELP_GUIDES = [
         'Les positions sont regroupées par <strong>ouverture nommée</strong> ; chacune se révise (▶) ou s’affiche en aperçu, le coup attendu masqué.',
         'La régularité (série, calendrier, réussite par semaine) compte tous les répertoires.'], 'tab:stats'],
     ['endgame', 'pawn', 'Finales', 'Des mats élémentaires aux finales de tours', [
-        'Mats élémentaires, finales de pions (opposition, percée, étude de Réti) et de tours (Lucena, Philidor).',
+        'Mats élémentaires, finales de pions (opposition, percée, étude de Réti), de pièces mineures (cavalier contre pion, Fou de la mauvaise couleur) et de tours (Lucena, Philidor, Vancura).',
         'L’adversaire répond tout seul et <strong>chaque coup est vérifié par le calcul</strong> : un coup qui laisse échapper le gain, ou qui perd, est signalé et peut être annulé.',
         'Filtrez par niveau ou lancez un exercice au hasard.'], 'tab:endgame'],
     ['tree', 'git-branch', 'Arbre et données', 'Voir, corriger et sauvegarder ses lignes', [
@@ -47,7 +48,7 @@ const HELP_GUIDES = [
 
 const HELP_FAQ = [
     ['Mes données sont-elles envoyées en ligne ?', 'Seulement si vous créez un compte. Sans compte, tout reste dans ce navigateur : téléchargez une sauvegarde (.json) de temps en temps, depuis Paramètres › Données et sauvegarde.'],
-    ['Que se passe-t-il si je joue un autre coup que celui de mon répertoire ?', 'Le coup est refusé et compté comme une erreur sur cette position, qui reviendra plus vite en révision. Pour changer de coup de référence, utilisez ⋯ sur ce coup dans l’Arbre.'],
+    ['Que se passe-t-il si je joue un autre coup que celui de mon répertoire ?', 'Le coup est refusé. En Entraînement, il compte comme une erreur et la position reviendra plus vite en révision ; dans Jouer, rien n’est compté. Pour changer de coup de référence, utilisez ⋯ sur ce coup dans l’Arbre.'],
     ['Comment comparer mes parties Lichess ou Chess.com à mon répertoire ?', 'Renseignez vos pseudos dans Compte › Profil, puis ouvrez « Mes parties en ligne » dans le panneau Données : chaque déviation est listée et ouvre la position concernée.'],
     ['L’application fonctionne-t-elle sans connexion ?', 'Oui, une fois installée (Paramètres › Données et sauvegarde › Installer). Avec un compte, les modifications faites hors ligne sont synchronisées au retour de la connexion.'],
     ['J’ai supprimé un répertoire par erreur.', 'Il reste 30 jours dans la corbeille, d’où il peut être restauré (menu ⋮ des répertoires, ou Paramètres › Données et sauvegarde).'],
@@ -87,7 +88,7 @@ function _renderHelp(section, q) {
             <div class="pn-step"><em>2</em><b>Jouez les deux camps</b><small>Vos coups deviennent les réponses à retrouver ; les coups de l’adversaire ouvrent de nouvelles branches.</small></div>
             <div class="pn-step"><em>3</em><b>Révisez chaque jour</b><small>L’onglet Entraînement prépare la séance du jour : quelques minutes suffisent.</small></div>
         </div>
-        <div class="pn-actions">${PanelKit.button('Commencer à jouer', 'go', { primary: true, attrs: ' data-v="tab:play"', icon: 'crown' })}${PanelKit.button('Lire les guides', 'section', { attrs: ' data-v="guides"', icon: 'book' })}</div>`;
+        <div class="pn-actions">${PanelKit.button('Commencer à jouer', 'go', { primary: true, attrs: ' data-v="tab:play"', icon: 'crown' })}${PanelKit.button('Lire les guides', 'section', { attrs: ' data-v="guides"', icon: 'book' })}${PanelKit.button('Revoir la présentation', 'go', { attrs: ' data-v="onboarding"', icon: 'play' })}</div>`;
     if (section === 'guides') return HELP_GUIDES.map(g => _guideHTML(g, '')).join('');
     if (section === 'keys')   return typeof _keysHTML === 'function' ? _keysHTML() : '';
     if (section === 'faq')    return HELP_FAQ.map((f, i) => _faqHTML(f, i, '')).join('');
@@ -115,6 +116,7 @@ const HelpPanel = PanelKit.create({
             HelpPanel.close();
             if (value.startsWith('tab:')) goHome(value.slice(4));
             else if (value === 'data') showData();
+            else if (value === 'onboarding') showOnboarding();
             else if (value === 'account' && typeof AccountUI !== 'undefined') AccountUI.open();
         }
     }

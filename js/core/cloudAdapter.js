@@ -28,7 +28,7 @@ const SyncMeta = (function () {
 
     function read() {
         let m = null;
-        try { m = JSON.parse(L().get(META_KEY)); } catch (e) {}
+        try { m = JSON.parse(L().get(META_KEY)); } catch (e) { /* illisible : état vierge, tout sera resynchronisé */ }
         m = (m && typeof m === 'object') ? m : {};
         const obj = o => (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
         return { owner: typeof m.owner === 'string' ? m.owner : null,
@@ -41,7 +41,7 @@ const SyncMeta = (function () {
         const m = read();
         m.dirty[key] = ++m.seq;
         write(m);
-        listeners.forEach(fn => { try { fn(key); } catch (e) {} });
+        listeners.forEach(fn => { try { fn(key); } catch (e) { reportError('synchro : écouteur ' + key, e); } });
     }
 
     // Première activation de la synchro : tout ce qui est synchronisable doit partir.

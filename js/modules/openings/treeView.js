@@ -43,9 +43,13 @@ function _applySideTab() {
     const eff = gameMode === 'play' ? sideTab : 'moves';      // l'arbre n'existe qu'en mode Jouer
     document.getElementById('side-tab-moves').classList.toggle('active', eff === 'moves');
     document.getElementById('side-tab-tree').classList.toggle('active', eff === 'tree');
+    document.getElementById('side-tab-freq').classList.toggle('active', eff === 'freq');
     document.getElementById('moves-bar').classList.toggle('hidden', eff !== 'moves');
     document.getElementById('tree-view').classList.toggle('hidden', eff !== 'tree');
-    if (eff === 'tree' && document.getElementById('game-screen').style.display !== 'none') renderTree(true);
+    document.getElementById('freq-view').classList.toggle('hidden', eff !== 'freq');
+    if (document.getElementById('game-screen').style.display === 'none') return;
+    if (eff === 'tree') renderTree(true);
+    if (eff === 'freq') renderFreqPanel();
 }
 
 // Les données ont changé (coup enregistré, suppression, import…) : reconstruction différée.
@@ -75,7 +79,7 @@ function buildRepertoireTree() {
 
     function keyAfter(path) {
         try {
-            return _withEngineSnapshot(() => { parseFEN(INIT_FEN); path.forEach(_applyUciRaw); return positionKey(); });
+            return Chess.key(Chess.replay(path));
         } catch (e) { return null; }
     }
 
@@ -123,7 +127,7 @@ function buildRepertoireTree() {
         addReplies(mp, depth, rr.list);
     }
 
-    const initKey = _withEngineSnapshot(() => { parseFEN(INIT_FEN); return positionKey(); });
+    const initKey = Chess.key(Chess.start());
     if (playerColor === 'w') { if (openingDB[initKey]) addMe(initKey, [], 0); }
     else addReplies([], 0, repliesAfter([]).list);            // Noirs : on part des premiers coups adverses
 
@@ -145,7 +149,7 @@ function _findCurrentIndex(rows) {
     const ps   = path.join(' ');
     let i = rows.findIndex(r => r.path.join(' ') === ps);
     if (i >= 0) return i;
-    const key = _withEngineSnapshot(() => { parseFEN(INIT_FEN); path.forEach(_applyUciRaw); return positionKey(); });
+    const key = Chess.key(Chess.replay(path));
     i = rows.findIndex(r => r.key === key && !r.ref);
     return i >= 0 ? i : rows.findIndex(r => r.key === key);
 }

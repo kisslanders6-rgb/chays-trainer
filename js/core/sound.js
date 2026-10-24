@@ -86,7 +86,7 @@ const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', succe
 // Vibration (téléphones compatibles) : coup refusé, exercice réussi. Indépendante du son.
 function buzz(kind) {
     if (!appSettings.haptic || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
-    try { navigator.vibrate(kind === 'error' ? [28, 50, 28] : 18); } catch (e) {}
+    try { navigator.vibrate(kind === 'error' ? [28, 50, 28] : 18); } catch (e) { /* vibration non prise en charge */ }
 }
 
 function playSound(kind) {

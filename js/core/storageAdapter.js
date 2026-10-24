@@ -24,7 +24,7 @@ const LocalStorageAdapter = {
     remove(key)     { try { localStorage.removeItem(key); return true; } catch (e) { return false; } },
     keys() {
         const out = [];
-        try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch (e) {}
+        try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch (e) { /* stockage interdit : aucune clé */ }
         return out;
     }
 };
@@ -36,7 +36,12 @@ const dataStore = {
 
     // Chaînes brutes
     get(key)         { return this.adapter.get(key); },
-    set(key, value)  { return this.adapter.set(key, String(value)); },
+    // Une écriture refusée (stockage plein ou interdit) est toujours signalée à l'utilisateur.
+    set(key, value)  {
+        const ok = this.adapter.set(key, String(value));
+        if (!ok && typeof reportError === 'function') reportError('écriture de ' + key, new Error('écriture refusée'), { notify: true, message: STORAGE_FULL_MSG });
+        return ok;
+    },
     remove(key)      { return this.adapter.remove(key); },
     keys()           { return this.adapter.keys(); },
 

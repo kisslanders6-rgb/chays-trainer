@@ -57,7 +57,7 @@ function trashEntries(keys, note) {
     if (!n) return true;
     const root = entries[keys[0]] || entries[Object.keys(entries)[0]];
     let line = root.san;
-    if (root.path) { try { line = formatLinePrefix(_pathToSans(root.path)); } catch (e) {} }
+    if (root.path) { try { line = formatLinePrefix(_pathToSans(root.path)); } catch (e) { /* chemin illisible : libellé = SAN seul */ } }
     return moveToTrash({
         type: n > 1 ? 'branch' : 'move', rep: currentRepertoire, color: playerColor,
         label: line + (note ? ` (${note})` : ''), count: n, data: { entries }
@@ -123,9 +123,10 @@ function restoreTrashItem(id) {
         const db = readDBFor(item.rep, item.color);
         const conflicts = {};
         let restored = 0;
-        Object.keys(item.data.entries).forEach(k => {
-            if (db[k]) conflicts[k] = item.data.entries[k];                // position déjà occupée : on n'écrase jamais
-            else { db[k] = item.data.entries[k]; restored++; }
+        const entries = upgradeDBKeys(item.data.entries);                  // supprimé avant le nouveau format de clés
+        Object.keys(entries).forEach(k => {
+            if (db[k]) conflicts[k] = entries[k];                          // position déjà occupée : on n'écrase jamais
+            else { db[k] = entries[k]; restored++; }
         });
         dataStore.mustSet(dbKeyFor(item.rep, item.color), JSON.stringify(db));
         noteChange(restored);
