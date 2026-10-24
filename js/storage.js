@@ -146,6 +146,11 @@ function readDBFor(rep, color) {
 
 const DAY_MS           = 86400000;
 const REVIEW_GROWTH    = 2.5;
+// Rythme des révisions (Paramètres › Jeu) : Doux espace davantage les révisions, Intensif les rapproche.
+const REVIEW_RHYTHM    = { soft: 3.2, std: REVIEW_GROWTH, intense: 1.8 };
+function reviewGrowth() {
+    return (typeof appSettings !== 'undefined' && REVIEW_RHYTHM[appSettings.rhythm]) || REVIEW_GROWTH;
+}
 const REVIEW_MAX_DAYS  = 180;
 const REVIEW_RETRY_MS  = 10 * 60000;
 const ACTIVITY_KEY     = 'chessTrainer_activity';
@@ -169,7 +174,7 @@ function recordReview(entry, ok) {
         entry.interval = 0;
         entry.due = now + REVIEW_RETRY_MS;
     } else if (wasDue) {
-        entry.interval = prev ? Math.min(REVIEW_MAX_DAYS, Math.round(prev * REVIEW_GROWTH * 10) / 10) : 1;
+        entry.interval = prev ? Math.min(REVIEW_MAX_DAYS, Math.round(prev * reviewGrowth() * 10) / 10) : 1;
         entry.due = now + entry.interval * DAY_MS;
     } else if (!entry.due) {                   // révision anticipée d'une ancienne position : son planning devient explicite
         entry.interval = prev;

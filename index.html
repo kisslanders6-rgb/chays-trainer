@@ -20,7 +20,11 @@
     <script>
         (function () {
             var d = document.documentElement;
-            try { var t = localStorage.getItem('chessTrainer_theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
+            try {       // 'light' = thème sombre, 'dark' = thème clair (noms historiques) ; 'system' suit l'appareil
+                var t = localStorage.getItem('chessTrainer_theme');
+                if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+                if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
+            } catch (e) {}
             try {       // thème d'échiquier dès la première image : le logo et l'accueil en dérivent (settings.js le revalide)
                 var p = JSON.parse(localStorage.getItem('chessTrainer_prefs') || '{}') || {}, s = JSON.parse(localStorage.getItem('chessTrainer_settings') || '{}') || {};
                 var b = (p.boardTheme && p.boardTheme.v) || s.boardTheme;
@@ -40,6 +44,7 @@
     <link rel="stylesheet" href="css/home.css" />
     <link rel="stylesheet" href="css/screens.css" />
     <link rel="stylesheet" href="css/account.css" />
+    <link rel="stylesheet" href="css/panels.css" />
     <link rel="stylesheet" href="css/feedback.css" />
 </head>
 <body>
@@ -185,6 +190,7 @@
                 <div class="home-hero" data-stagger>
                     <span class="home-greet" id="home-greet">Bonjour</span>
                     <h1 class="home-title">Quelle couleur aujourd'hui&nbsp;?</h1>
+                    <div class="home-goal" id="home-goal" role="status" hidden></div>
                 </div>
 
                 <div class="repertoire-select" data-stagger>
@@ -457,76 +463,8 @@
     </div>
 
     <!-- ─── OVERLAY PARAMÈTRES ────────────────────────────────────────────── -->
-    <div id="settings-overlay" class="overlay hidden">
-        <div class="panel settings-panel">
-            <div class="panel-head">
-                <div class="panel-title"><svg class="ico"><use href="#i-settings"/></svg> Paramètres</div>
-                <button class="panel-x" onclick="closeSettings()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
-            </div>
-
-            <div class="set-section">
-                <div class="set-label" style="margin-bottom:10px;">Sauvegarde et synchronisation</div>
-                <div id="backup-status"></div>
-                <button class="btn data-open-btn" onclick="closeSettings(); showData()"><svg class="ico"><use href="#i-database"/></svg> Données : PGN, analyse d'une partie, corbeille…</button>
-            </div>
-
-            <div class="set-section hidden" id="install-section">
-                <div class="set-label" style="margin-bottom:10px;">Installer l'application</div>
-                <div class="set-row">
-                    <div class="set-hint" id="install-hint"></div>
-                    <button class="btn btn-primary" id="install-btn" style="padding:10px 18px;" onclick="installApp()">Installer</button>
-                </div>
-            </div>
-
-            <div class="set-section">
-                <div class="set-row">
-                    <div>
-                        <div class="set-label">Effets sonores</div>
-                        <div class="set-hint">Coups, captures et coups refusés</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="set-sound" onchange="onSoundToggle(this.checked)">
-                        <span class="switch-slider"></span>
-                    </label>
-                </div>
-                <div class="set-row">
-                    <div class="set-label">Volume</div>
-                    <div class="set-range">
-                        <input type="range" id="set-volume" min="0" max="100" step="5" oninput="onVolumeInput(this.value)" onchange="onVolumeCommit()">
-                        <span id="set-volume-val" class="set-hint"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="set-section">
-                <div class="set-label" style="margin-bottom:10px;">Style des pièces</div>
-                <div class="theme-options" id="piece-options"></div>
-                <div class="set-hint" id="piece-credit" style="margin-top:8px;"></div>
-            </div>
-
-            <div class="set-section">
-                <div class="set-label" style="margin-bottom:10px;">Style des flèches</div>
-                <div class="theme-options" id="arrow-options"></div>
-                <div class="set-hint" style="margin-top:8px;">Clic droit glissé sur l'échiquier : flèche ; clic droit : cercle. <kbd>Maj</kbd> rouge, <kbd>Alt</kbd> bleu, <kbd>Ctrl</kbd> or.</div>
-            </div>
-
-            <div class="set-section">
-                <div class="set-label" style="margin-bottom:10px;">Thème de l'échiquier</div>
-                <div class="theme-options" id="board-options">
-                    <button class="theme-opt" data-board="classic" onclick="setBoardTheme('classic')"><span class="theme-swatch"></span>Vert classique</button>
-                    <button class="theme-opt" data-board="leather" onclick="setBoardTheme('leather')"><span class="theme-swatch"></span>Cuir vert</button>
-                    <button class="theme-opt" data-board="wood"    onclick="setBoardTheme('wood')"><span class="theme-swatch"></span>Bois chaud</button>
-                    <button class="theme-opt" data-board="ice"     onclick="setBoardTheme('ice')"><span class="theme-swatch"></span>Bleu glace</button>
-                    <button class="theme-opt" data-board="night"   onclick="setBoardTheme('night')"><span class="theme-swatch"></span>Bleu nuit</button>
-                    <button class="theme-opt" data-board="violet"  onclick="setBoardTheme('violet')"><span class="theme-swatch"></span>Violet</button>
-                    <button class="theme-opt" data-board="walnut"  onclick="setBoardTheme('walnut')"><span class="theme-swatch"></span>Noyer</button>
-                    <button class="theme-opt" data-board="stone"   onclick="setBoardTheme('stone')"><span class="theme-swatch"></span>Pierre</button>
-                    <button class="theme-opt" data-board="hache"   onclick="setBoardTheme('hache')"><span class="theme-swatch"></span>Hachuré</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Paramètres : fenêtre à rubriques construite par js/core/settingsUI.js -->
+    <div id="settings-overlay" class="overlay hidden"></div>
     <!-- ─── OVERLAY CORBEILLE ─────────────────────────────────────────────── -->
     <div id="trash-overlay" class="overlay hidden">
         <div class="panel trash-panel">
@@ -542,50 +480,8 @@
     </div>
 
     <!-- ─── OVERLAY AIDE ──────────────────────────────────────────────────── -->
-    <div id="help-overlay" class="overlay hidden">
-        <div class="panel help-panel">
-            <div class="panel-head">
-                <div class="panel-title"><svg class="ico"><use href="#i-info"/></svg> Comment ça marche ?</div>
-                <button class="panel-x" onclick="closeHelp()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-pawn"/></svg></div>
-                <div><div class="help-title">Jouer</div>
-                    <div class="help-text">Choisissez un répertoire et une couleur (ou <strong>Reprendre</strong> la dernière partie), puis jouez vos coups <strong>et</strong> ceux de l'adversaire pour explorer la branche voulue. Dans une position inconnue, votre coup devient l'<strong>unique réponse</strong> enregistrée ; ensuite, il faut la retrouver : un mauvais coup est refusé et compté comme une erreur. <strong>Indice</strong> donne le type de pièce ; appuyé une seconde fois, il devient <strong>Solution</strong> et montre le coup (une erreur est comptée). <strong>Flèches</strong> (touche R) affiche votre répertoire sur l'échiquier. L'onglet <strong>Arbre</strong> montre toutes vos lignes et leur maîtrise ; « N non couverts » mène d'un clic à la prochaine réponse adverse sans réponse. <strong>Corriger</strong> remplace un coup enregistré, <strong>Lichess</strong> ouvre la position affichée pour l'analyser. Le badge <strong>Blancs / Noirs</strong> de la barre du haut change de couleur.</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-target"/></svg></div>
-                <div><div class="help-title">Entraînement</div>
-                    <div class="help-text"><strong>Révision espacée</strong> : chaque position a une date de révision, qui s'éloigne à chaque réussite et revient vite après une erreur. Les positions à réviser passent en premier, sans que les autres disparaissent. <strong>Départ</strong> : « position ciblée » (l'échiquier rejoue les trois coups précédents) ou « début de partie » (toute une ligne, jusqu'à la fin de la variante). <strong>Exercice</strong> : un coup, une séquence, ou la variante entière. Indice, puis Solution au second appui, montre le coup attendu, sans compter de réussite. <strong>Blancs et Noirs mélangés</strong> tire la couleur à pile ou face avant chaque variante ; le badge de la barre du haut passe d'une couleur à l'autre.</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-bar-chart"/></svg></div>
-                <div><div class="help-title">Statistiques</div>
-                    <div class="help-text">Votre activité sur 30 jours (série de jours, réussites et erreurs, positions à réviser), puis un <strong>taux d'erreur</strong> par position, classé en maîtrisé, fragile ou à retravailler. Les positions sont regroupées par ligne d'ouverture (les 4 premiers demi-coups) : ouvrez une ligne pour voir ses coups, touchez-en un pour revoir la position.</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-crown"/></svg></div>
-                <div><div class="help-title">Finales</div>
-                    <div class="help-text">Des mats élémentaires aux finales de pions (opposition, percée, étude de Réti) et de tours (Lucena, Philidor). L'adversaire répond tout seul et <strong>chaque coup est vérifié par le calcul</strong> : un coup qui laisse échapper le gain, ou qui perd, est signalé et peut être annulé. Filtrez par niveau ou lancez un exercice au hasard.</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-database"/></svg></div>
-                <div><div class="help-title">Arbre, données et sauvegarde</div>
-                    <div class="help-text">L'onglet <strong>Arbre</strong> montre toutes vos lignes ; le bouton ⋯ d'un de vos coups permet de le <strong>remplacer</strong> ou de le <strong>supprimer</strong>. Le panneau <strong>Données</strong> (Paramètres, ou menu ⋮ des répertoires) regroupe la <strong>sauvegarde (.json)</strong> complète (statistiques, planning, finales), l'import et l'export <strong>PGN</strong> (variantes comprises), l'<strong>analyse de vos parties</strong> et la <strong>Corbeille</strong>. <strong>Analyser mes parties</strong> (aussi via le bouton <strong>Partie</strong>) : entrez votre pseudo Chess.com ou Lichess pour récupérer vos dernières parties, ou collez un PGN ; l'échiquier s'arrête sur le premier coup sorti du répertoire, et si c'est le vôtre, il compte comme une erreur. Les éléments supprimés restent 30 jours dans la Corbeille.</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-shield-check"/></svg></div>
-                <div><div class="help-title">Compte et synchronisation</div>
-                    <div class="help-text">Sans compte, tout reste dans ce navigateur. Avec un compte, vos répertoires, statistiques, révisions, finales, ainsi que le thème de l'échiquier, les pièces et les flèches, sont enregistrés en ligne et <strong>synchronisés entre vos appareils</strong>. Le mode clair / sombre et les sons restent propres à chaque appareil. Connexion par e-mail ou avec <strong>Google</strong> ; « Supprimer mon compte » efface définitivement vos données en ligne (celles de l'appareil sont conservées).</div></div>
-            </div>
-            <div class="help-item">
-                <div class="help-icon"><svg class="ico"><use href="#i-settings"/></svg></div>
-                <div><div class="help-title">Paramètres</div>
-                    <div class="help-text">Sons, style des pièces, thème de l'échiquier, style des flèches, et installation de l'application (hors ligne).</div></div>
-            </div>
-            <div class="help-tips">Astuces : glissez-déposez ou cliquez les pièces · clic droit glissé = flèche, clic droit = cercle (<kbd>Maj</kbd> rouge, <kbd>Alt</kbd> bleu, <kbd>Ctrl</kbd> or ; clic gauche pour effacer) · cliquez un coup de la barre pour y revenir · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>Espace</kbd> indice · <kbd>F</kbd> retourner · <kbd>Échap</kbd> fermer · au clavier : <kbd>Tab</kbd> jusqu'à l'échiquier, flèches puis <kbd>Entrée</kbd> · sur téléphone : touchez ou glissez la poignée sous l'échiquier pour agrandir le panneau, et « Plus » pour les autres actions</div>
-        </div>
-    </div>
+    <!-- Aide : fenêtre à rubriques construite par js/core/helpUI.js -->
+    <div id="help-overlay" class="overlay hidden"></div>
 
     <!-- ─── OVERLAY CONFIRMATION ─────────────────────────────────────────── -->
     <div id="confirm-overlay" class="overlay hidden">
@@ -623,6 +519,7 @@
 
 <!-- ─── SCRIPTS (ordre de dépendance ; icons.js est chargé en tête de <body>) ─── -->
 <script src="js/core/utils.js"></script>
+<script src="js/core/panelKit.js"></script>
 <script src="js/core/network.js"></script>
 <script src="js/core/storageAdapter.js"></script>
 <script src="js/core/syncModel.js"></script>
@@ -652,6 +549,8 @@
 <script src="js/modules/endgame/egExercises.js"></script>
 <script src="js/modules/endgame/endgame.js"></script>
 <script src="js/app.js"></script>
+<script src="js/core/settingsUI.js"></script>
+<script src="js/core/helpUI.js"></script>
 <script src="js/core/accountUI.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>

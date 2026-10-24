@@ -20,7 +20,9 @@ let _online = { busy: false, rows: null, summary: null, error: '' };
 
 function _onlinePrefs() {
     const p = dataStore.getJSON(ONLINE_PREFS_KEY, null) || {};
-    return { site: p.site === 'lichess' ? 'lichess' : 'chesscom', user: typeof p.user === 'string' ? p.user : '',
+    const site = p.site === 'lichess' ? 'lichess' : 'chesscom';
+    const fromProfile = typeof appSettings !== 'undefined' ? (site === 'lichess' ? appSettings.lichessUser : appSettings.chesscomUser) : '';
+    return { site, user: typeof p.user === 'string' && p.user ? p.user : fromProfile || '',      // repli : pseudo du profil (Compte)
              count: ONLINE_COUNTS.includes(p.count) ? p.count : 20 };
 }
 

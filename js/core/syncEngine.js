@@ -228,6 +228,7 @@ const SyncEngine = (function () {
             if (r.waiting)    { setStatus('busy', 'En attente de votre choix de première synchronisation…'); return r; }
             backoffIdx = 0; authFails = 0; fullScan = false;
             setStatus('ok', 'À jour · ' + hhmm(Date.now()));
+            if (typeof touchDevice === 'function') touchDevice();       // liste des appareils (Compte › Appareils), au plus 1×/h
             if (r.raced.length) schedule(1000, true);
             return r;
         } catch (e) { return handleError(e); }

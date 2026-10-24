@@ -184,6 +184,26 @@ const Auth = (function () {
         return r.error || !r.ok ? failure(r) : { ok: true };
     }
 
+    // Connexion sans mot de passe : un lien envoyé par e-mail (compte créé au besoin), traité par readHash.
+    async function signInWithLink(email) {
+        const r = await request('/otp' + redirectQuery(), { body: { email, create_user: true } });
+        return r.error || !r.ok ? failure(r) : { ok: true };
+    }
+
+    // Changement d'adresse : un lien de confirmation part vers la nouvelle adresse.
+    async function updateEmail(email) {
+        if (!session) return { ok: false, code: 'no_session', message: 'Session expirée : reconnectez-vous.' };
+        const r = await request('/user' + redirectQuery(), { method: 'PUT', token: session.access_token, body: { email } });
+        return r.error || !r.ok ? failure(r) : { ok: true };
+    }
+
+    // Profil complet côté service (méthodes de connexion associées, date de création).
+    async function fetchUser() {
+        if (!session) return null;
+        const r = await request('/user', { method: 'GET', token: session.access_token });
+        return r.error || !r.ok ? null : r.json;
+    }
+
     async function updatePassword(password) {
         if (!session) return { ok: false, code: 'no_session', message: 'Session expirée : recommencez depuis le lien reçu par e-mail.' };
         const r = await request('/user', { method: 'PUT', token: session.access_token, body: { password } });
@@ -328,7 +348,7 @@ const Auth = (function () {
     }
 
     return {
-        configured, init, refresh, refreshIfNeeded, signIn, signUp, signOut, recover, updatePassword,
+        configured, init, refresh, refreshIfNeeded, signIn, signUp, signOut, recover, updatePassword, signInWithLink, updateEmail, fetchUser,
         providers, signInWithProvider, signInWithIdToken, deleteAccount,
         onChange: fn => { listeners.push(fn); },
         takeNotice: () => { const n = notice; notice = null; return n; },

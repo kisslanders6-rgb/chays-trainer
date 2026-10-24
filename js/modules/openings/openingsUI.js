@@ -52,8 +52,8 @@ function renderBoard() {
             sq.tabIndex = idx === _kbFocus ? 0 : -1;
             sq.setAttribute('aria-label', _squareLabel(idx, board[idx]) + (selected === idx ? ', sélectionnée' : '') + (legalMoves.includes(idx) ? ', coup possible' : ''));
 
-            if (idx === lastFrom)             sq.classList.add('hl-from');
-            if (idx === lastTo)               sq.classList.add('hl-to');
+            if (appSettings.lastMove && idx === lastFrom) sq.classList.add('hl-from');   // Paramètres › Apparence
+            if (appSettings.lastMove && idx === lastTo)   sq.classList.add('hl-to');
             if (selected === idx)             sq.classList.add('hl-selected');
             if (legalMoves.includes(idx)) {
                 sq.classList.add('hl-legal');
@@ -72,7 +72,10 @@ function renderBoard() {
             if (col === 0) sq.insertAdjacentHTML('beforeend', `<span class="coord coord-rank">${r + 1}</span>`);
             if (row === 7) sq.insertAdjacentHTML('beforeend', `<span class="coord coord-file">${'abcdefgh'[c]}</span>`);
 
-            sq.addEventListener('click', () => { if (_dragJustEnded()) return; handleClick(idx); });
+            sq.addEventListener('click', () => {
+                if (_dragJustEnded() || appSettings.moveInput === 'drag') return;     // « Glisser » seulement : pas de clic
+                handleClick(idx);
+            });
             el.appendChild(sq);
         });
     });
@@ -92,11 +95,11 @@ function pieceHTML(p) {
 let moveAnim = null;
 
 // Demande une animation (case de départ → case d'arrivée) au prochain renderBoard().
-// Ignorée après un glisser-déposer (la pièce a déjà été déplacée à la main) et si
-// l'utilisateur préfère réduire les animations.
+// Ignorée après un glisser-déposer (la pièce a déjà été déplacée à la main), si l'animation des
+// pièces est coupée ou si les animations sont réduites (Paramètres, ou réglage de l'appareil).
 function animateNextMove(from, to) {
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    moveAnim = (reduce || _dragJustEnded()) ? null : { from, to };
+    const off = appSettings.anim === 'off' || prefersReducedMotion();
+    moveAnim = (off || _dragJustEnded()) ? null : { from, to };
 }
 
 function _runMoveAnim(a) {
@@ -109,7 +112,7 @@ function _runMoveAnim(a) {
     t.style.zIndex = 5;                                   // la pièce passe au-dessus des autres cases
     const anim = pc.animate(
         [{ transform: `translate(${fr.left - tr.left}px, ${fr.top - tr.top}px)` }, { transform: 'translate(0, 0)' }],
-        { duration: 170, easing: 'cubic-bezier(.22,.8,.3,1)' });
+        { duration: appSettings.anim === 'fast' ? 100 : 170, easing: 'cubic-bezier(.22,.8,.3,1)' });
     anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; };
 }
 
@@ -125,7 +128,7 @@ function _paintMovesBar(active) {
     let html = '';
     moveHistory.forEach((m, i) => {
         if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
-        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${escapeHtml(m.san)}</span> `;
+        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${escapeHtml(formatSan(m.san, i % 2 ? 'b' : 'w'))}</span> `;
     });
     bar.innerHTML = html;
     const cur = bar.querySelector('.move-token.active');
@@ -269,7 +272,7 @@ function renderNavBoard() {
     // Barre de coups avec surbrillance du coup courant
     _paintMovesBar(navCursor);
     setStatus(atStart ? 'Navigation — position initiale.'
-                      : `Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${snap.san}`, 'info');
+                      : `Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${formatSan(snap.san, snap.turnBefore)}`, 'info');
 }
 
 function resetNavCursor() {
@@ -473,8 +476,14 @@ function _endDrag(e, cancelled) {
     // relâché sur sa propre case : la pièce reste sélectionnée
 }
 
+// Alt maintenu pendant le coup : choix de la pièce de promotion malgré la promotion automatique.
+let altHeld = false;
+['keydown', 'keyup'].forEach(t => window.addEventListener(t, e => { altHeld = e.altKey; }, true));
+['pointerdown', 'pointerup'].forEach(t => window.addEventListener(t, e => { altHeld = e.altKey; }, true));
+
 _boardEl.addEventListener('pointerdown', e => {
     if (e.button !== 0 || !e.isPrimary || !_canInteract()) return;
+    if (appSettings.moveInput === 'click') return;                     // « Cliquer » seulement : pas de glisser
     const pieceEl = e.target.closest('.piece');
     if (!pieceEl) return;
     const sq = pieceEl.closest('.sq');

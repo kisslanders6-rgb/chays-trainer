@@ -185,7 +185,7 @@ function replaceTreeMove(r) {
         _treeActionsFor = null;
         loadPositionFromPath(r.path.slice(0, -1));
         renderTree(true);
-        setStatus(`Remplacement de ${r.san}`, 'new', 'Jouez le nouveau coup.' + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
+        setStatus(`Remplacement de ${formatSan(r.san, r.ply % 2 === 1 ? 'w' : 'b')}`, 'new', 'Jouez le nouveau coup.' + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
     });
 }
 
@@ -238,7 +238,8 @@ function _masteryBar(mix) {
 
 function _treeLabel(r) {
     const n = Math.ceil(r.ply / 2);
-    return r.ply % 2 === 1 ? `${n}. ${r.san}` : `${n}... ${r.san}`;
+    const san = formatSan(r.san, r.ply % 2 === 1 ? 'w' : 'b');
+    return r.ply % 2 === 1 ? `${n}. ${san}` : `${n}... ${san}`;
 }
 
 function renderTree(rebuild) {

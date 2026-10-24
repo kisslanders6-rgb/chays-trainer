@@ -201,7 +201,7 @@ function initTraining() {
             <span class="trs-eyebrow">Prochains jours</span>
             ${forecast}
             ${mastery}
-            <div class="trs-foot">${ico('target')} ${streak} jour${streak > 1 ? 's' : ''} d'affilée · ${today} essai${today > 1 ? 's' : ''} aujourd'hui</div>
+            <div class="trs-foot">${ico('target')} ${streak} jour${streak > 1 ? 's' : ''} d'affilée · ${today} / ${appSettings.dailyGoal} position${appSettings.dailyGoal > 1 ? 's' : ''} aujourd'hui${today >= appSettings.dailyGoal ? ' · objectif atteint' : ''}</div>
         </section>`;
 
     panel.innerHTML = hero + plan + settings;
@@ -483,7 +483,7 @@ function _pickOppContinuation(line) {
 function _playOpponentReply(opp) {
     _later(() => {
         const m   = _parseUci(opp);
-        const san = toAlgebraic(m.from, m.to, m.promo);
+        const san = formatSan(toAlgebraic(m.from, m.to, m.promo), turn);
         playMoveSound(m.from, m.to);
         animateNextMove(m.from, m.to);
         applyMove(m.from, m.to, m.promo);
@@ -497,11 +497,11 @@ function _playOpponentReply(opp) {
             setStatus('Fin de la variante.', 'ok');
             _finishDrill();
         }
-    }, TRAIN_STEP_MS);
+    }, opponentDelay(TRAIN_STEP_MS));
 }
 
 function _finishDrill() {
-    if (!trainingState.seq.assisted) trainingState.ok++;
+    if (!trainingState.seq.assisted) { trainingState.ok++; playSound('success'); }
     _later(nextDrill, 1400);
 }
 
@@ -537,7 +537,7 @@ function showTrainingSolution() {
         }
     }
     revealSolution(entry);
-    setStatus(`Solution : ${entry.san}`, 'hint', 'Jouez-le pour continuer (aucune réussite comptée).');
+    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer (aucune réussite comptée).');
 }
 
 // ─── RÉPONSE DU JOUEUR ────────────────────────────────────────────────────────
@@ -569,6 +569,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         saveDB();
         const pct = Math.round(100 * entry.failures / entry.attempts);
         _rejectMove(to, '✗ Pas le bon coup', `Taux d'erreur : ${pct} %. Réessayez, ou appuyez sur Indice.`);
+        noteMistake(key);
     } else {
         _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.');
     }

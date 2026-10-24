@@ -251,7 +251,7 @@ function _egLoadPosition() {
     parseFEN(ex.fen);
     moveHistory = []; lastFrom = -1; lastTo = -1;
     selected = null; legalMoves = []; hintPiece = null; awaitingPromotion = null;
-    boardFlipped = ex.player === 'b';
+    boardFlipped = appSettings.autoFlip && ex.player === 'b';
     resetNavCursor();
     clearErrorFx();
     s.busy = false; s.over = false; s.failed = null;
@@ -449,7 +449,7 @@ function answerEndgameMove(from, to, promo) {
     s.busy = true;
     _commitMove(from, to, promo, null, `✓ ${san}`, 'ok');
     renderEndgameCard();
-    _egLater(_egAiReply, 550);
+    _egLater(_egAiReply, opponentDelay(550));
 }
 
 // ─── RÉPONSE AUTOMATIQUE DE L'ADVERSAIRE ──────────────────────────────────────
@@ -489,6 +489,7 @@ function _egAiReply() {
 // ─── FIN D'EXERCICE ───────────────────────────────────────────────────────────
 function _egFinish(msg) {
     const s = endgameState, ex = s.ex;
+    playSound('success');
     s.over = msg; s.busy = true;
     const perfect = s.errors === 0 && s.hints === 0;
     _egBump(ex.id, p => {

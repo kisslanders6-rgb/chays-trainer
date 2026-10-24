@@ -98,9 +98,17 @@ function getBackupStatus() {
 
 // ─── INDICATEURS (pastille sur ⚙) ─────────────────────────────────────────────
 
+// Rappel de sauvegarde (Paramètres › Données) : jamais, chaque semaine (seuils par défaut) ou chaque mois
+// (seulement passé 30 jours, ou sans aucune sauvegarde). Jamais quand le compte synchronise.
+function backupReminderDue(st) {
+    const r = typeof appSettings !== 'undefined' ? appSettings.backupReminder : 'weekly';
+    if (r === 'never' || (st.level !== 'warn' && st.level !== 'danger')) return false;
+    return r !== 'monthly' || !st.last || st.days >= BACKUP_DANGER_DAYS;
+}
+
 function updateBackupIndicators() {
     const st    = getBackupStatus();
-    const alert = st.level === 'warn' || st.level === 'danger';           // jamais quand le compte synchronise
+    const alert = backupReminderDue(st);
     document.querySelectorAll('[data-backup-dot]').forEach(el => {
         el.classList.toggle('has-alert', alert);
         el.dataset.level = st.level;
@@ -166,7 +174,7 @@ async function requestPersistence() {
 function checkBackupOnStart() {
     updateBackupIndicators();
     const st = getBackupStatus();
-    if (st.level !== 'warn' && st.level !== 'danger') return;
+    if (!backupReminderDue(st)) return;
     const last = Number(dataStore.get(BACKUP_NAG_KEY)) || 0;
     if (Date.now() - last < _BK_DAY_MS) return;
     dataStore.set(BACKUP_NAG_KEY, String(Date.now()));
@@ -175,26 +183,19 @@ function checkBackupOnStart() {
 
 // ─── AUTO-BRANCHEMENT (aucune modification d'app.js ni de storage.js requise) ─
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. La carte « Sauvegarde » se remplit à chaque ouverture des Paramètres.
-    if (typeof showSettings === 'function' && !showSettings._bk) {
-        const orig = showSettings;
-        window.showSettings = function () { orig(); renderBackupStatus(); };
-        window.showSettings._bk = true;
-    }
-    // 2. La pastille se met à jour après chaque modification ou export.
+    // 1. La pastille se met à jour après chaque modification ou export.
     ['noteChange', 'markExported'].forEach(name => {
         const orig = window[name];
         if (typeof orig !== 'function' || orig._bk) return;
         window[name] = function (...args) { const r = orig.apply(this, args); updateBackupIndicators(); return r; };
         window[name]._bk = true;
     });
-    // 3. Rappel éventuel au lancement.
+    // 2. Rappel éventuel au lancement.
     checkBackupOnStart();
-    // 4. Connexion / déconnexion : la carte et la pastille changent de discours.
+    // 3. Connexion / déconnexion : la carte et la pastille changent de discours.
     if (typeof Auth !== 'undefined' && Auth.onChange) Auth.onChange(() => {
         updateBackupIndicators();
-        const ov = document.getElementById('settings-overlay');
-        if (ov && !ov.classList.contains('hidden')) renderBackupStatus();
+        if (document.getElementById('backup-status')) renderBackupStatus();
         if (isCloudBackedUp() && typeof hideBackupToast === 'function') hideBackupToast();
     });
 });

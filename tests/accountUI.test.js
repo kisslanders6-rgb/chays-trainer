@@ -19,7 +19,8 @@ function boot({ backend, store = {}, confirmAnswer = true } = {}) {
             window.askConfirmChoice = (msg, labels, withBackup, without) => { window.__confirms.push(msg); (window.__backupFirst ? withBackup : without)(); };
             window.exportDB = () => { window.__exports++; }; window.ico = () => '';`);
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
-    ['js/core/storageAdapter.js', 'js/core/syncModel.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    w.matchMedia = () => ({ matches: false, addEventListener() {} });
+    ['js/core/utils.js', 'js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/settings.js', 'js/core/panelKit.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
     ['js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
     // location.reload n'est pas implémenté par jsdom : on compte les appels via un espion posé sur Auth.signOut → wipeLocal → reload
@@ -77,7 +78,8 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     });
     await t('connexion réussie (cloud vide, appareil vide) → vue Compte, e-mail, pastille verte, intention « merge » silencieuse', async () => {
         type(w, 'input[name=password]', 'motdepasse1'); submit(w, '[data-form="auth"]'); await flush();
-        assert.match(text(w, '.account-email'), /ana@test\.fr/); assert.match(text(w, '#account-sync-text'), /Connecté/);
+        assert.match(text(w, '#acct-name'), /ana@test\.fr/);
+        click(w, '[data-pn="section"][data-key="appareils"]'); assert.match(text(w, '#account-sync-text'), /Connecté/);
         assert($(w, '#account-btn').classList.contains('has-session')); assert.match($(w, '#account-btn').title, /ana@test\.fr/);
         assert.strictEqual(JSON.parse(w.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'merge');
     });
@@ -92,7 +94,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     });
     await t('déconnexion simple : retour au formulaire, données locales intactes', async () => {
         w.localStorage.setItem('openingDB_Général_w', '{"p":{"move":"e2e4"}}');
-        click(w, '#account-btn'); click(w, '[data-act="signout"]'); await flush();
+        click(w, '#account-btn'); click(w, '[data-pn="section"][data-key="donnees"]'); click(w, '[data-act="signout"]'); await flush();
         assert($(w, '[data-form="auth"]')); assert.strictEqual(w.localStorage.getItem('openingDB_Général_w'), '{"p":{"move":"e2e4"}}');
         assert.match($(w, '#account-btn').title, /non connecté/);
     });
@@ -128,7 +130,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         click(w2, '[data-act="strategy:merge"]');
         assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'merge'); assert.strictEqual(evt.strategy, 'merge');
         assert('openingDB_Général_w' in w2.eval('SyncMeta').dirtySnapshot()); assert.strictEqual(w2.__confirms.length, 0); assert.strictEqual(w2.__exports, 0);
-        assert($(w2, '.account-email'));
+        assert($(w2, '#acct-name'));
     });
     await t('choix « Envoyer cet appareil » : demande confirmation avant d\'appliquer', async () => {
         const w2 = await mkBoth({ confirmAnswer: false }); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
@@ -167,7 +169,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         let reloaded = 0; try { Object.defineProperty(w2.location, 'reload', { value: () => { reloaded++; } }); } catch (e) {}
         await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
         w2.eval('dataStore').set('openingDB_Général_w', '{"p":1}'); w2.eval('dataStore').set('chessTrainer_theme', 'light');
-        click(w2, '#account-btn'); 
+        click(w2, '#account-btn'); click(w2, '[data-pn="section"][data-key="donnees"]');
         let threw = null; try { click(w2, '[data-act="signout-erase"]'); await flush(); } catch (e) { threw = e; }
         assert.match(w2.__confirms[0], /1 modification non synchronisée sera définitivement perdue/);
         assert.strictEqual(w2.localStorage.getItem('openingDB_Général_w'), null); assert.strictEqual(w2.localStorage.getItem('chessTrainer_session'), null);
@@ -194,9 +196,9 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const be2 = makeBackend(); const u = be2.addUser('ana@test.fr', 'motdepasse1'); const tok = be2.token(u);
         const dom = new JSDOM(`<!DOCTYPE html><body><div class="app"><nav><div class="topnav-right"></div></nav><div id="help-overlay" class="overlay hidden"></div></div></body>`,
             { url: `https://chays.test/app/#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=recovery`, runScripts: 'dangerously' });
-        const w2 = dom.window; w2.fetch = be2.fetch; w2.eval('window.ico=()=>"";');
+        const w2 = dom.window; w2.fetch = be2.fetch; w2.eval('window.ico=()=>"";'); w2.matchMedia = () => ({ matches: false, addEventListener() {} });
         const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
-        ['js/core/storageAdapter.js', 'js/core/syncModel.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+        ['js/core/utils.js', 'js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/settings.js', 'js/core/panelKit.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
         add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
         ['js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
         await tick(40); await flush();
@@ -207,7 +209,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     await t('échappement : un e-mail contenant du HTML s\'affiche comme texte (pas d\'injection)', async () => {
         const be2 = makeBackend(); be2.addUser('<img src=x onerror=alert(1)>@t.fr', 'motdepasse1');
         const w2 = await bootA({ backend: be2 }); await w2.eval('Auth').signIn('<img src=x onerror=alert(1)>@t.fr', 'motdepasse1'); await flush(); click(w2, '#account-btn');
-        assert.strictEqual(w2.document.querySelector('.account-email img'), null); assert.match(text(w2, '.account-email'), /<img src=x/);
+        assert.strictEqual(w2.document.querySelector('#acct-name img'), null); assert.match(text(w2, '#acct-name'), /<img src=x/);
     });
 
     console.log(`\n${n} tests réussis.`);

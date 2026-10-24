@@ -132,7 +132,7 @@ function _paintReviewColor() {
     });
 }
 
-const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${san}`;
+const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${formatSan(san, ply % 2 ? 'b' : 'w')}`;
 
 function runGameReview() {
     const out  = document.getElementById('review-result');

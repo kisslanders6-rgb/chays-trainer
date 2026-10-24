@@ -37,7 +37,8 @@ t('enregistrement : sons en local, seule la préférence modifiée est datée', 
     const p = c.prefs();
     assert.deepStrictEqual(p.boardTheme, { v: 'stone', at: 7 });           // inchangée : date d'origine conservée
     assert.strictEqual(p.pieceSet.v, 'fantasy'); assert(p.pieceSet.at > 7);
-    assert.deepStrictEqual(c.local(), { sound: true, volume: 0.3 });
+    assert.strictEqual(c.local().volume, 0.3); assert.strictEqual(c.local().sound, true);
+    assert.strictEqual(c.local().pieceSet, undefined);                    // rien de synchronisé dans le stockage local
 });
 
 t('valeur reçue d\'un autre appareil : jamais écrasée par une copie ancienne en mémoire', () => {
@@ -53,6 +54,37 @@ t('valeur reçue d\'un autre appareil : jamais écrasée par une copie ancienne 
 t('valeur inconnue (version plus récente sur un autre appareil) : repli sur la valeur par défaut', () => {
     const c = boot({ chessTrainer_prefs: JSON.stringify({ arrowStyle: { v: 'futur', at: 3 } }) });
     assert.strictEqual(c.run('appSettings.arrowStyle'), 'plume');
+});
+
+t('nouvelles préférences : valeurs par défaut et validation', () => {
+    const c = boot({ chessTrainer_prefs: JSON.stringify({ dailyGoal: { v: 99, at: 1 }, notation: { v: 'fig', at: 1 }, pseudo: { v: 'Mathilde', at: 1 } }) });
+    assert.strictEqual(c.run('appSettings.dailyGoal'), 10);                // hors bornes : défaut
+    assert.strictEqual(c.run('appSettings.notation'), 'fig');
+    assert.strictEqual(c.run('appSettings.pseudo'), 'Mathilde');
+    assert.strictEqual(c.run('appSettings.textSize'), 'm');
+});
+
+t('mode : valeurs historiques du thème et mode système', () => {
+    const c = boot({ chessTrainer_theme: 'light' });
+    assert.strictEqual(c.run('themeMode()'), 'dark');                     // 'light' historique = thème sombre
+    c.run(`setThemeMode('system')`);
+    assert.strictEqual(c.run('themeMode()'), 'system');
+    c.run(`setThemeMode('light')`);
+    assert.strictEqual(c.run(`dataStore.get('chessTrainer_theme')`), 'dark');
+});
+
+t('appareils : déconnexion demandée par un autre appareil, levée à la reconnexion', () => {
+    const c = boot();
+    c.navigator = { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X) Safari/605', maxTouchPoints: 0 };
+    c.run(`touchDevice(true)`);
+    const id = c.run('deviceId()');
+    assert.strictEqual(c.run('listDevices().length'), 1);
+    assert.strictEqual(c.run('listDevices()[0].name'), 'Mac · Safari');
+    const p = c.prefs(); p['dev:' + id].v.revoked = true; p['dev:' + id].at += 1;
+    c.run(`localStorage.setItem('chessTrainer_prefs', ${JSON.stringify(JSON.stringify(p))})`);
+    assert.strictEqual(c.run('isThisDeviceRevoked()'), true);
+    c.run(`touchDevice(true)`);
+    assert.strictEqual(c.run('isThisDeviceRevoked()'), false);
 });
 
 console.log(`\n${n} tests réussis.`);

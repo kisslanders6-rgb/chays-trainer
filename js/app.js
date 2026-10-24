@@ -18,31 +18,13 @@ let gameMode    = 'play';   // 'play' | 'preview' | 'training'
 
 // ─── THÈME ────────────────────────────────────────────────────────────────────
 
-function loadTheme() {
-    const saved = dataStore.get(THEME_STORAGE_KEY);
-    const theme = (saved === 'light' || saved === 'dark') ? saved : 'light';      // par défaut : sombre (« Nocturne »)
-    document.documentElement.setAttribute('data-theme', theme);
-}
+function loadTheme() { applyThemeMode(); }
 
+// Bascule rapide (pilule de la barre du haut) : clair ↔ sombre, quitte le mode « Système ».
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    const next    = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    dataStore.set(THEME_STORAGE_KEY, next);
+    const dark = document.documentElement.getAttribute('data-theme') === 'light';     // 'light' = thème sombre (nom historique)
+    setThemeMode(dark ? 'light' : 'dark');
 }
-
-// ─── AIDE (« Comment ça marche ? ») ───────────────────────────────────────────
-
-function showHelp()  { document.getElementById('help-overlay').classList.remove('hidden'); }
-function closeHelp() { document.getElementById('help-overlay').classList.add('hidden'); }
-
-(function initHelpDismiss() {
-    const overlay = document.getElementById('help-overlay');
-    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeHelp(); });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeHelp();
-    });
-})();
 
 // ─── SAISIE DE TEXTE (remplace prompt()) ──────────────────────────────────────
 // askText({ title, value?, placeholder?, ok?, validate?(texte) → message d'erreur | '' }, onOk(texte))
@@ -97,105 +79,27 @@ function hideBackupToast() {
 
 function exportFromToast() { exportDB(); }          // exportDB() remet le compteur à zéro et ferme le toast
 
-// ─── PARAMÈTRES (sons, volume, thème de l'échiquier) ──────────────────────────
-
-function syncSettingsUI() {
-    document.getElementById('set-sound').checked = appSettings.sound;
-    const slider = document.getElementById('set-volume');
-    slider.value    = Math.round(appSettings.volume * 100);
-    slider.disabled = !appSettings.sound;
-    document.getElementById('set-volume-val').textContent = slider.value + ' %';
-    document.querySelectorAll('.theme-opt[data-board]').forEach(b =>
-        b.classList.toggle('active', b.dataset.board === appSettings.boardTheme));
-    document.querySelectorAll('.piece-opt').forEach(b =>
-        b.classList.toggle('active', b.dataset.piece === appSettings.pieceSet));
-    document.querySelectorAll('.arrow-opt').forEach(b =>
-        b.classList.toggle('active', b.dataset.arrow === appSettings.arrowStyle));
-}
-
-function showSettings()  { syncSettingsUI(); document.getElementById('settings-overlay').classList.remove('hidden'); }
-function closeSettings() { document.getElementById('settings-overlay').classList.add('hidden'); }
-
-function onSoundToggle(on) {
-    appSettings.sound = on;
-    saveSettings();
-    syncSettingsUI();
-    if (on) playSound('move');                       // aperçu
-}
-
-function onVolumeInput(v) {
-    appSettings.volume = Number(v) / 100;
-    document.getElementById('set-volume-val').textContent = v + ' %';
-    saveSettings();
-}
-
-function onVolumeCommit() { playSound('move'); }     // aperçu au relâchement du curseur
-
-function setBoardTheme(theme) {
-    if (!BOARD_THEMES.includes(theme)) return;
-    appSettings.boardTheme = theme;
-    saveSettings();
-    applyBoardTheme();
-    syncSettingsUI();
-}
-
-// Cartes de sélection du style de pièces (générées depuis le registre PIECE_SETS).
-function renderPieceOptions() {
-    const box = document.getElementById('piece-options');
-    if (!box) return;
-    box.innerHTML = PIECE_SET_IDS.map(id => {
-        const s = PIECE_SETS[id];
-        return `<button class="theme-opt piece-opt" data-piece="${id}" data-action="setPieceStyle" data-arg="${id}">` +
-               `<span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`;
-    }).join('');
-}
-
-// Cartes de sélection du style des flèches (aperçu dessiné par annotations.js).
-function renderArrowOptions() {
-    const box = document.getElementById('arrow-options');
-    if (!box || typeof arrowStylePreview !== 'function') return;
-    box.innerHTML = ARROW_STYLE_IDS.map(id =>
-        `<button class="theme-opt arrow-opt" data-arrow="${id}" data-action="setArrowStyle" data-arg="${id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join('');
-}
-
-function setArrowStyle(id) {
-    if (!ARROW_STYLE_IDS.includes(id)) return;
-    appSettings.arrowStyle = id;
-    saveSettings();
-    syncSettingsUI();
-    if (typeof renderAnnotations === 'function') renderAnnotations();
-}
-
 // Préférences reçues d'un autre appareil (synchro) : appSettings est déjà à jour (reloadSyncedPrefs),
 // on redessine tout ce qui en dépend.
 function applySyncedPrefs() {
     applyBoardTheme();
+    applyDisplayPrefs();
     applyPieceSet();
-    syncSettingsUI();
     refreshPieces();
     initTraining();
     initEndgame();
+    renderHomeSummary();
+    if (typeof refreshNotation === 'function') refreshNotation();
     if (typeof renderAnnotations === 'function') renderAnnotations();
+    if (typeof SettingsPanel !== 'undefined' && SettingsPanel.isOpen()) SettingsPanel.refresh();
+    if (typeof AccountUI !== 'undefined' && AccountUI.refresh) AccountUI.refresh();
+    // Déconnexion demandée depuis un autre appareil (Compte › Appareils et synchro).
+    if (isThisDeviceRevoked() && typeof Auth !== 'undefined' && Auth.isSignedIn()) {
+        Auth.signOut();
+        touchDevice(true);                 // demande levée localement : une reconnexion ne redéclenchera pas la déconnexion
+        if (typeof AccountUI !== 'undefined') AccountUI.notify('Cet appareil a été déconnecté depuis un autre appareil. Vos données restent ici.');
+    }
 }
-
-function setPieceStyle(id) {
-    if (!PIECE_SET_IDS.includes(id)) return;
-    appSettings.pieceSet = id;
-    saveSettings();
-    applyPieceSet();
-    syncSettingsUI();
-    refreshPieces();                       // bascule instantanée sur le plateau
-    initTraining();                        // cartes Blancs / Noirs de l'onglet Entraînement
-    initEndgame();                         // mini-échiquiers du catalogue des finales
-}
-
-(function initSettingsDismiss() {
-    const overlay = document.getElementById('settings-overlay');
-    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeSettings(); });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeSettings();
-    });
-})();
 
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
@@ -229,8 +133,8 @@ function renderRepertoireList() {
 function renderHomeSummary() {
     const greet = document.getElementById('home-greet');
     if (!greet) return;
-    const h = new Date().getHours();
-    greet.textContent = h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour';
+    const h = new Date().getHours(), name = appSettings.pseudo.trim();
+    greet.textContent = (h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : '');
     const w = Object.values(readDBFor(currentRepertoire, 'w')), b = Object.values(readDBFor(currentRepertoire, 'b'));
     const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
     document.getElementById('home-meta-w').textContent = w.length ? pl(w.length, 'position', 'positions') : 'Aucune position';
@@ -240,6 +144,15 @@ function renderHomeSummary() {
     const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
     document.getElementById('home-stats').innerHTML = !all.length ? '' :
         `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
+    // Objectif quotidien (Paramètres › Jeu et entraînement) : positions jouées aujourd'hui, tous répertoires.
+    const today = (readActivity()[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
+    const box = document.getElementById('home-goal');
+    if (box) {
+        box.hidden = !all.length;
+        box.style.setProperty('--p', Math.min(100, Math.round(100 * today / goal)) + '%');
+        box.classList.toggle('is-done', today >= goal);
+        box.innerHTML = `<i aria-hidden="true"></i><span>Objectif du jour : <b>${Math.min(today, goal)} / ${goal}</b> positions${today >= goal ? ' · atteint' : ''}</span>`;
+    }
 }
 
 // iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).
@@ -321,7 +234,7 @@ function applyModeUI() {
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
 function showGameScreen(color) {
-    boardFlipped = color === 'b';
+    boardFlipped = appSettings.autoFlip && color === 'b';      // Paramètres › Jeu : orienter selon ma couleur
 
     document.getElementById('setup-screen').style.display = 'none';
     document.getElementById('setup-screen').classList.add('hidden');
@@ -438,7 +351,7 @@ function goHome(tab) {
     renderRepertoireList();
 }
 
-registerActions({ setPieceStyle, setArrowStyle, selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt() });
+registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt() });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 
@@ -448,6 +361,4 @@ registerActions({ setPieceStyle, setArrowStyle, selectRepertoire, resumeLastPlay
     purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
     updateTrashBadges();
-    renderPieceOptions();
-    renderArrowOptions();
 })();

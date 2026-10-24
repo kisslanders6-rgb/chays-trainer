@@ -70,14 +70,29 @@ const _SOUNDS = {
         _burst(ctx, out, t + 0.022, { freq: 900,  q: 0.8, peak: 0.35, dur: 0.07 });
         _tone(ctx, out, t,          { from: 150, to: 75, peak: 0.80, dur: 0.12 });
     },
+    success(ctx, out, t) {                       // deux notes claires, montantes
+        _tone(ctx, out, t,        { from: 660, to: 660, peak: 0.16, dur: 0.11 });
+        _tone(ctx, out, t + 0.09, { from: 990, to: 990, peak: 0.14, dur: 0.18 });
+    },
     error(ctx, out, t) {
         _tone(ctx, out, t,        { wave: 'sawtooth', from: 125, to: 95, peak: 0.22, dur: 0.075, lowpass: 420 });
         _tone(ctx, out, t + 0.1,  { wave: 'sawtooth', from: 110, to: 80, peak: 0.22, dur: 0.11,  lowpass: 380 });
     }
 };
 
+// Chaque son peut être coupé séparément (Paramètres › Sons et vibrations).
+const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess' };
+
+// Vibration (téléphones compatibles) : coup refusé, exercice réussi. Indépendante du son.
+function buzz(kind) {
+    if (!appSettings.haptic || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+    try { navigator.vibrate(kind === 'error' ? [28, 50, 28] : 18); } catch (e) {}
+}
+
 function playSound(kind) {
+    if (kind === 'error' || kind === 'success') buzz(kind);
     if (!appSettings.sound || appSettings.volume <= 0 || !_SOUNDS[kind]) return;
+    if (_SOUND_PREF[kind] && appSettings[_SOUND_PREF[kind]] === false) return;
     try {
         const ctx = _ctx();
         if (!ctx) return;
@@ -93,4 +108,22 @@ function playMoveSound(from, to) {
     const p = board[from];
     const capture = !!board[to] || (!!p && p.toUpperCase() === 'P' && (from % 8) !== (to % 8));
     playSound(capture ? 'capture' : 'move');
+    announceMove(from, to, capture);
+}
+
+// Annonce des coups aux lecteurs d'écran (Paramètres › Accessibilité) : « Cavalier f3 », « pion prend d5 ».
+const _SPOKEN = { K: 'Roi', Q: 'Dame', R: 'Tour', B: 'Fou', N: 'Cavalier', P: 'Pion' };
+function announceMove(from, to, capture) {
+    if (!appSettings.announce) return;
+    let live = document.getElementById('sr-moves');
+    if (!live) {
+        live = document.createElement('div');
+        live.id = 'sr-moves'; live.className = 'sr-only'; live.setAttribute('aria-live', 'polite');
+        document.body.appendChild(live);
+    }
+    const p = board[from] || '', t = p.toUpperCase();
+    const castle = t === 'K' && Math.abs((to % 8) - (from % 8)) === 2;
+    const who = p ? (p === t ? 'Blancs' : 'Noirs') : '';
+    live.textContent = castle ? `${who} : ${(to % 8) > 4 ? 'petit' : 'grand'} roque`
+        : `${who} : ${_SPOKEN[t] || ''} ${capture ? 'prend ' : ''}${squareToName(to)}`;
 }

@@ -1,13 +1,15 @@
 /**
  * core/settings.js
  * ──────────────────────────────────────────────────────────────────────────
- * Préférences de l'application, persistées via dataStore. L'interface est dans app.js.
+ * Préférences de l'application, persistées via dataStore. L'interface est dans settingsUI.js.
  *
- *   chessTrainer_settings  LOCAL à l'appareil : sons, volume
- *   chessTrainer_prefs     SYNCHRONISÉ avec le compte : thème de l'échiquier, style des pièces,
- *                          style des flèches. Chaque champ est daté : { boardTheme: { v, at }, … } ;
- *                          entre deux appareils, le choix le plus récent l'emporte (syncModel.js).
- * Le mode clair / sombre reste propre à chaque appareil (chessTrainer_theme).
+ *   chessTrainer_settings  LOCAL à l'appareil : sons (et chaque son), volume, vibrations, accessibilité
+ *   chessTrainer_prefs     SYNCHRONISÉ avec le compte : échiquier, pièces, flèches, jeu, révisions, notation,
+ *                          profil… Chaque champ est daté : { boardTheme: { v, at }, … } ; entre deux appareils,
+ *                          le choix le plus récent l'emporte (syncModel.js). Les clés « dev:<id> » décrivent
+ *                          les appareils du compte (nom, dernière activité, déconnexion demandée).
+ *   chessTrainer_theme     LOCAL : mode clair / sombre / système (valeurs historiques, voir THEME_MODES)
+ * Option « syncLooks » : le mode et les sons sont aussi recopiés dans les préférences synchronisées.
  */
 
 'use strict';
@@ -19,12 +21,64 @@ const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', '
 const DEFAULT_PIECE_SET = 'merida';
 const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille'];          // cf. annotations.js
 const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé' };
+const AVATAR_GLYPHS   = ['initial', 'k', 'q', 'r', 'b', 'n'];
+const AVATAR_COLORS   = ['sapin', 'noyer', 'nuit', 'ardoise', 'prune', 'ivoire'];
+const PLAYER_LEVELS   = ['debut', 'club', 'conf', 'expert'];
+
+const _oneOf = list => v => list.includes(v);
+const _bool  = v => typeof v === 'boolean';
+const _text  = max => v => typeof v === 'string' && v.length <= max;
 
 // Préférences synchronisées : valeurs admises et valeur par défaut.
 const SYNCED_PREFS = {
-    boardTheme: { ok: v => BOARD_THEMES.includes(v),    def: 'classic' },
-    pieceSet:   { ok: v => PIECE_SET_IDS.includes(v),   def: DEFAULT_PIECE_SET },
-    arrowStyle: { ok: v => ARROW_STYLE_IDS.includes(v), def: ARROW_STYLE_IDS[0] }
+    boardTheme: { ok: _oneOf(BOARD_THEMES),    def: 'classic' },
+    pieceSet:   { ok: _oneOf(PIECE_SET_IDS),   def: DEFAULT_PIECE_SET },
+    arrowStyle: { ok: _oneOf(ARROW_STYLE_IDS), def: ARROW_STYLE_IDS[0] },
+    // Échiquier
+    coords:     { ok: _bool, def: true },
+    coordPos:   { ok: _oneOf(['in', 'out']), def: 'in' },
+    lastMove:   { ok: _bool, def: true },
+    legalDots:  { ok: _bool, def: true },
+    anim:       { ok: _oneOf(['off', 'fast', 'normal']), def: 'normal' },
+    // Jeu
+    moveInput:  { ok: _oneOf(['both', 'drag', 'click']), def: 'both' },
+    autoQueen:  { ok: _bool, def: false },
+    oppDelay:   { ok: _oneOf(['instant', 'normal', 'calm']), def: 'normal' },
+    autoFlip:   { ok: _bool, def: true },
+    hintAfter:  { ok: _oneOf([0, 1, 2, 3]), def: 0 },
+    // Révisions et notation
+    dailyGoal:  { ok: v => Number.isInteger(v) && v >= 5 && v <= 50, def: 10 },
+    rhythm:     { ok: _oneOf(['soft', 'std', 'intense']), def: 'std' },
+    notation:   { ok: _oneOf(['fr', 'en', 'fig']), def: 'fr' },
+    backupReminder: { ok: _oneOf(['never', 'weekly', 'monthly']), def: 'weekly' },
+    // Profil
+    pseudo:      { ok: _text(24), def: '' },
+    avatarGlyph: { ok: _oneOf(AVATAR_GLYPHS), def: 'initial' },
+    avatarColor: { ok: _oneOf(AVATAR_COLORS), def: 'sapin' },
+    level:       { ok: _oneOf(PLAYER_LEVELS), def: 'club' },
+    elo:         { ok: v => v === '' || (/^\d{3,4}$/.test(v)), def: '' },
+    lichessUser: { ok: _text(40), def: '' },
+    chesscomUser:{ ok: _text(40), def: '' },
+    // Synchroniser aussi le mode clair / sombre et les sons
+    syncLooks:   { ok: _bool, def: false },
+    looksTheme:  { ok: _oneOf(['light', 'dark', 'system']), def: 'system' },
+    looksSound:  { ok: _bool, def: true },
+    looksVolume: { ok: v => typeof v === 'number' && v >= 0 && v <= 1, def: 0.6 }
+};
+
+// Préférences propres à l'appareil (chessTrainer_settings) : valeurs admises et valeur par défaut.
+const LOCAL_PREFS = {
+    sound:    { ok: _bool, def: true },
+    volume:   { ok: v => typeof v === 'number' && v >= 0 && v <= 1, def: 0.6 },
+    sMove:    { ok: _bool, def: true },
+    sCapture: { ok: _bool, def: true },
+    sError:   { ok: _bool, def: true },
+    sSuccess: { ok: _bool, def: true },
+    haptic:   { ok: _bool, def: true },
+    motion:   { ok: _oneOf(['system', 'reduced', 'full']), def: 'system' },
+    textSize: { ok: _oneOf(['s', 'm', 'l']), def: 'm' },
+    contrast: { ok: _bool, def: false },
+    announce: { ok: _bool, def: false }
 };
 
 function _readPrefs() {
@@ -44,12 +98,11 @@ function _syncedValues(legacy) {
 }
 
 function loadSettings() {
-    const s = dataStore.getJSON(SETTINGS_KEY, null) || {};
-    const vol = Number(s.volume);
-    return Object.assign({
-        sound:  s.sound !== false,                                       // activé par défaut
-        volume: Number.isFinite(vol) ? Math.min(1, Math.max(0, vol)) : 0.6
-    }, _syncedValues(s));
+    const s = dataStore.getJSON(SETTINGS_KEY, null) || {}, out = {};
+    if (typeof s.volume !== 'number' && Number.isFinite(Number(s.volume))) s.volume = Number(s.volume);
+    if (typeof s.volume === 'number') s.volume = Math.min(1, Math.max(0, s.volume));
+    Object.entries(LOCAL_PREFS).forEach(([name, d]) => { out[name] = d.ok(s[name]) ? s[name] : d.def; });
+    return Object.assign(out, _syncedValues(s));
 }
 
 let appSettings = loadSettings();
@@ -65,7 +118,9 @@ let _prefsSeen  = _syncedValues(dataStore.getJSON(SETTINGS_KEY, null) || {});   
 })();
 
 function saveSettings() {
-    dataStore.setJSON(SETTINGS_KEY, { sound: appSettings.sound, volume: appSettings.volume });
+    const local = {};
+    Object.keys(LOCAL_PREFS).forEach(name => { local[name] = appSettings[name]; });
+    dataStore.setJSON(SETTINGS_KEY, local);
     // Seules les préférences réellement modifiées ici sont datées et écrites : une valeur reçue d'un
     // autre appareil entre-temps n'est jamais écrasée par une copie ancienne.
     const p = _readPrefs();
@@ -88,11 +143,142 @@ function reloadSyncedPrefs() {
         if (appSettings[name] !== fresh[name]) { appSettings[name] = fresh[name]; changed = true; }
     });
     _prefsSeen = fresh;
+    if (_applyLooksFromPrefs()) changed = true;
     return changed;
 }
 
+// ─── Mode clair / sombre / système ──────────────────────────────────────────
+// chessTrainer_theme garde ses valeurs historiques : 'light' = thème SOMBRE (Nocturne), 'dark' = thème
+// CLAIR (Papier). THEME_MODES les traduit en modes lisibles ; 'system' suit l'appareil.
+const THEME_MODES = { dark: 'light', light: 'dark', system: 'system' };
+const _THEME_KEY  = typeof THEME_STORAGE_KEY !== 'undefined' ? THEME_STORAGE_KEY : 'chessTrainer_theme';
+
+function themeMode() {
+    const v = dataStore.get(_THEME_KEY);
+    return v === 'system' ? 'system' : v === 'dark' ? 'light' : 'dark';
+}
+
+function applyThemeMode() {
+    const m = themeMode();
+    const dark = m === 'dark' || (m === 'system' && typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+}
+
+function setThemeMode(mode) {
+    if (!THEME_MODES[mode]) return;
+    dataStore.set(_THEME_KEY, THEME_MODES[mode]);
+    applyThemeMode();
+    _copyLooksToPrefs();
+}
+
+if (typeof matchMedia === 'function') {
+    try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyThemeMode(); }); } catch (e) {}
+}
+
+// Recopie mode et sons dans les préférences synchronisées (option « syncLooks »).
+function _copyLooksToPrefs() {
+    if (!appSettings.syncLooks) return;
+    appSettings.looksTheme  = themeMode();
+    appSettings.looksSound  = appSettings.sound;
+    appSettings.looksVolume = Math.round(appSettings.volume * 100) / 100;
+    saveSettings();
+}
+
+// Applique le mode et les sons reçus d'un autre appareil (option « syncLooks »). Renvoie true si changé.
+function _applyLooksFromPrefs() {
+    if (!appSettings.syncLooks) return false;
+    let changed = false;
+    if (themeMode() !== appSettings.looksTheme) { dataStore.set(_THEME_KEY, THEME_MODES[appSettings.looksTheme]); applyThemeMode(); changed = true; }
+    if (appSettings.sound !== appSettings.looksSound || appSettings.volume !== appSettings.looksVolume) {
+        appSettings.sound = appSettings.looksSound;
+        appSettings.volume = appSettings.looksVolume;
+        const local = dataStore.getJSON(SETTINGS_KEY, null) || {};
+        dataStore.setJSON(SETTINGS_KEY, Object.assign(local, { sound: appSettings.sound, volume: appSettings.volume }));
+        changed = true;
+    }
+    return changed;
+}
+
+// ─── Affichage : attributs sur <html> lus par le CSS (css/settings.css) ─────
 function applyBoardTheme() {
     document.documentElement.setAttribute('data-board', appSettings.boardTheme);
 }
 
+function applyDisplayPrefs() {
+    const d = document.documentElement, s = appSettings;
+    d.setAttribute('data-coords', s.coords ? s.coordPos : 'off');
+    d.setAttribute('data-legal', s.legalDots ? 'on' : 'off');
+    d.setAttribute('data-text', s.textSize);
+    d.setAttribute('data-contrast', s.contrast ? 'on' : 'off');
+    d.setAttribute('data-motion', s.motion);
+}
+
+// Animations réduites : réglage de l'appli, sinon celui de l'appareil.
+function prefersReducedMotion() {
+    if (appSettings.motion === 'reduced') return true;
+    if (appSettings.motion === 'full') return false;
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Délai de réponse de l'adversaire : facteur appliqué aux temporisations (entraînement, finales).
+function opponentDelay(ms) {
+    return { instant: Math.min(ms, 120), normal: ms, calm: Math.round(ms * 1.8) }[appSettings.oppDelay] || ms;
+}
+
+// ─── Appareils du compte (clés « dev:<id> » des préférences synchronisées) ──
+const DEVICE_PREFIX   = 'dev:';
+const DEVICE_TOUCH_MS = 3600000;          // une écriture par heure au plus
+
+function deviceId() {
+    let id = dataStore.get('chessTrainer_deviceId');
+    if (!id) { id = 'd' + Math.random().toString(36).slice(2, 10); dataStore.set('chessTrainer_deviceId', id); }
+    return id;
+}
+
+function deviceName() {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPad'
+             : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : 'Appareil';
+    const standalone = typeof matchMedia === 'function' && (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true);
+    const app = standalone ? 'application installée'
+              : /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'navigateur';
+    return `${os} · ${app}`;
+}
+
+function listDevices() {
+    const p = _readPrefs(), me = deviceId();
+    return Object.keys(p).filter(k => k.startsWith(DEVICE_PREFIX) && p[k] && p[k].v && typeof p[k].v === 'object')
+        .map(k => ({ id: k.slice(DEVICE_PREFIX.length), ...p[k].v, me: k.slice(DEVICE_PREFIX.length) === me }))
+        .filter(d => !d.removed)
+        .sort((a, b) => (b.me - a.me) || ((b.seen || 0) - (a.seen || 0)));
+}
+
+function _writeDevice(id, value) {
+    const p = _readPrefs();
+    p[DEVICE_PREFIX + id] = { v: value, at: Date.now() };
+    dataStore.setJSON(PREFS_KEY, p);
+}
+
+// Note l'activité de cet appareil (au plus une fois par heure, sauf `force` : à la connexion).
+function touchDevice(force) {
+    const id = deviceId(), cur = (_readPrefs()[DEVICE_PREFIX + id] || {}).v || {};
+    const name = deviceName();
+    if (!force && !cur.revoked && cur.name === name && Date.now() - (cur.seen || 0) < DEVICE_TOUCH_MS) return;
+    _writeDevice(id, { name, seen: Date.now(), revoked: false });
+}
+
+// Demande à un autre appareil de se déconnecter (il le fera à sa prochaine synchronisation).
+function revokeDevice(id) {
+    const cur = (_readPrefs()[DEVICE_PREFIX + id] || {}).v;
+    if (!cur || id === deviceId()) return;
+    _writeDevice(id, Object.assign({}, cur, { revoked: true }));
+}
+
+function isThisDeviceRevoked() {
+    const cur = (_readPrefs()[DEVICE_PREFIX + deviceId()] || {}).v;
+    return !!(cur && cur.revoked);
+}
+
+applyThemeMode();
 applyBoardTheme();
+applyDisplayPrefs();

@@ -49,7 +49,7 @@ function formatLinePrefix(sans) {
     let out = '';
     sans.forEach((san, i) => {
         if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
-        out += san + ' ';
+        out += formatSan(san, i % 2 ? 'b' : 'w') + ' ';
     });
     return out.trim();
 }
@@ -255,7 +255,11 @@ function _isTransposition(entry) {
     return entry.path.slice(0, -1).join(' ') !== now.join(' ');
 }
 
+// Promotion automatique en dame (Paramètres › Jeu), sauf si Alt est maintenu pendant le coup.
+const _autoPromo = () => appSettings.autoQueen && !(typeof altHeld !== 'undefined' && altHeld) ? 'Q' : undefined;
+
 function executeOpponentMove(from, to, promo) {
+    if (promo === undefined && isPromotion(from, to)) promo = _autoPromo();
     if (promo === undefined) {
         if (isPromotion(from, to)) {
             awaitingPromotion = { from, to, isOpponent: true };
@@ -264,7 +268,7 @@ function executeOpponentMove(from, to, promo) {
         }
         promo = null;
     }
-    const san = toAlgebraic(from, to, promo);
+    const san = formatSan(toAlgebraic(from, to, promo), turn);
     if (recordOppReply(positionKey(), moveToStr(from, to, promo))) saveOpp();   // réponse adverse connue
     _commitMove(from, to, promo, null, `Adversaire : ${san}`, 'info', 'À vous de répondre.');
     // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
@@ -284,6 +288,7 @@ function _rejectMove(toIdx, msg, detail) {
 }
 
 function executePlayerMove(from, to, promo) {
+    if (promo === undefined && isPromotion(from, to)) promo = _autoPromo();
     if (promo === undefined) {
         if (isPromotion(from, to)) {
             awaitingPromotion = { from, to, isOpponent: false };
@@ -310,7 +315,7 @@ function executePlayerMove(from, to, promo) {
         recordReview(openingDB[key], true);
         saveDB();
         noteChange(1);
-        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${san}`, 'new');
+        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${formatSan(san, turn)}`, 'new');
 
     } else if (_solutionKey === key) {
         // Solution dévoilée : l'erreur est déjà comptée, on ne compte ni réussite ni nouvelle erreur.
@@ -333,7 +338,17 @@ function executePlayerMove(from, to, promo) {
         recordReview(entry, false);
         saveDB();
         _rejectMove(to, '✗ Pas le bon coup', 'Erreur comptée. Réessayez, ou appuyez sur Indice.');
+        noteMistake(key);
     }
+}
+
+// Indice automatique (Paramètres › Jeu) : après N erreurs d'affilée sur la même position.
+let _mistakeRun = { key: null, n: 0 };
+function noteMistake(key) {
+    if (_mistakeRun.key !== key) _mistakeRun = { key, n: 0 };
+    _mistakeRun.n++;
+    const after = appSettings.hintAfter;
+    if (after && _mistakeRun.n >= after && _hintKey !== key) showHint();
 }
 
 // ─── INDICE PUIS SOLUTION ─────────────────────────────────────────────────────
@@ -380,7 +395,7 @@ function showSolution() {
         saveDB();
     }
     revealSolution(entry);
-    setStatus(`Solution : ${entry.san}`, 'hint', 'Jouez-le pour continuer. Une erreur est comptée sur la position.');
+    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer. Une erreur est comptée sur la position.');
 }
 
 // Surligne le coup de `entry` (pièce + case d'arrivée) avec le halo doré.

@@ -34,3 +34,15 @@ document.addEventListener('keydown', e => {                 // éléments non-bo
         _runAction(e, 'action');
     }
 });
+
+// ─── NOTATION DES COUPS ───────────────────────────────────────────────────────
+// Les coups sont stockés en notation anglaise (N B R Q K). formatSan(san, couleur) les affiche selon le
+// réglage « Écriture des coups » : lettres françaises (C F T D R), anglaises, ou figurines.
+const _SAN_FR  = { N: 'C', B: 'F', R: 'T', Q: 'D', K: 'R' };
+const _SAN_FIG = { w: { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' }, b: { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' } };
+function formatSan(san, color) {
+    const mode = typeof appSettings !== 'undefined' ? appSettings.notation : 'en';
+    if (!san || mode === 'en') return san || '';
+    const map = mode === 'fig' ? _SAN_FIG[color === 'b' ? 'b' : 'w'] : _SAN_FR;
+    return san.replace(/[NBRQK]/g, c => map[c]);
+}

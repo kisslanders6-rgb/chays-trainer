@@ -62,9 +62,9 @@ function _statColor(rate) {
 
 // Repère du coup : « 4. e4 » (Blancs) ou « 4... e5 » (Noirs).
 function _moveLabel(e) {
-    if (!e.ply) return e.san;
-    const n = Math.ceil(e.ply / 2);
-    return e.ply % 2 === 1 ? `${n}. ${e.san}` : `${n}... ${e.san}`;
+    if (!e.ply) return formatSan(e.san);
+    const n = Math.ceil(e.ply / 2), san = formatSan(e.san, e.ply % 2 === 1 ? 'w' : 'b');
+    return e.ply % 2 === 1 ? `${n}. ${san}` : `${n}... ${san}`;
 }
 
 // Ligne d'ouverture d'une position : clé (premiers demi-coups UCI) et libellé lisible (« 1. e4 c5 2. Nf3 d6 »).
