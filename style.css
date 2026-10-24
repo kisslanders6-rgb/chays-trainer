@@ -1041,6 +1041,7 @@ button.color-badge:disabled { cursor: default; }
     background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow);
     animation: dd-in .14s ease-out;
 }
+.dd-menu[hidden] { display: none; }        /* display: flex ci-dessus l'emporterait sur l'attribut hidden */
 .dd-end .dd-menu { left: auto; right: 0; }
 @keyframes dd-in { from { opacity: 0; transform: translateY(-4px); } }
 .dd-opt {
