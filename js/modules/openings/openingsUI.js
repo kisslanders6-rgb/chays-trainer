@@ -102,6 +102,12 @@ function animateNextMove(from, to) {
     moveAnim = (off || _dragJustEnded()) ? null : { from, to };
 }
 
+// Facteur de `zoom` CSS hérité par `el` (réglage « Taille du texte » : body { zoom }). Les longueurs
+// CSS y sont multipliées par ce facteur, alors que clientX / getBoundingClientRect sont en px écran.
+function _zoomOf(el, cssWidth = el.offsetWidth) {
+    return el.getBoundingClientRect().width / cssWidth || 1;
+}
+
 function _runMoveAnim(a) {
     const b  = document.getElementById('board');
     const f  = b.querySelector(`.sq[data-idx="${a.from}"]`);
@@ -109,9 +115,10 @@ function _runMoveAnim(a) {
     const pc = t && t.querySelector('.piece');
     if (!f || !pc || !pc.animate) return;
     const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    const z  = _zoomOf(t);
     t.style.zIndex = 5;                                   // la pièce passe au-dessus des autres cases
     const anim = pc.animate(
-        [{ transform: `translate(${fr.left - tr.left}px, ${fr.top - tr.top}px)` }, { transform: 'translate(0, 0)' }],
+        [{ transform: `translate(${(fr.left - tr.left) / z}px, ${(fr.top - tr.top) / z}px)` }, { transform: 'translate(0, 0)' }],
         { duration: appSettings.anim === 'fast' ? 100 : 170, easing: 'cubic-bezier(.22,.8,.3,1)' });
     anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; };
 }
@@ -449,6 +456,8 @@ function _beginDrag(d) {
     g.innerHTML = d.html;
     g.style.cssText = `width:${d.size}px;height:${d.size}px;font-size:${d.font};`;
     document.body.appendChild(g);
+    d.zoom = _zoomOf(g, d.size);                        // ramène px écran → px CSS sous body { zoom }
+    g.style.width = g.style.height = d.size / d.zoom + 'px';
     document.body.classList.add('dragging');
     try { _boardEl.setPointerCapture(d.pid); } catch (e) {}
 
@@ -502,7 +511,8 @@ _boardEl.addEventListener('pointermove', e => {
         if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return;
         if (!_beginDrag(d)) { _drag = null; return; }
     }
-    d.ghost.style.transform = `translate(${e.clientX - d.size / 2}px, ${e.clientY - d.size / 2}px) scale(1.12)`;
+    const z = d.zoom;
+    d.ghost.style.transform = `translate(${(e.clientX - d.size / 2) / z}px, ${(e.clientY - d.size / 2) / z}px) scale(1.12)`;
     const over = _squareAt(e.clientX, e.clientY);
     if (over !== d.over) { _setOver(d.over, false); _setOver(over, true); d.over = over; }
 });
