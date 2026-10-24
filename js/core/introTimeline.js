@@ -40,7 +40,9 @@ const IntroTimeline = (function () {
     const shown = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
 
     // Inverse la position de départ : translate + scale depuis le coin haut gauche (transform-origin: 0 0).
-    function flip(el, target, options) {
+    // z : facteur de `zoom` hérité (Paramètres › Taille du texte : body { zoom }) ; getBoundingClientRect
+    // est en px écran, translate en px CSS zoomés : le déplacement est ramené en px CSS.
+    function flip(el, target, options, z) {
         const a = el.getBoundingClientRect();
         if (!shown(target) || !a.width) {               // cible absente (signature masquée) : l'élément s'efface sur place
             return anim(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-12px) scale(.92)' }],
@@ -49,7 +51,7 @@ const IntroTimeline = (function () {
         const b = target.getBoundingClientRect(), s = b.width / a.width;
         return anim(el, [
             { transform: 'translate(0px, 0px) scale(1)' },
-            { transform: `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${s})` }
+            { transform: `translate(${(b.left - a.left) / z}px, ${(b.top - a.top) / z}px) scale(${s})` }
         ], options);
     }
 
@@ -80,8 +82,9 @@ const IntroTimeline = (function () {
         piece.querySelectorAll('[pathLength]').forEach(el => el.getAnimations().forEach(a => a.cancel()));
 
         const flight = { duration: T.flipDur, easing: EASE.flip };
-        flip(piece, navPiece, flight);
-        if (wm) flip(wm, navWm, Object.assign({}, flight, { delay: T.wmLag }));
+        const z = splash.getBoundingClientRect().width / splash.offsetWidth || 1;
+        flip(piece, navPiece, flight, z);
+        if (wm) flip(wm, navWm, Object.assign({}, flight, { delay: T.wmLag }), z);
         recolor(stage, navPiece, { duration: T.flipDur, easing: EASE.soft });
         const veil = splash.querySelector('.sp-veil');
         if (veil) anim(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: T.veilDur, delay: T.veil, easing: EASE.soft });
