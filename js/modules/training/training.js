@@ -317,7 +317,7 @@ function _renderSessionBar() {
     }
     const n = S.items.length, pos = Math.min(n, (S.cur >= 0 ? S.cur : S.i) + 1);
     const again = S.items.filter(x => x.second).length;
-    el.innerHTML = `<div class="tr-prog-bar" role="img" aria-label="Position ${pos} sur ${n}">${S.items.map((x, i) =>
+    el.innerHTML = `<div class="tr-prog-bar${n > 40 ? ' dense' : ''}" role="img" aria-label="Position ${pos} sur ${n}">${S.items.map((x, i) =>
         `<i class="${i === S.cur ? 'cur' : x.res === 'ok' ? 'ok' : x.res === 'ko' ? 'ko' : x.res === 'skip' ? 'skip' : x.second ? 'again' : ''}"></i>`).join('')}</div>
         <div class="tr-prog-l"><span><b>${pos} / ${n}</b> ${escapeHtml(S.label.toLowerCase())}</span><span>${okFirst} du premier coup${again ? ` · ${again} à revoir à la fin` : ''}</span></div>`;
 }
