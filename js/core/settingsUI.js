@@ -4,7 +4,7 @@
  * Fenêtre « Paramètres » : six rubriques et une recherche (socle : panelKit.js).
  *   Apparence · Jeu et entraînement · Sons et vibrations · Accessibilité · Données et sauvegarde · Raccourcis
  * Les valeurs vivent dans appSettings (settings.js) ; setPref() enregistre et applique l'effet.
- * Les options de séance (départ, profondeur, exercice) restent celles de l'onglet Entraînement.
+ * Les options du mode libre de l'Entraînement (départ, profondeur, coups enchaînés) sont réglées ici seulement.
  */
 
 'use strict';
@@ -57,9 +57,9 @@ function _settingRows() {
               min: 5, max: 50, step: 5, out: v => `${v} positions` },
             { group: 'Révision espacée', kind: 'seg', key: 'rhythm', label: 'Rythme des révisions', hint: 'Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent.',
               opts: [['soft', 'Doux'], ['std', 'Standard'], ['intense', 'Intensif']] },
-            { group: 'Révision espacée', kind: 'seg', key: 'training:fromStart', label: 'Départ de la séance', opts: [[0, 'Position ciblée'], [1, 'Début de partie']], value: k.fromStart },
-            { group: 'Révision espacée', kind: 'seg', key: 'training:maxPlies', label: 'Profondeur', opts: [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], value: k.maxPlies },
-            { group: 'Révision espacée', kind: 'seg', key: 'training:seqLen', label: 'Exercice', opts: [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [999, 'Variante']], value: k.seqLen },
+            { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:fromStart', label: 'D’où partir', hint: 'Juste avant la position tirée, ou du premier coup de la ligne.', opts: [[0, 'Position ciblée'], [1, 'Début de partie']], value: k.fromStart },
+            { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:maxPlies', label: 'Jusqu’où dans l’ouverture', hint: 'Seules les positions jusqu’à ce coup sont tirées.', opts: [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], value: k.maxPlies },
+            { group: 'Mode libre (Entraînement)', kind: 'seg', key: 'training:seqLen', label: 'Coups à enchaîner', hint: 'Après votre coup, l’adversaire répond et vous continuez.', opts: [[1, '1 coup'], [3, '3 coups'], [5, '5 coups'], [999, 'Variante']], value: k.seqLen },
             { group: 'Notation', kind: 'seg', key: 'notation', label: 'Écriture des coups', hint: 'Barre des coups, arbre, statistiques.',
               opts: [['fr', 'C F T D R'], ['en', 'N B R Q K'], ['fig', 'Figurines']] },
             { group: 'Notation', kind: 'custom', label: 'Exemple', html: () => `<span class="pn-sample">${_sampleLine()}</span>`, search: 'exemple notation' }

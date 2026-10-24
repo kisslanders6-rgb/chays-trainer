@@ -3,7 +3,7 @@
 Entraîneur d'échecs en français, sans dépendance ni étape de compilation : un répertoire d'ouvertures appris par répétition espacée, et des finales théoriques jugées coup par coup.
 
 - **Jouer** : vous jouez vos coups et ceux de l'adversaire. Dans une position inconnue, votre coup devient l'unique réponse enregistrée. Ensuite, il faut la retrouver.
-- **Entraînement** : les positions fragiles, oubliées ou dont la révision est due reviennent en priorité. L'échiquier rejoue les trois coups précédents pour remettre la position en contexte.
+- **Entraînement** : un menu d'exercices (révision du jour, points faibles, ligne complète, à confirmer, contre-la-montre, mode libre). Chaque séance a une barre de progression, reprend les erreurs en fin de séance et se termine par un bilan. L'échiquier rejoue les trois coups précédents pour remettre la position en contexte.
 - **Statistiques** : révisions dues avec lancement direct sur l'échiquier, maîtrise en six niveaux, points faibles, positions regroupées par ouverture nommée, régularité (série, calendrier, réussite par semaine).
 - **Analyser mes parties** : récupère vos dernières parties Chess.com ou Lichess (pseudo, API publiques) ou un PGN collé ; chaque partie s'arrête sur le premier coup sorti du répertoire. Votre coup : erreur comptée sur la position. Coup adverse : nouveauté signalée.
 - **Finales** : mats élémentaires, finales de pions (vérifiées par une base exacte roi + pion contre roi) et défense de Philidor.

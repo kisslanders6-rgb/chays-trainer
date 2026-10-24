@@ -22,10 +22,11 @@ const HELP_GUIDES = [
         'Jouez vos coups <strong>et</strong> ceux de l’adversaire pour explorer la branche voulue.',
         'Dans une position inconnue, votre coup devient l’<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un autre coup est refusé et compté comme erreur.',
         '<strong>Indice</strong> (Espace) montre la pièce à jouer ; un second appui dévoile le coup et compte une erreur.'], 'tab:play'],
-    ['training', 'target', 'Entraînement', 'La séance du jour, en révision espacée', [
-        'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur. Les positions à réviser passent en premier.',
-        '<strong>Départ</strong> : position ciblée (l’échiquier rejoue les trois coups précédents) ou début de partie.',
-        '<strong>Profondeur</strong> et <strong>exercice</strong> (1, 3 ou 5 coups, ou toute la variante) se règlent sous la séance, ou dans Paramètres › Jeu et entraînement.'], 'tab:training'],
+    ['training', 'target', 'Entraînement', 'Des exercices qui finissent par un bilan', [
+        'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur. <strong>Révision du jour</strong> pose toutes les positions dues.',
+        'Autres exercices : <strong>Points faibles</strong>, <strong>Ligne complète</strong> (une ouverture du premier coup au bout de la variante), <strong>À confirmer</strong>, <strong>Contre-la-montre</strong> (3 minutes) et <strong>Mode libre</strong> (tirage sans fin).',
+        'Une barre montre où vous en êtes ; une position ratée revient une fois en fin de séance, et le bilan liste les erreurs et les niveaux gagnés. Touchez l’échiquier pour passer la mise en situation.',
+        'Les réglages du mode libre (départ, profondeur, coups enchaînés) sont dans Paramètres › Jeu et entraînement.'], 'tab:training'],
     ['stats', 'bar-chart', 'Statistiques', 'Ce que vous maîtrisez, ce qui reste fragile', [
         '<strong>Réviser maintenant</strong> lance sur l’échiquier les positions dues du répertoire et de la couleur choisis ; chaque coup compte comme un essai.',
         'Six niveaux par position : à retravailler, fragile, en progrès, solide, à confirmer (moins de 3 essais) et maîtrisée. Le bouton <strong>i</strong> en donne les seuils.',

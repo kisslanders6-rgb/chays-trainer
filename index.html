@@ -247,11 +247,17 @@
             </div>
 
             <!-- Onglet Entraînement ciblé -->
+            <!-- Barre de contexte collante (répertoire, couleur), puis le menu d'exercices rendu par trainingUI.js -->
             <div id="home-tab-training" class="home-tab hidden">
-                <div class="tab-title"><svg class="ico"><use href="#i-target"/></svg> Entraînement</div>
-                <div class="tab-sub">Révision espacée de votre répertoire : les positions à réviser passent en premier, les coups bien maîtrisés reviennent de plus en plus rarement. L'échiquier rejoue les trois derniers coups pour vous remettre dans le contexte.</div>
-                <div class="repertoire-list"></div>
-                <div id="training-panel"></div>
+                <div class="st-scope">
+                    <label class="st-rep"><span>Répertoire</span><select id="training-rep" data-change="trainingRep" aria-label="Répertoire"></select></label>
+                    <div class="seg st-seg" role="group" aria-label="Couleur">
+                        <button class="seg-btn" id="training-seg-w" data-action="trainingColor" data-arg="w" aria-pressed="false"><span class="glyph" data-glyph="K"></span> Blancs</button>
+                        <button class="seg-btn" id="training-seg-b" data-action="trainingColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
+                        <button class="seg-btn active" id="training-seg-mix" data-action="trainingColor" data-arg="mix" aria-pressed="true">Les deux</button>
+                    </div>
+                </div>
+                <div id="training-panel" class="tr-body"></div>
             </div>
 
             <!-- Onglet Finales -->
@@ -270,6 +276,7 @@
             <div class="game-main">
 
                 <div class="board-col">
+                    <div class="tr-progress" id="tr-progress" hidden></div>
                     <div class="board-wrap">
                         <div id="board" role="group" aria-label="Échiquier — flèches pour se déplacer, Entrée pour jouer"></div>
                     </div>
@@ -553,6 +560,7 @@
 <script src="js/modules/stats/openingNames.js"></script>
 <script src="js/modules/stats/stats.js"></script>
 <script src="js/modules/training/training.js"></script>
+<script src="js/modules/training/trainingUI.js"></script>
 <script src="js/modules/endgame/egCore.js"></script>
 <script src="js/modules/endgame/egExercises.js"></script>
 <script src="js/modules/endgame/endgame.js"></script>
