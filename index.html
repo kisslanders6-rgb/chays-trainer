@@ -262,9 +262,11 @@
 
             <!-- Onglet Finales -->
             <div id="home-tab-endgame" class="home-tab hidden">
-                <div class="tab-title"><svg class="ico"><use href="#i-pawn"/></svg> Finales</div>
-                <div class="tab-sub">Finales théoriques : l'adversaire répond tout seul et chaque coup est jugé. Les finales de pions sont vérifiées par un calcul exact.</div>
-                <div id="endgame-panel"></div>
+                <div class="st-scope">
+                    <div class="seg st-seg" id="endgame-seg" role="group" aria-label="Afficher"></div>
+                    <button class="egv-random" data-action="egRandom" title="Exercice au hasard"><svg class="ico" aria-hidden="true"><use href="#i-shuffle"/></svg><span>Au hasard</span></button>
+                </div>
+                <div id="endgame-panel" class="egv-body"></div>
             </div>
 
         </div>

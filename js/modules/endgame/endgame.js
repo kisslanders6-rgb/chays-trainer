@@ -57,14 +57,15 @@ function egMiniBoard(ex) {
 
 const _egDots = n => '●'.repeat(n) + '○'.repeat(3 - n);
 
-// Filtre du catalogue : 'all' | 'todo' (pas encore réussi sans faute) | '1' | '2' | '3' (niveau).
+// Filtre (barre de contexte) : 'all' | 'todo' (pas encore réussi) | 'done' (réussi). Les exercices écartés
+// restent sur le parcours, estompés, pour que le chemin garde sa forme.
 let egFilter = 'all';
 
+const _egWon = (prog, e) => !!(prog[e.id] && prog[e.id].wins > 0);
+const _egShown = (prog, e) => egFilter === 'all' || (egFilter === 'done') === _egWon(prog, e);
+
 function _egVisible(prog) {
-    return ENDGAME_EXERCISES.filter(e =>
-        egFilter === 'all' ? true
-      : egFilter === 'todo' ? !(prog[e.id] && prog[e.id].perfect)
-      : e.level === Number(egFilter));
+    return ENDGAME_EXERCISES.filter(e => _egShown(prog, e));
 }
 
 // Exercice au hasard parmi ceux qui sont affichés, en privilégiant ceux qui ne sont pas encore réussis sans faute.
@@ -76,42 +77,95 @@ function startRandomEndgame() {
     startEndgame(pool[Math.floor(Math.random() * pool.length)].id);
 }
 
-// Écran « Parcours » : chaque catégorie est un chemin d'exercices (ordre du catalogue, déjà rangé par
-// difficulté) ; le trait se colore à mesure qu'on avance et le prochain exercice est signalé. Rien n'est verrouillé.
+// Objectif avec sa limite : « Les Blancs jouent et font mat · 12 coups au plus ».
+function _egGoalLine(ex) {
+    return egObjective(ex) + (ex.maxMoves ? ` · ${ex.maxMoves} coups au plus` : ex.hold ? ` · tenir ${ex.hold} coups` : '');
+}
+
+// Onglet Finales (direction « Velours », comme Statistiques et Entraînement) :
+//   - barre de contexte : Toutes / À faire / Réussies, et « Au hasard » ;
+//   - « À suivre » (carte sombre) : premier exercice non réussi du catalogue, déjà rangé par difficulté ;
+//   - « Parcours » (carte claire) : réussites, sans faute, en cours, une barre par catégorie ;
+//   - un chemin de ronds par catégorie ; le trait se colore jusqu'au prochain exercice. Rien n'est verrouillé.
+// Anneau des ronds : laiton = sans faute, vert = réussi, vert vif + halo = à suivre, orange = en cours.
 function initEndgame() {
     const panel = document.getElementById('endgame-panel');
     if (!panel) return;
     const prog = readEndgameProgress();
-    const won = e => prog[e.id] && prog[e.id].wins > 0;
-    const done = ENDGAME_EXERCISES.filter(won).length;
-    const perfect = ENDGAME_EXERCISES.filter(e => prog[e.id] && prog[e.id].perfect).length;
+    const won = e => _egWon(prog, e);
+    const all = ENDGAME_EXERCISES, N = all.length;
+    const done = all.filter(won).length;
+    const perfect = all.filter(e => prog[e.id] && prog[e.id].perfect).length;
+    const tried = all.filter(e => !won(e) && prog[e.id] && prog[e.id].tries).length;
+    const pl = (n, one, many) => n > 1 ? many : one;
 
-    let html = `<div class="egp-head">
-        <div><span class="egp-eyebrow">Parcours · ${done} réussi${done > 1 ? 's' : ''} sur ${ENDGAME_EXERCISES.length}${perfect ? ` · ${perfect} sans faute` : ''}</span>
-             <h2 class="egp-title">${done ? 'Reprenez là où vous en étiez' : 'Commencez par les mats élémentaires'}</h2></div>
-        <button class="btn eg-random" data-action="egRandom">${ico('shuffle')} Au hasard</button>
-    </div>`;
+    const seg = document.getElementById('endgame-seg');
+    if (seg) seg.innerHTML = [['all', 'Toutes', N], ['todo', 'À faire', N - done], ['done', 'Réussies', done]].map(([f, label, n]) =>
+        `<button class="seg-btn${egFilter === f ? ' active' : ''}" data-action="egFilter" data-arg="${f}" aria-pressed="${egFilter === f}">${label}<span class="egv-n"> · ${n}</span></button>`).join('');
 
-    ENDGAME_CATEGORIES.forEach(cat => {
-        const list = ENDGAME_EXERCISES.filter(e => e.cat === cat.id);
-        if (!list.length) return;
-        const nextId = (list.find(e => !won(e)) || {}).id;
-        html += `<section class="egp-track">
-            <header class="egp-track-head"><b>${escapeHtml(cat.label)}</b><span>${list.filter(won).length}/${list.length}</span></header>
-            <p class="egp-track-desc">${escapeHtml(cat.desc)}</p>
-            <div class="egp-path">${list.map(ex => {
-                const p = prog[ex.id], isNext = ex.id === nextId;
-                const cls = p && p.perfect ? 'done perfect' : won(ex) ? 'done' : isNext ? 'next' : p && p.tries ? 'tried' : '';
-                const st = p && p.perfect ? 'Sans faute' : won(ex) ? 'Réussi' : isNext ? 'À suivre' : p && p.tries ? 'En cours' : _egDots(ex.level);
-                return `<button class="egp-node ${cls}" data-action="startEndgame" data-arg="${escapeHtml(ex.id)}" title="${escapeHtml(ex.title)} · ${escapeHtml(egObjective(ex))}">
-                    ${egMiniBoard(ex)}
-                    <b>${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</b>
-                    <span class="egp-st">${st}</span>
-                </button>`;
-            }).join('')}</div>
+    // ── À suivre ──
+    const next = all.find(e => !won(e));
+    let hero;
+    if (next) {
+        const cat = ENDGAME_CATEGORIES.find(c => c.id === next.cat), p = prog[next.id];
+        hero = `<section class="vel-card vel-dark egv-next" aria-label="Exercice à suivre">
+            <span class="st-eyebrow">À suivre · ${escapeHtml(cat ? cat.label : '')}</span>
+            <div class="egv-next-row">
+                <span class="egv-ring egv-ring-lg">${egMiniBoard(next)}</span>
+                <div class="egv-next-txt">
+                    <b class="egv-next-title">${escapeHtml(next.title)}</b>
+                    <span>${escapeHtml(_egGoalLine(next))}</span>
+                    <span class="egv-meta">Difficulté ${_egDots(next.level)} · ${p && p.tries ? `${p.tries} essai${pl(p.tries, '', 's')}` : 'jamais tenté'}</span>
+                </div>
+            </div>
+            <button class="st-cta" data-action="startEndgame" data-arg="${escapeHtml(next.id)}">Commencer ${ico('play')}</button>
+            <span class="st-foot">L'adversaire répond seul · chaque coup est jugé</span>
         </section>`;
-    });
-    panel.innerHTML = html;
+    } else {
+        hero = `<section class="vel-card vel-dark egv-next" aria-label="Parcours terminé">
+            <span class="st-eyebrow">Parcours terminé</span>
+            <div class="st-big st-big-text"><b>Tout est réussi</b></div>
+            <div class="st-today-sub">${perfect} sur ${N} sans faute. Rejouez au hasard pour garder la main.</div>
+            <button class="st-cta" data-action="egRandom">Au hasard ${ico('play')}</button>
+            <span class="st-foot">L'adversaire répond seul · chaque coup est jugé</span>
+        </section>`;
+    }
+
+    // ── Parcours ──
+    const tracks = ENDGAME_CATEGORIES.map(cat => ({ cat, list: all.filter(e => e.cat === cat.id) })).filter(t => t.list.length);
+    const summary = `<section class="vel-card vel-light egv-sum" aria-label="Parcours">
+        <span class="st-eyebrow">Parcours · finales théoriques</span>
+        <div class="st-big"><b>${done}</b><span>sur ${N} réussie${pl(done, '', 's')}</span></div>
+        <div class="st-today-sub">${perfect} sans faute · ${tried} en cours</div>
+        <div class="egv-bars">${tracks.map(({ cat, list }) => {
+            const w = list.filter(won).length;
+            return `<div class="egv-bar-row"><span>${escapeHtml(cat.label)}</span><span class="egv-bar"><i style="width:${Math.round(100 * w / list.length)}%"></i></span><b>${w} / ${list.length}</b></div>`;
+        }).join('')}</div>
+        <span class="st-foot">Finales de pions vérifiées par un calcul exact</span>
+    </section>`;
+
+    // ── Chemins ──
+    const paths = tracks.map(({ cat, list }) => {
+        const nextId = (list.find(e => !won(e)) || {}).id;
+        const reach = nextId ? list.findIndex(e => e.id === nextId) : list.length - 1;
+        const fill = list.length > 1 ? (reach / (list.length - 1)).toFixed(3) : 0;
+        return `<section class="st-sec egv-track">
+            <div class="st-h"><h3>${escapeHtml(cat.label)}</h3><span class="egv-count">${list.filter(won).length} / ${list.length}</span></div>
+            <p class="egv-desc">${escapeHtml(cat.desc)}</p>
+            <div class="egv-path"><div class="egv-row" style="--fill:${fill}">${list.map(ex => {
+                const p = prog[ex.id];
+                const state = p && p.perfect ? 'perfect' : won(ex) ? 'done' : ex.id === nextId ? 'next' : p && p.tries ? 'tried' : 'todo';
+                const st = { perfect: 'Sans faute', done: 'Réussi', next: 'À suivre', tried: 'En cours' }[state] || _egDots(ex.level);
+                return `<button class="egv-node is-${state}${_egShown(prog, ex) ? '' : ' is-dim'}" data-action="startEndgame" data-arg="${escapeHtml(ex.id)}" title="${escapeHtml(ex.title)} · ${escapeHtml(egObjective(ex))}">
+                    <span class="egv-ring">${egMiniBoard(ex)}</span>
+                    <b>${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</b>
+                    <span class="egv-st"${state === 'todo' ? ` aria-label="Difficulté ${ex.level} sur 3"` : ''}>${st}</span>
+                </button>`;
+            }).join('')}</div></div>
+        </section>`;
+    }).join('');
+
+    panel.innerHTML = `<div class="st-now">${hero}${summary}</div>${paths}`;
 
     // Précalcule la base KPK pendant que l'utilisateur choisit (≈ 0,25 s).
     const warm = () => { try { EG.buildKpk(); } catch (e) {} };

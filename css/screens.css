@@ -4,7 +4,7 @@
    titres et chiffres, IBM Plex Mono pour la notation, filet et repères en --board-accent (teinte de l'échiquier).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.trs-eyebrow, .egp-eyebrow { font-family: var(--font-note); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--board-accent); }
+.trs-eyebrow { font-family: var(--font-note); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--board-accent); }
 
 /* ─── Niveaux de maîtrise (Statistiques, Entraînement, arbre) ───
    .lv-<niveau> fixe --c ; .lv-mark ajoute une forme propre à chaque niveau (lisible sans les couleurs). */
@@ -341,31 +341,84 @@
 .trs-empty { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 1px dashed var(--border-strong); border-radius: 16px; font-size: 14px; color: var(--text-muted); }
 .trs-empty b { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--text); }
 
-/* ─── Finales : parcours ─── */
-#endgame-panel { gap: 16px; }
-.egp-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
-.egp-title { margin: 3px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; letter-spacing: -.01em; }
-.egp-track { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-sm); }
-.egp-track-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.egp-track-head b { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
-.egp-track-head span { font-family: var(--font-note); font-size: 12px; color: var(--text-muted); }
-.egp-track-desc { margin: 0 0 8px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
-.egp-path { display: flex; gap: 18px; overflow-x: auto; padding: 6px 4px 10px; scroll-snap-type: x proximity; }
-.egp-node { position: relative; flex: 0 0 92px; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; scroll-snap-align: start; }
-.egp-node + .egp-node::before { content: ''; position: absolute; top: 35px; right: 100%; width: 18px; height: 2px; border-radius: 1px; background: var(--border-strong); }
-.egp-node.done + .egp-node::before { background: var(--board-accent); }
-.egp-node .eg-mini { width: 70px; border-radius: 50%; border: 2px solid var(--border-strong); transition: transform .3s cubic-bezier(.16, 1, .3, 1), box-shadow .3s; }
-.egp-node.done .eg-mini { border-color: var(--board-accent); }
-.egp-node.perfect .eg-mini { box-shadow: 0 0 0 4px color-mix(in srgb, var(--board-accent) 25%, transparent); }
-.egp-node.next .eg-mini { border-color: var(--accent-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-bright) 22%, transparent); }
-@media (hover: hover) { .egp-node:hover .eg-mini { transform: translateY(-3px); } }
-.egp-node:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 4px; border-radius: 12px; }
-.egp-node b { font-size: 11.5px; font-weight: 600; line-height: 1.25; }
-.egp-st { font-family: var(--font-note); font-size: 10.5px; color: var(--text-dim); }
-.egp-node.done .egp-st { color: var(--board-accent); }
-.egp-node.next .egp-st { color: var(--accent-bright); font-weight: 500; }
+/* ─── Finales : parcours (endgame.js, initEndgame) ───
+   Même direction que l'Entraînement : barre de contexte (.st-scope), « À suivre » et « Parcours » en cartes
+   Velours (.st-now), puis un chemin de ronds par catégorie. L'anneau d'un rond dit son état (box-shadow :
+   un liseré couleur du fond, puis l'anneau ; --gap = fond sous le rond). */
+.home-content:has(#home-tab-endgame:not(.hidden)) { max-width: 1120px; justify-content: flex-start; text-align: left; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.setup-screen:has(#home-tab-endgame:not(.hidden)) { padding-top: 0; }
+#home-tab-endgame { gap: 0; align-items: stretch; }
+.egv-body { display: flex; flex-direction: column; gap: 34px; padding-top: 22px; }
+.egv-random {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; flex: none;
+    border: 1.5px solid var(--border); border-radius: 20px; background: var(--surface); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.egv-random .ico { width: 16px; height: 16px; }
+@media (hover: hover) { .egv-random:hover { border-color: var(--border-strong); } }
+.egv-random:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
+
+.egv-ring { --gap: var(--bg); --ring: var(--border-strong); --w: 4.5px; --halo: 0 0 transparent;
+    position: relative; display: block; width: 76px; flex: none; border-radius: 50%; background: var(--gap);
+    box-shadow: 0 0 0 3px var(--gap), 0 0 0 var(--w) var(--ring), var(--halo); transition: transform .3s var(--ease-out); }
+.egv-ring .eg-mini { border: 0; border-radius: 50%; }
+.egv-ring-lg { --gap: var(--card-b-bg); --ring: var(--card-b-ink); --w: 7px; width: 128px; }
+
+.egv-next-row { display: flex; align-items: center; gap: 24px; }
+.egv-next-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 14px; }
+.egv-next-txt > span { opacity: .86; }
+.egv-next-title { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.05; letter-spacing: -.01em; }
+.egv-meta { font-family: var(--font-note); font-size: 11.5px; }
+.egv-bars { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+.egv-bar-row { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 12.5px; }
+.egv-bar-row b { font-family: var(--font-note); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.egv-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, currentColor 12%, transparent); }
+.egv-bar i { border-radius: 4px; background: var(--board-accent); }
+
+.egv-track { gap: 6px; }
+.egv-count { font-family: var(--font-note); font-size: 12px; color: var(--text-muted); }
+.egv-desc { margin: 0 0 4px; font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+.egv-path { overflow-x: auto; margin: 0 -8px; scroll-snap-type: x proximity; scroll-padding-inline: 8px; scrollbar-width: thin; }
+.egv-row { --node: 104px; position: relative; display: flex; gap: 24px; width: max-content; padding: 12px 8px 8px; }
+.egv-row::before, .egv-row::after { content: ''; position: absolute; top: calc(12px + 38px - 1px); left: calc(8px + var(--node) / 2); height: 2px; border-radius: 1px; }
+.egv-row::before { right: calc(8px + var(--node) / 2); background: var(--border-strong); }
+.egv-row::after { width: calc((100% - 16px - var(--node)) * var(--fill, 0)); background: var(--board-accent); }
+.egv-node { position: relative; z-index: 1; width: var(--node); display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: center; cursor: pointer; scroll-snap-align: start; }
+.egv-node b { font-size: 12px; font-weight: 600; line-height: 1.25; }
+.egv-st { font-family: var(--font-note); font-size: 11px; color: var(--text-muted); }
+.egv-node.is-perfect .egv-ring { --ring: var(--ct-laiton); --w: 6px; --halo: 0 0 0 11px color-mix(in srgb, var(--ct-laiton) 24%, transparent); }
+.egv-node.is-done .egv-ring    { --ring: var(--board-accent); --w: 6px; }
+.egv-node.is-next .egv-ring    { --ring: var(--accent-bright); --w: 6px; --halo: 0 0 0 12px color-mix(in srgb, var(--accent-bright) 20%, transparent); }
+.egv-node.is-tried .egv-ring   { --ring: var(--lv-fragile); --w: 6px; }
+.egv-node.is-perfect .egv-st { color: color-mix(in srgb, var(--ct-laiton) 72%, var(--text)); }
+.egv-node.is-done .egv-st    { color: var(--board-accent); }
+.egv-node.is-next .egv-st    { color: var(--accent-bright); font-weight: 600; }
+.egv-node.is-tried .egv-st   { color: var(--lv-fragile-ink); }
+.egv-node.is-dim .egv-ring { --ring: var(--border-strong); --w: 4.5px; --halo: 0 0 transparent; }       /* filtré : estompé, le trait reste derrière */
+.egv-node.is-dim .eg-mini, .egv-node.is-dim b, .egv-node.is-dim .egv-st { opacity: .32; }
+@media (hover: hover) { .egv-node:hover .egv-ring { transform: translateY(-3px); } }
+.egv-node:focus-visible { outline: none; }
+.egv-node:focus-visible .egv-ring { outline: 2px solid var(--board-accent); outline-offset: 9px; }
+
+@media (max-width: 599px) {
+    .home-content:has(#home-tab-endgame:not(.hidden)) { padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
+    .egv-random { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
+    .egv-random span, .egv-n { display: none; }
+    .egv-body { gap: 26px; padding-top: 16px; }
+    .egv-next-row { gap: 18px; }
+    .egv-ring-lg { width: 92px; --w: 6px; }
+    .egv-next-title { font-size: 22px; }
+    .egv-bar-row { grid-template-columns: 116px minmax(0, 1fr) auto; font-size: 12px; }
+    .egv-path { margin: 0 -14px; scroll-padding-inline: 14px; }
+    .egv-row { --node: 88px; gap: 14px; padding: 12px 14px 8px; }
+    .egv-row::before, .egv-row::after { top: calc(12px + 32px - 1px); left: calc(14px + var(--node) / 2); }
+    .egv-row::before { right: calc(14px + var(--node) / 2); }
+    .egv-row::after { width: calc((100% - 28px - var(--node)) * var(--fill, 0)); }
+    .egv-node b { font-size: 11.5px; }
+    .egv-node .egv-ring { width: 64px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
-    .egp-node .eg-mini, .st-line-meta .ico { transition: none; }
-    @media (hover: hover) { .egp-node:hover .eg-mini { transform: none; } }
+    .egv-ring, .egv-node, .st-line-meta .ico { transition: none; }
+    @media (hover: hover) { .egv-node:hover .egv-ring { transform: none; } }
 }
