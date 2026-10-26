@@ -89,7 +89,7 @@ function _trSummaryHTML(s) {
     if (!s) return '';
     const label = r => {
         const op = r.e.path ? openingNameOf(r.e.path) : null;
-        return `<span><span class="trb-move">${escapeHtml(_moveLabel(r.e))}</span><small>${r.color === 'w' ? 'Blancs' : 'Noirs'}${op ? ' · ' + escapeHtml(op.name) : ''}</small></span>`;
+        return `<span><span class="trb-move">${_moveLabel(r.e, false, true)}</span><small>${r.color === 'w' ? 'Blancs' : 'Noirs'}${op ? ' · ' + escapeHtml(op.name) : ''}</small></span>`;
     };
     const lv = l => `${_lvMark(l)}<span>${STATS_LEVELS[l].one}</span>`;
     const missed = s.rows.filter(r => !r.ok);
@@ -135,10 +135,8 @@ function initTraining() {
     if (_trColor !== 'mix' && !has(_trColor) && sides.length) _trColor = 'mix';      // la couleur choisie n'a rien à réviser
 
     // Barre de contexte
-    ['w', 'b', 'mix'].forEach(c => {
-        const b = document.getElementById('training-seg-' + c);
-        if (b) { b.classList.toggle('active', c === _trColor); b.setAttribute('aria-pressed', c === _trColor); }
-    });
+    ColorScope.render(document.getElementById('training-color'), { options: ['w', 'b', 'mix'], value: _trColor,
+        onChange: c => UI_ACTIONS.trainingColor(c) });
     const rep = document.getElementById('training-rep');
     if (rep) rep.innerHTML = repertoireDropdownHTML('trainingRep');
 

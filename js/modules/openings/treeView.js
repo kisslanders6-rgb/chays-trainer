@@ -189,7 +189,7 @@ function replaceTreeMove(r) {
         _treeActionsFor = null;
         loadPositionFromPath(r.path.slice(0, -1));
         renderTree(true);
-        setStatus(`Remplacement de ${formatSan(r.san, r.ply % 2 === 1 ? 'w' : 'b')}`, 'new', 'Jouez le nouveau coup.' + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
+        setStatus(`Remplacement de ${formatSanText(r.san, r.ply % 2 === 1 ? 'w' : 'b')}`, 'new', 'Jouez le nouveau coup.' + (extra ? ` ${extra} coup(s) orphelin(s) nettoyé(s).` : ''));
     });
 }
 
@@ -241,9 +241,10 @@ function _masteryBar(mix) {
     return `<span class="tree-mbar" title="Cette variante : ${pct} % de coups maîtrisés (${n} coups${mix.weak ? `, ${mix.weak} à retravailler` : ''})">${segs}</span>`;
 }
 
-function _treeLabel(r) {
+// html : figurines dessinées (arbre) ; sinon texte simple (barre d'état, confirmations).
+function _treeLabel(r, html) {
     const n = Math.ceil(r.ply / 2);
-    const san = formatSan(r.san, r.ply % 2 === 1 ? 'w' : 'b');
+    const san = (html ? formatSan : formatSanText)(r.san, r.ply % 2 === 1 ? 'w' : 'b');
     return r.ply % 2 === 1 ? `${n}. ${san}` : `${n}... ${san}`;
 }
 
@@ -295,7 +296,7 @@ function renderTree(rebuild) {
         } else if (!r.covered) {
             badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;
         }
-        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${escapeHtml(_treeLabel(r))}</span>${r.mix ? _masteryBar(r.mix) : ''}${badges}</div>`;
+        html += `<div class="${cls}" style="--d:${r.depth}" data-i="${i}">${lead}<i class="tree-dot ${r.kind}"></i><span class="tree-move">${_treeLabel(r, true)}</span>${r.mix ? _masteryBar(r.mix) : ''}${badges}</div>`;
         if (open) html += `<div class="tree-actions" style="--d:${r.depth}">
             <button class="btn btn-tool" data-replace="${i}">${ico('pencil')} Remplacer</button>
             <button class="btn btn-tool is-danger" data-delete="${i}">${ico('trash')} Supprimer</button></div>`;

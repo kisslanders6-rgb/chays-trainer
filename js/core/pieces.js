@@ -40,6 +40,10 @@ const PIECE_SETS = {
     'minimal-warmth': _def('minimal-warmth', 'Minimal Warmth', 'blunder_reign',               'CC BY-NC-SA 4.0'),
     'fantasy':        _def('fantasy',        'Fantasy',        'Maurizio Monge',              'MIT'),
     'kiwen-suwi':     _def('kiwen-suwi',     'Kiwen Suwi',     'neverRare',                   'CC BY 4.0'),
+    'cburnett':       _def('cburnett',       'Cburnett',       'Colin M.L. Burnett',          'GPLv2+'),
+    'california':     _def('california',     'California',     'Jerry S.',                    'CC BY-NC-SA 4.0'),
+    'cardinal':       _def('cardinal',       'Cardinal',       'sadsnake1',                   'CC BY-NC-SA 4.0'),
+    'celtic':         _def('celtic',         'Celtic',         'Maurizio Monge',              'MIT'),
     'blindfold':      { label: 'Invisibles', author: 'Entraînement à l\'aveugle (pièces masquées)', license: '—', src: 'merida', svg: _imgSet('merida') }
 };
 
@@ -63,6 +67,9 @@ function applyPieceSet() {
     Object.assign(PIECE_SVG, set.svg);
     document.documentElement.setAttribute('data-piece', id);
     _preloadPieceSet(set.src || id);
+    // Figurines de la notation (formatSan) : le dessin du jeu actif, une variable CSS par pièce.
+    const root = document.documentElement.style;
+    'wb'.split('').forEach(c => 'KQRBN'.split('').forEach(t => root.setProperty(`--fig-${c}${t}`, `url("${PIECE_DIR}/${set.src || id}/${c}${t}.svg")`)));
 
     const credit = document.getElementById('piece-credit');
     if (credit) credit.textContent = `${set.label} · ${set.author} · ${set.license}`;

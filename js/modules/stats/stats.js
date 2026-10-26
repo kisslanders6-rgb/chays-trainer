@@ -35,7 +35,8 @@ const STATS_LINE_ROWS     = 30;     // positions affichées par ouverture avant 
 const STATS_WEAK_CARDS    = 3;
 const STATS_SECONDS_PER_POSITION = 30;
 const STATS_DAYS          = 30;
-const STATS_HEAT_WEEKS    = 5;
+const STATS_HEAT_WEEKS    = 12;     // calendrier : une colonne par semaine, il défile sur petit écran
+const STATS_PHONE_LINES   = 5;      // téléphone : ouvertures montrées avant « Tout voir »
 const STATS_TREND_WEEKS   = 8;
 
 // Du plus fragile au plus sûr (ordre des barres, des filtres et des listes).
@@ -57,6 +58,8 @@ let statsFilter = 'all';     // 'all' ou un niveau
 let statsSort   = 'weak';    // 'weak' | 'due' | 'order' | 'size'
 let statsOpen   = null;      // ouvertures dépliées (Set de clés) ; null : la plus fragile s'ouvre
 let statsAll    = new Set(); // ouvertures dont toutes les positions sont affichées
+let statsPane   = 'overview'; // téléphone : onglet affiché ('overview' | 'openings' | 'regularity')
+let statsAllLines = false;   // téléphone : toutes les ouvertures affichées
 let statsScope  = '';        // répertoire + couleur : les ouvertures dépliées se réinitialisent quand il change
 
 function _level(e) {
@@ -80,10 +83,11 @@ function levelBarHTML(counts, cls) {
 const _plural = (n, one, many) => `${n} ${n > 1 ? many || one + 's' : one}`;
 const _sideName = c => ({ w: 'Blancs', b: 'Noirs', all: 'Blancs et Noirs' })[c];
 
-// Repère du coup : « 4. e4 » (Blancs) ou « 4… e5 » (Noirs) ; masked : « 4. ? ».
-function _moveLabel(e, masked) {
-    if (!e.ply) return masked ? '?' : formatSan(e.san);
-    const n = Math.ceil(e.ply / 2), w = e.ply % 2 === 1, san = masked ? '?' : formatSan(e.san, w ? 'w' : 'b');
+// Repère du coup : « 4. e4 » (Blancs) ou « 4… e5 » (Noirs) ; masked : « 4. ? ». html : figurines dessinées.
+function _moveLabel(e, masked, html) {
+    const fmt = html ? formatSan : formatSanText;
+    if (!e.ply) return masked ? '?' : fmt(e.san);
+    const n = Math.ceil(e.ply / 2), w = e.ply % 2 === 1, san = masked ? '?' : fmt(e.san, w ? 'w' : 'b');
     return w ? `${n}. ${san}` : `${n}… ${san}`;
 }
 
@@ -159,14 +163,14 @@ function _countLevels(list) {
 
 // ─── ÉCHIQUIER MINIATURE ──────────────────────────────────────────────────────
 
-// Position AVANT mon coup, orientée de mon côté ; le dernier coup adverse est surligné.
-function _miniBoardHTML(r) {
+// Position AVANT mon coup (after : APRÈS tout le chemin), orientée de mon côté ; le dernier coup est surligné.
+function _miniBoardHTML(r, after) {
     let cells = null, last = [];
     _withEngineSnapshot(() => {
         try {
             parseFEN(INIT_FEN);
             if (r.path) {
-                const before = r.path.slice(0, -1);
+                const before = after ? r.path : r.path.slice(0, -1);
                 before.forEach(u => _applyUciRaw(u));
                 const lm = before[before.length - 1];
                 if (lm) last = [squareToIdx(lm.slice(0, 2)), squareToIdx(lm.slice(2, 4))];
@@ -210,9 +214,9 @@ function _regularityHTML() {
     const monday = _dayStart(today, -((new Date(today).getDay() + 6) % 7));
     const first  = _dayStart(monday, -7 * (STATS_HEAT_WEEKS - 1));
     const fmt = t => new Date(t).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    let heat = '<span></span>' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="st-heat-d">${d}</span>`).join('');
+    // Une colonne par semaine (lundi en haut), précédée des initiales des jours.
+    let heat = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="st-heat-d">${d}</span>`).join('');
     for (let w = 0; w < STATS_HEAT_WEEKS; w++) {
-        heat += '<span></span>';
         for (let d = 0; d < 7; d++) {
             const t = _dayStart(first, w * 7 + d), a = dayAt(t).a;
             const cls = t > today ? 'future' : !a ? '' : a < 10 ? 'h1' : a < 25 ? 'h2' : 'h3';
@@ -257,7 +261,7 @@ function _regularityHTML() {
 
     return `
         <div class="st-reg-kpis"><div><b>${_plural(streak, 'jour')}</b><span>d'affilée</span></div><div><b>${active} / ${STATS_DAYS}</b><span>jours actifs</span></div></div>
-        <div class="st-heat" role="img" aria-label="Essais par jour sur ${STATS_HEAT_WEEKS} semaines">${heat}</div>
+        <div class="st-heat-scroll"><div class="st-heat" role="img" aria-label="Essais par jour sur ${STATS_HEAT_WEEKS} semaines">${heat}</div></div>
         <div class="st-heat-leg">moins <i></i><i class="h1"></i><i class="h2"></i><i class="h3"></i> plus</div>
         ${chart}
         ${bySide ? `<div class="st-cmps"><span class="st-sub">Maîtrise par couleur · ${escapeHtml(currentRepertoire)}</span>${bySide}</div>` : ''}`;
@@ -266,10 +270,7 @@ function _regularityHTML() {
 // ─── RENDU ────────────────────────────────────────────────────────────────────
 
 function _renderStatsScope() {
-    ['w', 'b', 'all'].forEach(c => {
-        const seg = document.getElementById('stats-seg-' + c);
-        if (seg) { seg.classList.toggle('active', c === statsColor); seg.setAttribute('aria-pressed', c === statsColor); }
-    });
+    ColorScope.render(document.getElementById('stats-color'), { options: ['w', 'b', 'all'], value: statsColor, onChange: setStatsColor });
     const rep = document.getElementById('stats-rep');
     if (rep) rep.innerHTML = repertoireDropdownHTML('statsRep');
     const info = document.getElementById('stats-info');
@@ -285,9 +286,10 @@ function initStats() {
     _renderStatsScope();
 
     const rows = _statsRows();
-    const reg  = Object.keys(readActivity()).length ? `<aside class="st-side"><section class="st-sec"><div class="st-h"><h3>Régularité, tous répertoires</h3></div><div class="st-reg">${_regularityHTML()}</div></section></aside>` : '';
+    const reg  = Object.keys(readActivity()).length ? `<aside class="st-side" data-pane="regularity"><section class="st-sec"><div class="st-h"><h3>Régularité, tous répertoires</h3></div><div class="st-reg">${_regularityHTML()}</div></section></aside>` : '';
 
     if (!rows.length) {
+        body.className = 'st-body';
         body.innerHTML = `<div class="st-main"><div class="empty-tab"><div class="empty-tab-icon">${ico('bar-chart', 'ico-xl')}</div>
             <div>Aucune donnée</div>
             <div class="empty-tab-sub">Jouez votre répertoire « ${escapeHtml(currentRepertoire)} »${statsColor === 'all' ? '' : ` avec les ${_sideName(statsColor)}`} pour voir apparaître vos statistiques.</div></div></div>` + reg;
@@ -321,6 +323,16 @@ function initStats() {
             <button class="st-cta" data-action="statsGoTraining" data-arg="weak">Points faibles ${ico('chevron-right')}</button>`}
             <span class="st-foot">Demain : ${_plural(tomorrow, 'position')}</span>
         </div>`;
+
+    // ── Téléphone : trois chiffres et onglets collants (css/screens.css, requête de conteneur) ──
+    const tabs = [['overview', 'Aperçu'], ['openings', 'Ouvertures'], ['regularity', 'Régularité']].filter(([p]) => p !== 'regularity' || reg);
+    if (!tabs.some(([p]) => p === statsPane)) statsPane = 'overview';
+    const phoneHead = `<div class="st-phone st-kpis" role="group" aria-label="En bref">
+            <div><b>${dueAll}</b><span>à réviser</span></div>
+            <div><b>${Math.round(100 * counts.mastered / rows.length)} %</b><span>maîtrisées</span></div>
+            <div><b>${_streak(readActivity())} j</b><span>d'affilée</span></div></div>
+        <div class="st-phone st-tabs" role="tablist" aria-label="Sections">${tabs.map(([p, l]) =>
+            `<button type="button" role="tab" class="st-tab" aria-selected="${statsPane === p}" data-action="statsPane" data-arg="${p}">${l}</button>`).join('')}</div>`;
 
     // ── Maîtrise ──
     const totA = rows.reduce((s, r) => s + r.e.attempts, 0), totF = rows.reduce((s, r) => s + r.e.failures, 0);
@@ -384,7 +396,7 @@ function initStats() {
         const rowsHTML = shown.map(r => {
             const d = isDue(r.e, now), pct = Math.round(100 * _rate(r));
             return `<div class="st-row">
-                <span class="st-move">${escapeHtml(_moveLabel(r.e))}</span>
+                <span class="st-move">${_moveLabel(r.e, false, true)}</span>
                 <span class="st-lvl">${_lvMark(r.lv)}${STATS_LEVELS[r.lv].one}</span>
                 <span class="st-errs lv-${r.lv}" title="${pct} % d'erreurs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, pct)}%"></i></span><span class="st-n">${r.e.failures} err. / ${r.e.attempts}</span></span>
                 <span class="st-when ${d ? 'on' : ''}">${d ? 'Due' : _dueIn(dueOf(r.e))}</span>
@@ -404,20 +416,25 @@ function initStats() {
                 <span class="st-due ${g.due ? '' : 'none'}">${g.due ? g.due + ' à réviser' : 'à jour'}</span>
                 ${ico('chevron-right')}
             </button>
-            ${open ? `<div class="st-rows">${g.due ? `<button class="st-golink" data-action="statsGoTraining" data-arg="${escapeHtml('due:' + g.key)}">Réviser cette ouverture ${ico('chevron-right')}</button>` : ''}<div class="st-row st-row-hd" aria-hidden="true"><span>Coup</span><span>Niveau</span><span>Erreurs</span><span>Révision</span><span></span></div>${rowsHTML}${more}</div>` : ''}
+            ${open ? `<div class="st-rows">${g.path.length ? `<div class="st-line-pos">${_miniBoardHTML({ side: g.side, path: g.path }, true)}</div>` : ''}${g.due ? `<button class="st-golink" data-action="statsGoTraining" data-arg="${escapeHtml('due:' + g.key)}">Réviser cette ouverture ${ico('chevron-right')}</button>` : ''}<div class="st-row st-row-hd" aria-hidden="true"><span>Coup</span><span>Niveau</span><span>Erreurs</span><span>Révision</span><span></span></div>${rowsHTML}${more}</div>` : ''}
         </section>`;
     }).join('');
 
     body.innerHTML = `
         <div class="st-main">
-            <section class="st-now">${today}${masteryCard}</section>
-            ${weakHTML}
-            <section class="st-sec" id="stats-lines">
+            <section class="st-now" data-pane="overview">${today}${masteryCard}</section>
+            <div data-pane="overview">${weakHTML}</div>
+            <section class="st-sec" id="stats-lines" data-pane="openings">
                 <div class="st-h"><div class="st-h-title"><h3>Par ouverture</h3><span class="st-sub">${_plural(list.length, 'ouverture')} · ${_sideName(statsColor)}</span></div>${sortSel}</div>
                 <div class="stats-filters" role="group" aria-label="Filtrer par niveau">${chips}</div>
-                <div class="st-lines">${lines || '<div class="empty-tab">Aucune position à ce niveau.</div>'}</div>
+                <div class="st-lines${statsAllLines ? '' : ' is-capped'}">${lines || '<div class="empty-tab">Aucune position à ce niveau.</div>'}</div>
+                ${!statsAllLines && list.length > STATS_PHONE_LINES ? `<button class="st-more st-phone" data-action="statsAllLines">Tout voir : ${_plural(list.length, 'ouverture')}</button>` : ''}
             </section>
         </div>${reg}`;
+    body.className = 'st-body pane-' + statsPane;
+    body.insertAdjacentHTML('afterbegin', phoneHead);
+    const hs = body.querySelector('.st-heat-scroll');
+    if (hs) hs.scrollLeft = hs.scrollWidth;                     // la semaine en cours, à droite
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
@@ -456,6 +473,8 @@ registerActions({
     statsSort: v => { statsSort = v; initStats(); },
     statsLine: k => { if (statsOpen.has(k)) statsOpen.delete(k); else statsOpen.add(k); initStats(); },
     statsMore: k => { statsAll.add(k); initStats(); },
+    statsPane: p => { statsPane = p; initStats(); window.scrollTo({ top: 0 }); },
+    statsAllLines: () => { statsAllLines = true; initStats(); },
     statsInfo: () => {
         const box = document.getElementById('stats-info'), btn = document.getElementById('stats-info-btn');
         box.hidden = !box.hidden;

@@ -28,13 +28,9 @@ function dropdownHTML(o) {
 }
 
 // Choix du répertoire (onglets Statistiques et Entraînement), avec le nombre de positions de chacun.
+// La puce de RepPicker (repPicker.js) : liste avec recherche, fenêtre flottante ou panneau du bas.
 function repertoireDropdownHTML(action) {
-    const options = loadRepertoireList().map(n => {
-        const count = Object.keys(readDBFor(n, 'w')).length + Object.keys(readDBFor(n, 'b')).length;
-        return [n, n, `${count} position${count > 1 ? 's' : ''}`];
-    });
-    return dropdownHTML({ label: 'Répertoire', aria: 'Répertoire', value: currentRepertoire, options, action, cls: 'dd-rep',
-                          footer: { text: 'Nouveau répertoire', action: 'createRepertoire', icon: 'plus' } });
+    return RepPicker.html(action);
 }
 
 function _ddClose(dd, focusBtn) {

@@ -12,7 +12,7 @@
  *   chessTrainer_endgames        'endgames'  exercice → { tries, wins, perfect, best, last }
  *   chessTrainer_activity        'activity'  jour (AAAA-MM-JJ) → { a: essais, f: erreurs }
  *   chessTrainer_prefs           'prefs'     préférence → { v: valeur, at: date du choix } (échiquier, pièces, flèches)
- *   chessTrainer_gameLedger      'games'     partie analysée → { src, at, first, last, v: { 'rép|couleur': verdict }, counted: { … } }
+ *   chessTrainer_gameLedger      'games'     partie analysée → { src, at, first, last, vs?, v: { 'rép|couleur': verdict }, counted: { … } }
  *   chessTrainer_timedRecord     'record'    record du contre-la-montre (nombre) : le plus grand l'emporte
  * Tout le reste (mode clair / sombre, sons, options d'entraînement, état de sauvegarde…)
  * reste LOCAL à l'appareil.
@@ -198,6 +198,8 @@ const SyncModel = (function () {
         const pos = [l.first, r.first].filter(x => num(x) > 0);
         const out = { src: minStr(l.src, r.src) || '', at: Math.max(num(l.at), num(r.at)),
                       first: pos.length ? Math.min(...pos) : 0, last: Math.max(num(l.last), num(r.last)) };
+        const vs = minStr(l.vs || null, r.vs || null);                 // adversaire : le même des deux côtés, sinon ordre fixe
+        if (vs) out.vs = vs;
         out.v = mergeMap(b && b.v, l.v, r.v, (bb, ll, rr) => mergePref(bb, ll, rr));
         out.counted = mergeMap(b && b.counted, l.counted, r.counted, (bb, ll, rr) => {
             const a = num(ll.at), c = num(rr.at);

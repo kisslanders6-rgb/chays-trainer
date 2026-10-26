@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titre">
   <title id="titre">Chays Trainer — icône</title>
-  <desc>Icône maskable : le roi seul, centré dans la zone sûre.</desc>
+  <desc>Icône maskable, identité Noyer : le roi clair sur fond noyer, centré dans la zone sûre.</desc>
   <defs>
   <style>
-    .trait  { fill: none; stroke: var(--ct-encre, #2f4a26); stroke-linecap: round; stroke-linejoin: round; }
-    .plein  { fill: var(--ct-encre, #2f4a26); stroke: var(--ct-encre, #2f4a26); stroke-linejoin: round; }
-    .laiton { fill: none; stroke: var(--ct-laiton, #b08d48); stroke-linecap: round; stroke-linejoin: round; }
-    .grave  { fill: none; stroke: var(--ct-grave, #f3ecd9); stroke-linecap: round; stroke-linejoin: round; }
-    .fond   { fill: var(--ct-fond, #f5f5f3); }
+    .trait  { fill: none; stroke: var(--ct-encre, #dbc09a); stroke-linecap: round; stroke-linejoin: round; }
+    .plein  { fill: var(--ct-encre, #dbc09a); stroke: var(--ct-encre, #dbc09a); stroke-linejoin: round; }
+    .laiton { fill: none; stroke: var(--ct-laiton, #c99a4b); stroke-linecap: round; stroke-linejoin: round; }
+    .grave  { fill: none; stroke: var(--ct-grave, #70503a); stroke-linecap: round; stroke-linejoin: round; }
+    .fond   { fill: var(--ct-fond, #2c1f16); }
   </style>
   </defs>
   <rect id="fond" class="fond" width="512" height="512"/>

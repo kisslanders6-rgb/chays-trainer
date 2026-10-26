@@ -5,9 +5,11 @@
  * et sa fenêtre — aucune modification de index.html (hors balises <script>/<link>) ni d'app.js.
  * Rien n'apparaît si le service n'est pas configuré (cloudConfig.js vide).
  *
- * Vues : connexion / création de compte (e-mail, ou Google si activé dans Supabase) · mot de passe
- *        oublié · nouveau mot de passe · compte connecté (dont suppression du compte) ·
- *        première synchronisation (choix fusionner / envoyer / récupérer).
+ * Vues : connexion (« auth ») et création de compte (« signup »), deux vues distinctes avec, en tête,
+ *        « Continuer avec Google » (redirection) si le fournisseur est activé ; après une erreur, l'autre vue
+ *        est proposée avec l'e-mail déjà rempli · accueil d'un nouveau compte (« welcome », pseudo pré-rempli :
+ *        created_at ≈ last_sign_in_at) · mot de passe oublié · nouveau mot de passe · compte connecté
+ *        (dont suppression du compte) · première synchronisation (choix fusionner / envoyer / récupérer).
  *
  * Choix de première synchronisation → SyncIntent (auth.js) + événement window « chays-sync-intent »,
  * consommés par syncEngine.js. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
@@ -20,7 +22,8 @@
 
 const AccountUI = (function () {
     let overlay = null, btn = null;
-    let view = 'auth', mode = 'signin', busy = false, switched = false, chooser = null, choosing = false;
+    let view = 'auth', linkMode = false, busy = false, switched = false, chooser = null, choosing = false;
+    let draftEmail = '', swapOffer = false, welcomeName = '';      // e-mail repris d'une vue à l'autre ; nom proposé à l'accueil
     let syncStatus = { level: 'ok', text: 'Connecté' };
     let providers = [], providersReady = false;           // fournisseurs externes activés (Auth.providers) ; Ready = liste connue
     const SVG_GOOGLE = '<svg class="account-provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
@@ -77,20 +80,31 @@ const AccountUI = (function () {
     const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 
     // ─── Avatar (pseudo, pièce ou initiale, couleur : Compte › Profil) ─────────
-    const AVATAR_TINTS = { sapin: ['#2f4a26', '#efe3c9'], noyer: ['#5a3c26', '#f1e3cc'], nuit: ['#2c3f62', '#e3e9f3'],
+    const AVATAR_TINTS = { theme: ['var(--board-dark)', 'var(--board-light)'], sapin: ['#2f4a26', '#efe3c9'], noyer: ['#5a3c26', '#f1e3cc'], nuit: ['#2c3f62', '#e3e9f3'],
                            ardoise: ['#3b3f44', '#ebebe7'], prune: ['#4b3560', '#efe7f6'], ivoire: ['#efe3c9', '#26381e'] };
+    // Photo (avatarPhoto.js) si elle existe et qu'aucun motif précis n'est demandé ; sinon le motif choisi.
     function avatarInner(glyph, color) {
+        const photo = !glyph && typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src();
+        if (photo) return `<img class="av-photo" src="${photo}" alt="">`;
         const g = glyph || appSettings.avatarGlyph, c = color || appSettings.avatarColor;
-        if (g === 'initial') {
-            const u = Auth.user() || {};
-            return esc(((appSettings.pseudo || '').trim()[0] || (u.email || '?')[0]).toUpperCase());
+        if (g === 'initial' || g === 'initials') {
+            const u = Auth.user() || {}, name = (appSettings.pseudo || '').trim() || (u.email || '?').split('@')[0];
+            const words = name.split(/[\s._-]+/).filter(Boolean);
+            const txt = g === 'initial' ? name[0] : words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2);
+            return `<span class="av-mono${g === 'initials' ? ' is-two' : ''}">${esc((txt || '?').toUpperCase())}</span>`;
         }
+        if (g.startsWith('av-')) return `<span class="av-picto">${icon(g)}</span>`;
         if (typeof PIECE_SETS === 'undefined') return g.toUpperCase();
         const set = PIECE_SETS[appSettings.pieceSet] && appSettings.pieceSet !== 'blindfold' ? PIECE_SETS[appSettings.pieceSet] : PIECE_SETS[DEFAULT_PIECE_SET];
         const key = c === 'ivoire' ? g : g.toUpperCase();                 // pièce noire sur fond ivoire, blanche ailleurs
         return `<span class="av-glyph">${set.svg[key]}</span>`;
     }
     const avatarStyle = c => { const t = AVATAR_TINTS[c || appSettings.avatarColor] || AVATAR_TINTS.sapin; return `background:${t[0]};color:${t[1]}`; };
+
+    const AVATAR_COLOR_NAMES = { theme: 'de l’échiquier', sapin: 'sapin', noyer: 'noyer', nuit: 'nuit', ardoise: 'ardoise', prune: 'prune', ivoire: 'ivoire' };
+    const AVATAR_NAMES = { initial: 'Initiale', initials: 'Deux initiales', k: 'Roi', q: 'Dame', r: 'Tour', b: 'Fou', n: 'Cavalier', p: 'Pion',
+                           'av-crown': 'Couronne', 'av-star': 'Étoile', 'av-flame': 'Flamme', 'av-leaf': 'Feuille', 'av-moon': 'Lune', 'av-bolt': 'Éclair',
+                           'av-compass': 'Boussole', 'av-mountain': 'Montagne', 'av-owl': 'Hibou', 'av-fox': 'Renard' };
 
     // ─── Bouton de la barre du haut ───────────────────────────────────────────
     function updateButton() {
@@ -111,28 +125,62 @@ const AccountUI = (function () {
             <button type="button" class="account-eye" data-act="eye">Afficher</button></span></label>`;
     }
 
+    // « Continuer avec Google », en tête des deux vues (redirection, pas de One Tap).
+    function googleBlock(label) {
+        if (!providersReady && isOnline()) return '<div class="account-providers sk-online" aria-hidden="true"><span class="sk sk-btn"></span></div><div class="account-or sk-online" aria-hidden="true"><span class="sk sk-line" style="width:140px"></span></div>';
+        if (!providers.includes('google')) return '';
+        return `<div class="account-providers"><button class="btn account-provider account-provider-google" data-needs-network data-act="provider:google" type="button"><span class="account-provider-badge">${SVG_GOOGLE}</span>Continuer avec Google</button></div>
+            <div class="account-or"><span>${label}</span></div>`;
+    }
+    const emailField = () => `<label class="account-field"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="username" required value="${esc(draftEmail)}"></label>`;
+    // Après une erreur : l'autre vue, avec l'e-mail saisi.
+    const swapLink = () => swapOffer ? `<button type="button" class="toast-link account-link account-swap" data-act="swap">${view === 'signup' ? 'Se connecter avec cette adresse' : 'Créer un compte avec cette adresse'}</button>` : '';
+
     function viewAuth() {
-        const up = mode === 'signup', link = mode === 'link';
         return `<div class="account-auth">
-            <h3 class="account-auth-title">Vos répertoires, sur tous vos appareils</h3>
-            <div class="panel-sub">Sans compte, vos données restent uniquement sur cet appareil. Avec un compte, elles sont aussi sauvegardées en ligne et synchronisées entre vos appareils.</div>
+            <h3 class="account-auth-title">Se connecter</h3>
+            <div class="panel-sub">Retrouvez vos répertoires sur tous vos appareils. Sans compte, vos données restent uniquement sur cet appareil.</div>
             ${OFFLINE_NOTE}
-            ${!providersReady && isOnline() ? '<div class="account-providers sk-online" aria-hidden="true"><span class="sk sk-btn"></span></div><div class="account-or sk-online" aria-hidden="true"><span class="sk sk-line" style="width:140px"></span></div>' : ''}
-            ${providers.length ? `<div class="account-providers">${providers.filter(p => PROVIDER_LABEL[p]).map(p =>
-                `<button class="btn account-provider account-provider-${p}" data-needs-network data-act="provider:${p}" type="button">${p === 'google' ? `<span class="account-provider-badge">${SVG_GOOGLE}</span>` : ''}Continuer avec ${PROVIDER_LABEL[p]}</button>`).join('')}</div>
-                <div class="account-or"><span>ou avec votre e-mail</span></div>` : ''}
-            <div class="seg account-seg">
-                <button class="seg-btn ${link ? 'active' : ''}" data-act="mode:link" type="button">Lien par e-mail</button>
-                <button class="seg-btn ${!up && !link ? 'active' : ''}" data-act="mode:signin" type="button">Mot de passe</button>
-                <button class="seg-btn ${up ? 'active' : ''}" data-act="mode:signup" type="button">Créer un compte</button>
-            </div>
-            <form class="account-form" data-form="${link ? 'link' : 'auth'}" data-needs-network novalidate>
-                <label class="account-field"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="username" required></label>
-                ${link ? '' : pwField(up ? 'new-password' : 'current-password')}
+            ${googleBlock('ou avec votre e-mail')}
+            <form class="account-form" data-form="${linkMode ? 'link' : 'auth'}" data-needs-network novalidate>
+                ${emailField()}
+                ${linkMode ? '' : pwField('current-password')}
                 <div class="account-msg" role="status" aria-live="polite"></div>
-                <button class="btn btn-primary account-submit" type="submit" data-needs-network>${link ? 'Recevoir un lien de connexion' : up ? 'Créer mon compte' : 'Se connecter'}</button>
-                ${link ? '<div class="set-hint">Pas de mot de passe à retenir : le lien vous connecte (et crée le compte si besoin).</div>'
-                       : up ? '<div class="set-hint">8 caractères minimum.</div>' : '<button type="button" class="toast-link account-link" data-act="view:recover">Mot de passe oublié ?</button>'}
+                ${swapLink()}
+                <button class="btn btn-primary account-submit" type="submit" data-needs-network>${linkMode ? 'Recevoir un lien de connexion' : 'Se connecter'}</button>
+                ${linkMode ? '<div class="set-hint">Pas de mot de passe à retenir : le lien vous connecte (et crée le compte si besoin).</div><button type="button" class="toast-link account-link" data-act="link:off">Utiliser un mot de passe</button>'
+                           : '<div class="account-links"><button type="button" class="toast-link account-link" data-act="view:recover">Mot de passe oublié ?</button><button type="button" class="toast-link account-link" data-act="link:on">Recevoir un lien par e-mail</button></div>'}
+            </form>
+            <div class="account-switch">Pas encore de compte ? <button type="button" class="toast-link" data-act="view:signup">Créer un compte</button></div></div>`;
+    }
+
+    function viewSignup() {
+        return `<div class="account-auth">
+            <h3 class="account-auth-title">Créer un compte</h3>
+            <div class="panel-sub">Vos répertoires, statistiques et finales sont sauvegardés en ligne et synchronisés entre vos appareils.</div>
+            ${OFFLINE_NOTE}
+            ${googleBlock('ou créez un compte avec votre e-mail')}
+            <form class="account-form" data-form="auth" data-needs-network novalidate>
+                ${emailField()}
+                ${pwField('new-password', 'Choisissez un mot de passe')}
+                <div class="set-hint">8 caractères minimum.</div>
+                <div class="account-msg" role="status" aria-live="polite"></div>
+                ${swapLink()}
+                <button class="btn btn-primary account-submit" type="submit" data-needs-network>Créer mon compte</button>
+            </form>
+            <div class="account-switch">Déjà un compte ? <button type="button" class="toast-link" data-act="view:auth">Se connecter</button></div></div>`;
+    }
+
+    // Premier passage d'un nouveau compte (Google en particulier) : pseudo proposé, modifiable.
+    function viewWelcome() {
+        return `<div class="account-auth">
+            <h3 class="account-auth-title">Bienvenue !</h3>
+            <div class="panel-sub">Votre compte est créé. Choisissez le nom affiché sur l'accueil (« Bonjour, … ») ; vous pourrez le changer dans Compte › Profil.</div>
+            <form class="account-form" data-form="welcome" novalidate>
+                <label class="account-field"><span>Pseudo</span><input type="text" name="pseudo" maxlength="24" autocomplete="nickname" value="${esc(welcomeName)}"></label>
+                <div class="account-msg" role="status" aria-live="polite"></div>
+                <button class="btn btn-primary account-submit" type="submit">Commencer</button>
+                <button type="button" class="toast-link account-link" data-act="view:account">Plus tard</button>
             </form></div>`;
     }
 
@@ -215,9 +263,12 @@ const AccountUI = (function () {
             + PanelKit.group('Identité', [
                 PanelKit.row('Pseudo', 'Affiché sur l’accueil (« Bonsoir, … ») et dans la barre du haut.',
                     `<input class="pn-input" type="text" maxlength="24" autocomplete="nickname" placeholder="Votre pseudo" value="${esc(appSettings.pseudo)}" data-pn="text" data-key="pseudo" aria-label="Pseudo">`),
-                PanelKit.row('Avatar', 'Une pièce ou votre initiale, sur la couleur de votre choix.',
-                    `<div class="pn-choices" role="radiogroup" aria-label="Motif">${AVATAR_GLYPHS.map(g => choice('avatarGlyph', g, avatarInner(g), avatarStyle(), g === 'initial' ? 'Initiale' : 'Pièce')).join('')}</div>
-                     <div class="pn-choices" role="radiogroup" aria-label="Couleur">${AVATAR_COLORS.map(c => choice('avatarColor', c, '', avatarStyle(c), 'Couleur ' + c)).join('')}</div>`, { col: true })])
+                PanelKit.row('Photo', appSettings.avatarPhoto || (typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src())
+                        ? 'Votre photo remplace l’avatar dessiné.' : 'Recadrée en carré ; enregistrée avec votre compte (sinon, sur cet appareil seulement).',
+                    `<div class="pn-actions"><button class="btn" type="button" data-act="photo-pick">Choisir une photo</button>${typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src() ? '<button class="btn" type="button" data-act="photo-remove" data-key="avatarPhoto">Retirer</button>' : ''}</div>`),
+                PanelKit.row('Avatar', 'Une initiale, une pièce ou un pictogramme, sur la couleur de votre choix (« Échiquier » : les couleurs de l’échiquier actif).',
+                    `<div class="pn-choices" role="radiogroup" aria-label="Motif">${AVATAR_GLYPHS.map(g => choice('avatarGlyph', g, avatarInner(g), avatarStyle(), AVATAR_NAMES[g] || 'Pièce')).join('')}</div>
+                     <div class="pn-choices" role="radiogroup" aria-label="Couleur">${AVATAR_COLORS.map(c => choice('avatarColor', c, '', avatarStyle(c), 'Couleur ' + (AVATAR_COLOR_NAMES[c] || c))).join('')}</div>`, { col: true })])
             + PanelKit.group('Classement et objectif', [
                 PanelKit.row('Classement Elo', 'Facultatif, visible de vous seul.',
                     `<input class="pn-input is-short" type="text" inputmode="numeric" maxlength="4" placeholder="ex. 1650" value="${esc(appSettings.elo)}" data-pn="text" data-key="elo" aria-label="Classement Elo">`),
@@ -292,7 +343,7 @@ const AccountUI = (function () {
 
     // ─── Fenêtre ──────────────────────────────────────────────────────────────
     let panelApi = null;
-    const TITLES = { auth: 'Compte', recover: 'Mot de passe oublié', newpw: 'Nouveau mot de passe', chooser: 'Première synchronisation' };
+    const TITLES = { auth: 'Connexion', signup: 'Créer un compte', welcome: 'Bienvenue', recover: 'Mot de passe oublié', newpw: 'Nouveau mot de passe', chooser: 'Première synchronisation' };
 
     function render() {
         if (!panelApi) return;
@@ -306,13 +357,14 @@ const AccountUI = (function () {
             return '<div class="account-msg" role="status" aria-live="polite"></div>'
                  + { profil: sectionProfil, securite: sectionSecurite, appareils: sectionAppareils, donnees: sectionDonnees }[section || 'profil']();
         }
-        return view === 'recover' ? viewRecover() : view === 'newpw' ? viewNewPassword() : view === 'chooser' ? viewChooser() : viewAuth();
+        const v = { recover: viewRecover, newpw: viewNewPassword, chooser: viewChooser, signup: viewSignup, welcome: viewWelcome }[view] || viewAuth;
+        return v();
     }
 
     function open(v, section) {
         if (!overlay) return;
         view = v || (Auth.isSignedIn() ? 'account' : 'auth');
-        if (view === 'auth') mode = 'signin';
+        if (view === 'auth' || view === 'signup') { linkMode = false; swapOffer = false; }
         confirmDelete = false; editEmail = false;
         panelApi.open(view === 'account' ? section : undefined);
         if (view === 'account' && Auth.fetchUser) Auth.fetchUser().then(u => { userInfo = u; if (isOpen() && panelApi.state.section === 'securite') render(); });
@@ -410,6 +462,7 @@ const AccountUI = (function () {
         const input = overlay.querySelector('#account-delete-confirm');
         if (!input || input.value.trim().toUpperCase() !== 'SUPPRIMER') { msg('Tapez SUPPRIMER pour confirmer la suppression.', 'err'); if (input) input.focus(); return; }
         setBusy(true);
+        if (typeof AvatarPhoto !== 'undefined') await AvatarPhoto.purge();        // dossier de photos, avant le compte
         const r = await Auth.deleteAccount();
         setBusy(false);
         if (!r.ok) return msg(r.message, 'err');
@@ -425,29 +478,48 @@ const AccountUI = (function () {
         const f = form.elements;
         const email = f.email ? f.email.value.trim() : '';
         const pw = f.password ? f.password.value : '';
+        if (type === 'welcome') {
+            const name = (f.pseudo.value || '').trim().slice(0, 24);
+            if (name && SYNCED_PREFS.pseudo.ok(name)) { appSettings.pseudo = name; saveSettings(); updateButton(); if (typeof renderHomeSummary === 'function') renderHomeSummary(); }
+            view = 'account'; render();
+            return;
+        }
+        if (email) draftEmail = email;
         if (type !== 'newpw' && !/^\S+@\S+\.\S+$/.test(email)) return msg('Adresse e-mail invalide.', 'err');
         if (type !== 'recover' && type !== 'link' && type !== 'email' && !pw) return msg('Saisissez un mot de passe.', 'err');
-        if ((type === 'newpw' || (type === 'auth' && mode === 'signup')) && pw.length < 8) return msg('Mot de passe : 8 caractères minimum.', 'err');
+        if ((type === 'newpw' || (type === 'auth' && view === 'signup')) && pw.length < 8) return msg('Mot de passe : 8 caractères minimum.', 'err');
         setBusy(true);
         let r;
         if (type === 'recover')      r = await Auth.recover(email);
         else if (type === 'link')    r = await Auth.signInWithLink(email);
         else if (type === 'email')   r = await Auth.updateEmail(email);
         else if (type === 'newpw')   r = await Auth.updatePassword(pw);
-        else if (mode === 'signup')  r = await Auth.signUp(email, pw);
+        else if (view === 'signup')  r = await Auth.signUp(email, pw);
         else                         r = await Auth.signIn(email, pw);
         if (!overlay.contains(form)) return;                           // la vue a changé pendant l'appel (ex. connexion réussie)
         setBusy(false);
-        if (!r.ok) return msg(r.message, 'err');
+        if (!r.ok) {
+            // Connexion refusée ou adresse déjà inscrite : l'autre vue est proposée, l'e-mail déjà rempli.
+            if (type === 'auth' && ['invalid_credentials', 'user_exists', 'email_not_confirmed'].includes(r.code) && !swapOffer) {
+                swapOffer = true; render();
+            }
+            return msg(r.message, 'err');
+        }
         if (type === 'recover') return msg("Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.", 'ok');
         if (type === 'link')    return msg(`Lien envoyé à ${email} : ouvrez-le sur cet appareil pour vous connecter.`, 'ok');
         if (type === 'email')   { editEmail = false; render(); return msg(`Un lien de confirmation vient d'être envoyé à ${email}. L'adresse changera une fois le lien ouvert.`, 'ok'); }
         if (type === 'newpw')   { view = 'account'; render(); return msg('Mot de passe modifié.', 'ok'); }
         if (r.needsConfirmation) {
-            mode = 'signin'; view = 'auth'; render();
+            linkMode = false; swapOffer = false; view = 'auth'; render();
             return msg(`Compte créé. Un e-mail de confirmation vient d'être envoyé à ${email} : cliquez sur le lien qu'il contient, puis connectez-vous.`, 'ok');
         }
         // connexion réussie : l'événement « signed-in » affiche la vue du compte
+    }
+
+    // E-mail en cours de saisie, repris par la vue suivante.
+    function keepEmail() {
+        const i = overlay.querySelector('.account-form input[name=email]');
+        if (i && i.value.trim()) draftEmail = i.value.trim();
     }
 
     function onClick(e) {
@@ -461,14 +533,17 @@ const AccountUI = (function () {
         else if (act === 'delete-ask') { confirmDelete = true; render(); const i = overlay.querySelector('#account-delete-confirm'); if (i) i.focus(); }
         else if (act === 'delete-cancel') { confirmDelete = false; render(); }
         else if (act.startsWith('revoke:')) { revokeDevice(act.slice(7)); if (typeof SyncEngine !== 'undefined') SyncEngine.syncNow(); render(); msg('L’appareil sera déconnecté à sa prochaine synchronisation.', 'ok'); }
-        else if (act.startsWith('mode:')) { mode = act.slice(5); render(); }
-        else if (act.startsWith('view:')) { view = act.slice(5); render(); }
+        else if (act === 'link:on' || act === 'link:off') { keepEmail(); linkMode = act === 'link:on'; render(); }
+        else if (act === 'swap') { keepEmail(); view = view === 'signup' ? 'auth' : 'signup'; swapOffer = false; linkMode = false; render(); }
+        else if (act.startsWith('view:')) { keepEmail(); view = act.slice(5); swapOffer = false; render(); }
         else if (act === 'eye') {
             const i = el.parentElement.querySelector('input');
             i.type = i.type === 'password' ? 'text' : 'password';
             el.textContent = i.type === 'password' ? 'Afficher' : 'Masquer';
         }
         else if (act === 'sync-now') { if (typeof SyncEngine !== 'undefined') SyncEngine.syncNow(); }
+        else if (act === 'photo-pick') { if (typeof AvatarPhoto !== 'undefined') AvatarPhoto.pick(); }
+        else if (act === 'photo-remove') { if (typeof AvatarPhoto !== 'undefined') AvatarPhoto.remove(); }
         else if (act === 'signout') onSignOut(false);
         else if (act === 'signout-erase') onSignOut(true);
         else if (act === 'delete-account') onDeleteAccount();
@@ -529,17 +604,37 @@ const AccountUI = (function () {
                 switched = !!(data && data.switched);
                 if (isOpen() && view !== 'newpw') { view = 'account'; render(); }
                 updateButton(); ensureIntent();
+                welcomeIfNew();
             } else if (ev === 'signed-out') {
-                updateButton(); if (isOpen()) { view = 'auth'; mode = 'signin'; render(); }
+                updateButton(); if (isOpen()) { view = 'auth'; linkMode = false; render(); }
             } else if (ev === 'expired') {
                 updateButton(); toast('Votre session a expiré : reconnectez-vous pour reprendre la synchronisation.');
-                if (isOpen()) { view = 'auth'; mode = 'signin'; render(); }
+                if (isOpen()) { view = 'auth'; linkMode = false; render(); }
             } else if (ev === 'notice') onNotice(data);
         });
         onNotice(Auth.takeNotice());
+        if (typeof AvatarPhoto !== 'undefined') AvatarPhoto.onChange(() => { updateButton(); if (isOpen() && view === 'account') render(); });
         if (Auth.isSignedIn()) ensureIntent();
         loadProviders();
         if (typeof Net !== 'undefined') Net.onChange(on => { if (on && !providersReady) loadProviders(); });
+    }
+
+    // Nouveau compte (création et première connexion à moins d'une minute d'écart) sans pseudo : accueil.
+    function isNewUser(u) {
+        if (!u || !u.created_at || !u.last_sign_in_at) return false;
+        return Math.abs(Date.parse(u.last_sign_in_at) - Date.parse(u.created_at)) < 60000;
+    }
+    function suggestedName(u) {
+        const m = (u && u.user_metadata) || {};
+        const name = (m.full_name || m.name || m.given_name || '').trim() || ((u && u.email) || '').split('@')[0];
+        return name.slice(0, 24);
+    }
+    async function welcomeIfNew() {
+        if ((appSettings.pseudo || '').trim() || !Auth.fetchUser) return;
+        const u = await Auth.fetchUser();
+        if (!isNewUser(u) || view === 'chooser' || (appSettings.pseudo || '').trim()) return;
+        welcomeName = suggestedName(u);
+        open('welcome');
     }
 
     // Boutons « Continuer avec … » dès que la liste est connue ; hors ligne, nouvel essai au retour de la connexion.
@@ -564,5 +659,5 @@ const AccountUI = (function () {
     // Préférences reçues d'un autre appareil : avatar et fenêtre à jour.
     function refresh() { updateButton(); if (isOpen() && view === 'account') render(); }
 
-    return { open, close, setSyncStatus, ensureIntent, refresh, notify: toast };
+    return { open, close, setSyncStatus, ensureIntent, refresh, notify: toast, isNewUser, suggestedName };
 })();

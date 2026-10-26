@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#3d5c2e" />   <!-- couleur de la barre système ; mise à jour par js/core/themeColor.js -->
+    <meta name="theme-color" content="#2c1f16" />   <!-- couleur de la barre système ; mise à jour par js/core/themeColor.js -->
     <link rel="manifest" href="manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,7 +15,7 @@
     <link rel="icon" type="image/png" sizes="64x64" href="assets/icons/favicon-64.png" />
     <!-- Thème appliqué avant le premier affichage (sinon éclair du thème clair) ; écran de lancement
          une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://).
-         Pendant le lancement, la barre système prend le fond de l'écran de lancement (#f5f5f3, comme
+         Pendant le lancement, la barre système prend le fond de l'écran de lancement (#2c1f16, comme
          l'écran système de la PWA) ; themeColor.js repasse à la couleur du thème à la sortie. -->
     <script>
         (function () {
@@ -37,7 +37,7 @@
                 if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) {
                     d.classList.add('splashing');
                     sessionStorage.setItem('chays_splash', '1');
-                    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#f5f5f3';
+                    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#2c1f16';
                 }
             } catch (e) {}
         })();
@@ -190,47 +190,63 @@
 
             <!-- Onglet Jouer -->
             <div id="home-tab-play" class="home-tab home-play">
-                <div class="home-hero" data-stagger>
-                    <span class="home-greet" id="home-greet">Bonjour</span>
-                    <h1 class="home-title">Quelle couleur aujourd'hui&nbsp;?</h1>
-                    <div class="home-goal" id="home-goal" role="status" hidden></div>
-                </div>
+                <!-- Trois colonnes quand le conteneur dépasse 1 200 px (requête de conteneur, css/home.css), une seule sinon :
+                     Reprendre + sélecteurs · Aujourd'hui + Mes répertoires · Nouveautés à traiter + Dernières parties -->
+                <div class="hp-grid">
+                    <div class="hp-col hp-col-main">
+                        <div id="looks-tip"></div>
+                        <div class="home-hero" data-stagger>
+                            <span class="home-greet" id="home-greet">Bonjour</span>
+                            <h1 class="home-title">Quelle couleur aujourd'hui&nbsp;?</h1>
+                        </div>
 
-                <div class="repertoire-select" data-stagger>
-                    <div class="repertoire-select-label">Répertoire</div>
-                    <div class="repertoire-row">
-                        <div class="repertoire-list" id="repertoire-list"></div>
-                        <div class="menu-wrap">
-                            <button class="menu-btn" id="rep-menu-btn" onclick="toggleRepMenu()" title="Actions sur les répertoires" aria-label="Actions sur les répertoires" aria-haspopup="true" aria-expanded="false">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
-                            </button>
-                            <div class="menu hidden" id="rep-menu" role="menu">
-                                <button class="menu-item" role="menuitem" onclick="repMenuAction('new')"><svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire</button>
-                                <button class="menu-item" id="rep-menu-rename" role="menuitem" onclick="repMenuAction('rename')"><svg class="ico"><use href="#i-pencil"/></svg> <span id="rep-menu-rename-label">Renommer le répertoire</span></button>
-                                <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
-                                <div class="menu-sep"></div>
-                                <button class="menu-item" role="menuitem" onclick="repMenuAction('data')"><svg class="ico"><use href="#i-database"/></svg> Données (import / export)</button>
-                                <button class="menu-item" role="menuitem" onclick="repMenuAction('trash')"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></button>
+                        <div class="repertoire-select" data-stagger>
+                            <div class="repertoire-select-label">Répertoire</div>
+                            <div class="repertoire-row">
+                                <div class="repertoire-list" id="repertoire-list"></div>
+                                <div class="menu-wrap">
+                                    <button class="menu-btn" id="rep-menu-btn" onclick="toggleRepMenu()" title="Actions sur les répertoires" aria-label="Actions sur les répertoires" aria-haspopup="true" aria-expanded="false">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+                                    </button>
+                                    <div class="menu hidden" id="rep-menu" role="menu">
+                                        <button class="menu-item" role="menuitem" onclick="repMenuAction('new')"><svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire</button>
+                                        <button class="menu-item" id="rep-menu-rename" role="menuitem" onclick="repMenuAction('rename')"><svg class="ico"><use href="#i-pencil"/></svg> <span id="rep-menu-rename-label">Renommer le répertoire</span></button>
+                                        <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
+                                        <div class="menu-sep"></div>
+                                        <button class="menu-item" role="menuitem" onclick="repMenuAction('data')"><svg class="ico"><use href="#i-database"/></svg> Données (import / export)</button>
+                                        <button class="menu-item" role="menuitem" onclick="repMenuAction('trash')"><svg class="ico"><use href="#i-trash"/></svg> Corbeille <span data-trash-count></span></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="home-cards">
+                            <button class="home-card is-white" type="button" onclick="startGame('w')" data-stagger>
+                                <span class="home-card-head"><span class="home-card-name">Blancs</span><span class="home-card-meta" id="home-meta-w"></span></span>
+                                <span class="glyph home-card-piece" data-glyph="K"></span>
+                                <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                            </button>
+                            <button class="home-card is-black" type="button" onclick="startGame('b')" data-stagger>
+                                <span class="home-card-head"><span class="home-card-name">Noirs</span><span class="home-card-meta" id="home-meta-b"></span></span>
+                                <span class="glyph home-card-piece" data-glyph="k"></span>
+                                <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                            </button>
+                        </div>
+                        <div id="resume-slot" data-stagger></div>
+                    </div>
+                    <div class="hp-col">
+                        <section class="hp-today" data-stagger aria-label="Aujourd'hui">
+                            <span class="hp-eyebrow">Aujourd'hui</span>
+                            <div class="home-goal" id="home-goal" role="status" hidden></div>
+                            <div class="home-stats" id="home-stats"></div>
+                        </section>
+                        <section class="hp-panel hp-wide" id="hp-reps" aria-label="Mes répertoires"></section>
+                    </div>
+                    <div class="hp-col">
+                        <section class="hp-panel" id="hp-news" aria-label="Nouveautés à traiter"></section>
+                        <section class="hp-panel hp-wide" id="hp-recent" aria-label="Dernières parties"></section>
                     </div>
                 </div>
-
-                <div class="home-cards">
-                    <button class="home-card is-white" type="button" onclick="startGame('w')" data-stagger>
-                        <span class="home-card-head"><span class="home-card-name">Blancs</span><span class="home-card-meta" id="home-meta-w"></span></span>
-                        <span class="glyph home-card-piece" data-glyph="K"></span>
-                        <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
-                    </button>
-                    <button class="home-card is-black" type="button" onclick="startGame('b')" data-stagger>
-                        <span class="home-card-head"><span class="home-card-name">Noirs</span><span class="home-card-meta" id="home-meta-b"></span></span>
-                        <span class="glyph home-card-piece" data-glyph="k"></span>
-                        <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
-                    </button>
-                </div>
-
-                <div id="resume-slot" data-stagger></div>
-                <div class="home-stats" id="home-stats" data-stagger></div>
             </div>
 
             <!-- Onglet Statistiques -->
@@ -238,11 +254,7 @@
             <div id="home-tab-stats" class="home-tab hidden">
                 <div class="st-scope">
                     <div class="st-rep" id="stats-rep"></div>
-                    <div class="seg st-seg" role="group" aria-label="Couleur">
-                        <button class="seg-btn active" id="stats-seg-w" data-action="statsColor" data-arg="w" aria-pressed="true"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                        <button class="seg-btn" id="stats-seg-b" data-action="statsColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
-                        <button class="seg-btn" id="stats-seg-all" data-action="statsColor" data-arg="all" aria-pressed="false">Les deux</button>
-                    </div>
+                    <div class="st-seg" id="stats-color"></div>
                     <button class="st-info-btn" id="stats-info-btn" data-action="statsInfo" aria-expanded="false" aria-controls="stats-info" title="Comment lire ces statistiques" aria-label="Comment lire ces statistiques"><svg class="ico"><use href="#i-info"/></svg></button>
                     <div class="st-info" id="stats-info" role="note" hidden></div>
                 </div>
@@ -254,11 +266,7 @@
             <div id="home-tab-training" class="home-tab hidden">
                 <div class="st-scope">
                     <div class="st-rep" id="training-rep"></div>
-                    <div class="seg st-seg" role="group" aria-label="Couleur">
-                        <button class="seg-btn" id="training-seg-w" data-action="trainingColor" data-arg="w" aria-pressed="false"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                        <button class="seg-btn" id="training-seg-b" data-action="trainingColor" data-arg="b" aria-pressed="false"><span class="glyph" data-glyph="k"></span> Noirs</button>
-                        <button class="seg-btn active" id="training-seg-mix" data-action="trainingColor" data-arg="mix" aria-pressed="true">Les deux</button>
-                    </div>
+                    <div class="st-seg" id="training-color"></div>
                 </div>
                 <div id="training-panel" class="tr-body"></div>
             </div>
@@ -451,10 +459,7 @@
             <div id="review-pane-paste" class="hidden">
                 <div class="review-color">
                     <span>J'avais les</span>
-                    <div class="tr-seg" role="group" aria-label="Ma couleur dans cette partie">
-                        <button class="tr-seg-btn" id="review-seg-w" onclick="setReviewColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                        <button class="tr-seg-btn" id="review-seg-b" onclick="setReviewColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
-                    </div>
+                    <div id="review-color"></div>
                     <small style="color:var(--text-dim)">Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.</small>
                 </div>
                 <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
@@ -474,10 +479,7 @@
             <div class="panel-sub">Répertoire : <strong id="pgn-target" style="color:var(--accent)"></strong>. Les variantes (parenthèses) sont importées. Vos coups déjà enregistrés ne sont jamais écrasés.</div>
             <div class="review-color">
                 <span>Mes coups sont ceux des</span>
-                <div class="tr-seg" role="group" aria-label="Couleur importée">
-                    <button class="tr-seg-btn" id="pgn-seg-w" onclick="setPgnColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
-                    <button class="tr-seg-btn" id="pgn-seg-b" onclick="setPgnColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
-                </div>
+                <div id="pgn-color"></div>
             </div>
             <div class="pgn-file-row">
                 <button class="btn" onclick="document.getElementById('pgn-file-input').click()"><svg class="ico"><use href="#i-folder-open"/></svg> Choisir un fichier .pgn</button>
@@ -567,6 +569,8 @@
 <script src="js/core/utils.js"></script>
 <script src="js/core/panelKit.js"></script>
 <script src="js/core/dropdown.js"></script>
+<script src="js/core/colorScope.js"></script>
+<script src="js/core/repPicker.js"></script>
 <script src="js/core/network.js"></script>
 <script src="js/core/storageAdapter.js"></script>
 <script src="js/core/syncModel.js"></script>
@@ -588,6 +592,7 @@
 <script src="js/modules/openings/pgn.js"></script>
 <script src="js/modules/openings/gameReview.js"></script>
 <script src="js/modules/openings/onlineGames.js"></script>
+<script src="js/modules/openings/homePanels.js"></script>
 <script src="js/modules/openings/moveStats.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
 <script src="js/modules/openings/treeView.js"></script>
@@ -606,6 +611,7 @@
 <script src="js/core/settingsUI.js"></script>
 <script src="js/core/helpUI.js"></script>
 <script src="js/core/onboarding.js"></script>
+<script src="js/core/avatarPhoto.js"></script>
 <script src="js/core/accountUI.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>

@@ -289,7 +289,7 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 .sq:focus-visible { outline: 3px solid var(--accent-bright); outline-offset: -3px; z-index: 3; }
 .annot-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
 /* Couleurs des flèches : « accent » suit le thème de l'échiquier ; un liseré clair les détache de toutes les cases */
-:root { --annot-accent: color-mix(in srgb, var(--accent) 80%, #000); --annot-red: #d8463e; --annot-blue: #3f84d8; --annot-gold: #e0a92e; }
+:root { --annot-accent: color-mix(in srgb, var(--accent) 80%, #000); --annot-red: #d8463e; --annot-blue: #3f84d8; --annot-gold: #e0a92e; --annot-green: #3d9a4e; }
 .annot-halo { stroke: rgba(255, 255, 255, .6); stroke-width: .035; stroke-linejoin: round; paint-order: stroke; }
 .annot-halo-stroke { filter: drop-shadow(0 0 .025px rgba(255, 255, 255, .9)); }
 .arrow-preview { width: 84px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--board-border); display: block; }
@@ -567,7 +567,7 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 }
 
 /* ─── STATS / ENTRAÎNEMENT / RETOURS VISUELS ─────────────────────────────── */
-#home-tab-play { max-width: 460px; }
+#home-tab-play { max-width: none; }          /* largeur bornée par .hp-grid (css/home.css) */
 .tab-title { font-size: 20px; font-weight: 800; color: var(--text); }
 .tab-sub { font-size: 13px; color: var(--text-muted); max-width: 520px; margin-top: -14px; line-height: 1.5; }
 .seg { display: inline-flex; border: 1.5px solid var(--border); border-radius: 24px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
@@ -913,25 +913,27 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
        est relevée pour les cases peu colorées (Glace → bleu sombre), les gris restent gris (Pierre, Hachuré).
        Calibrée pour que l'échiquier Classique redonne le vert sapin d'origine (#2f4a26). */
     --logo-deep: oklch(from var(--board-dark) .37 min(calc(c * 1.75), .07) h);
+
+    /* 2. Accent de l'interface (boutons, liens, barre système), dérivé de la case sombre : aucun accent écrit
+          à la main par échiquier. La teinte vient de --board-dark, fondue en oklab vers un brun profond ; la clarté
+          est bornée pour que le texte des boutons et l'accent employé comme texte restent lisibles (4,5:1,
+          tests/theme.test.js ; contrôle visuel : tests/theme-matrix.html).
+            --board-ring  cerclage de l'échiquier en thème sombre */
+    --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.34, l, .45) min(c, .13) h);
+    --accent:        var(--ui-accent);
+    --accent-bright: color-mix(in oklab, var(--ui-accent) 82%, #fff);
+    --accent-dim:    color-mix(in oklab, var(--ui-accent) 55%, var(--surface));
+    --info:          var(--ui-accent);
+    --board-ring:    color-mix(in oklab, var(--board-dark) 45%, #000);
 }
 [data-theme="dark"] {
-    --board-accent:   oklch(from var(--board-dark) max(l, .74) c h);
+    --board-accent:  oklch(from var(--board-dark) max(l, .74) c h);
+    /* En sombre, l'accent est clair et porte un texte foncé : lisible comme texte sur les cartes ET comme fond de bouton. */
+    --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.7, l, .76) min(c, .12) h);
+    --accent-text:   #12170f;
+    --accent-dim:    color-mix(in oklab, var(--ui-accent) 45%, var(--surface));
 }
-
-/* 2. Accents par thème d'échiquier — mode clair (data-theme="light" dans ce projet)
-      puis mode sombre (data-theme="dark"). Classique = valeurs d'origine. */
-html[data-board="wood"] {
-    --accent: #7a4e24;  --accent-bright: #94622f;  --accent-dim: #b0824f;  --info: #7a4e24;
-}
-html[data-board="night"] {
-    --accent: #34508a;  --accent-bright: #4064a8;  --accent-dim: #6d86b8;  --info: #34508a;
-}
-html[data-board="wood"][data-theme="dark"] {
-    --accent: #9a6431;  --accent-bright: #b3763b;  --accent-dim: #7a4e24;  --info: #9a6431;
-}
-html[data-board="night"][data-theme="dark"] {
-    --accent: #4a6fb5;  --accent-bright: #5c82cc;  --accent-dim: #3a5790;  --info: #4a6fb5;
-}
+[data-theme="dark"] #board { border-color: var(--board-ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--board-dark) 22%, var(--bg)), var(--shadow); }
 
 /* 3. Boutons de choix de camp (écran d'accueil) */
 .color-btn {
@@ -1167,7 +1169,7 @@ button.color-badge:disabled { cursor: default; }
 #piece-options, #board-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
 #piece-options .theme-opt, #board-options .theme-opt { min-width: 0; }
 
-/* ─── ÉCHIQUIERS TEXTURÉS (Pierre, Cuir vert, Noyer) ─────────────────────────
+/* ─── ÉCHIQUIERS TEXTURÉS (Pierre, Cuir vert, Noyer, Érable, Marbre, Tournoi, Cerisier ; scripts/gen-boards.mjs) ─────────────────────────
    La texture est UNE image posée sur #board ; les cases deviennent transparentes.
    Les surbrillances (cases jouées, sélection) restent donc de simples voiles
    translucides par-dessus la texture. */
@@ -1175,19 +1177,27 @@ html[data-board="stone"]   { --board-light: #cdcdc8; --board-dark: #484848; --bo
 html[data-board="leather"] { --board-light: #ecebe7; --board-dark: #3f7058; --board-border: #232321; }
 html[data-board="walnut"]  { --board-light: #dbc09a; --board-dark: #70503a; --board-border: #4a3426; }
 html[data-board="ice"]     { --board-light: #f0f0ef; --board-dark: #c9d6e5; --board-border: #9fb2c7; }
+html[data-board="maple"]      { --board-light: #f0dcb4; --board-dark: #c79a62; --board-border: #8f6a3e; }
+html[data-board="marble"]     { --board-light: #ece9e2; --board-dark: #76807d; --board-border: #4c5452; }
+html[data-board="tournament"] { --board-light: #eeecd0; --board-dark: #6b8f5a; --board-border: #4a6640; }
+html[data-board="cherry"]     { --board-light: #ecc9a2; --board-dark: #91493a; --board-border: #5e2e24; }
 
 html[data-board="stone"]   #board { background: url("assets/boards/stone.webp")   center / 100% 100% no-repeat; }
 html[data-board="leather"] #board { background: url("assets/boards/leather.webp") center / 100% 100% no-repeat; }
 html[data-board="walnut"]  #board { background: url("assets/boards/walnut.webp")  center / 100% 100% no-repeat; }
+html[data-board="maple"] #board { background: url("assets/boards/maple.webp") center / 100% 100% no-repeat; }
+html[data-board="marble"] #board { background: url("assets/boards/marble.webp") center / 100% 100% no-repeat; }
+html[data-board="tournament"] #board { background: url("assets/boards/tournament.webp") center / 100% 100% no-repeat; }
+html[data-board="cherry"] #board { background: url("assets/boards/cherry.webp") center / 100% 100% no-repeat; }
 
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.light,
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.dark { background: transparent; }
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.light,
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.dark { background: transparent; }
 
 /* Repères de coups légaux lisibles sur fond clair comme sombre */
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.hl-legal::after {
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal::after {
     background: rgba(20, 20, 20, .34); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .38);
 }
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .sq.hl-legal.has-piece::after {
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal.has-piece::after {
     background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .35), inset 0 0 0 5px rgba(255, 255, 255, .38);
 }
 
@@ -1200,22 +1210,19 @@ html[data-board="walnut"]  .sq.hl-from, html[data-board="walnut"]  .sq.hl-to { b
 html[data-board="walnut"]  .sq.hl-selected                                   { background: rgba(230, 150, 40, .62) !important; }
 html[data-board="ice"]     .sq.hl-from, html[data-board="ice"]     .sq.hl-to { background: rgba(90, 150, 225, .42) !important; }
 html[data-board="ice"]     .sq.hl-selected                                   { background: rgba(60, 130, 230, .55) !important; }
-
-/* ─── COULEURS D'ACCENT PAR THÈME (clair, puis sombre = data-theme="dark") ─ */
-html[data-board="stone"]   { --accent: #4a5642; --accent-bright: #5d6b53; --accent-dim: #7a876e; --info: #4a5642; }
-html[data-board="leather"] { --accent: #2f5a40; --accent-bright: #3d6e50; --accent-dim: #6b9079; --info: #2f5a40; }
-html[data-board="walnut"]  { --accent: #7a4e24; --accent-bright: #94622f; --accent-dim: #b0824f; --info: #7a4e24; }
-html[data-board="ice"]     { --accent: #3f5f86; --accent-bright: #4f73a0; --accent-dim: #7f9bbd; --info: #3f5f86; }
-
-html[data-board="stone"][data-theme="dark"]   { --accent: #66765a; --accent-bright: #778868; --accent-dim: #4f5d45; --info: #66765a; }
-html[data-board="leather"][data-theme="dark"] { --accent: #3f7a58; --accent-bright: #4f8e69; --accent-dim: #2f5a40; --info: #3f7a58; }
-html[data-board="walnut"][data-theme="dark"]  { --accent: #9a6431; --accent-bright: #b3763b; --accent-dim: #7a4e24; --info: #9a6431; }
-html[data-board="ice"][data-theme="dark"]     { --accent: #4f7ab0; --accent-bright: #6089c0; --accent-dim: #3f5f86; --info: #4f7ab0; }
+html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-from, html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-to { background: rgba(220, 175, 50, .48) !important; }
+html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-selected { background: rgba(230, 150, 40, .6) !important; }
+html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-from, html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-to { background: rgba(215, 205, 70, .48) !important; }
+html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-selected { background: rgba(190, 205, 60, .6) !important; }
 
 /* ─── PASTILLES D'APERÇU (Paramètres) : 2×2 cases de la texture ───────────── */
 .theme-opt[data-board="stone"]   .theme-swatch { background: url("assets/boards/stone.webp")   0 0 / 400% 400%; }
 .theme-opt[data-board="leather"] .theme-swatch { background: url("assets/boards/leather.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="walnut"]  .theme-swatch { background: url("assets/boards/walnut.webp")  0 0 / 400% 400%; }
+.theme-opt[data-board="maple"] .theme-swatch { background: url("assets/boards/maple.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="marble"] .theme-swatch { background: url("assets/boards/marble.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="tournament"] .theme-swatch { background: url("assets/boards/tournament.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="cherry"] .theme-swatch { background: url("assets/boards/cherry.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="ice"] { --sw-l: #f0f0ef; --sw-d: #c9d6e5; }
 
 /* Pas de zoom automatique du texte à la rotation (iOS) */
@@ -1348,15 +1355,13 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 #arrow-options .theme-opt { min-width: 0; }   /* 3 lignes de 3 */
 
 /* ─── Échiquier « Violet » (clair / violet) ─────────────────────────────── */
-html[data-board="violet"] { --board-light: #f0f0f0; --board-dark: #8477ba; --board-border: #5e4f8a; --accent: #6a559a; --accent-bright: #7d68b0; --accent-dim: #9a8ac0; --info: #6a559a; }
-html[data-board="violet"][data-theme="dark"] { --accent: #8f7bc0; --accent-bright: #a090d0; --accent-dim: #6a559a; --info: #8f7bc0; }
+html[data-board="violet"] { --board-light: #f0f0f0; --board-dark: #8477ba; --board-border: #5e4f8a; }
 html[data-board="violet"] .sq.hl-from, html[data-board="violet"] .sq.hl-to { background: rgba(205, 210, 106, .55) !important; }
 html[data-board="violet"] .sq.hl-selected { background: rgba(170, 190, 60, .65) !important; }
 .theme-opt[data-board="violet"] { --sw-l: #f0f0f0; --sw-d: #8477ba; }
 
 /* ─── Échiquier « Hachuré » (papier gris, cases sombres hachurées) ───────── */
-html[data-board="hache"] { --board-light: #d3d3ce; --board-dark: #8c8c88; --board-border: #4a4a48; --accent: #4a4a48; --accent-bright: #5f5f5c; --accent-dim: #80807c; --info: #4a4a48; }
-html[data-board="hache"][data-theme="dark"] { --accent: #6f6f6b; --accent-bright: #85857f; --accent-dim: #5a5a56; --info: #6f6f6b; }
+html[data-board="hache"] { --board-light: #d3d3ce; --board-dark: #8c8c88; --board-border: #4a4a48; }
 html[data-board="hache"] .sq { outline: .5px solid rgba(50, 50, 50, .55); outline-offset: -.5px; }
 html[data-board="hache"] .sq.dark,
 html[data-board="hache"] .eg-sq.d { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
@@ -1582,8 +1587,8 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 /* ─── EMBLÈME (assets/brand/chays-logo.svg) ──────────────────────────────── */
 /* Classes du logo maître. Seule la couleur dominante (encre) suit l'échiquier actif (--logo-deep) ; laiton et
    gravure crème restent ceux de la marque. Thème sombre : logo en négatif, silhouette crème et gravure profonde. */
-:root                { --ct-encre: var(--logo-deep); --ct-laiton: #a8843f; --ct-grave: #f3ecd9; --ct-fond: #f5f5f3; }
-[data-theme="dark"] { --ct-encre: #ece6d6; --ct-laiton: #c9a75e; --ct-grave: var(--logo-deep); }
+:root                { --ct-encre: var(--logo-deep); --ct-laiton: #a8843f; --ct-grave: #f1e6d4; --ct-fond: #f1e6d4; }
+[data-theme="dark"] { --ct-encre: #f1e6d4; --ct-laiton: #c99a4b; --ct-grave: var(--logo-deep); }
 .ct-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .plein  { fill: var(--ct-encre); stroke: var(--ct-encre); stroke-linejoin: round; }
 .laiton { fill: none; stroke: var(--ct-laiton); stroke-linecap: round; stroke-linejoin: round; }
@@ -1619,3 +1624,69 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
+
+/* ─── FIGURINES DE LA NOTATION (formatSan, mode « Figurines ») ───
+   Dessin du jeu de pièces actif, à la couleur du camp ; en thème sombre, un fin liseré clair détache
+   les pièces noires du fond. */
+.fig { display: inline-block; width: 1.3em; height: 1.3em; vertical-align: -0.32em; margin-right: .04em;
+       background: var(--f) center / contain no-repeat; }
+:root[data-theme="dark"] .fig-b { filter: drop-shadow(0 0 .5px rgba(241, 230, 212, .9)) drop-shadow(0 0 .5px rgba(241, 230, 212, .5)); }
+
+/* ─── SÉLECTEUR DE COULEUR (ColorScope, colorScope.js) ───
+   Boutons radio ; le curseur glisse sous l'option choisie (--i), une colonne par option (--n). */
+.cs { position: relative; display: inline-grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 3px;
+      border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.cs-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px;
+            background: var(--accent); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .24s var(--ease-out, ease); }
+.cs-opt { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px;
+          padding: 6px 14px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: inherit; font-size: 13px;
+          font-weight: 600; white-space: nowrap; cursor: pointer; transition: color .2s; }
+.cs-opt[aria-checked="true"] { color: var(--accent-text); }
+.cs-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cs-opt .glyph { width: 18px; height: 18px; display: inline-block; flex: none; }
+.cs-opt .glyph img { width: 100%; height: 100%; display: block; }
+.cs-both { position: relative; display: inline-block; width: 22px; height: 18px; flex: none; }
+.cs-both .glyph { position: absolute; top: 0; }
+.cs-both .glyph:first-child { left: 0; }
+.cs-both .glyph:last-child { right: 0; }
+@media (prefers-reduced-motion: reduce) { .cs-thumb { transition: none; } }
+
+/* ─── CHOIX DU RÉPERTOIRE (RepPicker, repPicker.js) ───
+   Puce : initiale, nom, indicateurs. Liste : fenêtre flottante, ou panneau du bas sur téléphone. */
+.rp-chip { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; min-height: 40px; padding: 5px 12px 5px 6px;
+           border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm);
+           color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.rp-chip > .ico { width: 14px; height: 14px; flex: none; color: var(--text-dim); fill: none; }
+@media (hover: hover) { .rp-chip:hover { border-color: var(--board-accent, var(--accent)); } }
+.rp-chip:focus-visible, .rp-row:focus-visible, .rp-new:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rp-ini { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 8px;
+          background: var(--board-dark); color: var(--board-light); font-family: var(--font-display); font-weight: 600; font-size: 14px; }
+.rp-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.rp-txt b { font-size: 13.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-txt small { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+.rp-layer { position: fixed; inset: 0; z-index: 900; }
+.rp-backdrop { position: absolute; inset: 0; }
+.rp-pop { position: absolute; display: flex; flex-direction: column; gap: 6px; width: min(320px, calc(100vw - 24px)); max-height: min(420px, 70vh);
+          padding: 8px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg, 0 14px 40px rgba(0, 0, 0, .3)); }
+.rp-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.rp-search .ico { width: 15px; height: 15px; color: var(--text-dim); fill: none; flex: none; }
+.rp-search input { flex: 1; min-width: 0; height: 36px; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.rp-list { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+.rp-row, .rp-new { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: 10px; background: none;
+                   color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.rp-row .rp-txt { flex: 1; }
+.rp-row > .ico { width: 15px; height: 15px; color: var(--accent); fill: none; }
+.rp-row[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+@media (hover: hover) { .rp-row:hover, .rp-new:hover { background: color-mix(in srgb, var(--text) 6%, transparent); } }
+.rp-new { border-top: 1px solid var(--border); border-radius: 0 0 10px 10px; padding-top: 10px; color: var(--accent); font-weight: 600; font-size: 13px; }
+.rp-new .ico { width: 15px; height: 15px; fill: none; }
+.rp-none { padding: 12px 8px; font-size: 13px; color: var(--text-dim); }
+.rp-layer.is-sheet .rp-backdrop { background: rgba(0, 0, 0, .45); }
+.rp-layer.is-sheet .rp-pop { left: 0; right: 0; bottom: 0; width: auto; max-height: 75vh; padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+                              border-radius: 18px 18px 0 0; animation: rp-up .22s var(--ease-out, ease); }
+.rp-grip { align-self: center; width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 2px 0 6px; }
+.rp-title { font-family: var(--font-display); font-size: 17px; padding: 0 4px 4px; }
+.rp-layer.is-sheet .rp-row { padding: 10px 8px; }
+@keyframes rp-up { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .rp-layer.is-sheet .rp-pop { animation: none; } }

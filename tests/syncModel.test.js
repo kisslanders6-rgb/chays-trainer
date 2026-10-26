@@ -158,6 +158,15 @@ t('journal des parties : verdict le plus récent, première erreur comptée gard
     assert.deepStrictEqual(x.g.counted, { 'G|b': { at: 200 } });
 });
 
+t('journal des parties : adversaire et chemin de la nouveauté gardés à la fusion', () => {
+    const L = 'chessTrainer_gameLedger';
+    const l = { g: { src: 'pgn', at: 1, first: 5, last: 9, vs: 'Bob', v: { 'G|w': { kind: 'novelty', ply: 3, by: 'opp', at: 9, path: ['e2e4', 'd7d5'] } }, counted: {} } };
+    const r = { g: { src: 'pgn', at: 1, first: 5, last: 7, v: { 'G|w': { kind: 'theory', ply: -1, by: null, at: 7 } }, counted: {} } };
+    const m = S.merge(L, { g: { src: 'pgn', at: 1, first: 5, last: 5, v: {}, counted: {} } }, l, r);
+    assert.strictEqual(m.g.vs, 'Bob');
+    assert.deepStrictEqual(m.g.v['G|w'].path, ['e2e4', 'd7d5']);
+});
+
 t('record du contre-la-montre : synchronisé, le plus grand l\'emporte, symétrique', () => {
     const SM = S;
     assert.strictEqual(SM.kindOf('chessTrainer_timedRecord'), 'record');

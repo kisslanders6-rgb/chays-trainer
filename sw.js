@@ -16,7 +16,7 @@
  * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
  * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v14';
+const VERSION = 'v15';
 const CACHE   = 'chays-trainer-' + VERSION;
 const ENGINE_CACHE = 'chays-engine';
 const ENGINE_FILE  = /\/engine\/\d+\.\d+\.\d+\//;
@@ -24,7 +24,8 @@ const ENGINE_FILE  = /\/engine\/\d+\.\d+\.\d+\//;
 const EXTRA = [
     './', 'manifest.json',
     'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png',
-    'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp'
+    'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp',
+    'assets/boards/maple.webp', 'assets/boards/marble.webp', 'assets/boards/tournament.webp', 'assets/boards/cherry.webp'
 ];
 
 // Ressources locales référencées par index.html (les liens externes et les ancres sont ignorés).
@@ -35,7 +36,7 @@ async function pageAssets() {
     } catch (e) { return ['index.html']; }
 }
 
-const SETS = ['merida', 'maestro', 'staunty', 'chrome', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi'];
+const SETS = ['merida', 'maestro', 'staunty', 'chrome', 'minimal-warmth', 'fantasy', 'chessnut', 'kiwen-suwi', 'cburnett', 'california', 'cardinal', 'celtic'];
 const PIECES = SETS.flatMap(s => ['w', 'b'].flatMap(c => 'KQRBNP'.split('').map(t => `assets/pieces/${s}/${c}${t}.svg`)));
 
 self.addEventListener('install', e => {

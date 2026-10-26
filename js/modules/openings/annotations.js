@@ -13,16 +13,23 @@
  * mon coup enregistré (vert) ou les réponses adverses connues (bleu : couvertes, rouge : non couvertes),
  * en semi-transparence pour ne pas les confondre avec les annotations dessinées.
  *
- * Trois styles (Paramètres → Style des flèches, appSettings.arrowStyle) :
+ * Six styles (Paramètres → Style des flèches, appSettings.arrowStyle) :
  *   plume     trait effilé qui s'épaissit vers une pointe à encoche, dégradé de transparence (défaut)
  *   contour   silhouette pleine translucide cernée d'un liseré, point d'origine marqué
  *   pointille chapelet de points et pointe ouverte en chevron, anneau à l'origine
+ *   lichess   trait épais régulier, pointe triangulaire, translucide, comme sur Lichess
+ *   pinceau   coup de pinceau : bords irréguliers, épais au départ, qui s'affine vers la pointe
+ *   fine      trait fin et net, petite pointe pleine
+ * appSettings.knightArrows : saut de cavalier dessiné en « L » (sinon en ligne droite), pour tous les styles.
+ *
+ * drawArrows({ arrows, circles, style, flipped, knight }) est PURE (aucun état global) : elle sert à
+ * l'échiquier (renderAnnotations) et à l'aperçu d'Apparence (settingsUI.js).
  */
 
 'use strict';
 
 // Couleurs : variables CSS (la couleur « accent » suit le thème de l'échiquier).
-const ANNOT_COLORS = { accent: 'var(--annot-accent)', red: 'var(--annot-red)', blue: 'var(--annot-blue)', gold: 'var(--annot-gold)' };
+const ANNOT_COLORS = { accent: 'var(--annot-accent)', red: 'var(--annot-red)', blue: 'var(--annot-blue)', gold: 'var(--annot-gold)', green: 'var(--annot-green)' };
 const ARROW_STYLES = ARROW_STYLE_IDS;                    // settings.js
 let _annotGradSeq = 0;
 
@@ -38,10 +45,12 @@ function _annotColor(e) {
 
 const _arrowStyle = () => (typeof appSettings !== 'undefined' && ARROW_STYLES.includes(appSettings.arrowStyle)) ? appSettings.arrowStyle : 'plume';
 
+const _knightArrows = () => typeof appSettings === 'undefined' || appSettings.knightArrows !== false;
+
 // Case (0..63) → coin haut-gauche à l'écran, en unités de case.
-function _annotXY(idx) {
+function _annotXY(idx, flipped) {
     const c = idx % 8, r = Math.floor(idx / 8);
-    return boardFlipped ? [7 - c, r] : [c, 7 - r];
+    return flipped ? [7 - c, r] : [c, 7 - r];
 }
 
 function clearAnnotations() {
@@ -68,10 +77,10 @@ function _toggleAnnotation(from, to, color) {
 const _f = n => Math.round(n * 1000) / 1000;
 const _pts = list => list.map(p => `${_f(p[0])},${_f(p[1])}`).join(' ');
 
-// Points du tracé (centres de cases) : saut de cavalier = coude le long de l'axe le plus long d'abord.
-function _arrowPath(x1, y1, x2, y2) {
+// Points du tracé (centres de cases) : saut de cavalier = coude le long de l'axe le plus long d'abord (si knightL).
+function _arrowPath(x1, y1, x2, y2, knightL = true) {
     const dx = x2 - x1, dy = y2 - y1;
-    const knight = (Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1);
+    const knight = knightL && ((Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1));
     return knight ? [[x1, y1], Math.abs(dy) > Math.abs(dx) ? [x1, y2] : [x2, y1], [x2, y2]] : [[x1, y1], [x2, y2]];
 }
 
@@ -107,9 +116,27 @@ function _arrowOutline(pts, w0, w1, head, half, notch) {
     return left.concat([wingL, tip, wingR]).concat(right.reverse());
 }
 
+// Bord irrégulier du pinceau : petits écarts déterministes le long du tracé.
+function _brushOutline(pts) {
+    const base = _arrowOutline(pts, .26, .12, .44, .3, .1);
+    return base.map((p, i) => { const j = Math.sin(i * 12.9898 + p[0] * 78.233) * .018; return [p[0] + j, p[1] - j]; });
+}
+
 function _arrowShape(pts, colorKey, style, preview) {
     const col = ANNOT_COLORS[colorKey] || ANNOT_COLORS.accent;
     const op = preview ? .55 : 1;
+    if (style === 'lichess') {
+        const poly = _pts(_arrowOutline(pts, .15, .15, .4, .3, 0));
+        return `<g class="annot" style="color:${col}" opacity="${preview ? .45 : .8}"><polygon points="${poly}" fill="currentColor" stroke="currentColor" stroke-width=".01" stroke-linejoin="round"/></g>`;
+    }
+    if (style === 'pinceau') {
+        const poly = _pts(_brushOutline(pts));
+        return `<g class="annot" style="color:${col}" opacity="${preview ? .5 : .78}"><polygon points="${poly}" fill="currentColor" stroke="currentColor" stroke-width=".035" stroke-linejoin="round" class="annot-halo"/></g>`;
+    }
+    if (style === 'fine') {
+        const poly = _pts(_arrowOutline(pts, .06, .06, .26, .15, .04));
+        return `<g class="annot" style="color:${col}" opacity="${preview ? .55 : .95}"><polygon points="${poly}" fill="currentColor" stroke-linejoin="round" class="annot-halo"/></g>`;
+    }
     if (style === 'pointille') {
         const tip = pts[pts.length - 1], prev = pts[pts.length - 2];
         const L = Math.hypot(tip[0] - prev[0], tip[1] - prev[1]), ux = (tip[0] - prev[0]) / L, uy = (tip[1] - prev[1]) / L;
@@ -139,6 +166,12 @@ function _arrowShape(pts, colorKey, style, preview) {
 
 function _circleShape(x, y, colorKey, style) {
     const col = ANNOT_COLORS[colorKey] || ANNOT_COLORS.accent;
+    if (style === 'lichess')
+        return `<circle cx="${x}" cy="${y}" r=".44" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".07" stroke-opacity=".8"/>`;
+    if (style === 'pinceau')
+        return `<circle cx="${x}" cy="${y}" r=".4" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".12" stroke-opacity=".75" stroke-dasharray="1.6 .08 .5 .05" class="annot-halo-stroke"/>`;
+    if (style === 'fine')
+        return `<circle cx="${x}" cy="${y}" r=".42" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".04" class="annot-halo-stroke"/>`;
     if (style === 'pointille')
         return `<circle cx="${x}" cy="${y}" r=".4" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".1" stroke-linecap="round" stroke-dasharray=".001 .2" class="annot-halo-stroke"/>`;
     if (style === 'contour')
@@ -146,18 +179,21 @@ function _circleShape(x, y, colorKey, style) {
     return `<circle cx="${x}" cy="${y}" r=".41" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".09" stroke-opacity=".85" class="annot-halo-stroke"/>`;
 }
 
-function _arrowSVG(a, preview) {
-    const [x1, y1] = _annotXY(a.from).map(v => v + .5);
-    const [x2, y2] = _annotXY(a.to).map(v => v + .5);
-    return _arrowShape(_arrowPath(x1, y1, x2, y2), a.color, _arrowStyle(), preview);
+// Contenu SVG (repère 8 × 8, une unité = une case) des flèches et cercles. Fonction pure.
+//   arrows  : [{ from, to, color, preview? }] (cases 0..63, couleur : clé d'ANNOT_COLORS ; preview : translucide)
+//   circles : [{ sq, color }]
+//   style   : un de ARROW_STYLE_IDS · flipped : échiquier retourné · knight : saut de cavalier en « L »
+function drawArrows({ arrows = [], circles = [], style = 'plume', flipped = false, knight = true }) {
+    const center = sq => _annotXY(sq, flipped).map(v => v + .5);
+    const circ = circles.map(c => { const [x, y] = center(c.sq); return _circleShape(x, y, c.color, style); }).join('');
+    const arr = arrows.map(a => {
+        const [x1, y1] = center(a.from), [x2, y2] = center(a.to);
+        return _arrowShape(_arrowPath(x1, y1, x2, y2, knight), a.color, style, !!a.preview);
+    }).join('');
+    return circ + arr;
 }
 
-function _circleSVG(c) {
-    const [x, y] = _annotXY(c.sq);
-    return _circleShape(x + .5, y + .5, c.color, _arrowStyle());
-}
-
-// Aperçu d'un style (Paramètres) : 3 × 2 cases, une flèche coudée et un cercle.
+// Vignette d'un style (Paramètres) : 3 × 2 cases, une flèche coudée et un cercle.
 function arrowStylePreview(style) {
     let sq = '';
     for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++)
@@ -223,12 +259,14 @@ function renderAnnotations(afterBoardRender) {
         layer.setAttribute('aria-hidden', 'true');
         b.appendChild(layer);
     }
-    const d = _annotDraw;
-    const preview = d && d.to !== null && d.to !== d.from ? _arrowSVG(d, true) : '';
-    let book = '';
-    try { book = _bookArrowList().map(a => _arrowSVG(a, true)).join(''); } catch (e) { /* position illisible : pas de flèches */ }
-    if (typeof analysisArrowList === 'function') book += analysisArrowList().map(a => _arrowSVG(a, true)).join('');      // meilleurs coups du moteur
-    layer.innerHTML = book + annotations.circles.map(_circleSVG).join('') + annotations.arrows.map(a => _arrowSVG(a)).join('') + preview;
+    const d = _annotDraw, ghost = a => Object.assign({}, a, { preview: true });
+    let book = [];
+    try { book = _bookArrowList().map(ghost); } catch (e) { /* position illisible : pas de flèches */ }
+    if (typeof analysisArrowList === 'function') book = book.concat(analysisArrowList().map(ghost));      // meilleurs coups du moteur
+    const opts = { style: _arrowStyle(), flipped: boardFlipped, knight: _knightArrows() };
+    layer.innerHTML = drawArrows(Object.assign({ arrows: book }, opts))
+        + drawArrows(Object.assign({ circles: annotations.circles, arrows: annotations.arrows }, opts))
+        + (d && d.to !== null && d.to !== d.from ? drawArrows(Object.assign({ arrows: [ghost(d)] }, opts)) : '');
 }
 
 // ─── SOURIS ───────────────────────────────────────────────────────────────────

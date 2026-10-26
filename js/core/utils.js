@@ -61,13 +61,28 @@ registerActions({ hideErrorToast });
 const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).";
 
 // ─── NOTATION DES COUPS ───────────────────────────────────────────────────────
-// Les coups sont stockés en notation anglaise (N B R Q K). formatSan(san, couleur) les affiche selon le
-// réglage « Écriture des coups » : lettres françaises (C F T D R), anglaises, ou figurines.
+// Les coups sont stockés en notation anglaise (N B R Q K), affichés selon le réglage « Écriture des coups » :
+// lettres françaises (C F T D R), anglaises, ou figurines.
+//   formatSan(san, couleur)     → HTML (échappé) : en mode figurines, la pièce du jeu actif, à la couleur du camp
+//                                 (<span class="fig">, image lue dans --fig-wN… écrites par applyPieceSet).
+//   formatSanText(san, couleur) → texte simple (barre d'état, title, copie) : figurines Unicode en mode figurines.
+// Le jeu « Invisibles » n'a pas de dessin de pièce : les figurines repassent aux lettres françaises.
 const _SAN_FR  = { N: 'C', B: 'F', R: 'T', Q: 'D', K: 'R' };
 const _SAN_FIG = { w: { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' }, b: { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' } };
-function formatSan(san, color) {
-    const mode = typeof appSettings !== 'undefined' ? appSettings.notation : 'en';
+const _FIG_NAMES = { N: 'Cavalier', B: 'Fou', R: 'Tour', Q: 'Dame', K: 'Roi' };
+function _sanMode() {
+    const s = typeof appSettings !== 'undefined' ? appSettings : { notation: 'en' };
+    return s.notation === 'fig' && s.pieceSet === 'blindfold' ? 'fr' : s.notation || 'en';
+}
+function formatSanText(san, color) {
+    const mode = _sanMode();
     if (!san || mode === 'en') return san || '';
     const map = mode === 'fig' ? _SAN_FIG[color === 'b' ? 'b' : 'w'] : _SAN_FR;
     return san.replace(/[NBRQK]/g, c => map[c]);
+}
+function formatSan(san, color) {
+    if (!san) return '';
+    if (_sanMode() !== 'fig') return escapeHtml(formatSanText(san, color));
+    const c = color === 'b' ? 'b' : 'w';
+    return escapeHtml(san).replace(/[NBRQK]/g, p => `<span class="fig fig-${c}" style="--f:var(--fig-${c}${p})" role="img" aria-label="${_FIG_NAMES[p]}"></span>`);
 }

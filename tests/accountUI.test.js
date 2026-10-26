@@ -58,8 +58,9 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     await t('ouverture : formulaire de connexion, onglets Connexion / Créer un compte', async () => {
         click(w, '#account-btn'); assert(visible(w));
         assert($(w, '[data-form="auth"]')); assert.match(text(w, '.account-submit'), /Se connecter/); assert($(w, '[data-act="view:recover"]'));
-        click(w, '[data-act="mode:signup"]'); assert.match(text(w, '.account-submit'), /Créer mon compte/); assert(!$(w, '[data-act="view:recover"]'));
-        click(w, '[data-act="mode:signin"]');
+        click(w, '[data-act="view:signup"]'); assert.match(text(w, '.account-submit'), /Créer mon compte/); assert(!$(w, '[data-act="view:recover"]'));
+        assert.match(text(w, '.account-auth-title'), /Créer un compte/); assert.match(text(w, '.account-switch'), /Déjà un compte/);
+        click(w, '[data-act="view:auth"]'); assert.match(text(w, '.account-auth-title'), /Se connecter/);
     });
     await t('validation : e-mail invalide, mot de passe vide → message, aucun appel réseau', async () => {
         const k = be.log.length;
@@ -75,6 +76,23 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     await t('mauvais mot de passe → message d\'erreur affiché dans la fenêtre', async () => {
         type(w, 'input[name=email]', 'ana@test.fr'); type(w, 'input[name=password]', 'faux-faux'); submit(w, '[data-form="auth"]'); await flush();
         assert.match(text(w, '.account-msg'), /incorrect/); assert.strictEqual($(w, '.account-submit').disabled, false);
+    });
+    await t('après l\'erreur : l\'autre vue est proposée, l\'e-mail déjà rempli ; retour à la connexion', async () => {
+        assert.match(text(w, '[data-act="swap"]'), /Créer un compte avec cette adresse/);
+        click(w, '[data-act="swap"]');
+        assert.match(text(w, '.account-auth-title'), /Créer un compte/); assert.strictEqual($(w, 'input[name=email]').value, 'ana@test.fr');
+        click(w, '[data-act="view:auth"]'); assert.strictEqual($(w, 'input[name=email]').value, 'ana@test.fr');
+    });
+    await t('lien par e-mail : une option de la connexion, pas une vue à part', async () => {
+        click(w, '[data-act="link:on"]'); assert($(w, '[data-form="link"]')); assert(!$(w, 'input[name=password]'));
+        click(w, '[data-act="link:off"]'); assert($(w, '[data-form="auth"]'));
+    });
+    await t('nouveau compte : création et première connexion à moins d\'une minute, nom proposé', async () => {
+        const A = w.eval('AccountUI');
+        assert.strictEqual(A.isNewUser({ created_at: '2026-10-26T10:00:00Z', last_sign_in_at: '2026-10-26T10:00:20Z' }), true);
+        assert.strictEqual(A.isNewUser({ created_at: '2026-10-20T10:00:00Z', last_sign_in_at: '2026-10-26T10:00:20Z' }), false);
+        assert.strictEqual(A.suggestedName({ email: 'ana@test.fr', user_metadata: { full_name: 'Ana Lopez' } }), 'Ana Lopez');
+        assert.strictEqual(A.suggestedName({ email: 'ana@test.fr', user_metadata: {} }), 'ana');
     });
     await t('connexion réussie (cloud vide, appareil vide) → vue Compte, e-mail, pastille verte, intention « merge » silencieuse', async () => {
         type(w, 'input[name=password]', 'motdepasse1'); submit(w, '[data-form="auth"]'); await flush();
@@ -180,7 +198,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
 
     await t('inscription avec confirmation : message de succès, retour sur « Connexion »', async () => {
         const w2 = await bootA({ backend: makeBackend({ confirmEmail: true }) });
-        click(w2, '#account-btn'); click(w2, '[data-act="mode:signup"]');
+        click(w2, '#account-btn'); click(w2, '[data-act="view:signup"]');
         type(w2, 'input[name=email]', 'new@test.fr'); type(w2, 'input[name=password]', 'court'); submit(w2, '[data-form="auth"]');
         assert.match(text(w2, '.account-msg'), /8 caractères/);
         type(w2, 'input[name=password]', 'motdepasse1'); submit(w2, '[data-form="auth"]'); await flush();

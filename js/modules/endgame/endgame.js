@@ -318,7 +318,7 @@ function stopEndgame() {
 
 const _egCur  = () => EG.fromGlobals(board, turn);
 // Coup de la position affichée, écrit selon la préférence de notation (lettres françaises, anglaises ou figurines).
-const _egSan = (from, to, promo) => formatSan(toAlgebraic(from, to, promo), board[from] && board[from] === board[from].toLowerCase() ? 'b' : 'w');
+const _egSan = (from, to, promo) => formatSanText(toAlgebraic(from, to, promo), board[from] && board[from] === board[from].toLowerCase() ? 'b' : 'w');
 const _egPromoCode = l => ({ Q: 5, R: 4, B: 3, N: 2 }[String(l).toUpperCase()] || 0);
 
 function startEndgame(id) {

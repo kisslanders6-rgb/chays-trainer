@@ -226,11 +226,7 @@ function showPgnImport() {
 
 function setPgnColor(c) {
     _pgnColor = c;
-    ['w', 'b'].forEach(k => {
-        const b = document.getElementById('pgn-seg-' + k);
-        b.classList.toggle('active', k === c);
-        b.setAttribute('aria-pressed', k === c);
-    });
+    ColorScope.render(document.getElementById('pgn-color'), { options: ['w', 'b'], value: c, onChange: setPgnColor, label: 'Couleur importée' });
 }
 
 function closePgnImport() {
@@ -273,7 +269,7 @@ function runPgnImport() {
     if (r.skipped) html += `<div class="pgn-line">${pl(r.skipped, 'partie ignorée', 'parties ignorées')} (position de départ personnalisée).</div>`;
     if (r.implicit.length) {
         html += `<div class="pgn-note info">${ico('info')} ${pl(r.implicit.length, 'variante implicite reconnue', 'variantes implicites reconnues')} (numéro de coup qui revient en arrière, lu comme une variante) :</div><ul class="pgn-list">`;
-        r.implicit.slice(0, 8).forEach(v => { html += `<li>${escapeHtml(_pgnLineLabel(v.path, ''))}<strong>${escapeHtml(formatSan(v.san, v.path.length % 2 ? 'b' : 'w'))}</strong></li>`; });
+        r.implicit.slice(0, 8).forEach(v => { html += `<li>${escapeHtml(_pgnLineLabel(v.path, ''))}<strong>${formatSan(v.san, v.path.length % 2 ? 'b' : 'w')}</strong></li>`; });
         if (r.implicit.length > 8) html += `<li>… et ${r.implicit.length - 8} autre(s)</li>`;
         html += '</ul>';
     }

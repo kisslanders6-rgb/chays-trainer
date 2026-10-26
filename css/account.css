@@ -83,3 +83,27 @@
 
 /* Suppression du compte : discrète, sous les actions */
 .account-delete { display: block; margin: 14px auto 0; color: var(--err); font-weight: 700; font-size: 12.5px; }
+
+/* Connexion / Création de compte : deux vues, lien vers l'autre en pied */
+.account-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; }
+.account-swap { align-self: flex-start; font-weight: 600; }
+.account-switch { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted); }
+
+/* Avatars : monogrammes, pictogrammes au trait, photo */
+.av-mono { line-height: 1; }
+.av-mono.is-two { font-size: .82em; letter-spacing: -.02em; }
+.av-picto { display: grid; place-items: center; width: 62%; height: 62%; }
+.av-picto .ico { width: 100%; height: 100%; fill: none; stroke: currentColor; }
+.av-photo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.pn-avatar .av-photo, .topnav-avatar .av-photo { position: absolute; inset: 0; }
+.topnav-avatar { position: relative; overflow: hidden; }
+
+/* Recadrage de la photo (avatarPhoto.js) */
+.avp-layer { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .55); }
+.avp-dialog { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px; border-radius: 18px; background: var(--bg-elevated, var(--surface)); border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, .4); max-width: 100%; }
+.avp-title { font-family: var(--font-display); font-size: 18px; }
+.avp-canvas { border-radius: 50%; touch-action: none; cursor: grab; background: var(--bg-inset); box-shadow: 0 0 0 1px var(--border); max-width: 100%; height: auto !important; aspect-ratio: 1; }
+.avp-canvas:active { cursor: grabbing; }
+.avp-zoom { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 13px; color: var(--text-muted); }
+.avp-zoom input { flex: 1; accent-color: var(--accent); }
+.avp-actions { display: flex; gap: 10px; justify-content: flex-end; width: 100%; }

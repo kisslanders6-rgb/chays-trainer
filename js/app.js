@@ -119,10 +119,7 @@ function switchHomeTab(tab) {
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────
 
 function renderRepertoireList() {
-    const list = loadRepertoireList();
-    const html = list.map(name =>       // nom échappé : il vient de l'utilisateur (ou d'un autre appareil via la synchro)
-        `<div class="repertoire-chip ${name === currentRepertoire ? 'active' : ''}" role="button" tabindex="0" aria-pressed="${name === currentRepertoire}" data-action="selectRepertoire" data-arg="${escapeHtml(name)}">${escapeHtml(name)}</div>`
-    ).join('') + `<div class="repertoire-chip repertoire-chip-new" role="button" tabindex="0" data-action="createRepertoire">+ Nouveau</div>`;
+    const html = RepPicker.html('selectRepertoire');      // puce et liste avec recherche (repPicker.js)
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
     renderResumeCard();
     renderHomeSummary();
@@ -154,6 +151,7 @@ function renderHomeSummary() {
         box.classList.toggle('is-done', today >= goal);
         box.innerHTML = `<i aria-hidden="true"></i><span>Objectif du jour : <b>${Math.min(today, goal)} / ${goal}</b> positions${today >= goal ? ' · atteint' : ''}</span>`;
     }
+    HomePanels.render();                         // Mes répertoires, Nouveautés à traiter, Dernières parties
 }
 
 // iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).

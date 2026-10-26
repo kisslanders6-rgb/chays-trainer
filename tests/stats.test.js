@@ -3,7 +3,7 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: () => '', formatSan: s => s,
+const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: () => '', formatSan: s => s, formatSanText: s => s,
               document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] } };
 vm.createContext(ctx);
 for (const f of ['js/core/chessEngine.js', 'js/modules/openings/openingsLogic.js', 'js/modules/stats/openingNames.js', 'js/modules/stats/stats.js'])

@@ -94,8 +94,36 @@ begin
     if uid is null then
         raise exception 'not_authenticated' using errcode = '42501';
     end if;
+    -- Photos de profil (dossier {uid}/ du seau « avatars ») : l'application les supprime d'abord par l'API de stockage ;
+    -- ce filet ne doit jamais empêcher la suppression du compte (certaines versions refusent l'écriture directe).
+    begin
+        delete from storage.objects where bucket_id = 'avatars' and (storage.foldername(name))[1] = uid::text;
+    exception when others then null;
+    end;
     delete from auth.users where id = uid;
 end $$;
 
 revoke all on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- ─── Photos de profil (avatarPhoto.js) ─────────────────────────────────────────
+-- Seau PRIVÉ « avatars » : une image WebP de 256 px par utilisateur, chemin {uid}/avatar-{horodatage}.webp.
+-- Chacun ne lit, n'écrit et ne supprime que son propre dossier. À exécuter une fois dans l'éditeur SQL.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', false, 262144, array['image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 262144, allowed_mime_types = array['image/webp'];
+
+drop policy if exists "avatars : lire son dossier"      on storage.objects;
+drop policy if exists "avatars : ajouter dans son dossier" on storage.objects;
+drop policy if exists "avatars : remplacer dans son dossier" on storage.objects;
+drop policy if exists "avatars : supprimer dans son dossier" on storage.objects;
+
+create policy "avatars : lire son dossier" on storage.objects for select to authenticated
+    using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "avatars : ajouter dans son dossier" on storage.objects for insert to authenticated
+    with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "avatars : remplacer dans son dossier" on storage.objects for update to authenticated
+    using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text)
+    with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "avatars : supprimer dans son dossier" on storage.objects for delete to authenticated
+    using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);

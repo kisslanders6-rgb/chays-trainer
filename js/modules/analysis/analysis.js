@@ -121,7 +121,7 @@ function discardAnalysis() {
 // Appelé par executePlayerMove (openingsLogic.js) : les deux camps sont libres, rien n'est vérifié.
 function analysisMove(from, to, promo) {
     const san = toAlgebraic(from, to, promo);
-    _commitMove(from, to, promo, null, `Analyse : ${formatSan(san, turn)}`, 'info', '');
+    _commitMove(from, to, promo, null, `Analyse : ${formatSanText(san, turn)}`, 'info', '');
     _anInsert(_anLine());
     analysis.dirty = true;
     analysis.lastMerge = null;
@@ -248,12 +248,12 @@ function _anWin(l) {
 }
 
 // Variante en notation (numéros de coup compris) depuis la position affichée.
-function _anPvText(pv, max = 10) {
+function _anPvText(pv, max = 10, html = false) {
     let pos = Chess.fromFen(analysis.fen), ply = _displayedPath().length, out = '';
     pv.slice(0, max).forEach((u, i) => {
         const w = pos.turn === 'w';
         if (w) out += `${Math.floor(ply / 2) + 1}. `; else if (i === 0) out += `${Math.floor(ply / 2) + 1}… `;
-        try { out += formatSan(Chess.san(pos, u), pos.turn) + ' '; pos = Chess.play(pos, u); } catch (e) { return; }
+        try { out += (html ? formatSan : formatSanText)(Chess.san(pos, u), pos.turn) + ' '; pos = Chess.play(pos, u); } catch (e) { return; }
         ply++;
     });
     return out.trim();
@@ -295,7 +295,7 @@ function _anPaintEngine() {
     const rows = lines.map((l, i) => `<div class="an-line">
             <button type="button" class="an-play" data-action="analysisPlayLine" data-arg="${i}" title="Jouer ${escapeHtml(_anPvText(l.pv, 1))}">
                 <b class="an-score${l.score && (l.score.mate !== undefined ? l.score.mate < 0 : l.score.cp < 0) ? ' is-black' : ''}">${escapeHtml(_anScore(l))}</b>
-                <span>${escapeHtml(_anPvText(l.pv))}</span></button>
+                <span>${_anPvText(l.pv, 10, true)}</span></button>
             ${cloud ? '' : `<button type="button" class="an-use" data-action="analysisUseLine" data-arg="${i}" title="Recopier cette variante dans le brouillon">${ico('plus')}</button>`}
         </div>`).join('');
     const empty = !analysis.running ? '<p class="an-empty">Moteur arrêté. Lancez-le pour voir les meilleurs coups.</p>'
@@ -344,9 +344,9 @@ function _anTreeHTML() {
 
 function _anMoveHTML(node, path, ply, num, cur) {
     const w = ply % 2 === 0, n = Math.floor(ply / 2) + 1;
-    const label = (w ? `${n}. ` : num ? `${n}… ` : '') + formatSan(node.san, w ? 'w' : 'b');
+    const label = (w ? `${n}. ` : num ? `${n}… ` : '') + formatSan(node.san, w ? 'w' : 'b');      // HTML
     const p = path.join(',');
-    return `<button type="button" class="an-mv${p === cur ? ' is-cur' : ''}" data-action="analysisGo" data-arg="${p}">${escapeHtml(label)}</button>`;
+    return `<button type="button" class="an-mv${p === cur ? ' is-cur' : ''}" data-action="analysisGo" data-arg="${p}">${label}</button>`;
 }
 
 // ─── FUSION DANS LE RÉPERTOIRE ────────────────────────────────────────────────
@@ -393,8 +393,8 @@ function _anMergeHTML() {
     const row = it => {
         const sans = formatLinePrefix(_pathToSans(it.path));
         const tag = { new: '<span class="an-tag is-new">nouveau</span>', same: '<span class="an-tag">déjà connu</span>',
-                      conflict: `<span class="an-tag is-conflict">votre coup : ${escapeHtml(formatSan(it.keptSan, analysis.color))}</span>`,
-                      replace: `<span class="an-tag is-replace">remplace ${escapeHtml(formatSan(it.keptSan, analysis.color))}</span>` }[it.status];
+                      conflict: `<span class="an-tag is-conflict">votre coup : ${formatSan(it.keptSan, analysis.color)}</span>`,
+                      replace: `<span class="an-tag is-replace">remplace ${formatSan(it.keptSan, analysis.color)}</span>` }[it.status];
         const box = it.status === 'conflict' || it.status === 'replace'
             ? `<label class="an-replace"><input type="checkbox" data-action="analysisToggleReplace" data-arg="${escapeHtml(it.key)}"${it.status === 'replace' ? ' checked' : ''}> Remplacer</label>` : '';
         return `<li class="is-${it.status}"><span>${escapeHtml(sans)}</span>${tag}${box}</li>`;

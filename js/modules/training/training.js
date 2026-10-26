@@ -605,7 +605,7 @@ function _pickOppContinuation(line) {
 function _playOpponentReply(opp) {
     _later(() => {
         const m   = _parseUci(opp);
-        const san = formatSan(toAlgebraic(m.from, m.to, m.promo), turn);
+        const san = formatSanText(toAlgebraic(m.from, m.to, m.promo), turn);
         playMoveSound(m.from, m.to);
         animateNextMove(m.from, m.to);
         applyMove(m.from, m.to, m.promo);
@@ -663,7 +663,7 @@ function showTrainingSolution() {
         }
     }
     revealSolution(entry);
-    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer (aucune réussite comptée).');
+    setStatus(`Solution : ${formatSanText(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer (aucune réussite comptée).');
 }
 
 // ─── RÉPONSE DU JOUEUR ────────────────────────────────────────────────────────

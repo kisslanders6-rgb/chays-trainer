@@ -225,7 +225,7 @@ function renderFreqPanel() {
         else html += `<div class="freq-list" role="list">${rows.map(r => {
             const main = r.lichPct ?? r.ownPct;
             return `<button type="button" class="freq-row" role="listitem" data-action="freqPlay" data-arg="${r.uci}" title="Jouer ${escapeHtml(r.san)} pour l’adversaire">
-                <b>${escapeHtml(formatSan(r.san, playerColor === 'w' ? 'b' : 'w'))}</b>
+                <b>${formatSan(r.san, playerColor === 'w' ? 'b' : 'w')}</b>
                 <span class="freq-bar"><i style="width:${Math.max(2, Math.round(100 * main))}%"></i></span>
                 <span class="freq-num">${r.lichPct !== null ? `Lichess ${_pct(r.lichPct)}` : ''}${r.own ? `${r.lichPct !== null ? ' · ' : ''}vous ${r.own}×` : ''}</span>
                 <span class="freq-tag ${r.covered ? 'is-ok' : 'is-todo'}">${r.covered ? 'préparé' : 'à préparer'}</span>

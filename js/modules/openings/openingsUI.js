@@ -136,7 +136,7 @@ function _paintMovesBar(active) {
     let html = '';
     moveHistory.forEach((m, i) => {
         if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
-        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${escapeHtml(formatSan(m.san, i % 2 ? 'b' : 'w'))}</span> `;
+        html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${formatSan(m.san, i % 2 ? 'b' : 'w')}</span> `;
     });
     bar.innerHTML = html;
     const cur = bar.querySelector('.move-token.active');
@@ -281,7 +281,7 @@ function renderNavBoard() {
     // Barre de coups avec surbrillance du coup courant
     _paintMovesBar(navCursor);
     setStatus(atStart ? 'Navigation — position initiale.'
-                      : `Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${formatSan(snap.san, snap.turnBefore)}`, 'info');
+                      : `Navigation — coup ${navCursor + 1}/${moveHistory.length} : ${formatSanText(snap.san, snap.turnBefore)}`, 'info');
 }
 
 function resetNavCursor() {

@@ -45,7 +45,8 @@ function _settingRows() {
             { group: 'Échiquier', kind: 'toggle', key: 'legalDots', label: 'Montrer les coups possibles', hint: 'Points sur les cases accessibles à la pièce choisie.' },
             { group: 'Échiquier', kind: 'seg', key: 'anim', label: 'Animation des pièces', opts: [['off', 'Aucune'], ['fast', 'Rapide'], ['normal', 'Normale']] },
             { group: 'Pièces et flèches', kind: 'custom', label: 'Style des pièces', hint: () => _pieceCredit() + ' « Invisibles » masque les pièces pour s’entraîner à l’aveugle.', html: _piecesHTML, col: true },
-            { group: 'Pièces et flèches', kind: 'custom', label: 'Style des flèches', hint: 'Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.', html: _arrowsHTML, col: true }
+            { group: 'Pièces et flèches', kind: 'custom', label: 'Style des flèches', hint: 'Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.', html: _arrowsHTML, col: true },
+            { group: 'Pièces et flèches', kind: 'toggle', key: 'knightArrows', label: 'Flèches en L pour le cavalier', hint: 'Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.' }
         ],
         jeu: [
             { group: 'Pendant la partie', kind: 'seg', key: 'moveInput', label: 'Déplacer les pièces', opts: [['both', 'Glisser ou cliquer'], ['drag', 'Glisser'], ['click', 'Cliquer']] },
@@ -122,11 +123,14 @@ function _pieceCredit() {
 function _previewHTML() {
     const s = appSettings, out = s.coords && s.coordPos === 'out';
     const rows = ['rnbqkb.r', 'pppp.ppp', '.....n..', '....p...', '....P...', '.....N..', 'PPPP.PPP', 'RNBQKB.R'];
+    // Dernier coup (Cg1-f3), case choisie (f3) et ses coups possibles, flèche verte, flèche rouge (saut de cavalier) et cercle.
     const lastMove = s.lastMove ? [[5, 5], [7, 6]] : [];
     const legal = s.legalDots ? [[4, 7], [3, 6], [7, 6]] : [];
+    const sel = [5, 5];
     let html = '';
     rows.forEach((line, r) => line.split('').forEach((ch, c) => {
-        const cls = [(r + c) % 2 ? 'd' : '', lastMove.some(([a, b]) => a === r && b === c) ? 'lm' : '', ch === '.' && legal.some(([a, b]) => a === r && b === c) ? 'lg' : ''].filter(Boolean).join(' ');
+        const cls = [(r + c) % 2 ? 'd' : '', lastMove.some(([a, b]) => a === r && b === c) ? 'lm' : '', r === sel[0] && c === sel[1] ? 'sel' : '',
+                     ch === '.' && legal.some(([a, b]) => a === r && b === c) ? 'lg' : ''].filter(Boolean).join(' ');
         let inner = ch !== '.' ? pieceHTML(ch === ch.toUpperCase() ? ch : ch.toLowerCase()).replace('class="piece-svg"', '') : '';
         if (s.pieceSet === 'blindfold') inner = '';
         if (s.coords && r === 7) inner += `<b class="f">${'abcdefgh'[c]}</b>`;
@@ -135,12 +139,16 @@ function _previewHTML() {
     }));
     const set = PIECE_SETS[s.pieceSet] || PIECE_SETS[DEFAULT_PIECE_SET];
     const board = BOARD_LABELS[s.boardTheme] || '';
-    return `<div class="pn-preview"><div class="pn-board${out ? ' is-out' : ''}" aria-hidden="true">${html}</div>
+    const arrows = typeof drawArrows !== 'function' ? '' : `<svg class="pn-arrows" viewBox="0 0 8 8">${drawArrows({
+        style: s.arrowStyle, knight: s.knightArrows,
+        arrows: [{ from: 5, to: 26, color: 'green' }, { from: 45, to: 28, color: 'red' }], circles: [{ sq: 36, color: 'gold' }] })}</svg>`;
+    return `<div class="pn-preview"><div class="pn-board${out ? ' is-out' : ''}" aria-hidden="true">${html}${arrows}</div>
         <div class="pn-preview-notes"><b>${board} · ${set.label}</b><span>L’aperçu suit chacun des réglages de cette rubrique.</span>
         <span>Les couleurs de l’interface sont tirées des cases de l’échiquier.</span></div></div>`;
 }
 
-const BOARD_LABELS = { classic: 'Vert classique', leather: 'Cuir vert', wood: 'Bois chaud', ice: 'Bleu glace', night: 'Bleu nuit', violet: 'Violet', walnut: 'Noyer', stone: 'Pierre', hache: 'Hachuré' };
+const BOARD_LABELS = { classic: 'Sauge', leather: 'Cuir vert', wood: 'Bois chaud', ice: 'Bleu glace', night: 'Bleu nuit', violet: 'Violet', walnut: 'Noyer', stone: 'Pierre', hache: 'Hachuré',
+                       maple: 'Érable', marble: 'Marbre', tournament: 'Tournoi', cherry: 'Cerisier' };
 const _boardsHTML = () => `<div class="theme-options">${BOARD_THEMES.map(id =>
     `<button type="button" class="theme-opt${appSettings.boardTheme === id ? ' active' : ''}" data-board="${id}" data-pn="seg" data-key="boardTheme" data-v="${id}" aria-pressed="${appSettings.boardTheme === id}"><span class="theme-swatch"></span>${BOARD_LABELS[id]}</button>`).join('')}</div>`;
 const _piecesHTML = () => `<div class="theme-options">${PIECE_SET_IDS.map(id => { const s = PIECE_SETS[id];
@@ -211,7 +219,7 @@ function _sampleLine() {
     const m = _NOTATION_SAMPLE.split(' ');
     let out = '';
     m.forEach((san, i) => { if (i % 2 === 0) out += `${i / 2 + 1}. `; out += formatSan(san, i % 2 ? 'b' : 'w') + ' '; });
-    return escapeHtml(out.trim());
+    return out.trim();
 }
 
 // ─── Rendu d'une rangée et d'une rubrique ─────────────────────────────────────
@@ -277,10 +285,11 @@ function setPref(key, value) {
         case 'boardTheme': applyBoardTheme(); break;
         case 'pieceSet':
             applyPieceSet(); _redrawBoardViews();
+            refreshNotation();                                      // figurines du jeu actif (« Invisibles » : lettres)
             if (typeof initTraining === 'function') initTraining();
             if (typeof initEndgame === 'function') initEndgame();
             break;
-        case 'arrowStyle': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
+        case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
         case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion':
             applyDisplayPrefs(); break;
         case 'lastMove': _redrawBoardViews(); break;

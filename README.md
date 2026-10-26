@@ -9,6 +9,8 @@ Entraîneur d'échecs en français, sans dépendance ni étape de compilation : 
 - **Analyser mes parties** : récupère vos dernières parties Chess.com ou Lichess (pseudo, API publiques) ou un PGN collé ; chaque partie s'arrête sur le premier coup sorti du répertoire. Votre coup : erreur comptée sur la position (une fois par partie, sur tous les appareils). Coup adverse : nouveauté signalée. Déviation couverte par une réponse ajoutée après la partie : « Traitée depuis », rien de compté.
 - **Finales** : 43 exercices en six catégories (mats, pions, tours, dame, pièces mineures, Tour + Fou contre Tour). Les mats et les finales roi + pion sont jugés hors ligne par un calcul exact ; les autres par les tables Syzygy de Lichess (jusqu'à 7 pièces, réponses gardées sur l'appareil), ou par Stockfish au-delà (verdict « estimé »). L'adversaire calcule : « Résistance maximale » ou « Humain ». Les FEN et leurs verdicts se vérifient avec `node scripts/check-endgames.mjs`.
 - Une présentation en quatre écrans au premier lancement (relançable depuis Aide › Premiers pas).
+- **Apparence** : 13 échiquiers (dont Noyer, Érable, Marbre, Tournoi, Cerisier), 12 jeux de pièces, six styles de flèches ; les couleurs de l'interface sont tirées de l'échiquier, avec des contrastes vérifiés en clair et en sombre (`tests/theme.test.js`, page `tests/theme-matrix.html`).
+- **Compte** : connexion ou création de compte (e-mail ou Google), photo de profil ou l'un des 18 avatars.
 - Import et export **PGN** (notation standard : désambiguïsation, `+` et `#`) et **JSON**, corbeille de 30 jours, flèches et cercles au clic droit, ouverture de la position sur Lichess, mode hors ligne (PWA), synchronisation facultative entre appareils (Supabase).
 
 ## Lancer l'application
@@ -72,7 +74,7 @@ Une position est identifiée par « pièces trait roques passant » (`positionKe
 
 ## Synchronisation (facultative)
 
-1. Créez un projet Supabase, puis exécutez `supabase/schema.sql` dans l'éditeur SQL.
+1. Créez un projet Supabase, puis exécutez `supabase/schema.sql` dans l'éditeur SQL. Relancez-le après une mise à jour : il est sans risque à répéter, et la version d'octobre 2026 ajoute le seau privé `avatars` des photos de profil.
 2. Renseignez `url` et `anonKey` dans `js/core/cloudConfig.js`. Cette clé est publique : la sécurité repose sur les règles RLS du schéma. N'y mettez jamais la clé `service_role`.
 3. Pour vérifier la connexion, ouvrez `tests/cloud-smoke.html` (servi en HTTP).
 4. Authentication → URL Configuration : mettez l'adresse de l'application (ex. `https://chays-trainer.vercel.app`) en « Site URL » et dans « Redirect URLs ».

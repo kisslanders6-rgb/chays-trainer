@@ -16,13 +16,15 @@
 
 const SETTINGS_KEY    = 'chessTrainer_settings';
 const PREFS_KEY       = 'chessTrainer_prefs';
-const BOARD_THEMES    = ['classic', 'leather', 'wood', 'ice', 'night', 'violet', 'walnut', 'stone', 'hache'];
-const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', 'minimal-warmth', 'fantasy', 'kiwen-suwi', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
+const BOARD_THEMES    = ['classic', 'leather', 'wood', 'ice', 'night', 'violet', 'walnut', 'stone', 'hache', 'maple', 'marble', 'tournament', 'cherry'];
+const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', 'minimal-warmth', 'fantasy', 'kiwen-suwi', 'cburnett', 'california', 'cardinal', 'celtic', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
 const DEFAULT_PIECE_SET = 'maestro';
-const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille'];          // cf. annotations.js
-const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé' };
-const AVATAR_GLYPHS   = ['initial', 'k', 'q', 'r', 'b', 'n'];
-const AVATAR_COLORS   = ['sapin', 'noyer', 'nuit', 'ardoise', 'prune', 'ivoire'];
+const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille', 'lichess', 'pinceau', 'fine'];          // cf. annotations.js
+const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé', lichess: 'Lichess', pinceau: 'Pinceau', fine: 'Fine' };
+// 18 avatars : 2 monogrammes, les 6 pièces du jeu actif, 10 pictogrammes au trait (icons.js, « av-… »).
+const AVATAR_GLYPHS   = ['initial', 'initials', 'k', 'q', 'r', 'b', 'n', 'p',
+                         'av-crown', 'av-star', 'av-flame', 'av-leaf', 'av-moon', 'av-bolt', 'av-compass', 'av-mountain', 'av-owl', 'av-fox'];
+const AVATAR_COLORS   = ['theme', 'sapin', 'noyer', 'nuit', 'ardoise', 'prune', 'ivoire'];      // theme : couleurs de l'échiquier actif
 
 const _oneOf = list => v => list.includes(v);
 const _bool  = v => typeof v === 'boolean';
@@ -33,6 +35,7 @@ const SYNCED_PREFS = {
     boardTheme: { ok: _oneOf(BOARD_THEMES),    def: 'walnut' },
     pieceSet:   { ok: _oneOf(PIECE_SET_IDS),   def: DEFAULT_PIECE_SET },
     arrowStyle: { ok: _oneOf(ARROW_STYLE_IDS), def: ARROW_STYLE_IDS[0] },
+    knightArrows: { ok: _bool, def: true },                                             // saut de cavalier en « L »
     // Échiquier
     coords:     { ok: _bool, def: true },
     coordPos:   { ok: _oneOf(['in', 'out']), def: 'in' },
@@ -68,6 +71,7 @@ const SYNCED_PREFS = {
     pseudo:      { ok: _text(24), def: '' },
     avatarGlyph: { ok: _oneOf(AVATAR_GLYPHS), def: 'initial' },
     avatarColor: { ok: _oneOf(AVATAR_COLORS), def: 'sapin' },
+    avatarPhoto: { ok: v => v === '' || /^[0-9a-f-]{36}\/avatar-\d{10,15}\.webp$/.test(v), def: '' },   // chemin dans le seau « avatars » (avatarPhoto.js)
     elo:         { ok: v => v === '' || (/^\d{3,4}$/.test(v)), def: '' },
     lichessUser: { ok: _text(40), def: '' },
     chesscomUser:{ ok: _text(40), def: '' },
@@ -121,7 +125,7 @@ function loadSettings() {
 }
 
 // Défauts Noyer + Maestro (octobre 2026) réservés aux nouvelles installations : une installation qui a déjà
-// des données et n'a jamais choisi d'échiquier ou de pièces garde les anciens défauts (Vert classique + Merida),
+// des données et n'a jamais choisi d'échiquier ou de pièces garde les anciens défauts (Sauge, id classic, + Merida),
 // écrits explicitement et datés de 0 pour qu'un choix déjà présent sur le compte l'emporte. Une seule fois.
 const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults';
 (function keepOldLookDefaults() {

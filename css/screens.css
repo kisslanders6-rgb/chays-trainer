@@ -38,7 +38,6 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 .st-rep { min-width: 0; }
-.st-seg .seg-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; white-space: nowrap; }
 .st-info-btn { margin-left: auto; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 1.5px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text-muted); cursor: pointer; box-shadow: var(--shadow-sm); }
 .st-info-btn .ico { width: 17px; height: 17px; }
 .st-info-btn[aria-expanded="true"] { color: var(--text); border-color: var(--board-accent); }
@@ -203,8 +202,11 @@
 .st-reg-kpis div { display: flex; flex-direction: column; }
 .st-reg-kpis b { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .st-reg-kpis span { font-size: 12px; color: var(--text-muted); }
-.st-heat { display: grid; grid-template-columns: 0 repeat(7, minmax(0, 1fr)); gap: 4px; }
-.st-heat-d { font-family: var(--font-note); font-size: 9.5px; color: var(--text-dim); text-align: center; }
+/* Calendrier : une colonne par semaine (lundi en haut), la semaine en cours à droite ; défile s'il manque de place */
+.st-heat-scroll { overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.st-heat-scroll::-webkit-scrollbar { display: none; }
+.st-heat { display: grid; grid-template-rows: repeat(7, 18px); grid-auto-flow: column; grid-auto-columns: 18px; gap: 4px; width: max-content; margin-left: auto; }
+.st-heat-d { font-family: var(--font-note); font-size: 9.5px; line-height: 18px; color: var(--text-dim); text-align: center; }
 .st-heat i, .st-heat-leg i { aspect-ratio: 1; border-radius: 4px; background: var(--bg-inset); }
 .st-heat i.h1, .st-heat-leg i.h1 { background: color-mix(in srgb, var(--board-accent) 30%, var(--bg-inset)); }
 .st-heat i.h2, .st-heat-leg i.h2 { background: color-mix(in srgb, var(--board-accent) 60%, var(--bg-inset)); }
@@ -235,8 +237,8 @@
     .st-rep .dd-label { display: none; }
     .st-rep .dd-value { max-width: 96px; }
     .st-seg { flex: 1 1 auto; min-width: max-content; }
-    .st-seg .seg-btn { flex: 1; justify-content: center; padding: 7px 5px; font-size: 12.5px; }
-    .st-seg .glyph { display: none; }
+    .st-seg .cs { width: 100%; }
+    .st-seg .cs-opt { padding: 7px 4px; font-size: 12.5px; }
     .st-info-btn { margin-left: 0; }
     .st-big b { font-size: 46px; }
 }
@@ -444,4 +446,30 @@
 @media (prefers-reduced-motion: reduce) {
     .egv-ring, .egv-node, .st-line-meta .ico { transition: none; }
     @media (hover: hover) { .egv-node:hover .egv-ring { transform: none; } }
+}
+
+/* ─── Statistiques sur téléphone (requête de conteneur sur l'onglet) ───
+   Trois chiffres en tête, onglets collants Aperçu / Ouvertures / Régularité, ouvertures limitées à 5. */
+#home-tab-stats { container: stats / inline-size; }
+.st-phone { display: none; }
+.st-line-pos { width: 132px; margin: 6px 0 4px; }
+@container stats (max-width: 599px) {
+    .st-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .st-kpis div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+    .st-kpis b { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .st-kpis span { font-size: 11.5px; color: var(--text-muted); }
+    .st-tabs { display: flex; position: sticky; top: calc(var(--topnav-h) + 104px); z-index: 40; gap: 2px; padding: 3px; margin-top: -14px;
+               border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--bg) 92%, transparent);
+               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .st-tab { flex: 1; padding: 8px 4px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .st-tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .st-tab:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 1px; }
+    .st-more.st-phone { display: block; }
+    .st-body.pane-overview [data-pane]:not([data-pane="overview"]),
+    .st-body.pane-openings [data-pane]:not([data-pane="openings"]),
+    .st-body.pane-regularity [data-pane]:not([data-pane="regularity"]) { display: none; }
+    .st-body.pane-overview .st-main, .st-body.pane-openings .st-main { display: flex; }
+    .st-body.pane-regularity .st-main { display: none; }
+    .st-lines.is-capped > .st-line:nth-child(n+6) { display: none; }
+    .st-side { position: static; }
 }

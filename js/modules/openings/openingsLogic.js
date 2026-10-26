@@ -35,7 +35,7 @@ function formatLinePrefix(sans) {
     let out = '';
     sans.forEach((san, i) => {
         if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
-        out += formatSan(san, i % 2 ? 'b' : 'w') + ' ';
+        out += formatSanText(san, i % 2 ? 'b' : 'w') + ' ';
     });
     return out.trim();
 }
@@ -253,7 +253,7 @@ function executeOpponentMove(from, to, promo) {
         }
         promo = null;
     }
-    const san = formatSan(toAlgebraic(from, to, promo), turn);
+    const san = formatSanText(toAlgebraic(from, to, promo), turn);
     if (recordOppReply(positionKey(), moveToStr(from, to, promo))) saveOpp();   // réponse adverse connue
     _commitMove(from, to, promo, null, `Adversaire : ${san}`, 'info', 'À vous de répondre.');
     // Position déjà au répertoire mais atteinte par un autre ordre de coups : la réponse mémorisée s'applique.
@@ -300,7 +300,7 @@ function executePlayerMove(from, to, promo) {
         openingDB[key] = newEntry(movStr, san, pathNow.concat(movStr));
         saveDB();
         noteChange(1);
-        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${formatSan(san, turn)}`, 'new');
+        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${formatSanText(san, turn)}`, 'new');
 
     } else if (_solutionKey === key) {
         if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info');
@@ -367,7 +367,7 @@ function showSolution() {
     if (!entry || turn !== playerColor) return;
     _solutionKey = key;
     revealSolution(entry);
-    setStatus(`Solution : ${formatSan(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer.');
+    setStatus(`Solution : ${formatSanText(entry.san, turn)}`, 'hint', 'Jouez-le pour continuer.');
 }
 
 // Surligne le coup de `entry` (pièce + case d'arrivée) avec le halo doré.

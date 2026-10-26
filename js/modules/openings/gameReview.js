@@ -91,7 +91,9 @@ function _deviationAt(uci, ply, color, db, opp, playedAt) {
 // chessTrainer_gameLedger : identifiant de partie → {
 //   src     : 'lichess' | 'chesscom' | 'pgn' · at : date de la partie (0 : inconnue)
 //   first / last : première et dernière analyse
-//   v       : { 'rép|couleur': { kind, ply, by, at } }   verdict de la dernière analyse
+//   vs      : adversaire (en-têtes White / Black)
+//   v       : { 'rép|couleur': { kind, ply, by, at, path? } }   verdict de la dernière analyse ; path (coups UCI) :
+//             nouveauté ou hors répertoire, la position où ma réponse manque (accueil : « Nouveautés à traiter »)
 //   counted : { 'rép|couleur': { at } } }                 erreur comptée : une seule fois, sur tous les appareils
 // L'ancienne liste chessTrainer_reviewedGames (signatures, propre à l'appareil) reste lue pour ne rien recompter.
 
@@ -195,8 +197,12 @@ function reviewGame(game, color, rep, base, ledger) {
     entry.v = entry.v || {};
     entry.counted = entry.counted || {};
     if (!entry.at && at) entry.at = at;
+    const vs = color === 'w' ? game.headers.Black : game.headers.White;
+    if (vs && vs !== '?') entry.vs = String(vs).slice(0, 40);
     entry.last = now;
     entry.v[scope] = { kind, ply, by, at: now };
+    if (kind === 'novelty' || kind === 'out')      // position où ma réponse manque : après le coup adverse, ou avant le mien
+        entry.v[scope].path = r.moves.slice(0, kind === 'novelty' ? ply + 1 : ply).map(m => m.uci);
     if (counted === 'counted') entry.counted[scope] = { at: now };
     return { r, kind, counted, prev: pv ? { first: g.first, kind: pv.kind } : null,
              answer: ans ? { key: answerKey, san: ans.san } : null, ply, by };
@@ -221,11 +227,7 @@ function closeGameReview() {
 function setReviewColor(c) { _reviewColor = c; _paintReviewColor(); }
 
 function _paintReviewColor() {
-    ['w', 'b'].forEach(c => {
-        const b = document.getElementById('review-seg-' + c);
-        b.classList.toggle('active', c === _reviewColor);
-        b.setAttribute('aria-pressed', c === _reviewColor);
-    });
+    ColorScope.render(document.getElementById('review-color'), { options: ['w', 'b'], value: _reviewColor, onChange: setReviewColor, label: 'Ma couleur dans cette partie' });
 }
 
 // Couleur jouée dans la partie par l'un de vos pseudos (profil, dernier pseudo des parties en ligne), sinon null.
@@ -236,7 +238,7 @@ function _profileColor(headers) {
     return null;
 }
 
-const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${formatSan(san, ply % 2 ? 'b' : 'w')}`;
+const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${formatSanText(san, ply % 2 ? 'b' : 'w')}`;
 
 function runGameReview() {
     const out  = document.getElementById('review-result');
@@ -281,7 +283,7 @@ function showReviewResult(res) {
     if (res.kind === 'theory') {
         setStatus('✓ Partie 100 % théorique', 'ok', `${seen}Aucun coup n'est sorti du répertoire (${r.moves.length} demi-coups).${illegal}`);
     } else if (res.kind === 'treated') {
-        const ans = res.answer ? formatSan(res.answer.san, res.answer.key.split(' ')[1] === 'b' ? 'b' : 'w') : 'une réponse';
+        const ans = res.answer ? formatSanText(res.answer.san, res.answer.key.split(' ')[1] === 'b' ? 'b' : 'w') : 'une réponse';
         setStatus(`✓ Traitée depuis : ${at}`, 'ok',
             seen + (res.by === 'opp' ? `Ce coup vous avait sorti de votre préparation. ` : `Votre répertoire n'avait pas encore de réponse ici. `)
             + `Vous avez ajouté ${ans} depuis : rien n'est compté.${illegal}`);
