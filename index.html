@@ -28,6 +28,8 @@
             try {       // thème d'échiquier dès la première image : le logo et l'accueil en dérivent (settings.js le revalide)
                 var p = JSON.parse(localStorage.getItem('chessTrainer_prefs') || '{}') || {}, s = JSON.parse(localStorage.getItem('chessTrainer_settings') || '{}') || {};
                 var b = (p.boardTheme && p.boardTheme.v) || s.boardTheme;
+                // Aucun choix : Noyer pour une nouvelle installation (une installation antérieure garde ses défauts, cf. settings.js)
+                if (!b && (localStorage.getItem('chessTrainer_looksDefaults') || !(localStorage.getItem('chessTrainer_repertoires') || localStorage.getItem('chessTrainer_settings')))) b = 'walnut';
                 if (typeof b === 'string' && /^[a-z]+$/.test(b)) d.setAttribute('data-board', b);
             } catch (e) {}
             try {
@@ -439,6 +441,7 @@
                         <button class="tr-seg-btn" id="review-seg-w" onclick="setReviewColor('w')"><span class="glyph" data-glyph="K"></span> Blancs</button>
                         <button class="tr-seg-btn" id="review-seg-b" onclick="setReviewColor('b')"><span class="glyph" data-glyph="k"></span> Noirs</button>
                     </div>
+                    <small style="color:var(--text-dim)">Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.</small>
                 </div>
                 <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
                 <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runGameReview()">Analyser la partie</button>

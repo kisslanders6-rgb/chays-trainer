@@ -47,7 +47,7 @@ const STATS_LEVELS = {
 };
 const STATS_LEVEL_ORDER = Object.keys(STATS_LEVELS);
 
-let statsColor  = 'w';       // 'w' | 'b' | 'all'
+let statsColor  = 'all';     // 'w' | 'b' | 'all' ; « Les deux » à chaque lancement
 let statsFilter = 'all';     // 'all' ou un niveau
 let statsSort   = 'weak';    // 'weak' | 'due' | 'order' | 'size'
 let statsOpen   = null;      // ouvertures dépliées (Set de clés) ; null : la plus fragile s'ouvre

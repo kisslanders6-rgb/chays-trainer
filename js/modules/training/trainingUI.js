@@ -14,7 +14,7 @@
 
 const TRAIN_SECONDS_PER_POSITION = 30;      // pour la durée estimée de la séance
 const TRAIN_WEAK_MAX   = 20;                // positions par séance « Points faibles » / « À confirmer »
-let _trColor   = null;                      // 'mix' | 'w' | 'b' ; null : choisi d'après les positions
+let _trColor   = 'mix';                     // 'mix' | 'w' | 'b' ; « Les deux » à chaque lancement
 let _trLineOpen = false;                    // liste des ouvertures (Ligne complète) dépliée
 
 const _trSides = () => _trColor === 'mix' ? ['w', 'b'] : [_trColor];
@@ -108,7 +108,7 @@ function initTraining() {
 
     const has = c => Object.keys(readDBFor(currentRepertoire, c)).length > 0;
     const sides = ['w', 'b'].filter(has);
-    if (!_trColor || (_trColor !== 'mix' && !has(_trColor) && sides.length)) _trColor = sides.length === 1 ? sides[0] : 'mix';
+    if (_trColor !== 'mix' && !has(_trColor) && sides.length) _trColor = 'mix';      // la couleur choisie n'a rien à réviser
 
     // Barre de contexte
     ['w', 'b', 'mix'].forEach(c => {

@@ -18,10 +18,22 @@ function boot(store = {}) {
     return ctx;
 }
 
-t('appareil neuf : valeurs par défaut, rien n\'est écrit', () => {
+t('appareil neuf : Noyer + Maestro par défaut, rien n\'est écrit', () => {
     const c = boot();
-    assert.strictEqual(c.run('appSettings.pieceSet'), 'merida');
+    assert.strictEqual(c.run('appSettings.pieceSet'), 'maestro');
+    assert.strictEqual(c.run('appSettings.boardTheme'), 'walnut');
     assert.strictEqual(c.prefs(), null);
+});
+
+t('installation existante sans choix d\'apparence : anciens défauts gardés, datés de 0, une seule fois', () => {
+    const c = boot({ chessTrainer_repertoires: '["Général"]' });
+    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'classic', at: 0 }, pieceSet: { v: 'merida', at: 0 } });
+    assert.strictEqual(c.run('appSettings.boardTheme'), 'classic');
+    const d = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_prefs: JSON.stringify({ pieceSet: { v: 'chrome', at: 4 } }) });
+    assert.deepStrictEqual(d.prefs(), { pieceSet: { v: 'chrome', at: 4 }, boardTheme: { v: 'classic', at: 0 } });   // choix existant respecté
+    const e = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_looksDefaults: '2026-10' });
+    assert.strictEqual(e.prefs(), null);                                   // déjà passé : nouvelle installation après coup
+    assert.strictEqual(e.run('appSettings.boardTheme'), 'walnut');
 });
 
 t('migration : les choix existants deviennent des préférences datées de 0', () => {

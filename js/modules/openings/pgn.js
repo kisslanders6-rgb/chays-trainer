@@ -40,7 +40,9 @@ function _pgnTokenize(text) {
         i = j;
         if (/^\$\d+$/.test(w)) continue;                          // NAG
         if (['1-0', '0-1', '1/2-1/2', '*'].includes(w)) { toks.push({ type: 'result' }); continue; }
-        w = w.replace(/^\d+(\.{1,3}|…)/, '').replace(/^\.+/, '').replace(/[!?]+$/, '');
+        const num = /^(\d+)(\.{1,3}|…)/.exec(w);                   // numéro de coup : « 12. » blanc, « 12... » / « 12… » noir
+        if (num) { toks.push({ type: 'num', n: Number(num[1]), black: num[2].length > 1 }); w = w.slice(num[0].length); }
+        w = w.replace(/^\.+/, '').replace(/[!?]+$/, '');
         if (w.length >= 2 && /^[A-Za-z0-9-]/.test(w)) toks.push({ type: 'move', san: w });
     }
     return toks;
@@ -65,13 +67,31 @@ function _pgnSplitGames(toks) {
 }
 
 // Arbre : une ligne = [{ san, vars: [ligne, ...] }] ; vars = alternatives au coup concerné.
-function _pgnParseLine(toks, ptr, top) {
+// start : demi-coup du premier coup de la ligne (0 = premier coup blanc).
+// Variante implicite : un numéro de coup qui revient en arrière (« 12. Cf3 Cd7 12... Cf6 ») ouvre une
+// variante à cet endroit, comme si « (12... Cf6 …) » avait été écrit. Elle se termine à la parenthèse
+// fermante englobante (non consommée), à un numéro qui remonte avant son début, ou à la fin de la partie.
+// Elle est marquée implicit = true. Un numéro en avance sur la ligne est ignoré.
+function _pgnParseLine(toks, ptr, top, start = 0, implicit = false) {
     const moves = [];
     while (ptr.i < toks.length) {
-        const t = toks[ptr.i++];
+        const t = toks[ptr.i];
+        if (t.type === 'num') {
+            const at = 2 * (t.n - 1) + (t.black ? 1 : 0) - start;
+            if (at < 0 && !top) return moves;                    // remonte avant cette ligne : rendue à la ligne parente
+            ptr.i++;
+            if (at >= 0 && at < moves.length) {
+                const sub = _pgnParseLine(toks, ptr, false, start + at, true);
+                sub.implicit = true;
+                if (sub.length) moves[at].vars.push(sub);
+            }
+            continue;
+        }
+        if (t.type === ')' && implicit) return moves;
+        ptr.i++;
         if (t.type === 'move') moves.push({ san: t.san, vars: [] });
         else if (t.type === '(') {
-            const sub = _pgnParseLine(toks, ptr, false);
+            const sub = _pgnParseLine(toks, ptr, false, start + Math.max(0, moves.length - 1));
             if (moves.length) moves[moves.length - 1].vars.push(sub);
         } else if (t.type === ')' && !top) return moves;
     }
@@ -160,7 +180,11 @@ function _walkPgnLine(line, startPath, ctx) {
             else { _applyUciRaw(uci); nextPath = path.concat(uci); after = _engineState(); }
         }
         // Variantes : alternatives à CE coup, jouées depuis la position d'avant.
-        mv.vars.forEach(v => { _restoreEngine(before); _walkPgnLine(v, path, ctx); });
+        mv.vars.forEach(v => {
+            if (v.implicit) ctx.implicit.push({ path: path.slice(), san: v[0].san });
+            _restoreEngine(before);
+            _walkPgnLine(v, path, ctx);
+        });
         if (stop) break;
         _restoreEngine(after);
         path = nextPath;
@@ -169,7 +193,7 @@ function _walkPgnLine(line, startPath, ctx) {
 }
 
 function importPgnText(text) {
-    const ctx = { added: 0, same: 0, branches: 0, conflicts: [], conflictKeys: new Set(), errors: [], skipped: 0, games: 0, healed: false };
+    const ctx = { added: 0, same: 0, branches: 0, conflicts: [], conflictKeys: new Set(), errors: [], implicit: [], skipped: 0, games: 0, healed: false };
     const games = _pgnSplitGames(_pgnTokenize(text));
     _withEngineSnapshot(() => {
         games.forEach(g => {
@@ -247,6 +271,12 @@ function runPgnImport() {
     }
     if (r.same)    html += `<div class="pgn-line">${pl(r.same, 'coup déjà connu', 'coups déjà connus')} (ignoré${r.same > 1 ? 's' : ''}).</div>`;
     if (r.skipped) html += `<div class="pgn-line">${pl(r.skipped, 'partie ignorée', 'parties ignorées')} (position de départ personnalisée).</div>`;
+    if (r.implicit.length) {
+        html += `<div class="pgn-note info">${ico('info')} ${pl(r.implicit.length, 'variante implicite reconnue', 'variantes implicites reconnues')} (numéro de coup qui revient en arrière, lu comme une variante) :</div><ul class="pgn-list">`;
+        r.implicit.slice(0, 8).forEach(v => { html += `<li>${escapeHtml(_pgnLineLabel(v.path, ''))}<strong>${escapeHtml(formatSan(v.san, v.path.length % 2 ? 'b' : 'w'))}</strong></li>`; });
+        if (r.implicit.length > 8) html += `<li>… et ${r.implicit.length - 8} autre(s)</li>`;
+        html += '</ul>';
+    }
     if (r.conflicts.length) {
         html += `<div class="pgn-note warn">${ico('alert-triangle')} ${pl(r.conflicts.length, 'conflit', 'conflits')} : votre coup déjà enregistré a été conservé, la suite de la ligne n'a pas été importée.</div><ul class="pgn-list">`;
         r.conflicts.slice(0, 10).forEach(c => {

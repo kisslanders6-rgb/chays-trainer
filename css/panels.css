@@ -40,6 +40,8 @@
 .pn-badge { width: 8px; height: 8px; border-radius: 50%; background: var(--err); font-size: 0; flex: none; }
 
 .pn-content { overflow-y: auto; padding: 22px 26px 30px; display: flex; flex-direction: column; gap: 10px; outline: none; overscroll-behavior: contain; }
+/* Les blocs gardent leur hauteur : c'est le panneau qui défile (sans cela, un volet en overflow: hidden est écrasé). */
+.pn-content > * { flex-shrink: 0; }
 .pn-h { margin: 14px 0 2px; font-family: var(--font-note); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
 .pn-h:first-child { margin-top: 0; }
 .pn-lede { margin: 0 0 4px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); max-width: 62ch; }

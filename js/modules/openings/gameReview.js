@@ -129,6 +129,14 @@ function _paintReviewColor() {
     });
 }
 
+// Couleur jouée dans la partie par l'un de vos pseudos (profil, dernier pseudo des parties en ligne), sinon null.
+function _profileColor(headers) {
+    const names = [typeof appSettings !== 'undefined' && appSettings.lichessUser, typeof appSettings !== 'undefined' && appSettings.chesscomUser,
+                   typeof _onlinePrefs === 'function' && _onlinePrefs().user].filter(Boolean);
+    for (const u of names) { const c = _userColor(headers, u); if (c) return c; }
+    return null;
+}
+
 const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${formatSan(san, ply % 2 ? 'b' : 'w')}`;
 
 function runGameReview() {
@@ -140,6 +148,8 @@ function runGameReview() {
     if (game.headers.FEN && game.headers.FEN.split(' ')[0] !== INIT_FEN.split(' ')[0]) {
         note('err', 'Cette partie commence depuis une position personnalisée : elle ne peut pas être comparée au répertoire.'); return;
     }
+    const auto = _profileColor(game.headers);                          // votre pseudo figure dans la partie : sa couleur l'emporte
+    if (auto && auto !== _reviewColor) setReviewColor(auto);
 
     const same = _reviewColor === playerColor && _gameScreenShown() && gameMode === 'play';   // base en mémoire à jour
     const r = detectDeviation(game.sans, _reviewColor, same ? openingDB : readDBFor(currentRepertoire, _reviewColor),
