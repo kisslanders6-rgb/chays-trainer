@@ -186,6 +186,22 @@ function analysisPositionChanged() {
     renderAnalysisPanel();
 }
 
+// Lichess écrit le roque « roi prend sa tour » (e1h1) : converti en coup du roi (e1g1), comme le moteur local.
+function _anCastleFix(fen, moves) {
+    let pos = Chess.fromFen(fen);
+    const out = [];
+    for (const u of moves) {
+        let m = u;
+        const from = squareToIdx(u.slice(0, 2)), to = squareToIdx(u.slice(2, 4));
+        const p = pos.board[from], q = pos.board[to];
+        if (p && q && p.toUpperCase() === 'K' && q.toUpperCase() === 'R' && (p === 'K') === (q === 'R'))
+            m = u.slice(0, 2) + (to % 8 > from % 8 ? 'g' : 'c') + u[1];
+        try { pos = Chess.play(pos, m); } catch (e) { break; }
+        out.push(m);
+    }
+    return out;
+}
+
 // Évaluation déjà calculée par Lichess (scores du point de vue des Blancs, comme le moteur local).
 function _anCloud(fen) {
     analysis.cloud = null;
@@ -196,7 +212,7 @@ function _anCloud(fen) {
         .then(d => {
             if (!d || analysis.cloudFen !== fen || gameMode !== 'analysis') return;
             analysis.cloud = (d.pvs || []).map((p, i) => ({
-                multipv: i + 1, depth: d.depth, wdl: null, pv: (p.moves || '').split(' ').filter(Boolean),
+                multipv: i + 1, depth: d.depth, wdl: null, pv: _anCastleFix(fen, (p.moves || '').split(' ').filter(Boolean)),
                 score: p.mate !== undefined ? { mate: p.mate } : { cp: p.cp }
             })).filter(l => l.pv.length);
             _anPaintEngine();
@@ -271,7 +287,7 @@ function _anPaintEngine() {
     const st = Engine.status(), info = Engine.info();
     const { lines, cloud } = _anShownLines();
     const depth = lines[0] ? lines[0].depth : 0;
-    const name = info ? `Stockfish ${info.version.split('.')[0]}` : 'Stockfish';
+    const name = info ? `Stockfish ${info.version.split('.')[0]} ${info.net === 'full' ? 'complet' : 'léger'}` : 'Stockfish';
     const state = !analysis.running ? 'arrêté'
                 : st === 'loading' ? 'chargement…'
                 : st === 'error' ? 'indisponible'
@@ -284,7 +300,7 @@ function _anPaintEngine() {
         </div>`).join('');
     const empty = !analysis.running ? '<p class="an-empty">Moteur arrêté. Lancez-le pour voir les meilleurs coups.</p>'
                 : st === 'error' ? `<p class="an-empty">Le moteur n’a pas pu démarrer (${escapeHtml(Engine.error())}).</p>`
-                : st === 'loading' ? '<p class="an-empty">Téléchargement du moteur (environ 1,8 Mo, une seule fois)…</p>' : '';
+                : st === 'loading' ? `<p class="an-empty">${appSettings.engineNet === 'full' ? 'Chargement du moteur complet…' : 'Chargement du moteur (environ 1,8 Mo la première fois)…'}</p>` : '';
     box.innerHTML = `<div class="an-h"><b>${ico('cpu')} ${name}</b><small>${state}</small>
             <button type="button" class="an-toggle${analysis.running ? ' is-on' : ''}" data-action="analysisToggleEngine" aria-pressed="${analysis.running}">${analysis.running ? 'Arrêter' : 'Lancer'}</button></div>
         <div class="an-lines">${rows || empty}</div>`;

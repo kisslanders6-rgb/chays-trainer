@@ -68,6 +68,9 @@ function _settingRows() {
         ],
         moteur: [
             { group: null, kind: 'custom', html: _engineInfoHTML, search: 'stockfish moteur version licence', col: true },
+            { group: 'Moteur', kind: 'seg', key: 'engineNet', label: 'Réseau neuronal', hint: 'Complet : nettement plus fort, mais 99 Mo à télécharger une fois et plus de mémoire. Réglage propre à cet appareil.',
+              opts: [['lite', 'Léger · 1,8 Mo'], ['full', 'Complet · 99 Mo']] },
+            { group: 'Moteur', kind: 'custom', html: _fullEngineHTML, search: 'télécharger moteur complet supprimer', col: true },
             { group: 'Calcul', kind: 'seg', key: 'engineLines', label: 'Lignes calculées', hint: 'Meilleurs coups affichés en même temps (MultiPV).', opts: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] },
             { group: 'Calcul', kind: 'seg', key: 'engineDepth', label: 'Profondeur', hint: 'Le calcul s’arrête à cette profondeur (en demi-coups).', opts: [[20, '20'], [25, '25'], [30, '30'], [40, '40'], [0, 'Sans limite']] },
             { group: 'Calcul', kind: 'seg', key: 'engineTime', label: 'Temps par position', hint: 'Arrêt au bout de ce temps, même si la profondeur n’est pas atteinte.', opts: [[0, 'Sans limite'], [5, '5 s'], [10, '10 s'], [30, '30 s']] },
@@ -142,6 +145,54 @@ const _piecesHTML = () => `<div class="theme-options">${PIECE_SET_IDS.map(id => 
     return `<button type="button" class="theme-opt piece-opt${appSettings.pieceSet === id ? ' active' : ''}" data-piece="${id}" data-pn="seg" data-key="pieceSet" data-v="${id}" aria-pressed="${appSettings.pieceSet === id}"><span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`; }).join('')}</div>`;
 const _arrowsHTML = () => typeof arrowStylePreview !== 'function' ? '' : `<div class="theme-options">${ARROW_STYLE_IDS.map(id =>
     `<button type="button" class="theme-opt arrow-opt${appSettings.arrowStyle === id ? ' active' : ''}" data-arrow="${id}" data-pn="seg" data-key="arrowStyle" data-v="${id}" aria-pressed="${appSettings.arrowStyle === id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join('')}</div>`;
+// Moteur complet : état du téléchargement (gardé hors de la fenêtre : il continue si on la ferme).
+const _fullDl = { state: null, job: null, got: 0, total: 0, error: '' };       // state : null (inconnu) | 'absent' | 'ready'
+const _mo = n => `${Math.round(n / 1e6)} Mo`;                         // mégaoctets décimaux, comme « 99 Mo » ailleurs
+
+function _fullEngineHTML() {
+    if (typeof Engine === 'undefined') return '';
+    if (_fullDl.state === null) { Engine.full.status().then(s => { _fullDl.state = s; if (SettingsPanel.isOpen()) SettingsPanel.refresh(); }).catch(() => {}); return ''; }
+    const err = _fullDl.error ? `<p class="pn-dl-err">${PanelKit.esc(_fullDl.error)}</p>` : '';
+    if (_fullDl.job) {
+        const pct = _fullDl.total ? Math.round(100 * _fullDl.got / _fullDl.total) : 0;
+        return `<div class="pn-dl"><b>Téléchargement du moteur complet</b>
+            <progress id="full-dl-bar" max="100" value="${pct}"></progress>
+            <small id="full-dl-text">${_mo(_fullDl.got)} sur ${_mo(_fullDl.total)}</small>
+            <div class="pn-actions">${PanelKit.button('Annuler', 'fullCancel', { icon: 'x' })}</div></div>`;
+    }
+    if (_fullDl.state === 'ready') {
+        return `<div class="pn-dl"><b>Moteur complet téléchargé (${_mo(_fullDl.total || 99e6)}), disponible hors ligne.</b>
+            <small>${appSettings.engineNet === 'full' ? 'Il est utilisé pour l’analyse.' : 'Choisissez « Complet » ci-dessus pour l’utiliser.'}</small>
+            <div class="pn-actions">${PanelKit.button('Supprimer le moteur complet', 'fullRemove', { icon: 'trash' })}</div>${err}</div>`;
+    }
+    if (appSettings.engineNet !== 'full') return err;
+    const save = typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData;
+    return `<div class="pn-dl"><b>Pas encore téléchargé : l’analyse utilise le réseau léger en attendant.</b>
+        <small>Environ 99 Mo, une seule fois, depuis unpkg.com ; le fichier est vérifié avant d’être gardé.${save ? ' Votre appareil économise les données : préférez le Wi-Fi.' : ''}</small>
+        <div class="pn-actions">${PanelKit.button('Télécharger (99 Mo)', 'fullDownload', { primary: true, icon: 'download' })}</div>${err}</div>`;
+}
+
+function _fullDownload() {
+    if (_fullDl.job || typeof Engine === 'undefined') return;
+    _fullDl.error = '';
+    _fullDl.got = 0;
+    let last = 0;
+    _fullDl.job = Engine.full.download((got, total) => {
+        _fullDl.got = got; _fullDl.total = total;
+        if (Date.now() - last < 200) return;
+        last = Date.now();
+        const bar = document.getElementById('full-dl-bar'), txt = document.getElementById('full-dl-text');
+        if (bar) bar.value = Math.round(100 * got / total);
+        if (txt) txt.textContent = `${_mo(got)} sur ${_mo(total)}`;
+    });
+    Engine.full.size().then(n => { _fullDl.total = n; });
+    _fullDl.job.done
+        .then(() => { _fullDl.state = 'ready'; if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged('engineNet'); })
+        .catch(e => { _fullDl.error = e.message === 'annulé' ? '' : `Téléchargement impossible : ${e.message}. Le réseau léger reste utilisé.`; })
+        .finally(() => { _fullDl.job = null; if (SettingsPanel.isOpen()) SettingsPanel.refresh(); });
+    SettingsPanel.refresh();
+}
+
 // Moteur : version et mode de calcul une fois chargé, sinon ce qui se passera au premier usage.
 function _engineInfoHTML() {
     const i = typeof Engine !== 'undefined' ? Engine.info() : null;
@@ -235,6 +286,8 @@ function setPref(key, value) {
         case 'dailyGoal': if (typeof renderHomeSummary === 'function') renderHomeSummary(); if (typeof initTraining === 'function') initTraining(); break;
         case 'sound': case 'volume': _copyLooksToPrefs(); break;
         case 'backupReminder': if (typeof updateBackupIndicators === 'function') updateBackupIndicators(); break;
+        case 'engineNet': if (typeof Engine !== 'undefined') Engine.reload();
+            if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged(key); break;
         case 'engineLines': case 'engineDepth': case 'engineTime': case 'engineEval': case 'engineArrows': case 'engineThreads': case 'engineHash': case 'cloudEval':
             if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged(key); break;
     }
@@ -265,6 +318,9 @@ const SettingsPanel = PanelKit.create({
         if (kind === 'act') {
             if (key === 'openData')  { SettingsPanel.close(); showData(); }
             if (key === 'openTrash') { SettingsPanel.close(); showTrash(); }
+            if (key === 'fullDownload') _fullDownload();
+            if (key === 'fullCancel' && _fullDl.job) _fullDl.job.cancel();
+            if (key === 'fullRemove') Engine.full.remove().then(() => { _fullDl.state = 'absent'; SettingsPanel.refresh(); if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged('engineNet'); });
             return;
         }
         if (kind === 'range' || kind === 'range-commit') {

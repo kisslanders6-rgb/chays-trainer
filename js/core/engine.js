@@ -12,6 +12,16 @@
  *   Engine.bestMove(fen, opts) → Promise<{ uci, score } | null>
  *   Engine.load() → Promise (appelé tout seul au premier calcul)
  *   Engine.status() → 'absent' | 'loading' | 'ready' | 'error' ; Engine.onStatus(fn) ; Engine.info()
+ *   Engine.reload() : arrête le moteur ; le prochain calcul recharge la variante choisie.
+ *
+ * Deux réseaux (appSettings.engineNet, propre à l'appareil) :
+ *   'lite' : moteur embarqué (≈ 1,8 Mo, engine/<version>/) ;
+ *   'full' : moteur complet, dont le .wasm (≈ 99 Mo) n'est pas dans le dépôt. Engine.full.download()
+ *            le télécharge depuis unpkg (adresse et empreinte sha256 dans le manifeste), vérifie l'empreinte
+ *            et le garde dans le cache « chays-engine » ; il est ensuite passé au Worker par une URL blob:
+ *            (fragment # du script, lu par stockfish.js). Tant qu'il n'est pas téléchargé : réseau léger.
+ *   Engine.full.status() → Promise<'absent' | 'ready'> · Engine.full.download(onProgress) → { cancel(), done }
+ *   Engine.full.remove() · Engine.full.size()
  *
  * Un seul calcul à la fois : un nouveau calcul arrête le précédent (« stop », puis attente de son
  * « bestmove ») avant de démarrer ; seul le dernier demandé attend son tour, les autres sont annulés.
@@ -23,8 +33,9 @@
 'use strict';
 
 const Engine = (function () {
-    let manifest = null, variant = null, worker = null, state = 'absent', loading = null, error = '';
-    let threads = 0, hash = 0, wdlOn = false;
+    const ENGINE_CACHE = 'chays-engine';
+    let manifest = null, variant = null, worker = null, state = 'absent', loading = null, error = '', blobUrl = null;
+    let threads = 0, hash = 0, wdlOn = false, gen = 0;          // gen : un chargement abandonné (reload) ne termine jamais
     let cur = null, next = null, waiting = null;
     const listeners = new Set();
     const INFO_EVERY_MS = 100;
@@ -44,27 +55,54 @@ const Engine = (function () {
         return Math.min(max, v > 0 ? v : Math.max(1, Math.floor(cores() / 2)));
     }
 
+    const isolated = () => typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated && typeof SharedArrayBuffer === 'function';
+
+    async function readManifest() {
+        if (!manifest) manifest = await (await fetch('engine/manifest.json', { cache: 'no-cache' })).json();
+        return manifest;
+    }
+
+    // Variante d'un réseau adaptée à la page : multi-thread si elle est isolée, sinon mono-thread.
+    const pick = net => manifest.variants.find(v => v.net === net && v.threads === isolated())
+                     || manifest.variants.find(v => v.net === net && !v.threads);
+
     function load() {
         if (state === 'ready') return Promise.resolve();
         if (loading) return loading;
         setState('loading');
-        loading = (async () => {
-            manifest = await (await fetch('engine/manifest.json', { cache: 'no-cache' })).json();
-            const isolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated && typeof SharedArrayBuffer === 'function';
-            variant = manifest.variants.find(v => v.threads === isolated) || manifest.variants.find(v => !v.threads);
-            worker = new Worker(variant.js.path);
+        const my = ++gen, live = () => { if (my !== gen) throw new Error('remplacé'); };
+        const p = loading = (async () => {
+            await readManifest();
+            live();
+            variant = pick('lite');
+            let url = variant.js.path;
+            if (setting('engineNet', 'lite') === 'full' && typeof caches !== 'undefined') {
+                const full = pick('full'), hit = full && await (await caches.open(ENGINE_CACHE)).match(full.wasm.url);
+                if (hit) {                                                  // moteur complet téléchargé : passé au Worker en blob:
+                    const blob = await hit.blob();
+                    live();
+                    if (blobUrl) URL.revokeObjectURL(blobUrl);
+                    blobUrl = URL.createObjectURL(blob);
+                    variant = full;
+                    url = `${full.js.path}#${encodeURIComponent(blobUrl)}`;
+                }
+            }
+            worker = new Worker(url);
             worker.onmessage = e => onLine(String(e.data));
             worker.onerror = e => fail(e.message || 'le moteur s\'est arrêté');
             const ok = waitLine(l => l === 'uciok');
             send('uci');
             await ok;
+            live();
             threads = hash = 0;
             wdlOn = false;
             await applyOptions();
+            live();
             setState('ready');
             pruneOldEngines();
-        })().catch(e => { fail(e && e.message || String(e)); throw e; }).finally(() => { loading = null; });
-        return loading;
+        })().catch(e => { if (my === gen) fail(e && e.message || String(e)); throw e; })
+            .finally(() => { if (loading === p) loading = null; });
+        return p;
     }
 
     function fail(msg) {
@@ -88,12 +126,78 @@ const Engine = (function () {
     }
 
     // Fichiers d'une ancienne version encore en cache (le service worker les purge aussi à son activation).
+    const current = url => { const p = new URL(url).pathname; return p.includes(`/engine/${manifest.version}/`) || p.includes(`/stockfish@${manifest.version}/`); };
     function pruneOldEngines() {
         if (typeof caches === 'undefined') return;
-        caches.open('chays-engine').then(c => c.keys().then(reqs => reqs
-            .filter(r => !new URL(r.url).pathname.includes(`/engine/${manifest.version}/`)).forEach(r => c.delete(r))))
+        caches.open(ENGINE_CACHE).then(c => c.keys().then(reqs => reqs.filter(r => !current(r.url)).forEach(r => c.delete(r))))
             .catch(() => {});
     }
+
+    // Arrêt complet : le prochain calcul recharge le moteur (changement de réseau, moteur complet téléchargé…).
+    function reload() {
+        [cur, next].forEach(j => { if (j) j.resolve({ best: null, lines: j.lines, cancelled: true }); });
+        cur = next = null;
+        gen++;                                                          // le chargement en cours, s'il y en a un, est abandonné
+        loading = null;
+        if (waiting) { const w = waiting; waiting = null; w.resolve(null); }
+        if (worker) { try { worker.terminate(); } catch (e) { /* déjà arrêté */ } }
+        worker = null;
+        variant = null;
+        if (state !== 'absent') setState('absent');
+    }
+
+    // ─── Moteur complet : téléchargement vérifié, gardé dans le cache ─────────
+    const full = {
+        async size() { await readManifest(); const v = pick('full'); return v ? v.wasm.bytes : 0; },
+        async status() {
+            if (typeof caches === 'undefined') return 'absent';
+            await readManifest();
+            const v = pick('full');
+            return v && await (await caches.open(ENGINE_CACHE)).match(v.wasm.url) ? 'ready' : 'absent';
+        },
+        // onProgress(reçu, total). done : Promise<true> une fois vérifié et rangé ; rejetée en cas d'échec
+        // (message lisible), ou d'annulation (message « annulé »).
+        download(onProgress) {
+            const ctrl = new AbortController();
+            const done = (async () => {
+                await readManifest();
+                const v = pick('full');
+                if (!v) throw new Error('aucun moteur complet dans cette version');
+                let res;
+                try { res = await fetch(v.wasm.url, { signal: ctrl.signal, mode: 'cors', credentials: 'omit' }); }
+                catch (e) { throw new Error(ctrl.signal.aborted ? 'annulé' : 'serveur injoignable (unpkg)'); }
+                if (!res.ok || !res.body) throw new Error(`serveur indisponible (unpkg, code ${res.status})`);
+                const total = v.wasm.bytes, reader = res.body.getReader(), parts = [];
+                let got = 0;
+                try {
+                    for (;;) {
+                        const { done: end, value } = await reader.read();
+                        if (end) break;
+                        parts.push(value);
+                        got += value.length;
+                        if (onProgress) onProgress(got, total);
+                    }
+                } catch (e) { throw new Error(ctrl.signal.aborted ? 'annulé' : 'téléchargement interrompu'); }
+                const blob = new Blob(parts, { type: 'application/wasm' });
+                parts.length = 0;
+                const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))]
+                    .map(b => b.toString(16).padStart(2, '0')).join('');
+                if (blob.size !== total || hash !== v.wasm.sha256) throw new Error('fichier reçu altéré (empreinte différente) : rien n’a été gardé');
+                await (await caches.open(ENGINE_CACHE)).put(v.wasm.url, new Response(blob, { headers: { 'Content-Type': 'application/wasm' } }));
+                if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+                if (setting('engineNet', 'lite') === 'full') reload();
+                return true;
+            })();
+            return { cancel: () => ctrl.abort(), done };
+        },
+        async remove() {
+            if (typeof caches === 'undefined') return;
+            await readManifest();
+            const c = await caches.open(ENGINE_CACHE);
+            await Promise.all(manifest.variants.filter(v => v.wasm.url).map(v => c.delete(v.wasm.url)));
+            if (variant && variant.net === 'full') reload();
+        }
+    };
 
     // ─── Lecture des réponses UCI ─────────────────────────────────────────────
     function parseInfo(line, white) {
@@ -156,6 +260,7 @@ const Engine = (function () {
 
     async function start(j) {
         await applyOptions();
+        if (j !== cur || !worker) return;                               // moteur rechargé entre-temps : calcul déjà clos
         if (j.stopping) { cur = null; j.resolve({ best: null, lines: [], cancelled: true }); pump(); return; }
         send(`setoption name MultiPV value ${j.multipv}`);
         send(`position fen ${j.fen}`);
@@ -186,12 +291,13 @@ const Engine = (function () {
     }
 
     return {
-        load, analyse, bestMove,
+        load, analyse, bestMove, reload, full,
         stop: () => { if (next) stopJob(next); if (cur) stopJob(cur); },
         status: () => state,
         error: () => error,
         onStatus: fn => { listeners.add(fn); return () => listeners.delete(fn); },
         info: () => (manifest && variant ? { name: manifest.name, version: manifest.version, variant: variant.id, threads: variant.threads ? threads || wantedThreads() : 1, net: variant.net, license: manifest.license, source: manifest.source } : null),
+        isolated,
         _parseInfo: parseInfo
     };
 })();

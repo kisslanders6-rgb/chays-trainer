@@ -1,12 +1,14 @@
 // Lancer : node scripts/update-engine.mjs [version]   — embarque Stockfish (paquet npm « stockfish », nmrugg)
 //
-// Télécharge le paquet (dernière version publiée, ou celle demandée), n'en garde que les deux moteurs
-// « lite » (réseau neuronal léger, ≈ 1,8 Mo chacun) et la licence, les copie dans engine/<version>/,
-// écrit engine/manifest.json (fichiers, tailles, empreintes sha256) et supprime les versions précédentes.
+// Télécharge le paquet (dernière version publiée, ou celle demandée) et en garde, dans engine/<version>/ :
+//   - les deux moteurs « lite » (réseau neuronal léger, ≈ 1,8 Mo chacun), .js et .wasm ;
+//   - les .js des deux moteurs « complets » (≈ 33 Ko) : leurs .wasm (≈ 99 Mo chacun) ne sont PAS copiés,
+//     trop lourds pour le dépôt ; l'application les télécharge à la demande depuis unpkg (CORS et CORP
+//     ouverts) et vérifie leur empreinte sha256, notée ici dans le manifeste ;
+//   - la licence.
+// Écrit engine/manifest.json (fichiers, tailles, empreintes) et supprime les versions précédentes.
 // L'application ne lit que le manifeste : changer de version ne demande aucune modification du code.
-// Utilisé à la main et par .github/workflows/engine-update.yml. Ensuite : node tests/engine.test.js.
-//
-// Les moteurs « complets » (≈ 99 Mo chacun) ne sont pas embarqués : trop lourds pour le dépôt et le déploiement.
+// Utilisé à la main et par .github/workflows/engine-update.yml. Ensuite : node tests/stockfish.test.js.
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -35,18 +37,22 @@ try {
     const dir = join(ENGINE, wanted);
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
+    const sha = data => createHash('sha256').update(data).digest('hex');
     const variants = [
-        { id: 'lite',        threads: true,  base: `stockfish-${major}-lite` },
-        { id: 'lite-single', threads: false, base: `stockfish-${major}-lite-single` }
+        { id: 'lite',        threads: true,  net: 'lite', base: `stockfish-${major}-lite` },
+        { id: 'lite-single', threads: false, net: 'lite', base: `stockfish-${major}-lite-single` },
+        { id: 'full',        threads: true,  net: 'full', base: `stockfish-${major}` },
+        { id: 'full-single', threads: false, net: 'full', base: `stockfish-${major}-single` }
     ].map(v => {
-        const files = {};
-        ['js', 'wasm'].forEach(ext => {
-            const name = `${v.base}.${ext}`;
-            cpSync(join(bin, name), join(dir, name));
-            const data = readFileSync(join(dir, name));
-            files[ext] = { path: `engine/${wanted}/${name}`, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') };
-        });
-        return { id: v.id, threads: v.threads, net: 'lite', js: files.js, wasm: files.wasm };
+        const js = `${v.base}.js`, wasm = `${v.base}.wasm`;
+        cpSync(join(bin, js), join(dir, js));
+        const jsData = readFileSync(join(dir, js)), wasmData = readFileSync(join(bin, wasm));
+        const out = { id: v.id, threads: v.threads, net: v.net,
+                      js: { path: `engine/${wanted}/${js}`, bytes: jsData.length, sha256: sha(jsData) },
+                      wasm: { bytes: wasmData.length, sha256: sha(wasmData) } };
+        if (v.net === 'lite') { cpSync(join(bin, wasm), join(dir, wasm)); out.wasm.path = `engine/${wanted}/${wasm}`; }
+        else out.wasm.url = `https://unpkg.com/stockfish@${wanted}/bin/${wasm}`;      // téléchargé à la demande
+        return out;
     });
     cpSync(join(pkg, 'Copying.txt'), join(dir, 'COPYING.txt'));
 

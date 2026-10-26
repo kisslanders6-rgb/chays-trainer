@@ -8,7 +8,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'engine/manifest.jso
 
 // Lance le moteur, envoie les commandes, attend la première ligne qui satisfait `until`. Renvoie toutes les lignes.
 function uci(commands, until, timeout = 60000) {
-    const v = manifest.variants.find(x => !x.threads);
+    const v = manifest.variants.find(x => x.id === 'lite-single');
     const child = spawn(process.execPath, [path.join(ROOT, v.js.path)], { stdio: ['pipe', 'pipe', 'pipe'] });
     return new Promise((resolve, reject) => {
         const lines = [];
@@ -32,11 +32,21 @@ function uci(commands, until, timeout = 60000) {
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
 (async () => {
-    await t('manifeste : chaque fichier existe, taille et empreinte sha256 conformes', () => {
+    await t('manifeste : fichiers embarqués conformes (taille, sha256), moteur complet décrit par adresse et empreinte', () => {
         assert(/^\d+\.\d+\.\d+$/.test(manifest.version));
-        assert(manifest.variants.some(v => v.threads) && manifest.variants.some(v => !v.threads));
+        ['lite', 'full'].forEach(net => {
+            assert(manifest.variants.some(v => v.net === net && v.threads), net + ' multi-thread');
+            assert(manifest.variants.some(v => v.net === net && !v.threads), net + ' mono-thread');
+        });
         manifest.variants.forEach(v => ['js', 'wasm'].forEach(ext => {
-            const f = v[ext], data = fs.readFileSync(path.join(ROOT, f.path));
+            const f = v[ext];
+            if (!f.path) {                                                  // .wasm complet : téléchargé à la demande
+                assert(v.net === 'full' && ext === 'wasm', v.id + ' : seul le .wasm complet peut être distant');
+                assert(f.url.startsWith(`https://unpkg.com/stockfish@${manifest.version}/`), f.url);
+                assert(/^[0-9a-f]{64}$/.test(f.sha256) && f.bytes > 50e6, v.id);
+                return;
+            }
+            const data = fs.readFileSync(path.join(ROOT, f.path));
             assert.strictEqual(data.length, f.bytes, f.path);
             assert.strictEqual(crypto.createHash('sha256').update(data).digest('hex'), f.sha256, f.path);
         }));

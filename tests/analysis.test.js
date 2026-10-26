@@ -50,4 +50,10 @@ t('lignes UCI : score et WDL ramenés au point de vue des Blancs, bornes ignoré
     assert.strictEqual(parse('info string NNUE evaluation enabled', true), null);
 });
 
+t('lignes Lichess : roque « roi prend tour » converti (e1h1 → e1g1), autres coups intacts', () => {
+    const fen = 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 3 3';
+    jeq(run('_anCastleFix')(fen, ['e1h1', 'g8f6', 'f1e1']), ['e1g1', 'g8f6', 'f1e1']);
+    jeq(run('_anCastleFix')(fen, ['b5c6', 'd7c6']), ['b5c6', 'd7c6']);
+});
+
 console.log(`\n${n} tests réussis.`);

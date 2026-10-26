@@ -9,7 +9,7 @@
  *   - Police Inter (Google Fonts) : cache d'abord, mise en cache à la première visite en ligne.
  *   - Moteur Stockfish (engine/<version>/) : cache à part (ENGINE_CACHE), rempli au premier usage
  *     seulement (il n'alourdit pas l'installation) ; à l'activation, les fichiers d'une autre version
- *     que celle d'engine/manifest.json sont supprimés.
+ *     que celle d'engine/manifest.json sont supprimés, y compris le moteur complet téléchargé (unpkg).
  * Si tu modifies un fichier d'image existant, incrémente VERSION pour forcer le rafraîchissement.
  *
  * Liste de mise en cache : construite à l'installation à partir des balises src / href d'index.html
@@ -62,7 +62,8 @@ async function pruneEngine() {
         const { version } = await (await fetch('engine/manifest.json', { cache: 'no-cache' })).json();
         const cache = await caches.open(ENGINE_CACHE);
         const reqs  = await cache.keys();
-        await Promise.all(reqs.filter(r => !new URL(r.url).pathname.includes(`/engine/${version}/`)).map(r => cache.delete(r)));
+        const keep = p => p.includes(`/engine/${version}/`) || p.includes(`/stockfish@${version}/`);      // moteur complet (unpkg) compris
+        await Promise.all(reqs.filter(r => !keep(new URL(r.url).pathname)).map(r => cache.delete(r)));
     } catch (e) { /* hors ligne : on réessaiera à la prochaine activation */ }
 }
 

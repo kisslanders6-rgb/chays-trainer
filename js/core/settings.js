@@ -90,6 +90,7 @@ const LOCAL_PREFS = {
     textSize: { ok: _oneOf(['s', 'm', 'l']), def: 'm' },
     contrast: { ok: _bool, def: false },
     announce: { ok: _bool, def: false },
+    engineNet:     { ok: _oneOf(['lite', 'full']), def: 'lite' },                       // réseau du moteur (complet : téléchargé sur l'appareil)
     engineThreads: { ok: v => Number.isInteger(v) && v >= 0 && v <= 64, def: 0 },       // 0 : automatique (moitié des cœurs)
     engineHash:    { ok: _oneOf([16, 32, 64, 128, 256, 512]), def: 64 }                 // Mo
 };

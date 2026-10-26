@@ -16,9 +16,9 @@
         "sha256": "dac939ff529668e0168b2f615145ec18b029b753deb6963fd7319d788f964333"
       },
       "wasm": {
-        "path": "engine/19.0.1/stockfish-19-lite.wasm",
         "bytes": 1697617,
-        "sha256": "ddf06cdaf0b8e35c11b40530e44db96c2a99c9029c8d621dd9fca97e4872770c"
+        "sha256": "ddf06cdaf0b8e35c11b40530e44db96c2a99c9029c8d621dd9fca97e4872770c",
+        "path": "engine/19.0.1/stockfish-19-lite.wasm"
       }
     },
     {
@@ -31,9 +31,39 @@
         "sha256": "ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a"
       },
       "wasm": {
-        "path": "engine/19.0.1/stockfish-19-lite-single.wasm",
         "bytes": 1845971,
-        "sha256": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de"
+        "sha256": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de",
+        "path": "engine/19.0.1/stockfish-19-lite-single.wasm"
+      }
+    },
+    {
+      "id": "full",
+      "threads": true,
+      "net": "full",
+      "js": {
+        "path": "engine/19.0.1/stockfish-19.js",
+        "bytes": 33326,
+        "sha256": "623ee70a10d6dc202375127b49e2e1822635f9ab07693ae7be28e50a787f6218"
+      },
+      "wasm": {
+        "bytes": 99076105,
+        "sha256": "a599d78d72e0722d8895be84aca8b492d12e8bba3cdfcbcbc4a64017888c6667",
+        "url": "https://unpkg.com/stockfish@19.0.1/bin/stockfish-19.wasm"
+      }
+    },
+    {
+      "id": "full-single",
+      "threads": false,
+      "net": "full",
+      "js": {
+        "path": "engine/19.0.1/stockfish-19-single.js",
+        "bytes": 28130,
+        "sha256": "8071dee87312f74805a859de933e1a1ef465579ab1a51fbd597388cdce9d444d"
+      },
+      "wasm": {
+        "bytes": 99169054,
+        "sha256": "991bede2f253ebb08ff01fcc48270f4b9c8e66b12d5bd5f8d6f52eb3e3b3a740",
+        "url": "https://unpkg.com/stockfish@19.0.1/bin/stockfish-19-single.wasm"
       }
     }
   ]

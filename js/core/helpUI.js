@@ -27,7 +27,7 @@ const HELP_GUIDES = [
         'Le bouton <strong>Analyse</strong> de l’écran Jouer ouvre la position affichée avec <strong>Stockfish</strong> : évaluation, meilleures lignes et flèches. Le moteur se télécharge une fois (environ 1,8 Mo) puis fonctionne hors ligne.',
         'Jouez librement les deux camps : vos essais forment un <strong>brouillon</strong> en arbre, sans effet sur le répertoire. Un clic sur une ligne du moteur joue son coup ; <strong>+</strong> la recopie dans le brouillon.',
         '<strong>Ajouter au répertoire</strong> montre d’abord les coups qui seront enregistrés. Un coup différent du vôtre est signalé : il n’est remplacé que si vous cochez « Remplacer » (l’ancien part à la corbeille).',
-        'Réglages (lignes, profondeur, fils de calcul) : Paramètres › Moteur d’analyse.'], 'tab:play'],
+        'Réglages (lignes, profondeur, fils de calcul) : Paramètres › Moteur d’analyse. Le réseau <strong>complet</strong>, plus fort, se télécharge à la demande (99 Mo, une fois par appareil).'], 'tab:play'],
     ['training', 'target', 'Entraînement', 'Des exercices qui finissent par un bilan', [
         'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur. <strong>Révision du jour</strong> pose toutes les positions dues.',
         'Autres exercices : <strong>Points faibles</strong>, <strong>Ligne complète</strong> (une ouverture du premier coup au bout de la variante), <strong>À confirmer</strong>, <strong>Contre-la-montre</strong> (3 minutes) et <strong>Mode libre</strong> (tirage sans fin).',

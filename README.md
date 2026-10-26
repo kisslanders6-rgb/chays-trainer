@@ -25,7 +25,10 @@ Le moteur tourne sur un seul fil de calcul sans en-têtes particuliers. Pour le 
 
 ## Moteur d'analyse
 
-`engine/manifest.json` décrit le moteur embarqué (version, fichiers, tailles, empreintes) ; `js/core/engine.js` ne lit que ce manifeste. Seuls les moteurs « lite » de Stockfish (réseau léger, environ 1,8 Mo chacun) sont embarqués : les moteurs complets pèsent 99 Mo chacun.
+`engine/manifest.json` décrit le moteur (version, fichiers, tailles, empreintes) ; `js/core/engine.js` ne lit que ce manifeste.
+
+- **Réseau léger** (par défaut) : moteurs « lite » de Stockfish, environ 1,8 Mo chacun, embarqués dans `engine/<version>/`.
+- **Réseau complet** (Paramètres › Moteur d'analyse › Réseau neuronal) : nettement plus fort. Son `.wasm` (99 Mo) n'est pas dans le dépôt : il est téléchargé à la demande depuis unpkg (qui autorise CORS et CORP), vérifié par son empreinte sha256 notée dans le manifeste, puis gardé dans le cache du moteur, hors ligne compris. S'il n'est pas téléchargé, ou si unpkg ne répond pas, le réseau léger est utilisé. Un bouton le supprime de l'appareil.
 
 - **Mise à jour automatique** : chaque lundi, `.github/workflows/engine-update.yml` vérifie le paquet npm `stockfish` ; une version publiée depuis au moins 14 jours est embarquée, testée, puis proposée en pull request. Il faut autoriser une fois les Actions à créer des pull requests (Settings › Actions › General).
 - **À la main** : `node scripts/update-engine.mjs [version]`, puis `npm test`.
