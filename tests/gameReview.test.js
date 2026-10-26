@@ -2,7 +2,7 @@
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
-const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b), m);   // objets issus du contexte vm
+const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b), m || `${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);   // objets issus du contexte vm
 
 const store = {};
 const ctx = {
@@ -102,17 +102,77 @@ t('coup illégal : lecture arrêtée, déviation antérieure conservée', () => 
     jeq([r.moves.length, r.illegal.ply, r.illegal.san, r.deviation.ply], [7, 7, 'Ke5', 6]);
 });
 
-t('erreur comptée une seule fois par partie', () => {
+// Base modifiable pour reviewGame : { db, opp, save }.
+const baseOf = db => ({ db, opp: {}, saved: 0, save() { this.saved++; } });
+
+t('erreur comptée une seule fois par partie (journal), verdict noté', () => {
     vm.runInContext('currentRepertoire = "Test"; playerColor = "w";', ctx);
-    ctx.openingDB = repertoire('w', [ITA]);
-    vm.runInContext('openingDB = this.openingDB;', ctx);
-    const g = ctx.pgnMainLine(CHESSCOM);
-    const r = ctx.detectDeviation(g.sans, 'w', ctx.openingDB, {});
-    const sig = ctx._gameSignature(g.headers, g.sans);
-    assert.strictEqual(ctx.recordReviewMistake(r.deviation, sig), 'counted');
-    assert.strictEqual(ctx.recordReviewMistake(r.deviation, sig), 'already');
-    const e = ctx.openingDB[r.deviation.key];
+    delete store['chessTrainer_gameLedger'];
+    const g = ctx.pgnMainLine(CHESSCOM), b = baseOf(repertoire('w', [ITA]));
+    const ledger = {};
+    const a = ctx.reviewGame(g, 'w', 'Test', b, ledger);
+    jeq([a.kind, a.counted, a.prev], ['mistake', 'counted', null]);
+    const again = ctx.reviewGame(g, 'w', 'Test', b, ledger);
+    jeq([again.kind, again.counted, !!again.prev], ['mistake', 'already', true]);
+    const e = b.db[a.r.deviation.key];
     jeq([e.attempts, e.failures, e.interval], [2, 1, 0]);
+    const id = 'chess.com/game/live/123';
+    jeq(Object.keys(ledger), [id]);
+    jeq([ledger[id].src, ledger[id].v['Test|w'].kind, !!ledger[id].counted['Test|w']], ['chesscom', 'mistake', true]);
+});
+
+t('ancienne signature (reviewedGames) : erreur jamais recomptée', () => {
+    const g = ctx.pgnMainLine(CHESSCOM), b = baseOf(repertoire('w', [ITA]));
+    store['chessTrainer_reviewedGames'] = JSON.stringify([ctx._gameSignature(g.headers, g.sans, 'w', 'Test')]);
+    assert.strictEqual(ctx.reviewGame(g, 'w', 'Test', b, {}).counted, 'already');
+    delete store['chessTrainer_reviewedGames'];
+});
+
+const LICHESS = (moves, date = '2026.10.20', time = '18:00:00') =>
+    `[Site "https://lichess.org/AbCdEfGh"]\n[White "moi"]\n[Black "lui"]\n[UTCDate "${date}"]\n[UTCTime "${time}"]\n\n${moves} *`;
+const PLAYED = Date.UTC(2026, 9, 20, 18, 0, 0);
+
+t('date de la partie : en-têtes Lichess et Chess.com, journée seule, absente', () => {
+    assert.strictEqual(ctx.gamePlayedAt({ UTCDate: '2026.10.20', UTCTime: '18:00:00' }), PLAYED);
+    assert.strictEqual(ctx.gamePlayedAt({ Date: '2026.10.20' }), Date.UTC(2026, 9, 20));
+    assert.strictEqual(ctx.gamePlayedAt({ Date: '????.??.??' }), 0);
+});
+
+t('Traitée depuis : nouveauté adverse couverte par une réponse ajoutée après la partie', () => {
+    // Répertoire : 1.e4 e5 2.Cf3 … ; dans la partie, 1…c5 (nouveauté), puis 2.Cc3 joué faute de préparation.
+    // Après la partie, la réponse 2.Cf3 a été ajoutée contre 1…c5.
+    const db = repertoire('w', [ITA, 'e2e4 c7c5 g1f3']);
+    const k = Object.keys(db).find(x => db[x].move === 'g1f3' && x.includes('pp1ppppp'));
+    Object.keys(db).forEach(x => { db[x].created = PLAYED - 86400000; });
+    db[k].created = PLAYED + 3600000;
+    db[k].attempts = 0; db[k].failures = 0; db[k].san = 'Nf3';
+    const b = baseOf(db), g = ctx.pgnMainLine(LICHESS('1. e4 c5 2. Nc3 Nc6'));
+    const res = ctx.reviewGame(g, 'w', 'Test', b, {});
+    jeq([res.kind, res.counted, res.ply, res.by, res.answer.san], ['treated', null, 1, 'opp', 'Nf3']);
+    assert(db[k].prio > 0, 'réponse jamais réussie : prioritaire');
+    jeq([db[k].attempts, db[k].failures], [0, 0]);
+    // Réponse antérieure à la partie : le même coup reste une erreur.
+    db[k].created = PLAYED - 1;
+    jeq(ctx.reviewGame(g, 'w', 'Test2', baseOf(db), {}).kind, 'mistake');
+});
+
+t('Traitée depuis : entrées sans date, la déviation notée à la première analyse fait foi', () => {
+    const db = repertoire('w', [ITA]);
+    const g = ctx.pgnMainLine('[Site "https://lichess.org/ZzZzZzZz"]\n\n1. e4 c5 2. Nc3 Nc6 *');
+    const ledger = {};
+    jeq(ctx.reviewGame(g, 'w', 'Test', baseOf(db), ledger).kind, 'novelty');
+    // Depuis : réponse 2.Cf3 ajoutée (ancienne entrée, sans date de création).
+    Object.assign(db, repertoire('w', ['e2e4 c7c5 g1f3']));
+    const res = ctx.reviewGame(g, 'w', 'Test', baseOf(db), ledger);
+    jeq([res.kind, res.counted, res.ply, !!res.prev], ['treated', null, 1, true]);
+});
+
+t('réponse retrouvée : la priorité est levée', () => {
+    const e = { move: 'g1f3', san: 'Nf3', attempts: 0, failures: 0, prio: 5, due: 1, interval: 0 };
+    vm.runInContext('recordReview', ctx)(e, false);
+    assert.strictEqual(e.prio, 5);
+    vm.runInContext('recordReview', ctx)(e, true);
+    assert.strictEqual(e.prio, undefined);
 });
 
 t('parties en ligne : couleur déduite du pseudo, erreurs comptées une fois, autres parties classées', () => {
@@ -130,7 +190,7 @@ t('parties en ligne : couleur déduite du pseudo, erreurs comptées une fois, au
     const c5 = Object.values(JSON.parse(store['openingDB_Test_b']))[0];
     jeq([c5.attempts, c5.failures], [2, 1]);
     const again = ctx.analyzeOnlineGames(games, 'moi', 'Test');
-    jeq([again.summary.mistakes, again.summary.newMistakes], [2, 0]);
+    jeq([again.summary.mistakes, again.summary.newMistakes, again.summary.seen], [2, 0, 3]);
 });
 
 console.log(`\n${n} tests réussis.`);

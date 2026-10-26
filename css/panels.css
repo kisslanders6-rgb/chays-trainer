@@ -234,8 +234,8 @@ html[data-text="l"] body { zoom: 1.1; }
 
 /* Contraste renforcé */
 html[data-contrast="on"] { --border: var(--border-strong); --text-dim: var(--text-muted); }
-html[data-contrast="on"][data-theme="light"] { --text-muted: #cfd6c6; --border-strong: #4d6352; }
-html[data-contrast="on"][data-theme="dark"]  { --text-muted: #3a4135; --border-strong: #a99f86; }
+html[data-contrast="on"][data-theme="dark"] { --text-muted: #cfd6c6; --border-strong: #4d6352; }
+html[data-contrast="on"][data-theme="light"]  { --text-muted: #3a4135; --border-strong: #a99f86; }
 
 /* Animations réduites (réglage de l'appli) */
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after {

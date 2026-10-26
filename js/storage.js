@@ -10,7 +10,7 @@
 
 // ─── CLÉS DE STOCKAGE ─────────────────────────────────────────────────────────
 
-const THEME_STORAGE_KEY     = 'chessTrainer_theme';
+const THEME_STORAGE_KEY     = 'chessTrainer_mode';         // 'dark' | 'light' | 'system' (cf. settings.js)
 const REPERTOIRE_LIST_KEY   = 'chessTrainer_repertoires';
 const DEFAULT_REPERTOIRE    = 'Général';
 
@@ -93,9 +93,12 @@ function renameRepertoirePrompt(name) {
 // ─── BASE DE DONNÉES (ouvertures) ─────────────────────────────────────────────
 
 // Modèle d'une entrée (une seule réponse par position de MON camp) :
-//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply?, lastReviewed? }
+//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply?, lastReviewed?, due?, interval?, created?, prio? }
 //   - path : coups UCI depuis la position initiale, mon coup inclus (sert aux stats
 //            et à la cinématique de l'entraînement) ; ply = path.length.
+//   - created : date d'enregistrement de la réponse (absente sur les entrées d'avant octobre 2026) ;
+//               « Analyser mes parties » ne compte pas d'erreur si la réponse est postérieure à la partie.
+//   - prio : réponse ajoutée après une partie (« Traitée depuis ») et jamais réussie : en tête de la révision du jour.
 // Les coups adverses ne sont jamais stockés : ils sont implicites dans les clés.
 
 function dbKeyFor(rep, color) {
@@ -117,13 +120,16 @@ function normalizeEntry(e) {
     const lr = typeof e.lastReviewed === 'string' ? Date.parse(e.lastReviewed) : e.lastReviewed;
     if (Number.isFinite(lr) && lr > 0) out.lastReviewed = lr;
     if (Number.isFinite(e.due) && e.due > 0) { out.due = e.due; out.interval = Number.isFinite(e.interval) ? Math.max(0, e.interval) : 0; }
+    if (Number.isFinite(e.created) && e.created > 0) out.created = e.created;
+    if (Number.isFinite(e.prio) && e.prio > 0) out.prio = e.prio;
     return out;   // l'ancien champ `alt` est volontairement abandonné
 }
 
 // Nouveau coup du répertoire (Jouer, import PGN) : rien n'est encore compté, et il est dû tout de suite
 // pour être proposé dès la prochaine séance d'Entraînement.
 function newEntry(move, san, path) {
-    return { move, san, attempts: 0, failures: 0, path, ply: path.length, due: Date.now(), interval: 0 };
+    const now = Date.now();
+    return { move, san, attempts: 0, failures: 0, path, ply: path.length, due: now, interval: 0, created: now };
 }
 
 function normalizeDB(db) {
@@ -267,6 +273,7 @@ function recordReview(entry, ok) {
     const now = Date.now();
     const wasDue = isDue(entry, now), prev = entry.interval || impliedInterval(entry);
     entry.lastReviewed = now;
+    if (ok) delete entry.prio;                 // réponse « Traitée depuis » enfin retrouvée : priorité levée
     if (!ok) {
         entry.interval = 0;
         entry.due = now + REVIEW_RETRY_MS;

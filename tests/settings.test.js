@@ -76,13 +76,39 @@ t('nouvelles préférences : valeurs par défaut et validation', () => {
     assert.strictEqual(c.run('appSettings.textSize'), 'm');
 });
 
-t('mode : valeurs historiques du thème et mode système', () => {
-    const c = boot({ chessTrainer_theme: 'light' });
-    assert.strictEqual(c.run('themeMode()'), 'dark');                     // 'light' historique = thème sombre
+t('mode : ancienne clé aux valeurs inversées convertie une fois, mode système', () => {
+    const c = boot({ chessTrainer_theme: 'light' });                       // 'light' historique = thème sombre
+    assert.strictEqual(c.run('themeMode()'), 'dark');
+    assert.strictEqual(c.run(`dataStore.get('chessTrainer_mode')`), 'dark');
+    assert.strictEqual(c.run(`dataStore.get('chessTrainer_theme')`), null);
+    assert.strictEqual(boot({ chessTrainer_theme: 'dark' }).run('themeMode()'), 'light');
+    assert.strictEqual(boot({ chessTrainer_theme: 'system', chessTrainer_mode: 'light' }).run('themeMode()'), 'light');   // nouvelle clé prioritaire
+    assert.strictEqual(boot().run('themeMode()'), 'dark');               // par défaut : sombre
     c.run(`setThemeMode('system')`);
     assert.strictEqual(c.run('themeMode()'), 'system');
     c.run(`setThemeMode('light')`);
-    assert.strictEqual(c.run(`dataStore.get('chessTrainer_theme')`), 'dark');
+    assert.strictEqual(c.run(`dataStore.get('chessTrainer_mode')`), 'light');
+});
+
+t('mode libre : anciennes options de l\'appareil reprises en préférences, ancienne clé supprimée', () => {
+    const c = boot({ 'chessTrainer.trainingSettings': JSON.stringify({ maxPlies: 10, seqLen: 999, fromStart: 0 }) });
+    assert.strictEqual(c.run('appSettings.freeMaxPlies'), 10);
+    assert.strictEqual(c.run('appSettings.freeSeqLen'), 999);
+    assert.deepStrictEqual(c.prefs().freeMaxPlies, { v: 10, at: 0 });
+    assert.strictEqual(c.prefs().freeFromStart, undefined);               // valeur par défaut : rien d'écrit
+    assert.strictEqual(c.run(`dataStore.get('chessTrainer.trainingSettings')`), null);
+    const d = boot({ 'chessTrainer.trainingSettings': JSON.stringify({ seqLen: 3 }), chessTrainer_prefs: JSON.stringify({ freeSeqLen: { v: 5, at: 9 } }) });
+    assert.strictEqual(d.run('appSettings.freeSeqLen'), 5);                // choix du compte conservé
+});
+
+t('chaque préférence a son réglage dans l\'interface (Paramètres ou Compte)', () => {
+    const ui = ['js/core/settingsUI.js', 'js/core/accountUI.js'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    const c = boot();
+    const internal = ['looksTheme', 'looksSound', 'looksVolume'];          // copies du mode et des sons (option syncLooks)
+    const free = { freeMaxPlies: 'training:maxPlies', freeSeqLen: 'training:seqLen', freeFromStart: 'training:fromStart' };
+    const keys = c.run('Object.keys(SYNCED_PREFS).concat(Object.keys(LOCAL_PREFS))').filter(k => !internal.includes(k));
+    const missing = keys.filter(k => !ui.includes(`'${free[k] || k}'`) && !ui.includes(`"${free[k] || k}"`));
+    assert.strictEqual(missing.join(", "), "", "préférences sans réglage");
 });
 
 t('appareils : déconnexion demandée par un autre appareil, levée à la reconnexion', () => {

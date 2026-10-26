@@ -8,7 +8,7 @@
  *                          profil… Chaque champ est daté : { boardTheme: { v, at }, … } ; entre deux appareils,
  *                          le choix le plus récent l'emporte (syncModel.js). Les clés « dev:<id> » décrivent
  *                          les appareils du compte (nom, dernière activité, déconnexion demandée).
- *   chessTrainer_theme     LOCAL : mode clair / sombre / système (valeurs historiques, voir THEME_MODES)
+ *   chessTrainer_mode      LOCAL : mode 'dark' | 'light' | 'system' (remplace chessTrainer_theme, aux valeurs inversées)
  * Option « syncLooks » : le mode et les sons sont aussi recopiés dans les préférences synchronisées.
  */
 
@@ -23,7 +23,6 @@ const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille'];          // cf. annot
 const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé' };
 const AVATAR_GLYPHS   = ['initial', 'k', 'q', 'r', 'b', 'n'];
 const AVATAR_COLORS   = ['sapin', 'noyer', 'nuit', 'ardoise', 'prune', 'ivoire'];
-const PLAYER_LEVELS   = ['debut', 'club', 'conf', 'expert'];
 
 const _oneOf = list => v => list.includes(v);
 const _bool  = v => typeof v === 'boolean';
@@ -52,11 +51,14 @@ const SYNCED_PREFS = {
     freqWeight: { ok: _bool, def: true },
     notation:   { ok: _oneOf(['fr', 'en', 'fig']), def: 'fr' },
     backupReminder: { ok: _oneOf(['never', 'weekly', 'monthly']), def: 'weekly' },
+    // Mode libre de l'Entraînement (training.js)
+    freeMaxPlies:  { ok: v => Number.isInteger(v) && v >= 0 && v <= 60, def: 0 },       // 0 : toute profondeur
+    freeSeqLen:    { ok: v => Number.isInteger(v) && v >= 1 && v <= 999, def: 1 },      // 999 : toute la variante
+    freeFromStart: { ok: _oneOf([0, 1]), def: 0 },
     // Profil
     pseudo:      { ok: _text(24), def: '' },
     avatarGlyph: { ok: _oneOf(AVATAR_GLYPHS), def: 'initial' },
     avatarColor: { ok: _oneOf(AVATAR_COLORS), def: 'sapin' },
-    level:       { ok: _oneOf(PLAYER_LEVELS), def: 'club' },
     elo:         { ok: v => v === '' || (/^\d{3,4}$/.test(v)), def: '' },
     lichessUser: { ok: _text(40), def: '' },
     chesscomUser:{ ok: _text(40), def: '' },
@@ -126,6 +128,23 @@ const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults';
     if (changed) dataStore.setJSON(PREFS_KEY, p);
 })();
 
+// Options du mode libre : autrefois dans chessTrainer.trainingSettings (propre à l'appareil). Elles deviennent
+// des préférences synchronisées, datées de 0 pour qu'un choix déjà présent sur le compte l'emporte. Une seule fois.
+(function migrateFreeTraining() {
+    const OLD = 'chessTrainer.trainingSettings', old = dataStore.getJSON(OLD, null);
+    if (dataStore.get(OLD) === null) return;
+    const p = _readPrefs(), map = { maxPlies: 'freeMaxPlies', seqLen: 'freeSeqLen', fromStart: 'freeFromStart' };
+    let changed = false;
+    Object.keys(map).forEach(k => {
+        const name = map[k], v = old && old[k];
+        if (p[name] || !SYNCED_PREFS[name].ok(v) || v === SYNCED_PREFS[name].def) return;
+        p[name] = { v, at: 0 };
+        changed = true;
+    });
+    if (changed) dataStore.setJSON(PREFS_KEY, p);
+    dataStore.remove(OLD);
+})();
+
 let appSettings = loadSettings();
 let _prefsSeen  = _syncedValues(dataStore.getJSON(SETTINGS_KEY, null) || {});   // dernières valeurs lues ou écrites
 
@@ -169,25 +188,35 @@ function reloadSyncedPrefs() {
 }
 
 // ─── Mode clair / sombre / système ──────────────────────────────────────────
-// chessTrainer_theme garde ses valeurs historiques : 'light' = thème SOMBRE (Nocturne), 'dark' = thème
-// CLAIR (Papier). THEME_MODES les traduit en modes lisibles ; 'system' suit l'appareil.
-const THEME_MODES = { dark: 'light', light: 'dark', system: 'system' };
-const _THEME_KEY  = typeof THEME_STORAGE_KEY !== 'undefined' ? THEME_STORAGE_KEY : 'chessTrainer_theme';
+// chessTrainer_mode : 'dark' (Nocturne, par défaut), 'light' (Papier) ou 'system' (suit l'appareil).
+// data-theme sur <html> vaut 'dark' ou 'light'. L'ancienne clé chessTrainer_theme stockait les valeurs
+// inversées ('light' = sombre) : elle est convertie une fois puis supprimée (aussi lue par index.html
+// avant le premier rendu tant que la conversion n'a pas eu lieu).
+const THEME_MODES = ['dark', 'light', 'system'];
+const _THEME_KEY  = typeof THEME_STORAGE_KEY !== 'undefined' ? THEME_STORAGE_KEY : 'chessTrainer_mode';
+const LEGACY_THEME_KEY = 'chessTrainer_theme';
+
+(function migrateThemeKey() {
+    const old = dataStore.get(LEGACY_THEME_KEY);
+    if (old === null) return;
+    if (dataStore.get(_THEME_KEY) === null) dataStore.set(_THEME_KEY, { light: 'dark', dark: 'light', system: 'system' }[old] || 'dark');
+    dataStore.remove(LEGACY_THEME_KEY);
+})();
 
 function themeMode() {
     const v = dataStore.get(_THEME_KEY);
-    return v === 'system' ? 'system' : v === 'dark' ? 'light' : 'dark';
+    return THEME_MODES.includes(v) ? v : 'dark';
 }
 
 function applyThemeMode() {
     const m = themeMode();
     const dark = m === 'dark' || (m === 'system' && typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 }
 
 function setThemeMode(mode) {
-    if (!THEME_MODES[mode]) return;
-    dataStore.set(_THEME_KEY, THEME_MODES[mode]);
+    if (!THEME_MODES.includes(mode)) return;
+    dataStore.set(_THEME_KEY, mode);
     applyThemeMode();
     _copyLooksToPrefs();
 }
@@ -209,7 +238,7 @@ function _copyLooksToPrefs() {
 function _applyLooksFromPrefs() {
     if (!appSettings.syncLooks) return false;
     let changed = false;
-    if (themeMode() !== appSettings.looksTheme) { dataStore.set(_THEME_KEY, THEME_MODES[appSettings.looksTheme]); applyThemeMode(); changed = true; }
+    if (themeMode() !== appSettings.looksTheme) { dataStore.set(_THEME_KEY, appSettings.looksTheme); applyThemeMode(); changed = true; }
     if (appSettings.sound !== appSettings.looksSound || appSettings.volume !== appSettings.looksVolume) {
         appSettings.sound = appSettings.looksSound;
         appSettings.volume = appSettings.looksVolume;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="light" lang="fr">
+<html data-theme="dark" lang="fr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -20,9 +20,10 @@
     <script>
         (function () {
             var d = document.documentElement;
-            try {       // 'light' = thème sombre, 'dark' = thème clair (noms historiques) ; 'system' suit l'appareil
-                var t = localStorage.getItem('chessTrainer_theme');
-                if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+            try {       // mode 'dark' | 'light' | 'system' ; repli sur l'ancienne clé aux valeurs inversées (convertie par settings.js)
+                var t = localStorage.getItem('chessTrainer_mode');
+                if (t === null) t = { light: 'dark', dark: 'light', system: 'system' }[localStorage.getItem('chessTrainer_theme')] || null;
+                if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
             } catch (e) {}
             try {       // thème d'échiquier dès la première image : le logo et l'accueil en dérivent (settings.js le revalide)

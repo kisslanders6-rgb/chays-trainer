@@ -4,8 +4,9 @@
  * « Mes parties en ligne » : récupère les dernières parties d'un pseudo Chess.com ou Lichess
  * (API publiques, sans compte ni clé), les compare au répertoire actif et liste les déviations.
  *   - la couleur jouée est déduite du pseudo (en-têtes White / Black) ;
- *   - chaque partie passe par detectDeviation (gameReview.js) avec la base de cette couleur ;
- *   - une erreur d'ouverture est comptée tout de suite, une seule fois par partie (recordReviewMistake) ;
+ *   - chaque partie passe par reviewGame (gameReview.js) avec la base de cette couleur : verdict noté au
+ *     journal des parties, erreur d'ouverture comptée tout de suite, une seule fois par partie ;
+ *   - les parties déjà analysées sont masquées par défaut (un bouton les affiche) ;
  *   - un clic sur une partie ouvre « Jouer » sur la position après le coup déviant (showReviewResult) ;
  *   - les réponses adverses alimentent les fréquences de l'onglet « Adversaire » (moveStats.js).
  * Seules les parties d'échecs classiques depuis la position initiale sont retenues.
@@ -17,7 +18,7 @@
 const ONLINE_PREFS_KEY = 'chessTrainer_onlineAccount';
 const ONLINE_COUNTS    = [5, 10, 20, 50];
 
-let _online = { busy: false, rows: null, summary: null, error: '' };
+let _online = { busy: false, rows: null, summary: null, error: '', showSeen: false };
 
 function _onlinePrefs() {
     const p = dataStore.getJSON(ONLINE_PREFS_KEY, null) || {};
@@ -68,33 +69,31 @@ function _userColor(headers, user) {
 }
 
 // Compare chaque partie au répertoire `rep` et compte les erreurs nouvelles. Renvoie { rows, summary }.
-// Une ligne : { game, color, r (detectDeviation), counted, kind: 'mistake' | 'novelty' | 'out' | 'theory' }.
+// Une ligne : { game, color, r (detectDeviation), counted, kind, res (reviewGame) } ;
+// kind : 'mistake' | 'novelty' | 'out' | 'treated' | 'theory'.
 function analyzeOnlineGames(games, user, rep = currentRepertoire) {
     const bases = {};
-    const base  = c => bases[c] || (bases[c] = { db: readDBFor(rep, c), opp: readOppFor(rep, c), dirty: false });
+    const base  = c => bases[c] || (bases[c] = { db: readDBFor(rep, c), opp: readOppFor(rep, c), dirty: false, save() { this.dirty = true; } });
+    const ledger = readLedger();
     const rows  = [];
-    const summary = { games: 0, mistakes: 0, newMistakes: 0, novelties: 0, theory: 0, skipped: 0 };
+    const summary = { games: 0, mistakes: 0, newMistakes: 0, novelties: 0, treated: 0, theory: 0, skipped: 0, seen: 0 };
 
     games.forEach(game => {
         const color = _userColor(game.headers, user);
         const fen   = game.headers.FEN;
         if (!color || (fen && fen.split(' ')[0] !== INIT_FEN.split(' ')[0]) || !game.sans.length) { summary.skipped++; return; }
-        const b = base(color);
-        const r = detectDeviation(game.sans, color, b.db, b.opp);
-        if (!r.moves.length) { summary.skipped++; return; }
-        const d = r.deviation;
-        let counted = null, kind = 'theory';
-        if (d && d.by === 'me') {
-            counted = recordReviewMistake(d, _gameSignature(game.headers, game.sans, color), b.db, () => { b.dirty = true; });
-            kind = counted === 'none' ? 'out' : 'mistake';
-        } else if (d) kind = 'novelty';
+        const res = reviewGame(game, color, rep, base(color), ledger);
+        if (!res.kind) { summary.skipped++; return; }
         summary.games++;
-        if (kind === 'mistake') { summary.mistakes++; if (counted === 'counted') summary.newMistakes++; }
-        if (kind === 'novelty' || kind === 'out') summary.novelties++;
-        if (kind === 'theory') summary.theory++;
-        rows.push({ game, color, r, counted, kind });
+        if (res.prev) summary.seen++;
+        if (res.kind === 'mistake') { summary.mistakes++; if (res.counted === 'counted') summary.newMistakes++; }
+        if (res.kind === 'novelty' || res.kind === 'out') summary.novelties++;
+        if (res.kind === 'treated') summary.treated++;
+        if (res.kind === 'theory') summary.theory++;
+        rows.push({ game, color, r: res.r, counted: res.counted, kind: res.kind, res });
     });
     Object.keys(bases).forEach(c => { if (bases[c].dirty) dataStore.set(dbKeyFor(rep, c), JSON.stringify(bases[c].db)); });
+    writeLedger(ledger);
     return { rows, summary };
 }
 
@@ -134,7 +133,7 @@ async function runOnlineFetch() {
     if (!user) { _online.error = 'Entrez votre pseudo.'; _renderOnlineResults(); return; }
     if (typeof Net !== 'undefined' && !Net.online()) { _online.error = 'Hors ligne : la récupération des parties a besoin d\'Internet.'; _renderOnlineResults(); return; }
     _saveOnlinePrefs(p);
-    _online = { busy: true, rows: null, summary: null, error: '' };
+    _online = { busy: true, rows: null, summary: null, error: '', showSeen: false };
     renderOnlinePane();
     try {
         const games = p.site === 'lichess' ? await fetchLichessGames(user, count) : await fetchChesscomGames(user, count);
@@ -156,6 +155,7 @@ const _ONLINE_KIND = {
     mistake: { cls: 'err',  label: 'Erreur d\'ouverture' },
     novelty: { cls: 'hint', label: 'Nouveauté adverse' },
     out:     { cls: 'hint', label: 'Hors répertoire' },
+    treated: { cls: 'ok',   label: 'Traitée depuis' },
     theory:  { cls: 'ok',   label: '100 % théorique' }
 };
 
@@ -183,19 +183,23 @@ function _renderOnlineResults() {
         <span><b>${pl(s.games, 'partie', 'parties')}</b></span>
         <span class="err">${pl(s.mistakes, 'erreur', 'erreurs')} d'ouverture${s.newMistakes !== s.mistakes ? ` (${s.newMistakes} nouvelle${s.newMistakes > 1 ? 's' : ''})` : ''}</span>
         <span class="hint">${pl(s.novelties, 'nouveauté', 'nouveautés')} adverse${s.novelties > 1 ? 's' : ''}</span>
+        ${s.treated ? `<span class="ok">${pl(s.treated, 'traitée', 'traitées')} depuis</span>` : ''}
         <span class="ok">${s.theory} théorique${s.theory > 1 ? 's' : ''}</span>
         ${s.skipped ? `<span>${s.skipped} ignorée${s.skipped > 1 ? 's' : ''}</span>` : ''}</div>`;
-    const order = { mistake: 0, novelty: 1, out: 2, theory: 3 };
-    const rows  = _online.rows.map((row, i) => ({ row, i })).sort((a, b) => order[a.row.kind] - order[b.row.kind]);
+    if (s.seen) html += `<div class="online-seen"><span>${s.seen === s.games ? (s.games > 1 ? 'Toutes déjà analysées' : 'Déjà analysée') : `${s.games - s.seen} nouvelle${s.games - s.seen > 1 ? 's' : ''} · ${s.seen} déjà analysée${s.seen > 1 ? 's' : ''}`}</span>
+        <button type="button" class="online-seen-btn" data-action="toggleOnlineSeen">${_online.showSeen ? 'Masquer les parties déjà analysées' : `Afficher ${s.seen > 1 ? `les ${s.seen}` : 'la'} déjà analysée${s.seen > 1 ? 's' : ''}`}</button></div>`;
+    const order = { mistake: 0, novelty: 1, out: 2, treated: 3, theory: 4 };
+    const rows  = _online.rows.map((row, i) => ({ row, i })).filter(({ row }) => _online.showSeen || !row.res.prev)
+                              .sort((a, b) => order[a.row.kind] - order[b.row.kind]);
     html += '<div class="online-list">' + rows.map(({ row, i }) => {
-        const h = row.game.headers, d = row.r.deviation, k = _ONLINE_KIND[row.kind];
+        const h = row.game.headers, d = row.r.deviation, k = _ONLINE_KIND[row.kind], prev = row.res.prev;
         const opp  = row.color === 'w' ? h.Black : h.White;
         const date = (h.UTCDate || h.Date || '').replace(/\./g, '-');
         const res  = h.Result === '1/2-1/2' ? '½' : (h.Result === '1-0') === (row.color === 'w') ? 'gain' : h.Result === '*' ? '' : 'perte';
-        const at   = d ? _plyLabel(d.ply, row.r.moves[d.ply].san) : '';
+        const at   = d ? _plyLabel(row.res.ply, row.r.moves[row.res.ply].san) : '';
         return `<button class="online-row" data-action="openOnlineGame" data-arg="${i}">
             <span class="glyph" data-glyph="${row.color === 'w' ? 'K' : 'k'}"></span>
-            <span class="online-main"><b>${escapeHtml(opp || '?')}</b><small>${escapeHtml(date)}${res ? ' · ' + res : ''}</small></span>
+            <span class="online-main"><b>${escapeHtml(opp || '?')}</b><small>${escapeHtml(date)}${res ? ' · ' + res : ''}${prev ? ` · déjà analysée le ${escapeHtml(_shortDate(prev.first))}` : ''}</small></span>
             <span class="online-verdict ${k.cls}">${k.label}${at ? ` · ${escapeHtml(at)}` : ''}${row.counted === 'counted' ? ' · comptée' : ''}</span>
           </button>`;
     }).join('') + '</div>';
@@ -209,7 +213,12 @@ function openOnlineGame(i) {
     closeGameReview();
     closeData();
     openPlay(row.color);
-    showReviewResult(row.r, row.counted);
+    showReviewResult(row.res);
 }
 
-registerActions({ openOnlineGame });
+function toggleOnlineSeen() {
+    _online.showSeen = !_online.showSeen;
+    _renderOnlineResults();
+}
+
+registerActions({ openOnlineGame, toggleOnlineSeen });

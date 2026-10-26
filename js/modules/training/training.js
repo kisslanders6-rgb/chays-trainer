@@ -33,8 +33,7 @@ const TRAIN_CONTEXT_PLIES = 3;   // demi-coups rejoués avant que la main soit r
 // Mettre à false pour que la solution ne modifie aucune statistique.
 const TRAIN_SOLUTION_PENALTY = true;
 
-const TRAIN_SETTINGS_KEY = 'chessTrainer.trainingSettings';
-const TRAIN_RECORD_KEY   = 'chessTrainer.timedRecord';      // record du contre-la-montre (propre à l'appareil)
+const TRAIN_RECORD_KEY   = 'chessTrainer_timedRecord';      // record du contre-la-montre (propre à l'appareil)
 const TRAIN_SEQ_END      = 999;
 const TRAIN_TIMED_MS     = 3 * 60000;
 const TRAIN_TIMED_PENALTY_MS = 10000;                       // une erreur au contre-la-montre coûte 10 s
@@ -51,26 +50,30 @@ const trainingState = {
     tick: null              // minuteur du contre-la-montre
 };
 
-// ─── OPTIONS DU MODE LIBRE (persistées) ───────────────────────────────────────
+// ─── OPTIONS DU MODE LIBRE (préférences synchronisées, settings.js) ───────────
 
-function _loadTrainingSettings() {
-    const d = { maxPlies: 0, seqLen: 1, fromStart: 0 };
-    try {
-        const s = dataStore.getJSON(TRAIN_SETTINGS_KEY, null) || {};
-        if (Number.isFinite(s.maxPlies) && s.maxPlies >= 0) d.maxPlies = s.maxPlies;
-        if (Number.isFinite(s.seqLen)   && s.seqLen   >= 1) d.seqLen   = s.seqLen;
-        if (s.fromStart === 1) d.fromStart = 1;
-    } catch (_) { /* stockage indisponible : valeurs par défaut */ }
-    return d;
-}
-
-const trainingSettings = _loadTrainingSettings();
+const _FREE_PREFS = { maxPlies: 'freeMaxPlies', seqLen: 'freeSeqLen', fromStart: 'freeFromStart' };
+const trainingSettings = {
+    get maxPlies()  { return appSettings.freeMaxPlies; },
+    get seqLen()    { return appSettings.freeSeqLen; },
+    get fromStart() { return appSettings.freeFromStart; }
+};
 
 function setTrainingOption(name, value) {
-    trainingSettings[name] = Number(value);
-    dataStore.setJSON(TRAIN_SETTINGS_KEY, trainingSettings);
+    const key = _FREE_PREFS[name], v = Number(value);
+    if (!key || !SYNCED_PREFS[key].ok(v)) return;
+    appSettings[key] = v;
+    saveSettings();
     initTraining();
 }
+
+// Ancien nom du record du contre-la-montre (chessTrainer.timedRecord) : repris une fois.
+(function migrateTimedRecord() {
+    const OLD = 'chessTrainer.timedRecord', old = dataStore.get(OLD);
+    if (old === null) return;
+    if (dataStore.get(TRAIN_RECORD_KEY) === null) dataStore.set(TRAIN_RECORD_KEY, old);
+    dataStore.remove(OLD);
+})();
 
 function _entryDepth(e) { return e.ply || (e.path && e.path.length) || null; }
 

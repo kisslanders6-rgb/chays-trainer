@@ -8,7 +8,7 @@ const DB = 'openingDB_Général_w', OPP = 'openingOpp_Général_w';
 
 t('portée : clés synchronisées vs locales', () => {
     ['chessTrainer_repertoires', 'chessTrainer_trash', 'chessTrainer_endgames', 'chessTrainer_activity', 'chessTrainer_prefs', DB, OPP].forEach(k => assert(S.isSynced(k), k));
-    ['chessTrainer_theme', 'chessTrainer_settings', 'chessTrainer_backupState', 'chessTrainer_backupNag',
+    ['chessTrainer_mode', 'chessTrainer_theme', 'chessTrainer_settings', 'chessTrainer_backupState', 'chessTrainer_backupNag',
      'chessTrainer.trainingSettings'].forEach(k => assert(!S.isSynced(k), k));
 });
 
@@ -132,5 +132,30 @@ Object.keys(keyOf).forEach(kind => t(`propriétés (${kind}) : symétrie, idempo
         assert(S.same(S.merge(key, m1, m1, m2), m1), 'convergence');
     }
 }));
+
+t('entrées : date d\'enregistrement la plus ancienne, priorité levée par le passage le plus récent', () => {
+    const b = { p: E('e2e4', 0, 0, { created: 50, prio: 60 }) };
+    const l = { p: E('e2e4', 1, 0, { created: 50, lastReviewed: 200 }) };          // réussie ici : priorité levée
+    const r = { p: E('e2e4', 0, 0, { created: 40, prio: 60 }) };
+    const x = S.merge(DB, b, l, r);
+    assert.deepStrictEqual(x, S.merge(DB, b, r, l));
+    assert.strictEqual(x.p.created, 40); assert.strictEqual(x.p.prio, undefined);
+    const y = S.merge(DB, null, { p: E('e2e4', 0, 0, { prio: 7 }) }, { p: E('e2e4', 1, 1) });
+    assert.strictEqual(y.p.prio, 7);
+});
+
+t('journal des parties : verdict le plus récent, première erreur comptée gardée, symétrique', () => {
+    const K = 'chessTrainer_gameLedger';
+    assert(S.isSynced(K));
+    const b = { g: { src: 'lichess', at: 10, first: 100, last: 100, v: { 'G|w': { kind: 'novelty', ply: 1, at: 100 } }, counted: {} } };
+    const l = { g: { src: 'lichess', at: 10, first: 100, last: 300, v: { 'G|w': { kind: 'treated', ply: 1, at: 300 } }, counted: {} } };
+    const r = { g: { src: 'lichess', at: 10, first: 90, last: 200, v: { 'G|w': { kind: 'novelty', ply: 1, at: 200 }, 'G|b': { kind: 'theory', ply: -1, at: 200 } },
+                     counted: { 'G|b': { at: 200 } } } };
+    const x = S.merge(K, b, l, r);
+    assert.deepStrictEqual(x, S.merge(K, b, r, l));
+    assert.strictEqual(x.g.v['G|w'].kind, 'treated');
+    assert.strictEqual(x.g.first, 90); assert.strictEqual(x.g.last, 300);
+    assert.deepStrictEqual(x.g.counted, { 'G|b': { at: 200 } });
+});
 
 console.log(`\n${n} tests réussis.`);

@@ -22,7 +22,7 @@ function loadTheme() { applyThemeMode(); }
 
 // Bascule rapide (pilule de la barre du haut) : clair ↔ sombre, quitte le mode « Système ».
 function toggleTheme() {
-    const dark = document.documentElement.getAttribute('data-theme') === 'light';     // 'light' = thème sombre (nom historique)
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
     setThemeMode(dark ? 'light' : 'dark');
 }
 

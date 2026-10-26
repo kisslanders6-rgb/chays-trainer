@@ -6,12 +6,13 @@
  *
  * Unité de synchronisation = une clé de stockage (un « document » JSON).
  *   chessTrainer_repertoires     'list'      noms des répertoires
- *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due? }
+ *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due?, created?, prio? }
  *   openingOpp_{rép}_{couleur}   'opp'       position → [coups UCI adverses connus]
  *   chessTrainer_trash           'trash'     [{ id, type, deletedAt, … }]
  *   chessTrainer_endgames        'endgames'  exercice → { tries, wins, perfect, best, last }
  *   chessTrainer_activity        'activity'  jour (AAAA-MM-JJ) → { a: essais, f: erreurs }
  *   chessTrainer_prefs           'prefs'     préférence → { v: valeur, at: date du choix } (échiquier, pièces, flèches)
+ *   chessTrainer_gameLedger      'games'     partie analysée → { src, at, first, last, v: { 'rép|couleur': verdict }, counted: { … } }
  * Tout le reste (mode clair / sombre, sons, options d'entraînement, état de sauvegarde…)
  * reste LOCAL à l'appareil.
  *
@@ -38,6 +39,7 @@ const SyncModel = (function () {
         if (key === 'chessTrainer_endgames')    return 'endgames';
         if (key === 'chessTrainer_activity')    return 'activity';
         if (key === 'chessTrainer_prefs')       return 'prefs';
+        if (key === 'chessTrainer_gameLedger')  return 'games';
         if (typeof key === 'string' && key.startsWith('openingDB_'))  return 'db';
         if (typeof key === 'string' && key.startsWith('openingOpp_')) return 'opp';
         return null;
@@ -120,6 +122,11 @@ const SyncModel = (function () {
         // Planning de révision : celui du passage le plus récent (égalité → échéance la plus lointaine).
         const s = [l, r].reduce((x, y) => (num(y.lastReviewed) - num(x.lastReviewed) || num(y.due) - num(x.due) || num(y.interval) - num(x.interval)) > 0 ? y : x);
         if (num(s.due) > 0) { out.due = s.due; out.interval = num(s.interval); }
+        const created = [l.created, r.created].filter(x => num(x) > 0);        // première date d'enregistrement connue
+        if (created.length) out.created = Math.min(...created);
+        // Priorité : celle du passage le plus récent (elle est levée par une réussite) ; sinon l'une ou l'autre.
+        const prio = num(l.lastReviewed) === num(r.lastReviewed) ? Math.max(num(l.prio), num(r.prio)) : num(s.prio);
+        if (prio > 0) out.prio = prio;
         return out;
     }
 
@@ -183,8 +190,24 @@ const SyncModel = (function () {
     }
     const mergePrefs = (b, l, r) => mergeMap(b, l, r, mergePref);
 
+    // ─── Journal des parties analysées ────────────────────────────────────────
+    // Verdict : le plus récent (at) l'emporte. Erreur comptée : la première, gardée à vie (jamais recomptée).
+    function mergeGame(b, l, r) {
+        const pos = [l.first, r.first].filter(x => num(x) > 0);
+        const out = { src: minStr(l.src, r.src) || '', at: Math.max(num(l.at), num(r.at)),
+                      first: pos.length ? Math.min(...pos) : 0, last: Math.max(num(l.last), num(r.last)) };
+        out.v = mergeMap(b && b.v, l.v, r.v, (bb, ll, rr) => mergePref(bb, ll, rr));
+        out.counted = mergeMap(b && b.counted, l.counted, r.counted, (bb, ll, rr) => {
+            const a = num(ll.at), c = num(rr.at);
+            if (a !== c) return clone(a < c ? ll : rr);
+            return clone(stable(ll) <= stable(rr) ? ll : rr);
+        });
+        return out;
+    }
+    const mergeGames = (b, l, r) => mergeMap(b, l, r, mergeGame);
+
     // ─── Point d'entrée ───────────────────────────────────────────────────────
-    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs };
+    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs, games: mergeGames };
 
     // Valeurs déjà décodées (null = absent). Renvoie la valeur fusionnée (null = supprimée).
     function merge(key, base, local, remote) {

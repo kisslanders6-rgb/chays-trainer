@@ -185,7 +185,8 @@ const AccountUI = (function () {
         { id: 'appareils', icon: 'devices',  label: 'Appareils et synchro',  desc: 'Ce qui est synchronisé, et où' },
         { id: 'donnees',   icon: 'database', label: 'Données du compte',     desc: 'Exporter, déconnecter, supprimer' }
     ];
-    const LEVEL_LABELS = { debut: 'Débutant', club: 'Joueur de club', conf: 'Confirmé', expert: 'Expert' };
+    // Sous-titre de la carte de profil : classement, puis l'e-mail quand le pseudo occupe le titre.
+    const _subLine = (u, name) => [appSettings.elo ? `${appSettings.elo} Elo` : '', name ? u.email || '' : ''].filter(Boolean).join(' · ');
     let confirmDelete = false, editEmail = false, userInfo = null;
 
     function _figures() {
@@ -203,7 +204,7 @@ const AccountUI = (function () {
         const u = Auth.user() || {}, f = _figures(), name = (appSettings.pseudo || '').trim();
         return `<div class="pn-group"><div class="pn-profile">
             <span class="pn-avatar" style="${avatarStyle()}">${avatarInner()}<i style="background:${syncStatus.level === 'error' ? 'var(--err)' : syncStatus.level === 'offline' ? 'var(--text-dim)' : syncStatus.level === 'busy' ? '#d9a21b' : 'var(--ok)'}"></i></span>
-            <div class="pn-who"><b id="acct-name">${esc(name || u.email || '')}</b><small id="acct-sub">${LEVEL_LABELS[appSettings.level]}${appSettings.elo ? ` · ${esc(appSettings.elo)} Elo` : ''}${name ? ` · ${esc(u.email || '')}` : ''}</small></div>
+            <div class="pn-who"><b id="acct-name">${esc(name || u.email || '')}</b><small id="acct-sub">${esc(_subLine(u, name))}</small></div>
             <div class="pn-figures"><div><b>${f.positions}</b>positions</div><div><b>${f.streak} j</b>d'affilée</div><div><b>${f.today}</b>aujourd'hui</div></div>
         </div></div>`;
     }
@@ -217,8 +218,7 @@ const AccountUI = (function () {
                 PanelKit.row('Avatar', 'Une pièce ou votre initiale, sur la couleur de votre choix.',
                     `<div class="pn-choices" role="radiogroup" aria-label="Motif">${AVATAR_GLYPHS.map(g => choice('avatarGlyph', g, avatarInner(g), avatarStyle(), g === 'initial' ? 'Initiale' : 'Pièce')).join('')}</div>
                      <div class="pn-choices" role="radiogroup" aria-label="Couleur">${AVATAR_COLORS.map(c => choice('avatarColor', c, '', avatarStyle(c), 'Couleur ' + c)).join('')}</div>`, { col: true })])
-            + PanelKit.group('Niveau et objectif', [
-                PanelKit.row('Niveau', 'Pour situer votre progression.', PanelKit.seg('level', Object.entries(LEVEL_LABELS), appSettings.level, 'Niveau')),
+            + PanelKit.group('Classement et objectif', [
                 PanelKit.row('Classement Elo', 'Facultatif, visible de vous seul.',
                     `<input class="pn-input is-short" type="text" inputmode="numeric" maxlength="4" placeholder="ex. 1650" value="${esc(appSettings.elo)}" data-pn="text" data-key="elo" aria-label="Classement Elo">`),
                 PanelKit.row('Objectif quotidien', 'Aussi réglable dans Paramètres › Jeu et entraînement.',
@@ -330,7 +330,7 @@ const AccountUI = (function () {
             updateButton();
             const name = panelApi.el.querySelector('#acct-name'), sub = panelApi.el.querySelector('#acct-sub'), u = Auth.user() || {};
             if (name) name.textContent = (appSettings.pseudo || '').trim() || u.email || '';
-            if (sub) sub.textContent = LEVEL_LABELS[appSettings.level] + (appSettings.elo ? ` · ${appSettings.elo} Elo` : '') + ((appSettings.pseudo || '').trim() ? ` · ${u.email || ''}` : '');
+            if (sub) sub.textContent = _subLine(u, (appSettings.pseudo || '').trim());
             if (key === 'pseudo' && typeof renderHomeSummary === 'function') renderHomeSummary();
             return;
         }

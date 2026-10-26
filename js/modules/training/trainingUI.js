@@ -200,7 +200,8 @@ function initTraining() {
 // ─── LANCEMENT DES EXERCICES ──────────────────────────────────────────────────
 
 function startTrainingExercise(kind) {
-    const rows = _trRows(), now = Date.now(), items = list => list.sort(_trOrder).map(r => ({ color: r.color, key: r.key }));
+    const rows = _trRows(), now = Date.now(), items = (list, cmp = _trOrder) => list.sort(cmp).map(r => ({ color: r.color, key: r.key }));
+    const prioFirst = (a, b) => (b.e.prio ? 1 : 0) - (a.e.prio ? 1 : 0) || _trOrder(a, b);     // « Traitée depuis » jamais réussie
     if (kind === 'line') { _trLineOpen = !_trLineOpen; initTraining(); return; }
     if (kind === 'free') { startTraining(_trColor); return; }
     if (kind === 'timed') { startSession({ kind: 'timed', label: 'Contre-la-montre', colors: _trSides() }); return; }
@@ -210,7 +211,7 @@ function startTrainingExercise(kind) {
         unsure: () => rows.filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
     }[kind];
     const label = { due: 'Révision du jour', weak: 'Points faibles', unsure: 'À confirmer' }[kind];
-    if (pick) startSession({ kind, label, items: items(pick()) });
+    if (pick) startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
 }
 
 function _startLine(line) {

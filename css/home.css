@@ -2,7 +2,7 @@
    css/home.css — signature « Chays Trainer », barre du haut et accueil (onglet Jouer)
    ───────────────────────────────────────────────────────────────────────────
    Typographie : Fraunces (nom) + IBM Plex Mono (TRAINER, chiffres, notation), chargées par style.css.
-   Accueil « Nocturne » dans le thème sombre (data-theme="light", nom historique) ; « Studio » dans le
+   Accueil « Nocturne » dans le thème sombre (data-theme="dark") ; « Studio » dans le
    clair. Couleurs dérivées de l'échiquier actif (--board-*, --theme-*, style.css) : cartes Blancs / Noirs
    « Velours » (chacune écrit dans la teinte de l'autre), filets et repères en --board-accent. Les blocs [data-stagger]
    montent en cascade à la fin de la cinématique (js/core/introTimeline.js).
@@ -26,7 +26,7 @@
     --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 1px 2px rgba(0, 0, 0, .06), 0 18px 34px -22px rgba(0, 0, 0, .45);
     --card-piece-shadow: drop-shadow(0 10px 12px rgba(0, 0, 0, .2));
 }
-[data-theme="light"] {
+[data-theme="dark"] {
     --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 24px 40px -24px rgba(0, 0, 0, .85);
     --card-piece-shadow: drop-shadow(0 10px 10px rgba(0, 0, 0, .35));
 }
@@ -130,11 +130,11 @@
 /* Pastilles : un cran plus à l'intérieur, la pilule est plus étroite qu'un pavé */
 .topnav-pill > #account-btn.has-session::after,
 .topnav-pill > .theme-toggle[data-backup-dot].has-alert::after { top: 6px; right: 6px; }
-/* Thème : la lune en mode sombre, le soleil en mode clair (data-theme="light" = sombre, nom historique) */
+/* Thème : la lune en mode sombre, le soleil en mode clair (data-theme="dark") */
 .topnav-theme { overflow: hidden; }
 .topnav-theme svg { position: absolute; transition: transform .45s var(--ease-out), opacity .3s; }
-[data-theme="light"] .topnav-theme .tt-sun,
-[data-theme="dark"] .topnav-theme .tt-moon { transform: rotate(-90deg) scale(.4); opacity: 0; }
+[data-theme="dark"] .topnav-theme .tt-sun,
+[data-theme="light"] .topnav-theme .tt-moon { transform: rotate(-90deg) scale(.4); opacity: 0; }
 @media (min-width: 1200px) { .topnav-pill { height: 40px; } .topnav-pill > .theme-toggle { width: 38px; height: auto; } .topnav-pill > .theme-toggle svg { width: 17px; height: 17px; } }
 @media (max-width: 599px)  { .topnav-pill { height: 38px; } .topnav-pill > .theme-toggle { width: 34px; height: auto; } }
 @media (prefers-reduced-motion: reduce) { .topnav-theme svg { transition: none; } }
@@ -144,7 +144,7 @@
 
 /* ─── Fond de l'accueil Nocturne : halo et échiquier fantôme aux teintes de l'échiquier ───
    Sur toute la largeur de la fenêtre (.setup-screen n'a pas de largeur maximale) ; trame centrée. */
-[data-theme="light"] .setup-screen::before {
+[data-theme="dark"] .setup-screen::before {
     content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background:
         radial-gradient(90% 55% at 50% 0%, color-mix(in srgb, var(--board-accent) 12%, transparent), transparent 70%),

@@ -8,8 +8,10 @@ const db = { w: { kw: { move: 'e2e4', attempts: 4, failures: 3, path: ['e2e4'] }
 const ctx = {
     console, setTimeout, clearTimeout, setInterval, clearInterval,
     document: { getElementById: () => null },
-    dataStore: { getJSON: (k, d) => (k in store ? store[k] : d), setJSON: (k, v) => { store[k] = v; } },
+    dataStore: { getJSON: (k, d) => (k in store ? store[k] : d), setJSON: (k, v) => { store[k] = v; },
+                 get: k => (k in store ? store[k] : null), set: (k, v) => { store[k] = v; }, remove: k => { delete store[k]; } },
     currentRepertoire: 'Général', gameMode: 'play', playerColor: 'w',
+    appSettings: { freeMaxPlies: 0, freeSeqLen: 1, freeFromStart: 0 },
     readDBFor: (rep, c) => db[c],
     _level: e => (e.failures * 2 > e.attempts ? 'weak' : 'mastered'),
     goHome: tab => navigations.push(tab)
@@ -48,12 +50,12 @@ t('écran de jeu quitté avant tout coup : séance close, pas de bilan', () => {
 });
 
 t('séance close : la profondeur max du mode libre s\'applique de nouveau', () => {
-    ctx.trainingSettings.maxPlies = 4;
+    ctx.appSettings.freeMaxPlies = 4;
     session(false);
     assert.strictEqual(ctx._isEligible({ ply: 10 }), true);           // séance guidée : liste posée telle quelle
     ctx.abandonSession();
     assert.strictEqual(ctx._isEligible({ ply: 10 }), false);
-    ctx.trainingSettings.maxPlies = 0;
+    ctx.appSettings.freeMaxPlies = 0;
 });
 
 t('« Quitter » en cours de séance : bilan puis retour à l\'onglet d\'origine', () => {
