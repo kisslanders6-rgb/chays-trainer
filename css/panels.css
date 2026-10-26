@@ -247,3 +247,64 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 .account-auth-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.2; color: var(--text); text-align: center; text-wrap: balance; }
 .account-auth .panel-sub { margin: 0; text-align: center; }
 .pn .account-msg:empty { display: none; }
+
+/* ─── Mode Analyse (modules/analysis/analysis.js) ────────────────────────────
+   Barre d'évaluation à gauche de l'échiquier (dessous sur mobile) ; panneau : moteur, brouillon, fusion. */
+.eval-bar { position: absolute; left: -16px; top: 0; bottom: 0; width: 9px; border-radius: 5px; overflow: hidden;
+            background: #26221f; box-shadow: inset 0 0 0 1px var(--border); --white: 50%; }
+.eval-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--white); background: #f4f1ea; transition: height .35s ease; }
+.eval-bar.is-empty::after { height: 50%; opacity: .45; }
+[data-board] .board-wrap .eval-bar { z-index: 1; }
+@media (max-width: 919px) {
+    .eval-bar { left: 0; right: 0; top: auto; bottom: -8px; width: auto; height: 5px; }
+    .eval-bar::after { top: 0; bottom: 0; left: 0; right: auto; height: auto; width: var(--white); transition: width .35s ease; }
+    .eval-bar.is-empty::after { width: 50%; height: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .eval-bar::after { transition: none; } }
+
+.analysis-panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.analysis-panel section { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.analysis-panel .an-merge { padding: 0; border: 0; background: none; }
+.an-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text); }
+.an-h b { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.an-h b .ico { width: 15px; height: 15px; color: var(--board-accent); }
+.an-h small { flex: 1; min-width: 0; color: var(--text-muted); font: 11.5px var(--font-note); }
+.an-toggle { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: none; color: var(--text); font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+.an-toggle.is-on { border-color: var(--board-accent); color: var(--board-accent); }
+.an-lines { display: flex; flex-direction: column; gap: 2px; }
+.an-line { display: flex; align-items: stretch; gap: 4px; }
+.an-play { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; padding: 5px 6px; border: 0; border-radius: 7px; background: none; color: var(--text-muted);
+           font: 12.5px/1.4 var(--font-note); text-align: left; cursor: pointer; }
+.an-play span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.an-play:hover, .an-use:hover { background: var(--surface-hover); }
+.an-score { flex: none; min-width: 52px; padding: 1px 6px; border-radius: 5px; background: #f4f1ea; color: #1d1a17; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.an-score.is-black { background: #26221f; color: #f4f1ea; }
+.an-use { flex: none; width: 30px; border: 0; border-radius: 7px; background: none; color: var(--text-dim); cursor: pointer; display: grid; place-items: center; }
+.an-use .ico { width: 15px; height: 15px; }
+.an-play:focus-visible, .an-use:focus-visible, .an-mv:focus-visible, .an-toggle:focus-visible, .an-link:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 1px; }
+.an-empty { margin: 0; font-size: 12.5px; color: var(--text-dim); }
+.an-moves { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 3px; max-height: 260px; overflow-y: auto; font: 13px/1.7 var(--font-note); }
+.an-mv { padding: 0 4px; border: 0; border-radius: 5px; background: none; color: var(--text); font: inherit; cursor: pointer; }
+.an-mv:hover { background: var(--surface-hover); }
+.an-var { display: contents; color: var(--text-dim); }
+.an-var .an-mv { color: var(--text-muted); }
+.an-mv.is-cur, .an-var .an-mv.is-cur { background: color-mix(in srgb, var(--board-accent) 30%, transparent); color: var(--text); font-weight: 600; }
+.an-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.an-actions .btn .ico { width: 15px; height: 15px; }
+.an-preview { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--board-accent); border-radius: 12px; background: var(--surface); }
+.an-all { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--text-muted); }
+.an-plan { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.an-plan li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 5px 8px; border-radius: 7px; background: var(--bg-inset); font: 12.5px var(--font-note); color: var(--text); }
+.an-plan li > span:first-child { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+.an-tag { padding: 1px 7px; border-radius: 999px; font: 600 11px var(--font-body, inherit); color: var(--text-muted); background: var(--surface); }
+.an-tag.is-new { color: var(--ok); }
+.an-tag.is-conflict { color: var(--err); }
+.an-tag.is-replace { color: #b8860b; }
+.an-replace { display: inline-flex; gap: 5px; align-items: center; font: 12px var(--font-body, inherit); color: var(--text-muted); }
+.an-note { margin: 0; font-size: 12px; color: var(--text-dim); }
+.an-done { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--text); font-size: 13px; }
+.an-done .ico { width: 15px; height: 15px; color: var(--ok); }
+.an-link { padding: 0; border: 0; background: none; color: var(--board-accent); font: 600 13px inherit; font-family: inherit; text-decoration: underline; cursor: pointer; }
+.pn-engine { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; font-size: 13px; color: var(--text); }
+.pn-engine small { color: var(--text-muted); line-height: 1.5; }
+.pn-engine a { color: var(--board-accent); }

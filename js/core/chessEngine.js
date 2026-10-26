@@ -438,5 +438,21 @@ const Chess = (function () {
     const legalMoves = pos => at(pos, legalHere);
     const replay  = (path, from) => path.reduce((pos, u) => play(pos, u), from || start());
 
-    return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, replay };
+    // FEN d'une position (compteurs « 0 1 » : la règle des 50 coups n'est pas suivie).
+    function fen(pos) {
+        const rows = [];
+        for (let r = 7; r >= 0; r--) {
+            let row = '', empty = 0;
+            for (let c = 0; c < 8; c++) {
+                const p = pos.board[r * 8 + c];
+                if (!p) empty++;
+                else { if (empty) { row += empty; empty = 0; } row += p; }
+            }
+            rows.push(row + (empty || ''));
+        }
+        const castle = ['K', 'Q', 'k', 'q'].filter(k => pos.castling[k]).join('') || '-';
+        return `${rows.join('/')} ${pos.turn} ${castle} ${pos.ep >= 0 ? squareToName(pos.ep) : '-'} 0 1`;
+    }
+
+    return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, replay, fen };
 })();

@@ -146,7 +146,7 @@ function handleClick(idx) {
     if (selected === idx) { selected = null; legalMoves = []; renderBoard(); return; }
 
     if (legalMoves.includes(idx)) {
-        if (turn !== playerColor) {
+        if (turn !== playerColor && gameMode !== 'analysis') {      // Analyse : les deux camps passent par executePlayerMove
             executeOpponentMove(selected, idx);
         } else {
             executePlayerMove(selected, idx);
@@ -282,6 +282,8 @@ function executePlayerMove(from, to, promo) {
         }
         promo = null;
     }
+
+    if (gameMode === 'analysis') { analysisMove(from, to, promo); return; }      // brouillon : rien n'est vérifié ni enregistré
 
     const key    = positionKey();
     const entry  = openingDB[key];

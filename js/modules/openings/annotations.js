@@ -227,6 +227,7 @@ function renderAnnotations(afterBoardRender) {
     const preview = d && d.to !== null && d.to !== d.from ? _arrowSVG(d, true) : '';
     let book = '';
     try { book = _bookArrowList().map(a => _arrowSVG(a, true)).join(''); } catch (e) { /* position illisible : pas de flèches */ }
+    if (typeof analysisArrowList === 'function') book += analysisArrowList().map(a => _arrowSVG(a, true)).join('');      // meilleurs coups du moteur
     layer.innerHTML = book + annotations.circles.map(_circleSVG).join('') + annotations.arrows.map(a => _arrowSVG(a)).join('') + preview;
 }
 

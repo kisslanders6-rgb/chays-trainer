@@ -23,6 +23,11 @@ const HELP_GUIDES = [
         'Dans une position inconnue, votre coup devient l’<strong>unique réponse</strong> enregistrée. Ensuite, il faut la retrouver : un autre coup est refusé.',
         '<strong>Indice</strong> (Espace) montre la pièce à jouer ; un second appui dévoile le coup.',
         'Jouer sert à <strong>construire</strong> : rien n’y est compté. Un nouveau coup est proposé dès la prochaine séance d’Entraînement, qui seule fait évoluer statistiques et révisions.'], 'tab:play'],
+    ['analysis', 'microscope', 'Analyse', 'Explorer avec le moteur, puis ajouter au répertoire', [
+        'Le bouton <strong>Analyse</strong> de l’écran Jouer ouvre la position affichée avec <strong>Stockfish</strong> : évaluation, meilleures lignes et flèches. Le moteur se télécharge une fois (environ 1,8 Mo) puis fonctionne hors ligne.',
+        'Jouez librement les deux camps : vos essais forment un <strong>brouillon</strong> en arbre, sans effet sur le répertoire. Un clic sur une ligne du moteur joue son coup ; <strong>+</strong> la recopie dans le brouillon.',
+        '<strong>Ajouter au répertoire</strong> montre d’abord les coups qui seront enregistrés. Un coup différent du vôtre est signalé : il n’est remplacé que si vous cochez « Remplacer » (l’ancien part à la corbeille).',
+        'Réglages (lignes, profondeur, fils de calcul) : Paramètres › Moteur d’analyse.'], 'tab:play'],
     ['training', 'target', 'Entraînement', 'Des exercices qui finissent par un bilan', [
         'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur. <strong>Révision du jour</strong> pose toutes les positions dues.',
         'Autres exercices : <strong>Points faibles</strong>, <strong>Ligne complète</strong> (une ouverture du premier coup au bout de la variante), <strong>À confirmer</strong>, <strong>Contre-la-montre</strong> (3 minutes) et <strong>Mode libre</strong> (tirage sans fin).',
@@ -98,6 +103,9 @@ function _renderHelp(section, q) {
         <h3 class="pn-h">Jeux de pièces</h3>
         <div class="pn-group"><div class="pn-credits">${sets.map(s => `<div>${s.label}<span>${PanelKit.esc(s.author)} · ${PanelKit.esc(s.license)}</span></div>`).join('')}</div></div>
         <p class="pn-lede">Jeux issus du dépôt open source de lichess (dossier public/piece). Les textures d’échiquier (pierre, cuir, noyer) sont créées pour ce projet.</p>
+        <h3 class="pn-h">Moteur d’analyse</h3>
+        <div class="pn-group"><div class="pn-credits"><div>Stockfish${typeof Engine !== 'undefined' && Engine.info() ? ' ' + PanelKit.esc(Engine.info().version) : ''}<span>Stockfish developers · GPL v3</span></div><div>stockfish.js (WebAssembly)<span>Nathan Rugg, Chess.com · GPL v3</span></div></div></div>
+        <p class="pn-lede">Logiciel libre : sources sur github.com/official-stockfish/Stockfish et github.com/nmrugg/stockfish.js ; licence jointe dans engine/.</p>
         <h3 class="pn-h">Polices</h3>
         <div class="pn-group"><div class="pn-credits"><div>Fraunces<span>SIL OFL 1.1</span></div><div>IBM Plex Mono<span>SIL OFL 1.1</span></div><div>Inter<span>SIL OFL 1.1</span></div></div></div>`;
 }

@@ -283,6 +283,7 @@
                 <div class="board-col">
                     <div class="tr-progress" id="tr-progress" hidden></div>
                     <div class="board-wrap">
+                        <div class="eval-bar is-empty" id="eval-bar" data-modes="analysis" role="img" aria-label="Évaluation indisponible"></div>
                         <div id="board" role="group" aria-label="Échiquier — flèches pour se déplacer, Entrée pour jouer"></div>
                     </div>
 
@@ -295,7 +296,7 @@
                     -->
                     <div class="board-controls">
                         <div class="controls controls-main">
-                            <button class="btn btn-nav tb-prev" id="btn-prev" data-modes="play,preview" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
+                            <button class="btn btn-nav tb-prev" id="btn-prev" data-modes="play,preview,analysis" onclick="navPrev()" title="Coup précédent (←)" aria-label="Coup précédent">
                                 <svg class="ico"><use href="#i-chevron-left"/></svg><span class="btn-label mobile-only">Préc.</span>
                             </button>
                             <button class="btn btn-primary btn-grow tb-hint" data-modes="play,training,endgame" onclick="showHint()" title="Indice (Espace)">
@@ -313,7 +314,7 @@
                             <button class="btn btn-primary btn-grow" data-modes="preview" onclick="trainStatsPreview()" title="Jouer le coup de cette position (compte comme un essai)">
                                 <svg class="ico"><use href="#i-play"/></svg><span class="btn-label">S'entraîner</span>
                             </button>
-                            <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
+                            <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview,analysis" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
                             </button>
                         </div>
@@ -335,8 +336,8 @@
                             <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?">
                                 <svg class="ico"><use href="#i-target"/></svg><span class="btn-label">Partie</span>
                             </button>
-                            <button class="btn btn-tool tb-more" data-needs-network onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
-                                <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            <button class="btn btn-tool tb-more" onclick="openAnalysis()" title="Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin">
+                                <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyse</span>
                             </button>
                             <!-- Mobile : les actions .tb-more passent dans ce menu pour que chaque bouton garde une largeur confortable -->
                             <button class="btn btn-tool tb-more-btn" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
@@ -363,8 +364,19 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool" data-needs-network onclick="openLichessAnalysis()" title="Analyser la position affichée sur Lichess (nouvel onglet)">
+                            <button class="btn btn-tool" onclick="openAnalysis()" title="Analyser la position avec le moteur">
+                                <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyse</span>
+                            </button>
+                        </div>
+                        <div class="controls controls-tools" data-modes="analysis">
+                            <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
+                                <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
+                            </button>
+                            <button class="btn btn-tool" data-needs-network onclick="openLichessAnalysis()" title="Ouvrir la position affichée sur Lichess (nouvel onglet), pour la partager">
                                 <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            </button>
+                            <button class="btn btn-tool is-exit" onclick="quitAnalysis()" title="Revenir à Jouer ; le brouillon est gardé pour la session">
+                                <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
                             </button>
                         </div>
                     </div>
@@ -387,6 +399,7 @@
                         <div class="moves-bar" id="moves-bar">Aucun coup joué</div>
                         <div class="tree-view hidden" id="tree-view"></div>
                         <div class="tree-view freq-view hidden" id="freq-view" aria-live="polite"></div>
+                        <div class="analysis-panel" id="analysis-panel" data-modes="analysis"></div>
                     </div>
                 </div>
 
@@ -569,6 +582,7 @@
 <script src="js/core/sound.js"></script>
 <script src="js/core/pieces.js"></script>
 <script src="js/core/chessEngine.js"></script>
+<script src="js/core/engine.js"></script>
 <script src="js/modules/openings/openingsLogic.js"></script>
 <script src="js/modules/openings/dataPanel.js"></script>
 <script src="js/modules/openings/pgn.js"></script>
@@ -585,6 +599,7 @@
 <script src="js/modules/endgame/egCore.js"></script>
 <script src="js/modules/endgame/egExercises.js"></script>
 <script src="js/modules/endgame/endgame.js"></script>
+<script src="js/modules/analysis/analysis.js"></script>
 <script src="js/app.js"></script>
 <script src="js/core/settingsUI.js"></script>
 <script src="js/core/helpUI.js"></script>

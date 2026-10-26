@@ -55,6 +55,14 @@ const SYNCED_PREFS = {
     freeMaxPlies:  { ok: v => Number.isInteger(v) && v >= 0 && v <= 60, def: 0 },       // 0 : toute profondeur
     freeSeqLen:    { ok: v => Number.isInteger(v) && v >= 1 && v <= 999, def: 1 },      // 999 : toute la variante
     freeFromStart: { ok: _oneOf([0, 1]), def: 0 },
+    // Moteur d'analyse (engine.js, mode Analyse)
+    engineLines:   { ok: v => Number.isInteger(v) && v >= 1 && v <= 5, def: 3 },        // MultiPV
+    engineDepth:   { ok: _oneOf([0, 20, 25, 30, 40]), def: 30 },                         // 0 : sans limite
+    engineTime:    { ok: _oneOf([0, 5, 10, 30]), def: 0 },                               // secondes par position ; 0 : sans limite
+    engineEval:    { ok: _oneOf(['cp', 'wdl']), def: 'cp' },                             // pions ou chances de gain
+    engineArrows:  { ok: _oneOf([0, 1, 5]), def: 1 },                                    // flèches des meilleurs coups (5 : toutes les lignes)
+    engineAuto:    { ok: _bool, def: true },                                             // calcul lancé à l'ouverture de l'Analyse
+    cloudEval:     { ok: _bool, def: true },                                             // évaluation déjà calculée par Lichess
     // Profil
     pseudo:      { ok: _text(24), def: '' },
     avatarGlyph: { ok: _oneOf(AVATAR_GLYPHS), def: 'initial' },
@@ -81,7 +89,9 @@ const LOCAL_PREFS = {
     motion:   { ok: _oneOf(['system', 'reduced', 'full']), def: 'system' },
     textSize: { ok: _oneOf(['s', 'm', 'l']), def: 'm' },
     contrast: { ok: _bool, def: false },
-    announce: { ok: _bool, def: false }
+    announce: { ok: _bool, def: false },
+    engineThreads: { ok: v => Number.isInteger(v) && v >= 0 && v <= 64, def: 0 },       // 0 : automatique (moitié des cœurs)
+    engineHash:    { ok: _oneOf([16, 32, 64, 128, 256, 512]), def: 64 }                 // Mo
 };
 
 function _readPrefs() {

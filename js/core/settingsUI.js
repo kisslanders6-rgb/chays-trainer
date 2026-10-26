@@ -20,6 +20,7 @@ const KEYBOARD_SHORTCUTS = [
 const SETTINGS_SECTIONS = [
     { id: 'apparence', icon: 'palette',  label: 'Apparence',             desc: 'Mode, échiquier, pièces, flèches' },
     { id: 'jeu',       icon: 'target',   label: 'Jeu et entraînement',   desc: 'Échiquier, révisions, notation' },
+    { id: 'moteur',    icon: 'cpu',      label: 'Moteur d’analyse',      desc: 'Stockfish : lignes, profondeur, fils' },
     { id: 'sons',      icon: 'volume',   label: 'Sons et vibrations',    desc: 'Effets sonores, volume, vibrations' },
     { id: 'access',    icon: 'eye',      label: 'Accessibilité',         desc: 'Animations, texte, contraste' },
     { id: 'donnees',   icon: 'database', label: 'Données et sauvegarde', desc: 'Sauvegarde, import, corbeille' },
@@ -64,6 +65,18 @@ function _settingRows() {
             { group: 'Notation', kind: 'seg', key: 'notation', label: 'Écriture des coups', hint: 'Barre des coups, arbre, statistiques.',
               opts: [['fr', 'C F T D R'], ['en', 'N B R Q K'], ['fig', 'Figurines']] },
             { group: 'Notation', kind: 'custom', label: 'Exemple', html: () => `<span class="pn-sample">${_sampleLine()}</span>`, search: 'exemple notation' }
+        ],
+        moteur: [
+            { group: null, kind: 'custom', html: _engineInfoHTML, search: 'stockfish moteur version licence', col: true },
+            { group: 'Calcul', kind: 'seg', key: 'engineLines', label: 'Lignes calculées', hint: 'Meilleurs coups affichés en même temps (MultiPV).', opts: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] },
+            { group: 'Calcul', kind: 'seg', key: 'engineDepth', label: 'Profondeur', hint: 'Le calcul s’arrête à cette profondeur (en demi-coups).', opts: [[20, '20'], [25, '25'], [30, '30'], [40, '40'], [0, 'Sans limite']] },
+            { group: 'Calcul', kind: 'seg', key: 'engineTime', label: 'Temps par position', hint: 'Arrêt au bout de ce temps, même si la profondeur n’est pas atteinte.', opts: [[0, 'Sans limite'], [5, '5 s'], [10, '10 s'], [30, '30 s']] },
+            { group: 'Calcul', kind: 'toggle', key: 'engineAuto', label: 'Calculer dès l’ouverture de l’Analyse', hint: 'Sinon, le calcul se lance avec le bouton du panneau.' },
+            { group: 'Calcul', kind: 'toggle', key: 'cloudEval', label: 'Évaluation Lichess immédiate', hint: 'Pour les positions connues, affiche tout de suite l’évaluation déjà calculée sur Lichess (en ligne).' },
+            { group: 'Affichage', kind: 'seg', key: 'engineEval', label: 'Évaluation', opts: [['cp', 'En pions (+0,4)'], ['wdl', 'Chances de gain']] },
+            { group: 'Affichage', kind: 'seg', key: 'engineArrows', label: 'Flèches sur l’échiquier', opts: [[0, 'Aucune'], [1, 'Meilleur coup'], [5, 'Toutes les lignes']] },
+            { group: 'Cet appareil', kind: 'seg', key: 'engineThreads', label: 'Fils de calcul', hint: 'Plus de fils : plus rapide, plus gourmand. « Auto » : la moitié des cœurs.', opts: [[0, 'Auto'], [1, '1'], [2, '2'], [4, '4'], [8, '8']] },
+            { group: 'Cet appareil', kind: 'seg', key: 'engineHash', label: 'Mémoire', hint: 'Table de transposition du moteur.', opts: [[16, '16 Mo'], [64, '64 Mo'], [128, '128 Mo'], [256, '256 Mo'], [512, '512 Mo']] }
         ],
         sons: [
             { group: null, kind: 'toggle', key: 'sound', label: 'Effets sonores' },
@@ -129,6 +142,15 @@ const _piecesHTML = () => `<div class="theme-options">${PIECE_SET_IDS.map(id => 
     return `<button type="button" class="theme-opt piece-opt${appSettings.pieceSet === id ? ' active' : ''}" data-piece="${id}" data-pn="seg" data-key="pieceSet" data-v="${id}" aria-pressed="${appSettings.pieceSet === id}"><span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`; }).join('')}</div>`;
 const _arrowsHTML = () => typeof arrowStylePreview !== 'function' ? '' : `<div class="theme-options">${ARROW_STYLE_IDS.map(id =>
     `<button type="button" class="theme-opt arrow-opt${appSettings.arrowStyle === id ? ' active' : ''}" data-arrow="${id}" data-pn="seg" data-key="arrowStyle" data-v="${id}" aria-pressed="${appSettings.arrowStyle === id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join('')}</div>`;
+// Moteur : version et mode de calcul une fois chargé, sinon ce qui se passera au premier usage.
+function _engineInfoHTML() {
+    const i = typeof Engine !== 'undefined' ? Engine.info() : null;
+    const isolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated;
+    const what = i ? `${i.name} ${i.version} · réseau léger · ${i.threads > 1 ? `${i.threads} fils de calcul` : '1 fil de calcul'}`
+                   : `Stockfish, téléchargé au premier usage (environ 1,8 Mo), puis disponible hors ligne.`;
+    const how = isolated ? 'Calcul sur plusieurs fils disponible sur cet appareil.' : 'Ce navigateur limite le moteur à un seul fil de calcul.';
+    return `<div class="pn-engine"><b>${PanelKit.esc(what)}</b><small>${how} Logiciel libre, licence GPL v3 : <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener">Stockfish</a>, compilé en WebAssembly par <a href="https://github.com/nmrugg/stockfish.js" target="_blank" rel="noopener">stockfish.js</a>.</small></div>`;
+}
 const _keysHTML = () => KEYBOARD_SHORTCUTS.map(([g, list]) => `<h3 class="pn-h">${g}</h3><div class="pn-group"><div class="pn-keys">${list.map(([l, ks]) =>
     `<div class="pn-key"><span>${l}</span><span>${ks.map(x => x.startsWith('puis') ? `<small>${x}</small>` : `<kbd>${x}</kbd>`).join('')}</span></div>`).join('')}</div></div>`).join('');
 
@@ -213,6 +235,8 @@ function setPref(key, value) {
         case 'dailyGoal': if (typeof renderHomeSummary === 'function') renderHomeSummary(); if (typeof initTraining === 'function') initTraining(); break;
         case 'sound': case 'volume': _copyLooksToPrefs(); break;
         case 'backupReminder': if (typeof updateBackupIndicators === 'function') updateBackupIndicators(); break;
+        case 'engineLines': case 'engineDepth': case 'engineTime': case 'engineEval': case 'engineArrows': case 'engineThreads': case 'engineHash': case 'cloudEval':
+            if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged(key); break;
     }
 }
 

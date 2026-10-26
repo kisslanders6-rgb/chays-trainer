@@ -1,0 +1,67 @@
+# Mise à jour du moteur Stockfish embarqué (engine/).
+# Chaque lundi (ou à la demande), vérifie la dernière version du paquet npm « stockfish ». S'il y en a une
+# nouvelle : scripts/update-engine.mjs remplace engine/<version>/ et engine/manifest.json, tous les tests
+# tournent (dont tests/stockfish.test.js : empreintes, UCI, mat trouvé), puis une pull request est ouverte.
+# La fusionner suffit : Vercel déploie, le service worker télécharge le nouveau moteur et purge l'ancien.
+#
+# Prérequis (une fois) : Settings › Actions › General › « Allow GitHub Actions to create and approve pull requests ».
+
+name: Mise à jour du moteur
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Dernière version publiée
+        id: v
+        run: |
+          latest=$(npm view stockfish version)
+          current=$(node -p "require('./engine/manifest.json').version")
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "Embarqué : $current · publié : $latest"
+      - name: Ne garder qu'une version publiée depuis au moins 14 jours
+        if: steps.v.outputs.latest != steps.v.outputs.current
+        id: age
+        run: |
+          published=$(npm view stockfish time --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s)['${{ steps.v.outputs.latest }}']))")
+          age=$(( ( $(date +%s) - $(date -d "$published" +%s) ) / 86400 ))
+          echo "Publiée il y a $age jours"
+          if [ "$age" -ge 14 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Embarquer la nouvelle version
+        if: steps.age.outputs.ok == 'true'
+        run: node scripts/update-engine.mjs "${{ steps.v.outputs.latest }}"
+      - name: Tests
+        if: steps.age.outputs.ok == 'true'
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+      - name: Pull request
+        if: steps.age.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="moteur/stockfish-${{ steps.v.outputs.latest }}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then echo "Branche déjà ouverte"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add engine
+          git commit -m "Moteur : Stockfish ${{ steps.v.outputs.latest }} (remplace ${{ steps.v.outputs.current }})"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "Moteur : Stockfish ${{ steps.v.outputs.latest }}" \
+            --body "Nouvelle version du paquet npm stockfish (moteurs lite). Tests passés, dont tests/stockfish.test.js (empreintes, UCI, mat en 1). Fusionner pour déployer ; le service worker remplace l'ancien moteur."

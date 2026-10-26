@@ -1,0 +1,40 @@
+{
+  "name": "Stockfish",
+  "version": "19.0.1",
+  "major": "19",
+  "license": "GPL-3.0",
+  "source": "https://github.com/nmrugg/stockfish.js",
+  "upstream": "https://github.com/official-stockfish/Stockfish",
+  "variants": [
+    {
+      "id": "lite",
+      "threads": true,
+      "net": "lite",
+      "js": {
+        "path": "engine/19.0.1/stockfish-19-lite.js",
+        "bytes": 33426,
+        "sha256": "dac939ff529668e0168b2f615145ec18b029b753deb6963fd7319d788f964333"
+      },
+      "wasm": {
+        "path": "engine/19.0.1/stockfish-19-lite.wasm",
+        "bytes": 1697617,
+        "sha256": "ddf06cdaf0b8e35c11b40530e44db96c2a99c9029c8d621dd9fca97e4872770c"
+      }
+    },
+    {
+      "id": "lite-single",
+      "threads": false,
+      "net": "lite",
+      "js": {
+        "path": "engine/19.0.1/stockfish-19-lite-single.js",
+        "bytes": 28230,
+        "sha256": "ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a"
+      },
+      "wasm": {
+        "path": "engine/19.0.1/stockfish-19-lite-single.wasm",
+        "bytes": 1845971,
+        "sha256": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de"
+      }
+    }
+  ]
+}

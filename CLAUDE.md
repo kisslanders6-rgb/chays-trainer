@@ -11,6 +11,8 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 - **Statistiques** (`js/modules/stats/`) : maîtrise en six niveaux, ouvertures nommées, régularité.
 - **Finales** (`js/modules/endgame/`) : moteur maison `EG` (`egCore.js`), base exacte roi + pion contre roi, catalogue `egExercises.js`.
 - **Analyser mes parties** (`gameReview.js`, `onlineGames.js`) : parties Lichess / Chess.com / PGN collé, arrêt au premier coup hors répertoire, tout passe par `reviewGame`. Mon coup différent : erreur comptée une fois par partie, répertoire et couleur. Coup adverse non couvert : nouveauté, rien de compté. Déviation couverte par une réponse enregistrée **après** la partie : « Traitée depuis », rien de compté, réponse prioritaire en révision tant qu'elle n'a pas été réussie. Chaque partie est notée au journal synchronisé `chessTrainer_gameLedger` (« déjà analysée »).
+- **Analyse** (`js/modules/analysis/analysis.js`, `gameMode === 'analysis'`) : l'écran de jeu avec les deux camps libres, Stockfish (`js/core/engine.js`) et un brouillon en arbre (sessionStorage). Rien n'est écrit dans le répertoire avant « Ajouter au répertoire » (`analysisMergePlan`, mêmes règles que l'import PGN). `executePlayerMove` aiguille les coups vers `analysisMove`, `navGo` prévient `analysisPositionChanged`.
+- **Moteur** : `engine/manifest.json` (version, variantes lite / lite-single, empreintes) ; `Engine.analyse(fen, { multipv, depth, movetime }, onInfo)` renvoie `{ stop(), done }`, scores du point de vue des Blancs, un seul calcul à la fois. Multi-thread seulement si `crossOriginIsolated` (en-têtes de `vercel.json` : COOP `same-origin`, COEP `credentialless`). Ne pas passer COEP à `require-corp` : les polices Google, servies en réponse opaque par le service worker, seraient bloquées. Safari ignore `credentialless` : moteur mono-thread, rien d'autre ne change. Mise à jour : `scripts/update-engine.mjs` et `.github/workflows/engine-update.yml`.
 - **Fenêtres** Paramètres, Aide, Compte : socle commun `js/core/panelKit.js`.
 
 ## Modèle de données (invariants)
@@ -26,6 +28,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 
 - **Thème** : `chessTrainer_mode` vaut `'dark'` (défaut), `'light'` ou `'system'` ; `data-theme` sur `<html>` vaut `'dark'` ou `'light'`, dans le CSS comme en JS. L'ancienne clé `chessTrainer_theme` avait des valeurs inversées (`'light'` = sombre) : `settings.js` la convertit, le script en tête d'`index.html` la lit encore en repli. Passer par `themeMode()` / `setThemeMode()`.
 - Pour calculer sur une autre position que celle affichée : API `Chess` (`Chess.replay`, `Chess.play`, `Chess.san`, `Chess.key`, `Chess.snapshot`), jamais l'état global `board` / `turn`. Les lectures PGN passent par `_withEngineSnapshot`.
+- `Chess.fen(pos)` donne la FEN d'une position (`displayedFen()` pour celle affichée).
 - PGN (`pgn.js`) : les numéros de coup sont lus. Un numéro qui revient en arrière (`12. Cf3 Cd7 12... Cf6`) ouvre une **variante implicite** (`implicit: true`), comme des parenthèses.
 - Un seul nom global par script (de préférence un objet, comme `Chess`, `EG`, `SyncModel`) : `npm test` refuse un nom déclaré deux fois.
 - Nouveau script : l'ajouter dans `index.html` ; `sw.js` le met en cache tout seul. Image remplacée : incrémenter `VERSION` dans `sw.js`.
@@ -48,6 +51,6 @@ Prévisualisation locale : `.claude/launch.json` (serveur Node sur le port 8080)
 
 ## État et chantiers
 
-- Fait : notation standard, Jouer sans comptage, onglet Adversaire, refonte Finales « Velours », lot 1 (Aide, variantes implicites PGN, « Les deux » par défaut, Noyer + Maestro), lot 2 (journal des parties, « Traitée depuis », thème aux valeurs honnêtes, niveau retiré, mode libre synchronisé, clés unifiées).
-- Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Lots suivants : Stockfish embarqué et mode Analyse, finales jugées par Syzygy et moteur, apparence, compte.
+- Fait : notation standard, Jouer sans comptage, onglet Adversaire, refonte Finales « Velours », lot 1 (Aide, variantes implicites PGN, « Les deux » par défaut, Noyer + Maestro), lot 2 (journal des parties, « Traitée depuis », thème aux valeurs honnêtes, niveau retiré, mode libre synchronisé, clés unifiées), lot 3 (Stockfish 19 embarqué, mode Analyse, mise à jour automatique du moteur).
+- Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Lots suivants : finales jugées par Syzygy et moteur, apparence, compte.
 - Décision en attente : choix de l'icône (artefact des 48 icônes).

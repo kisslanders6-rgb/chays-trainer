@@ -337,6 +337,7 @@ function goHome(tab) {
     if (typeof stopTraining === 'function') stopTraining();
     if (typeof abandonSession === 'function') abandonSession();
     if (typeof stopEndgame === 'function') stopEndgame();
+    if (gameMode === 'analysis' && typeof stopAnalysis === 'function') stopAnalysis();     // le brouillon reste dans la session
     if (typeof setSheetOpen === 'function') setSheetOpen(false);
     if (typeof closeToolbarMore === 'function') closeToolbarMore();
     gameMode = 'play';

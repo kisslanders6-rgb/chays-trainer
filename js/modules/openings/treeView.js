@@ -44,7 +44,7 @@ function _applySideTab() {
     document.getElementById('side-tab-moves').classList.toggle('active', eff === 'moves');
     document.getElementById('side-tab-tree').classList.toggle('active', eff === 'tree');
     document.getElementById('side-tab-freq').classList.toggle('active', eff === 'freq');
-    document.getElementById('moves-bar').classList.toggle('hidden', eff !== 'moves');
+    document.getElementById('moves-bar').classList.toggle('hidden', eff !== 'moves' || gameMode === 'analysis');   // Analyse : coups dans le brouillon
     document.getElementById('tree-view').classList.toggle('hidden', eff !== 'tree');
     document.getElementById('freq-view').classList.toggle('hidden', eff !== 'freq');
     if (document.getElementById('game-screen').style.display === 'none') return;

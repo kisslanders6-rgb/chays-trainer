@@ -202,6 +202,7 @@ function navGo(p) {
         renderNavBoard();
     }
     updateNavButtons();
+    if (gameMode === 'analysis' && typeof analysisPositionChanged === 'function') analysisPositionChanged();
 }
 
 function navPrev() {
@@ -297,18 +298,7 @@ function displayedFen() {
         const s = moveHistory[navCursor === NAV_START ? 0 : navCursor + 1];
         b = s.boardBefore; t = s.turnBefore; cr = s.castlingBefore; ep = s.epBefore;
     }
-    const rows = [];
-    for (let r = 7; r >= 0; r--) {
-        let row = '', empty = 0;
-        for (let c = 0; c < 8; c++) {
-            const p = b[r * 8 + c];
-            if (!p) empty++;
-            else { if (empty) { row += empty; empty = 0; } row += p; }
-        }
-        rows.push(row + (empty || ''));
-    }
-    const castle = ['K', 'Q', 'k', 'q'].filter(k => cr[k]).join('') || '-';
-    return `${rows.join('/')} ${t} ${castle} ${ep >= 0 ? squareToName(ep) : '-'} 0 1`;
+    return Chess.fen({ board: b, turn: t, castling: cr, ep });
 }
 
 function openLichessAnalysis() {
