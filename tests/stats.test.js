@@ -51,4 +51,43 @@ t('regroupement : une position rejoint l\'unique ouverture plus précise de ses 
     assert.strictEqual(t2.gName, 'Sicilienne ouverte');                               // tronc commun : son propre nom
 });
 
+t('« À confirmer » : un état à part, absent des barres de niveaux', () => {
+    assert(!ctx.STATS_MASTERY_LEVELS.includes('unsure'));
+    assert.strictEqual(ctx.STATS_MASTERY_LEVELS.length, 5);
+    const html = ctx.levelBarHTML({ weak: 1, fragile: 0, progress: 0, solid: 2, unsure: 7, mastered: 3 });
+    assert(!html.includes('lv-unsure') && html.includes('lv-solid') && html.includes('lv-mastered'), html);
+});
+
+t('Statistiques → Entraînement : couleur, ouverture et exercice transmis, aucune séance lancée', () => {
+    const calls = [];
+    ctx.openTrainingFrom = o => calls.push(o);
+    ctx.statsColor = 'all';
+    ctx.statsGoTraining('due');
+    ctx.statsGoTraining('weak');
+    ctx.statsGoTraining('due:b|Sicilienne Najdorf');
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(calls)), [
+        { color: 'all', focus: 'due' }, { color: 'all', focus: 'weak' },
+        { color: 'b', opening: { key: 'b|Sicilienne Najdorf', name: 'Sicilienne Najdorf' }, focus: 'due' }]);
+});
+
+t('Entraînement filtré sur une ouverture : seules ses positions sont proposées', () => {
+    const P = 'e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6';
+    const dbs = { w: {}, b: {
+        k1: { move: 'a7a6', attempts: 3, failures: 1, path: path(P) },
+        k2: { move: 'e7e5', attempts: 2, failures: 0, path: path('e2e4 e7e5') },
+        k3: { move: 'g8f6', attempts: 0, failures: 0, path: path(P).slice(0, 8) } } };
+    Object.assign(ctx, { readDBFor: (r, c) => dbs[c], currentRepertoire: 'Général', switchHomeTab: tab => { ctx._tab = tab; },
+        dataStore: { get: () => null, getJSON: (k, d) => d, set() {}, setJSON() {}, remove() {} }, appSettings: {}, SYNCED_PREFS: {} });
+    ctx.document.querySelector = () => null;
+    for (const f of ['js/modules/training/training.js', 'js/modules/training/trainingUI.js'])
+        vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+    const tag = [{ side: 'b', k: 'k1', e: dbs.b.k1, path: dbs.b.k1.path }];
+    _assignOpenings(tag);
+    ctx.openTrainingFrom({ color: 'b', opening: { key: tag[0].gKey, name: tag[0].gName }, focus: 'due' });
+    assert.strictEqual(ctx._tab, 'training');
+    assert.strictEqual(ctx._trRows().map(r => r.key).sort().join(), 'k1,k3');
+    ctx.openTrainingFrom({ color: 'all' });
+    assert.strictEqual(ctx._trRows().map(r => r.key).sort().join(), 'k1,k2,k3');
+});
+
 console.log(`\n${n} tests réussis.`);

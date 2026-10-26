@@ -5,6 +5,7 @@
  *
  *   1. EG                noyau pur (règles, recherche, base KPK exacte)   → egCore.js
  *   2. ENDGAME_EXERCISES catalogue : FEN + objectif + théorie              → egExercises.js
+ *      EndgameJudge / EndgameOpponent : juge commun et adversaire calculé  → egJudge.js, egOpponent.js
  *   3. progression       stockage « chessTrainer_endgames »               (ce fichier)
  *   4. initEndgame()     écran d'accueil (appelé par switchHomeTab('endgame'))
  *   5. startEndgame(id)  séance : jugement du coup, réponse de l'adversaire, indices, retenter
@@ -55,7 +56,7 @@ function egMiniBoard(ex) {
     return `<div class="eg-mini" aria-hidden="true">${html}</div>`;
 }
 
-const _egDots = n => '●'.repeat(n) + '○'.repeat(3 - n);
+const _egDots = n => '●'.repeat(n) + '○'.repeat(5 - n);
 
 // Filtre (barre de contexte) : 'all' | 'todo' (pas encore réussi) | 'done' (réussi). Les exercices écartés
 // restent sur le parcours, estompés, pour que le chemin garde sa forme.
@@ -141,7 +142,7 @@ function initEndgame() {
             const w = list.filter(won).length;
             return `<div class="egv-bar-row"><span>${escapeHtml(cat.label)}</span><span class="egv-bar"><i style="width:${Math.round(100 * w / list.length)}%"></i></span><b>${w} / ${list.length}</b></div>`;
         }).join('')}</div>
-        <span class="st-foot">Finales de pions vérifiées par un calcul exact</span>
+        <span class="st-foot">Coups jugés par un calcul exact ou par les tables Syzygy</span>
     </section>`;
 
     // ── Chemins ──
@@ -159,7 +160,7 @@ function initEndgame() {
                 return `<button class="egv-node is-${state}${_egShown(prog, ex) ? '' : ' is-dim'}" data-action="startEndgame" data-arg="${escapeHtml(ex.id)}" title="${escapeHtml(ex.title)} · ${escapeHtml(egObjective(ex))}">
                     <span class="egv-ring">${egMiniBoard(ex)}</span>
                     <b>${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</b>
-                    <span class="egv-st"${state === 'todo' ? ` aria-label="Difficulté ${ex.level} sur 3"` : ''}>${st}</span>
+                    <span class="egv-st"${state === 'todo' ? ` aria-label="Difficulté ${ex.level} sur 5"` : ''}>${st}</span>
                 </button>`;
             }).join('')}</div></div>
         </section>`;
@@ -282,46 +283,28 @@ function _egVancuraCheck(st, m) {
     return null;
 }
 
-// Défenses à règles : vérification du coup et réponse des Blancs, selon l'exercice (ex.rules).
+// Défenses à règles (ex.rules) : les exercices sont jugés par les tables ; les règles servent à expliquer
+// une erreur et à donner un conseil quand le coup tient la nulle sans suivre la méthode.
 const _EG_RULES = {
     philidor: { check: (st, m) => _egPhilidorCheck(st, m), name: 'la défense de Philidor' },
     vancura:  { check: (st, m) => _egVancuraCheck(st, m),  name: 'la défense de Vancura' }
 };
 const _egRules = ex => _EG_RULES[ex.rules || 'philidor'];
 
-// Les Blancs poussent, doublent sur la 7e, donnent échec : un adversaire qui « essaie » vraiment.
-function _egPhilidorWhite(st) {
-    let best = null, bs = -1e9;
-    for (const m of EG.legalMoves(st)) {
-        const ns = EG.make(st, m), from = EG.mFrom(m), to = EG.mTo(m), t = Math.abs(st.b[from]);
-        let sc = 0;
-        if (st.b[to] < 0) sc += 500;
-        if (t === 1) { sc += 60; if (EG.attacked(ns.b, to, -1) && !EG.attacked(ns.b, to, 1)) sc -= 300; }
-        if (t === 4) { const rk = to >> 3; if (rk === 6) sc += 30; if (rk === 7) sc += 25; if (EG.attacked(ns.b, to, -1) && !EG.attacked(ns.b, to, 1)) sc -= 400; }
-        if (t === 6) sc += 6 * (to >> 3);
-        if (EG.inCheck(ns)) sc += 15;
-        const ps = ns.b.indexOf(1);
-        if (ps >= 0 && EG.attacked(ns.b, ps, -1) && !EG.attacked(ns.b, ps, 1)) sc -= 500;      // ne jamais laisser le pion en prise
-        if (ps >= 0 && !EG.attacked(ns.b, ps, 1)) sc -= 150;                                   // garder le pion protégé
-        if (ps >= 0) {                                                                         // prise du pion non reprise ?
-            for (const r of EG.legalMoves(ns)) {
-                if (EG.mTo(r) !== ps) continue;
-                const n2 = EG.make(ns, r);
-                if (!EG.legalMoves(n2).some(x => EG.mTo(x) === ps)) { sc -= 600; break; }
-            }
-        }
-        if (sc > bs) { bs = sc; best = m; }
-    }
-    return best;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  5. SÉANCE D'EXERCICE
 // ═══════════════════════════════════════════════════════════════════════════
 const endgameState = {
     ex: null, busy: false, over: false, failed: null, timers: [],
-    moves: 0, errors: 0, hints: 0, hintLevel: 0, budget: 0, seen: {}, tried: false
+    moves: 0, errors: 0, hints: 0, hintLevel: 0, budget: 0, seen: {}, tried: false,
+    token: 0, source: null, exact: true, planStep: 0
 };
+
+// Exercice jugé par le juge commun (tables Syzygy, base KPK ou moteur) : pas de « kind » propre.
+const _egJudged = ex => !ex.kind;
+const _egFen = () => Chess.fen(Chess.snapshot());
+const EG_SOURCES = { kpk: 'Calcul exact', syzygy: 'Tables Syzygy · exact', engine: 'Moteur · verdict estimé' };
+const EG_OPPONENTS = [['max', 'Résistance maximale'], ['human', 'Humain']];
 
 function _egLater(fn, ms) { endgameState.timers.push(setTimeout(fn, ms)); }
 
@@ -330,9 +313,12 @@ function stopEndgame() {
     endgameState.timers = [];
     endgameState.busy = false;
     endgameState.ex   = null;
+    endgameState.token++;                                     // un verdict ou une réponse en attente sont ignorés
 }
 
 const _egCur  = () => EG.fromGlobals(board, turn);
+// Coup de la position affichée, écrit selon la préférence de notation (lettres françaises, anglaises ou figurines).
+const _egSan = (from, to, promo) => formatSan(toAlgebraic(from, to, promo), board[from] && board[from] === board[from].toLowerCase() ? 'b' : 'w');
 const _egPromoCode = l => ({ Q: 5, R: 4, B: 3, N: 2 }[String(l).toUpperCase()] || 0);
 
 function startEndgame(id) {
@@ -359,13 +345,20 @@ function _egLoadPosition() {
     resetNavCursor();
     clearErrorFx();
     s.busy = false; s.over = false; s.failed = null;
-    s.moves = 0; s.hintLevel = 0; s.seen = {};
-    if (ex.kind === 'kpk') {
+    s.moves = 0; s.hintLevel = 0; s.seen = {}; s.planStep = 0;
+    s.token++;
+    if (_egJudged(ex)) {
+        s.budget = ex.goal === 'win' ? ex.keep || ex.maxMoves : ex.hold;
+        const token = s.token;
+        EndgameJudge.probe(_egFen()).then(v => {                // verdict de départ : source affichée, cache rempli
+            if (token !== s.token || !v) return;
+            s.source = v.source; s.exact = v.exact;
+            renderEndgameCard();
+        }, () => {});
+    } else if (ex.kind === 'kpk') {
         const pr = EG.kpkProbe(_egCur());
         s.budget = ex.goal === 'win' ? Math.ceil(pr.dtw / 2) + 3 : ex.hold;
-    } else if (ex.kind === 'script') s.budget = Math.ceil(ex.line.length / 2);
-    else if (ex.kind === 'rules')    s.budget = ex.hold;
-    else if (ex.kind === 'pawns')    s.budget = ex.goal === 'win' ? ex.maxMoves : ex.hold;
+    } else if (ex.kind === 'pawns')    s.budget = ex.goal === 'win' ? ex.maxMoves : ex.hold;
     else s.budget = ex.maxMoves;
     renderMoves();
     renderBoard();
@@ -390,7 +383,14 @@ function nextEndgame() {
     startEndgame(ENDGAME_EXERCISES[(i + 1) % ENDGAME_EXERCISES.length].id);
 }
 
-registerActions({ egFilter: f => { egFilter = f; initEndgame(); }, egRandom: () => startRandomEndgame(),
+function setEndgameOpponent(policy) {
+    if (!EG_OPPONENTS.some(([id]) => id === policy)) return;
+    appSettings.egOpponent = policy;
+    saveSettings();
+    renderEndgameCard();
+}
+
+registerActions({ egFilter: f => { egFilter = f; initEndgame(); }, egRandom: () => startRandomEndgame(), egOpponent: p => setEndgameOpponent(p),
     startEndgame: id => startEndgame(id), nextEndgame: () => nextEndgame(), retryEndgame: () => retryEndgame(), undoEndgameMove: () => undoEndgameMove() });
 
 // ─── CARTE D'OBJECTIF (panneau de jeu) ────────────────────────────────────────
@@ -399,7 +399,7 @@ function renderEndgameCard() {
     const s = endgameState, ex = s.ex;
     if (!el || !ex) return;
     const cat = ENDGAME_CATEGORIES.find(c => c.id === ex.cat);
-    const unit = ex.kind === 'script' ? 'au total' : ex.goal === 'draw' ? 'à tenir' : 'max';
+    const unit = ex.goal === 'draw' ? 'à tenir' : _egJudged(ex) && ex.keep ? 'pour conclure' : 'max';
     const meter = `<div class="eg-meter"><span>Coup <b>${s.moves}</b> / ${s.budget} ${unit}</span><span>${s.errors} erreur${s.errors > 1 ? 's' : ''}</span><span>${s.hints} indice${s.hints > 1 ? 's' : ''}</span></div>`;
 
     let result = '';
@@ -411,11 +411,20 @@ function renderEndgameCard() {
         result = `<div class="eg-result err">${ico('alert-triangle')} <span>${escapeHtml(s.failed.msg)}</span></div>
             <div class="eg-actions">${s.failed.undoable ? `<button class="btn btn-primary" data-action="undoEndgameMove">${ico('pencil')} Annuler ce coup</button>` : ''}<button class="btn" data-action="retryEndgame">${ico('rotate-ccw')} Recommencer</button></div>`;
     }
+    // Exercices jugés : choix de l'adversaire et origine du verdict (tables, calcul exact ou moteur).
+    let judged = '';
+    if (_egJudged(ex)) {
+        const pol = appSettings.egOpponent || 'max';
+        judged = `<div class="eg-opp"><span class="eg-opp-label" id="eg-opp-label">Adversaire</span>
+            <div class="seg eg-opp-seg" role="radiogroup" aria-labelledby="eg-opp-label">${EG_OPPONENTS.map(([id, label]) =>
+                `<button class="seg-btn${pol === id ? ' active' : ''}" role="radio" aria-checked="${pol === id}" data-action="egOpponent" data-arg="${id}">${label}</button>`).join('')}</div></div>
+            ${s.source ? `<div class="eg-source${s.exact ? '' : ' is-estimate'}">${escapeHtml(EG_SOURCES[s.source] || '')}</div>` : ''}`;
+    }
     el.className = 'endgame-card' + (s.over ? ' is-ok' : s.failed ? ' is-err' : '');
     el.innerHTML = `<div class="eg-card-top"><span class="eg-cat">${escapeHtml(cat ? cat.label : '')}</span><span class="eg-lvl">${_egDots(ex.level)}</span></div>
         <div class="eg-title">${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</div>
-        <div class="eg-goal">${egObjective(ex)}</div>
-        ${meter}${result}`;
+        <div class="eg-goal">${escapeHtml(_egGoalLine(ex))}</div>
+        ${meter}${judged}${result}`;
 }
 
 // ─── COUP DU JOUEUR (appelé par executePlayerMove) ────────────────────────────
@@ -427,19 +436,6 @@ function _egJudge(ex, st, m) {
         if (j.stalemate) return { state: 'fail', undoable: true,  msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse (hors échec).' };
         if (j.hanging)   return { state: 'fail', undoable: true,  msg: 'Votre pièce est abandonnée : le roi adverse la prend et le gain disparaît.' };
         if (n > ex.maxMoves) return { state: 'fail', undoable: false, msg: `Trop lent : le mat doit tomber en ${ex.maxMoves} coups maximum.` };
-        return { state: 'continue' };
-    }
-    if (ex.kind === 'script') {
-        const i = 2 * (n - 1);
-        if (_egUci(m) !== ex.line[i]) return { state: 'fail', undoable: true, msg: 'Ce coup sort de la méthode théorique : cherchez le plan de la leçon (utilisez l\'indice).' };
-        if (i === ex.line.length - 1) return { state: 'success', msg: 'Pion promu : position gagnée !' };
-        return { state: 'continue' };
-    }
-    if (ex.kind === 'rules') {
-        const r = _egRules(ex).check(st, m);
-        if (r && r.capture) return { state: 'success', msg: r.note || 'Le pion est éliminé : nulle !' };
-        if (r) return { state: 'fail', undoable: true, msg: r.msg };
-        if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups avec ${_egRules(ex).name}.` };
         return { state: 'continue' };
     }
     if (ex.kind === 'pawns') return _egJudgePawns(ex, st, m, n);
@@ -530,9 +526,10 @@ function _egPawnsReply(ex, st) {
 function answerEndgameMove(from, to, promo) {
     const s = endgameState, ex = s.ex;
     if (!ex || s.busy || s.over) return;
+    if (_egJudged(ex)) { _egPlayJudged(from, to, promo); return; }
     const st  = _egCur();
     const m   = EG.mk(from, to, promo ? _egPromoCode(promo) : 0);
-    const san = toAlgebraic(from, to, promo);                 // avant application : board est encore la position d'origine
+    const san = _egSan(from, to, promo);                 // avant application : board est encore la position d'origine
     const res = _egJudge(ex, st, m);
 
     if (!s.tried) { s.tried = true; _egBump(ex.id, p => { p.tries++; }); }
@@ -556,6 +553,116 @@ function answerEndgameMove(from, to, promo) {
     _egLater(_egAiReply, opponentDelay(550));
 }
 
+// ─── EXERCICES JUGÉS (tables Syzygy, base KPK ou moteur) ──────────────────────
+// Camp adverse sans pion et sans matériel de mat (roi seul, ou roi + pièce mineure).
+function _egCannotWin(st, side) {
+    let minor = 0;
+    for (let i = 0; i < 64; i++) {
+        const v = st.b[i] * side;
+        if (v <= 0 || v === EG.K) continue;
+        if (v === EG.N || v === EG.B) minor++; else return false;
+    }
+    return minor <= 1;
+}
+const _egBare = (st, side) => { for (let i = 0; i < 64; i++) { const v = st.b[i] * side; if (v > 0 && v !== EG.K) return false; } return true; };
+
+// Verdict d'un coup d'exercice jugé. v : { before, after } (juge commun) ou null si aucun verdict n'est disponible.
+// st : position avant le coup (état EG), m : coup EG, n : numéro du coup. Pure : testée sans DOM.
+function _egJudgedOutcome(ex, st, m, v, n) {
+    const res = EndgameJudge.result, me = st.stm, ns = EG.make(st, m);
+    const replies = EG.legalMoves(ns);
+    const capture = st.b[EG.mTo(m)] !== 0, promo = !!EG.mPromo(m);
+    if (v && res(v.after) < res(v.before)) {
+        const rule = ex.rules ? _egRules(ex).check(st, m) : null;
+        const msg = rule && rule.msg ? rule.msg
+                  : ex.goal === 'win' ? (res(v.after) < 0 ? 'Ce coup perd : la position se retourne.' : 'Ce coup laisse échapper le gain : la position est maintenant nulle.')
+                  : 'Ce coup perd : l\'adversaire peut maintenant forcer le gain.';
+        return { state: 'fail', undoable: true, msg };
+    }
+    if (!replies.length) {
+        if (EG.inCheck(ns)) return { state: 'success', msg: 'Échec et mat ! Bien joué.' };
+        if (ex.goal === 'draw') return { state: 'success', msg: 'Pat : nulle !' };
+        return { state: 'fail', undoable: true, msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse.' };
+    }
+    const kept = !v || res(v.after) >= (ex.goal === 'win' ? 1 : 0);
+    if (ex.goal === 'win') {
+        if (kept && _egBare(ns, -me)) return { state: 'success', msg: 'Il ne reste que le roi adverse : le gain est acquis.' };
+        if (kept && promo && ex.until !== 'capture') return { state: 'success', msg: 'Promotion réussie : la position est gagnée.' };
+        if (kept && capture && ex.until !== 'promo') return { state: 'success', msg: 'Matériel gagné, gain conservé : la position est gagnée.' };
+        if (ex.keep && n >= ex.keep) return { state: 'success', msg: `Gain conservé pendant ${ex.keep} coups : la méthode est acquise.` };
+        if (ex.maxMoves && n >= ex.maxMoves) return { state: 'fail', undoable: false, msg: 'Le gain est toujours là, mais trop lent : cherchez la ligne la plus directe.' };
+    } else {
+        if (_egCannotWin(ns, -me)) return { state: 'success', msg: 'L\'adversaire n\'a plus de quoi gagner : nulle !' };
+        if (kept && (capture || promo) && !ns.b.some(x => x === -me * EG.P)) return { state: 'success', msg: 'Le dernier pion adverse est tombé : nulle !' };
+        if (n >= ex.hold) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${ex.hold} coups sans céder.` };
+    }
+    // Coup juste qui s'écarte de la méthode (Philidor, Vancura) : conseil.
+    const rule = ex.rules ? _egRules(ex).check(st, m) : null;
+    return { state: 'continue', note: rule && rule.msg ? rule.msg : '' };
+}
+
+async function _egPlayJudged(from, to, promo) {
+    const s = endgameState, ex = s.ex, token = s.token;
+    const fen = _egFen(), st = _egCur();
+    const m   = EG.mk(from, to, promo ? _egPromoCode(promo) : 0);
+    const uci = moveToStr(from, to, promo);
+    const san = _egSan(from, to, promo);
+    if (!s.tried) { s.tried = true; _egBump(ex.id, p => { p.tries++; }); }
+    s.moves++; s.hintLevel = 0; s.busy = true;
+    _commitMove(from, to, promo, null, `${san} — vérification…`, 'info');
+    renderEndgameCard();
+    const v = await EndgameJudge.judgeMove(fen, uci).catch(() => null);
+    if (token !== s.token) return;                              // exercice quitté ou recommencé entre-temps
+    if (v) { s.source = v.source; s.exact = v.exact; }
+    const res = _egJudgedOutcome(ex, st, m, v, s.moves);
+    const est = v && !v.exact ? ' (verdict estimé)' : '';
+    if (res.state === 'fail') {
+        s.errors++; s.failed = res;
+        setStatus(`✗ ${san} — ${res.msg}${est}`, 'err');
+        playSound('error');
+        renderEndgameCard();
+        return;
+    }
+    if (res.state === 'success') { setStatus(`✓ ${san} — ${res.msg}`, 'ok'); _egFinish(res.msg); return; }
+    setStatus(`✓ ${san}${v ? '' : ' — verdict indisponible (hors ligne, moteur absent)'}`, 'ok', res.note ? `Conseil : ${res.note}` : '');
+    renderEndgameCard();
+    // L'adversaire calcule pendant le délai de réponse.
+    const pick = EndgameOpponent.pick(_egFen(), appSettings.egOpponent).catch(() => null);
+    _egLater(async () => {
+        const p = await pick;
+        if (token !== s.token) return;
+        if (!p) {
+            s.failed = { msg: 'L\'adversaire ne peut pas répondre : connexion et moteur indisponibles. Réessayez plus tard.', undoable: false };
+            setStatus('Adversaire indisponible.', 'err');
+            renderEndgameCard();
+            return;
+        }
+        _egReplyMove(_egParseUci(p.uci));
+    }, opponentDelay(550));
+}
+
+// Indice d'un exercice jugé : pièce à jouer, puis une étape du plan, puis le coup exact.
+async function _egJudgedHint() {
+    const s = endgameState, ex = s.ex, token = s.token;
+    s.busy = true;
+    const p = await EndgameJudge.probe(_egFen()).catch(() => null);
+    if (token !== s.token) return;
+    s.busy = false;
+    const best = p && p.moves && p.moves[0];
+    const plan = ex.plan || ex.tips || [];
+    let level = s.hintLevel;
+    if (!best && level !== 1) level = plan.length ? 1 : -1;
+    if (level === 1 && !plan.length) level = 2;
+    if (level < 0) { setStatus('Aucun indice disponible hors ligne pour cette position.', 'info'); return; }
+    s.hints++;
+    const m = best && _egParseUci(best.uci), from = m != null ? EG.mFrom(m) : -1;
+    if (level === 0) setStatus(`Indice : déplacez ${PIECE_HINT[(board[from] || '').toUpperCase()] || 'une pièce'}.`, 'hint', 'Appuyez encore pour une étape du plan.');
+    else if (level === 1) { setStatus(`Plan : ${plan[s.planStep % plan.length]}`, 'hint'); s.planStep++; }
+    else setStatus(`Solution : ${_egSan(from, EG.mTo(m), EG.promoLetter(m))}`, 'hint');
+    s.hintLevel = Math.min(s.hintLevel + 1, 2);
+    renderEndgameCard();
+}
+
 // ─── RÉPONSE AUTOMATIQUE DE L'ADVERSAIRE ──────────────────────────────────────
 function _egAiReply() {
     const s = endgameState, ex = s.ex;
@@ -563,16 +670,19 @@ function _egAiReply() {
     const st = _egCur();
     const me = ex.player === 'w' ? 1 : -1;
     let m;
-    if (ex.kind === 'script')     m = _egParseUci(ex.line[2 * s.moves - 1]);        // réponse de la ligne théorique
-    else if (ex.kind === 'rules') m = _egPhilidorWhite(st);                         // Blancs qui cherchent à gagner
-    else if (ex.kind === 'mate')  m = EG.searchBest(st, ex.defDepth || 4, me);      // défense du roi seul
+    if (ex.kind === 'mate')       m = EG.searchBest(st, ex.defDepth || 4, me);      // défense du roi seul
     else if (ex.kind === 'pawns') m = _egPawnsReply(ex, st);                         // solveur de finales de pions
     else if (ex.goal === 'win')   m = EG.kpkDefense(st);                            // défense parfaite (base exacte)
     else                          m = EG.kpkTrapAttack(st);                         // attaque qui tend des pièges
     if (m == null) { _egFinish('Partie terminée.'); return; }
+    _egReplyMove(m);
+}
 
+// Coup de l'adversaire joué sur l'échiquier, puis fin de partie éventuelle (mat, pat, répétition).
+function _egReplyMove(m) {
+    const s = endgameState, ex = s.ex;
     const from = EG.mFrom(m), to = EG.mTo(m), pr = EG.promoLetter(m);
-    const san  = toAlgebraic(from, to, pr);
+    const san  = _egSan(from, to, pr);
     _commitMove(from, to, pr, null, `Adversaire : ${san} — à vous.`, 'info');
 
     // Le joueur est-il maté / pat ? Répétition ?
@@ -617,7 +727,7 @@ function undoEndgameMove() {
 }
 
 // ─── INDICE (appelé par showHint) ─────────────────────────────────────────────
-//   kpk  : 1) type de pièce  2) idée  3) coup exact
+//   kpk, pions, exercices jugés : 1) type de pièce  2) étape du plan  3) coup exact
 //   mate : conseils successifs de la fiche
 function endgameHint() {
     const s = endgameState, ex = s.ex;
@@ -625,16 +735,8 @@ function endgameHint() {
     const st = _egCur();
     s.hints++;
 
-    if (ex.kind === 'script') {
-        const want = _egParseUci(ex.line[2 * s.moves]), from = EG.mFrom(want);
-        if (s.hintLevel === 0) setStatus(`Indice : déplacez ${PIECE_HINT[(board[from] || '').toUpperCase()] || 'une pièce'}.`, 'hint');
-        else if (s.hintLevel === 1 && ex.tips.length) setStatus(`Indice : ${ex.tips[Math.min(s.moves ? 1 : 0, ex.tips.length - 1)]}`, 'hint');
-        else setStatus(`Solution : ${toAlgebraic(from, EG.mTo(want), EG.promoLetter(want))}`, 'hint');
-        s.hintLevel = Math.min(s.hintLevel + 1, 2);
-        renderEndgameCard();
-        return;
-    }
-    if (ex.kind === 'mate' || ex.kind === 'rules') {
+    if (_egJudged(ex)) { _egJudgedHint(); return; }
+    if (ex.kind === 'mate') {
         const tip = ex.tips[Math.min(s.hintLevel, ex.tips.length - 1)];
         s.hintLevel++;
         setStatus(`Indice : ${tip}`, 'hint');
@@ -655,7 +757,7 @@ function endgameHint() {
         if (level === 1 && !tips.length) level = 2;
         if (level === 0)      setStatus(`Indice : déplacez ${PIECE_HINT[(board[from] || '').toUpperCase()] || 'une pièce'}.`, 'hint');
         else if (level === 1) setStatus(`Indice : ${tips[Math.min(s.moves ? 1 : 0, tips.length - 1)]}`, 'hint');
-        else                  setStatus(`Solution : ${toAlgebraic(from, EG.mTo(good), EG.promoLetter(good))}`, 'hint');
+        else                  setStatus(`Solution : ${_egSan(from, EG.mTo(good), EG.promoLetter(good))}`, 'hint');
         s.hintLevel = Math.min(s.hintLevel + 1, 2);
         renderEndgameCard();
         return;
@@ -676,12 +778,12 @@ function endgameHint() {
     } else if (level === 1) {
         setStatus(`Indice : ${tips[0]}`, 'hint');
     } else {
-        setStatus(`Solution : ${toAlgebraic(from, EG.mTo(best.m), EG.promoLetter(best.m))}`, 'hint');
+        setStatus(`Solution : ${_egSan(from, EG.mTo(best.m), EG.promoLetter(best.m))}`, 'hint');
     }
     s.hintLevel = Math.min(s.hintLevel + 1, 2);
     renderEndgameCard();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { _egPhilidorCheck, _egPhilidorWhite, _egVancuraCheck };
+    module.exports = { _egPhilidorCheck, _egVancuraCheck, _egJudgedOutcome };
 }

@@ -7,7 +7,9 @@
  *     niveaux avant → après ; « Revoir les erreurs » relance une séance sur elles.
  *   - « Révision du jour » (carte Velours) : les positions dues ; à côté, les révisions des 7 prochains jours.
  *   - Autres exercices : Points faibles, Ligne complète (choix de l'ouverture), À confirmer,
- *     Contre-la-montre, Mode libre (tirage sans fin, réglé dans Paramètres).
+ *     Contre-la-montre, Mode libre (tirage sans fin, réglé dans sa carte et dans Paramètres).
+ *   - Filtre d'ouverture posé par les Statistiques (openTrainingFrom) : les exercices ne portent
+ *     que sur les positions de cette ouverture, jusqu'à ce qu'il soit retiré.
  */
 
 'use strict';
@@ -16,6 +18,8 @@ const TRAIN_SECONDS_PER_POSITION = 30;      // pour la durée estimée de la sé
 const TRAIN_WEAK_MAX   = 20;                // positions par séance « Points faibles » / « À confirmer »
 let _trColor   = 'mix';                     // 'mix' | 'w' | 'b' ; « Les deux » à chaque lancement
 let _trLineOpen = false;                    // liste des ouvertures (Ligne complète) dépliée
+let _trOpening = null;                      // { key, name } : ouverture choisie depuis les Statistiques
+let _trFocus = null;                        // exercice mis en avant à l'arrivée depuis les Statistiques
 
 const _trSides = () => _trColor === 'mix' ? ['w', 'b'] : [_trColor];
 
@@ -26,7 +30,27 @@ function _trRows() {
         const db = readDBFor(currentRepertoire, color);
         Object.keys(db).forEach(key => rows.push({ color, key, e: db[key], lv: _level(db[key]) }));
     });
-    return rows;
+    if (!_trOpening) return rows;
+    // Positions déjà jouées : même regroupement que les Statistiques. Positions nouvelles : regroupées avec tout le répertoire.
+    const tag = () => rows.map(r => ({ side: r.color, k: r.key, e: r.e, path: r.e.path && r.e.path.length ? r.e.path : null, r }));
+    const played = tag().filter(x => x.e.attempts > 0), all = tag();
+    _assignOpenings(played);
+    _assignOpenings(all);
+    return played.filter(x => x.gKey === _trOpening.key).map(x => x.r)
+        .concat(all.filter(x => !x.e.attempts && x.gKey === _trOpening.key).map(x => x.r));
+}
+
+// Arrivée depuis les Statistiques : couleur, ouverture éventuelle et exercice à mettre en avant
+// ('due' : Révision du jour, 'weak' : Points faibles). Rien n'est lancé : l'utilisateur choisit.
+function openTrainingFrom({ color, opening, focus }) {
+    _trColor = color === 'all' || !color ? 'mix' : color;
+    _trOpening = opening || null;
+    _trFocus = focus || null;
+    _trLineOpen = false;
+    trainingState.lastSummary = null;
+    switchHomeTab('training');
+    const el = document.querySelector(`#training-panel [data-focus="${_trFocus}"]`);
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 // Blancs d'abord, puis les plus fragiles (ordre des séances guidées).
@@ -120,8 +144,10 @@ function initTraining() {
 
     const rows = _trRows(), now = Date.now();
     const summary = _trSummaryHTML(trainingState.lastSummary);
+    const filter = _trOpening ? `<div class="trs-filter" role="status"><span>Ouverture : <b>${escapeHtml(_trOpening.name)}</b></span>
+        <button class="st-link" data-action="trainingAllOpenings">Toutes les ouvertures</button></div>` : '';
     if (!rows.length) {
-        panel.innerHTML = summary + `<div class="trs-empty">
+        panel.innerHTML = summary + filter + `<div class="trs-empty">
             <b>Rien à réviser pour l'instant</b>
             <span>Jouez vos lignes dans « Jouer »${_trColor === 'mix' ? '' : ` avec les ${_trColor === 'w' ? 'Blancs' : 'Noirs'}`} : elles apparaîtront ici pour être révisées.</span>
         </div>`;
@@ -133,9 +159,9 @@ function initTraining() {
     const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
     const next = due.length ? 0 : Math.min(...rows.map(r => dueOf(r.e)));
     const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a;
-    const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor];
+    const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor] + (_trOpening ? ' · ' + escapeHtml(_trOpening.name) : '');
     const hero = `
-        <div class="vel-card vel-dark trs-day">
+        <div class="vel-card vel-dark trs-day${_trFocus === 'due' ? ' is-focus' : ''}" data-focus="due">
             <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
             ${due.length ? `
             <div class="st-big"><b>${due.length}</b><span>${due.length > 1 ? 'positions dues' : 'position due'}</span></div>
@@ -170,7 +196,7 @@ function initTraining() {
     const freeOpts = [trainingSettings.fromStart ? 'début de partie' : 'position ciblée', trainingSettings.maxPlies ? `≤ ${trainingSettings.maxPlies} coups` : 'toute profondeur',
                       trainingSettings.seqLen >= TRAIN_SEQ_END ? 'variante' : trainingSettings.seqLen > 1 ? `${trainingSettings.seqLen} coups` : '1 coup'].join(', ');
     const card = (kind, icon, lvl, title, text, meta, n, extra) => `
-        <button class="trx ${extra || ''}" data-action="trainingEx" data-arg="${kind}" ${n === 0 ? 'disabled' : ''} ${kind === 'line' ? `aria-expanded="${_trLineOpen}"` : ''}>
+        <button class="trx ${extra || ''}${_trFocus === kind ? ' is-focus' : ''}" data-focus="${kind}" data-action="trainingEx" data-arg="${kind}" ${n === 0 ? 'disabled' : ''} ${kind === 'line' ? `aria-expanded="${_trLineOpen}"` : ''}>
             <span class="trx-ic ${lvl ? 'lv-' + lvl : ''}">${ico(icon)}</span>
             <b>${title}</b><span class="trx-txt">${text}</span><span class="trx-meta">${meta}</span>
         </button>`;
@@ -181,6 +207,24 @@ function initTraining() {
                 <span class="trx-line-n">${o.n} pos.</span>${ico('play')}</button>`).join('')
               : '<div class="trs-note">Aucune ouverture reconnue dans ce répertoire : jouez vos lignes dans « Jouer ».</div>'}
         </div>` : '';
+    // Mode libre : la carte porte ses réglages (aussi dans Paramètres › Jeu).
+    const seg = (name, label, opts) => `<div class="trx-opt"><span id="trx-opt-${name}">${label}</span>
+        <div class="seg trx-seg" role="radiogroup" aria-labelledby="trx-opt-${name}">${opts.map(([v, t]) =>
+            `<button class="seg-btn${trainingSettings[name] === v ? ' active' : ''}" role="radio" aria-checked="${trainingSettings[name] === v}" data-action="trainingOpt" data-arg="${name}:${v}">${t}</button>`).join('')}</div></div>`;
+    const freeCard = `
+        <div class="trx trx-free" data-focus="free">
+            <div class="trx-free-head">
+                <span class="trx-ic">${ico('shuffle')}</span>
+                <span><b>Mode libre</b><span class="trx-txt">Tirage sans fin, les plus fragiles plus souvent. Vous arrêtez quand vous voulez.</span></span>
+                <button class="btn btn-primary trx-go" data-action="trainingEx" data-arg="free" ${rows.length ? '' : 'disabled'}>${ico('play')}<span>Commencer</span></button>
+            </div>
+            <div class="trx-opts" role="group" aria-label="Réglages du mode libre">
+                ${seg('fromStart', 'D’où partir', [[0, 'Position ciblée'], [1, 'Début de partie']])}
+                ${seg('maxPlies', 'Jusqu’où', [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']])}
+                ${seg('seqLen', 'Coups à enchaîner', [[1, '1'], [3, '3'], [5, '5'], [TRAIN_SEQ_END, 'Variante']])}
+            </div>
+            <span class="trx-meta">${freeOpts}</span>
+        </div>`;
     const exercises = `
         <section class="st-sec">
             <div class="st-h"><h3>Autres exercices</h3><span class="st-sub">chacun se termine par un bilan</span></div>
@@ -189,12 +233,13 @@ function initTraining() {
                 ${card('line', 'git-branch', '', 'Ligne complète', 'Une ouverture jouée du premier coup jusqu\'au bout de la variante.', `${openings.length} ouverture${openings.length > 1 ? 's' : ''}`, openings.length)}
                 ${card('unsure', 'check', 'unsure', 'À confirmer', 'Les positions jouées moins de 3 fois, pour les ancrer.', `${Math.min(unsure, TRAIN_WEAK_MAX)} position${unsure > 1 ? 's' : ''}`, unsure)}
                 ${card('timed', 'lightbulb', 'progress', 'Contre-la-montre', 'Un maximum de bons coups en 3 minutes. Une erreur coûte 10 s.', record ? `Record : ${record} coup${record > 1 ? 's' : ''}` : 'Pas encore de record', rows.length)}
-                ${card('free', 'shuffle', '', 'Mode libre', 'Tirage sans fin, les plus fragiles plus souvent. Vous arrêtez quand vous voulez.', freeOpts, rows.length)}
+                ${freeCard}
             </div>
             ${lineList}
+            ${TRAIN_SOLUTION_PENALTY ? '<p class="trs-note">L\'indice (la pièce à jouer) ne compte pas. Voir la solution compte comme une erreur.</p>' : ''}
         </section>`;
 
-    panel.innerHTML = summary + `<div class="trs-top">${hero}${plan}</div>` + exercises;
+    panel.innerHTML = summary + filter + `<div class="trs-top">${hero}${plan}</div>` + exercises;
 }
 
 // ─── LANCEMENT DES EXERCICES ──────────────────────────────────────────────────
@@ -220,7 +265,7 @@ function _startLine(line) {
 }
 
 registerActions({
-    trainingColor: c => { _trColor = c; _trLineOpen = false; initTraining(); },
+    trainingColor: c => { _trColor = c; _trLineOpen = false; _trFocus = null; initTraining(); },
     trainingRep: name => { if (name !== currentRepertoire) selectRepertoire(name); },
     trainingEx: kind => { if (kind !== 'line') trainingState.lastSummary = null; startTrainingExercise(kind); },
     trainingLine: i => { const o = _trOpenings()[Number(i)]; if (o) _startLine({ color: o.color, path: o.path, name: o.name }); },
@@ -232,5 +277,7 @@ registerActions({
         trainingState.lastSummary = null;
         startSession({ kind: 'retry', label: 'Erreurs à revoir', items });
     },
-    trainingCloseSummary: () => { trainingState.lastSummary = null; initTraining(); }
+    trainingCloseSummary: () => { trainingState.lastSummary = null; initTraining(); },
+    trainingAllOpenings: () => { _trOpening = null; _trFocus = null; initTraining(); },
+    trainingOpt: arg => { const [name, v] = arg.split(':'); setTrainingOption(name, v); }
 });

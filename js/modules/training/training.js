@@ -33,7 +33,7 @@ const TRAIN_CONTEXT_PLIES = 3;   // demi-coups rejoués avant que la main soit r
 // Mettre à false pour que la solution ne modifie aucune statistique.
 const TRAIN_SOLUTION_PENALTY = true;
 
-const TRAIN_RECORD_KEY   = 'chessTrainer_timedRecord';      // record du contre-la-montre (propre à l'appareil)
+const TRAIN_RECORD_KEY   = 'chessTrainer_timedRecord';      // record du contre-la-montre (synchronisé : le plus grand l'emporte)
 const TRAIN_SEQ_END      = 999;
 const TRAIN_TIMED_MS     = 3 * 60000;
 const TRAIN_TIMED_PENALTY_MS = 10000;                       // une erreur au contre-la-montre coûte 10 s

@@ -4,9 +4,10 @@ let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b), m);   // objets issus du contexte vm
 
-const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: () => '', dataStore: { getJSON: () => ({}), setJSON() {} } };
+const ctx = { console, setTimeout, clearTimeout, registerActions() {}, escapeHtml: s => String(s), ico: () => '', dataStore: { getJSON: () => ({}), setJSON() {} } };
 vm.createContext(ctx);
-for (const f of ['js/modules/endgame/egCore.js', 'js/modules/endgame/egExercises.js', 'js/modules/endgame/endgame.js'])
+for (const f of ['js/modules/endgame/egCore.js', 'js/modules/endgame/egExercises.js', 'js/modules/endgame/egJudge.js',
+                 'js/modules/endgame/egOpponent.js', 'js/modules/endgame/endgame.js'])
     vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
 const { EG, ENDGAME_BY_ID, _egPhilidorCheck, _egParseUci, _egUci } = ctx;
 
@@ -82,4 +83,100 @@ t('Vancura : roi hors du coin, Tour qui quitte la 6e ou échange perdant refusé
     ['g7f7', 'f6f8', 'f6a6'].forEach(u => assert(verdict(u) && verdict(u).msg, u));
 });
 
-console.log(`\n${n} tests réussis.`);
+t('catalogue : exercices jugés décrits par des données (plan, objectif, limite), niveaux 1 à 5, catégories connues', () => {
+    const cats = ctx.ENDGAME_CATEGORIES.map(c => c.id);
+    ctx.ENDGAME_EXERCISES.forEach(ex => {
+        assert(cats.includes(ex.cat), ex.id + ' : catégorie');
+        assert(ex.level >= 1 && ex.level <= 5, ex.id + ' : niveau');
+        if (!ex.kind) assert(ex.plan.length && ['win', 'draw'].includes(ex.goal), ex.id);
+    });
+    ['rook-lucena', 'rook-philidor', 'rook-vancura'].forEach(id => assert(!ENDGAME_BY_ID[id].kind, id + ' doit être jugé par les tables'));
+    assert(ctx.ENDGAME_EXERCISES.filter(e => !e.kind).length >= 25);
+});
+
+// ─── Juge commun et adversaire calculé (sans réseau : API Syzygy et moteur simulés) ──
+const { EndgameJudge, EndgameOpponent, _egJudgedOutcome } = ctx;
+const tests = [];
+const at = (name, fn) => tests.push([name, fn]);
+
+at('juge : roi + pion contre roi tranché hors ligne par la base exacte, coups classés', async () => {
+    const v = await EndgameJudge.probe(ENDGAME_BY_ID['kpk-opposition'].fen);
+    assert.strictEqual(v.source, 'kpk'); assert.strictEqual(v.exact, true); assert.strictEqual(v.wdl, 2);
+    const wins = v.moves.filter(m => m.wdl === 2).map(m => m.uci);
+    jeq(wins, ['c5d5']);                                                 // un seul coup gagne : l'opposition
+    const j = await EndgameJudge.judgeMove(ENDGAME_BY_ID['kpk-opposition'].fen, 'c5b5');
+    assert.strictEqual(EndgameJudge.result(j.after), 0);
+});
+
+at('juge : tables Syzygy lues une seule fois (cache), catégories converties pour le camp qui joue', async () => {
+    let calls = 0;
+    ctx.fetch = async url => { calls++; assert(url.startsWith('https://tablebase.lichess.ovh/standard?fen=')); return { ok: true, status: 200, json: async () => ({
+        category: 'draw', dtz: 0, moves: [
+            { uci: 'a6b6', san: 'Rb6', category: 'draw', dtz: 0, zeroing: false },
+            { uci: 'e8d8', san: 'Rd8', category: 'win', dtz: 13, zeroing: false },
+            { uci: 'a6a1', san: 'Ta1', category: 'cursed-win', dtz: 60, zeroing: false }] }) }; };
+    const fen = ENDGAME_BY_ID['rook-philidor'].fen;
+    const v = await EndgameJudge.probe(fen);
+    assert.strictEqual(v.source, 'syzygy'); assert.strictEqual(v.wdl, 0);
+    jeq(v.moves.map(m => m.wdl), [0, -2, -1]);
+    await EndgameJudge.probe(fen);
+    assert.strictEqual(calls, 1, 'seconde lecture : cache');
+    const j = await EndgameJudge.judgeMove(fen, 'e8d8');
+    jeq([j.before, j.after, j.exact], [0, -2, true]);
+    assert.strictEqual(EndgameJudge.result(-1), 0, 'gain annulé par la règle des 50 coups : nulle');
+    delete ctx.fetch; EndgameJudge.reset();
+});
+
+at('juge : au-delà de 7 pièces, repli sur le moteur, verdict estimé (seuils +2,5 et 0,6)', async () => {
+    let asked = null;
+    ctx.Engine = { analyse: (fen, opts) => { asked = opts; return { stop() {}, done: Promise.resolve({ cancelled: false, best: 'c8c2',
+        lines: [{ pv: ['c8c2'], score: { cp: -30 } }, { pv: ['g8f8'], score: { cp: -280 } }] }) }; } };
+    const fen = ENDGAME_BY_ID['tours-4c3'].fen;                          // Noirs au trait : scores des Blancs inversés
+    const v = await EndgameJudge.probe(fen);
+    jeq([v.source, v.exact, v.wdl], ['engine', false, 0]);
+    jeq(v.moves.map(m => m.wdl), [0, 2]);
+    jeq(asked, { multipv: 3, depth: 18 });
+    jeq([EndgameJudge.classify({ cp: 250 }), EndgameJudge.classify({ cp: 60 }), EndgameJudge.classify({ cp: 100 }), EndgameJudge.classify({ mate: -3 })], [2, 0, 1, -2]);
+    delete ctx.Engine; EndgameJudge.reset();
+});
+
+at('adversaire : résistance maximale = meilleur coup ; en nulle, il pousse ; humain = même résultat, au hasard', async () => {
+    const fen = '8/8/8/8/8/8/8/8 w - - 0 1';
+    const probe = moves => { EndgameJudge.probe = async () => ({ source: 'syzygy', exact: true, wdl: Math.max(...moves.map(m => m.wdl)), moves }); };
+    const orig = EndgameJudge.probe;
+    probe([{ uci: 'a1a2', wdl: 2 }, { uci: 'b1b2', wdl: 2 }, { uci: 'c1c2', wdl: 0 }]);
+    assert.strictEqual((await EndgameOpponent.pick(fen, 'max')).uci, 'a1a2');
+    assert.strictEqual((await EndgameOpponent.pick(fen, 'human', () => 0.99)).uci, 'b1b2');
+    probe([{ uci: 'a1a2', san: 'Ra2', wdl: 0 }, { uci: 'e4e5', san: 'e5', wdl: 0, zeroing: true }, { uci: 'h1h8', san: 'Th8+', wdl: 0 }, { uci: 'b1b2', wdl: -2 }]);
+    assert.strictEqual((await EndgameOpponent.pick(fen, 'max')).uci, 'e4e5');
+    probe([{ uci: 'a1a2', wdl: -2 }, { uci: 'b1b2', wdl: -2 }, { uci: 'c1c2', wdl: -2 }, { uci: 'd1d2', wdl: -2 }]);
+    assert.strictEqual((await EndgameOpponent.pick(fen, 'human', () => 0.99)).uci, 'c1c2', 'en perte : parmi les trois plus tenaces');
+    EndgameJudge.probe = orig;
+});
+
+at('coup jugé : erreur si le verdict se dégrade (explication de Philidor), réussite par prise ou après « hold » coups', async () => {
+    const phil = ENDGAME_BY_ID['rook-philidor'], st = EG.fromFen(phil.fen);
+    const bad = _egJudgedOutcome(phil, st, _egParseUci('a6a1'), { before: 0, after: -2 }, 1);
+    assert.strictEqual(bad.state, 'fail'); assert(/6e rangée/.test(bad.msg), bad.msg);
+    const ok = _egJudgedOutcome(phil, st, _egParseUci('a6b6'), { before: 0, after: 0 }, 1);
+    jeq([ok.state, ok.note], ['continue', '']);
+    assert.strictEqual(_egJudgedOutcome(phil, st, _egParseUci('a6b6'), { before: 0, after: 0 }, 12).state, 'success');
+    const advice = _egJudgedOutcome(phil, st, _egParseUci('e8d8'), { before: 0, after: 0 }, 1);
+    assert(advice.state === 'continue' && advice.note, 'coup juste mais hors méthode : conseil');
+    const race = ENDGAME_BY_ID['tours-pion-course'];                     // until: 'capture' : la prise du pion conclut
+    const rs = EG.fromFen('8/8/8/8/8/2k5/2p5/2R1K3 w - - 0 1');
+    assert.strictEqual(_egJudgedOutcome(race, rs, _egParseUci('c1c2'), { before: 2, after: 0 }, 5).state, 'fail', 'Txc2 ?? Rxc2 : nulle');
+    assert.strictEqual(_egJudgedOutcome(race, rs, _egParseUci('e1d1'), { before: 2, after: 2 }, 5).state, 'continue');
+    const q = ENDGAME_BY_ID['dame-pion-centre'], qs = EG.fromFen('8/8/8/8/8/8/3p4/K2Qk3 w - - 0 1');
+    assert.strictEqual(_egJudgedOutcome(q, qs, _egParseUci('d1d2'), { before: 2, after: 2 }, 3).state, 'success');
+    const slow = _egJudgedOutcome(q, EG.fromFen(q.fen), _egParseUci('h1h2'), { before: 2, after: 2 }, q.maxMoves);
+    jeq([slow.state, slow.undoable], ['fail', false]);
+    const lost = _egJudgedOutcome(q, EG.fromFen(q.fen), _egParseUci('h1d1'), { before: 2, after: 0 }, 1);
+    assert.strictEqual(lost.state, 'fail');
+    assert.strictEqual(_egJudgedOutcome(q, EG.fromFen(q.fen), _egParseUci('h1h2'), null, 1).state, 'continue', 'sans verdict : coup accepté');
+});
+
+(async () => {
+    for (const [name, fn] of tests) { await fn(); n++; console.log('ok  ', name); }
+    console.log(`\n${n} tests réussis.`);
+})().catch(e => { console.error(e); process.exit(1); });

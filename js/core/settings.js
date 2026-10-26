@@ -45,6 +45,7 @@ const SYNCED_PREFS = {
     oppDelay:   { ok: _oneOf(['instant', 'normal', 'calm']), def: 'normal' },
     autoFlip:   { ok: _bool, def: true },
     hintAfter:  { ok: _oneOf([0, 1, 2, 3]), def: 0 },
+    egOpponent: { ok: _oneOf(['max', 'human']), def: 'max' },                          // adversaire des finales jugées
     // Révisions et notation
     dailyGoal:  { ok: v => Number.isInteger(v) && v >= 5 && v <= 50, def: 10 },
     rhythm:     { ok: _oneOf(['soft', 'std', 'intense']), def: 'std' },

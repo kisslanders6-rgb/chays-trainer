@@ -13,6 +13,7 @@
  *   chessTrainer_activity        'activity'  jour (AAAA-MM-JJ) → { a: essais, f: erreurs }
  *   chessTrainer_prefs           'prefs'     préférence → { v: valeur, at: date du choix } (échiquier, pièces, flèches)
  *   chessTrainer_gameLedger      'games'     partie analysée → { src, at, first, last, v: { 'rép|couleur': verdict }, counted: { … } }
+ *   chessTrainer_timedRecord     'record'    record du contre-la-montre (nombre) : le plus grand l'emporte
  * Tout le reste (mode clair / sombre, sons, options d'entraînement, état de sauvegarde…)
  * reste LOCAL à l'appareil.
  *
@@ -40,6 +41,7 @@ const SyncModel = (function () {
         if (key === 'chessTrainer_activity')    return 'activity';
         if (key === 'chessTrainer_prefs')       return 'prefs';
         if (key === 'chessTrainer_gameLedger')  return 'games';
+        if (key === 'chessTrainer_timedRecord') return 'record';
         if (typeof key === 'string' && key.startsWith('openingDB_'))  return 'db';
         if (typeof key === 'string' && key.startsWith('openingOpp_')) return 'opp';
         return null;
@@ -206,8 +208,11 @@ const SyncModel = (function () {
     }
     const mergeGames = (b, l, r) => mergeMap(b, l, r, mergeGame);
 
+    // ─── Record du contre-la-montre ───────────────────────────────────────────
+    const mergeRecord = (b, l, r) => Math.max(num(Number(l)), num(Number(r)));
+
     // ─── Point d'entrée ───────────────────────────────────────────────────────
-    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs, games: mergeGames };
+    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs, games: mergeGames, record: mergeRecord };
 
     // Valeurs déjà décodées (null = absent). Renvoie la valeur fusionnée (null = supprimée).
     function merge(key, base, local, remote) {

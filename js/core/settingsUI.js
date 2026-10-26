@@ -54,6 +54,8 @@ function _settingRows() {
             { group: 'Pendant la partie', kind: 'toggle', key: 'autoFlip', label: 'Orienter l’échiquier selon ma couleur', hint: 'Avec les Noirs, vos pièces sont en bas. La touche <kbd>F</kbd> retourne toujours l’échiquier.' },
             { group: 'Pendant la partie', kind: 'seg', key: 'hintAfter', label: 'Proposer un indice', hint: 'Affiche la pièce à jouer après plusieurs erreurs sur la même position.',
               opts: [[0, 'Jamais'], [1, 'Après 1 erreur'], [2, 'Après 2'], [3, 'Après 3']] },
+            { group: 'Pendant la partie', kind: 'seg', key: 'egOpponent', label: 'Adversaire des finales', hint: 'Résistance maximale : la défense la plus longue, le gain le plus rapide. Humain : un coup au hasard parmi ceux qui gardent le même résultat.',
+              opts: [['max', 'Résistance maximale'], ['human', 'Humain']] },
             { group: 'Révision espacée', kind: 'range', key: 'dailyGoal', label: 'Objectif quotidien', hint: 'Positions à réviser chaque jour ; la progression s’affiche sur l’accueil.',
               min: 5, max: 50, step: 5, out: v => `${v} positions` },
             { group: 'Révision espacée', kind: 'seg', key: 'rhythm', label: 'Rythme des révisions', hint: 'Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent.',

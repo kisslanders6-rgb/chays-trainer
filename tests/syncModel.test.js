@@ -158,4 +158,12 @@ t('journal des parties : verdict le plus récent, première erreur comptée gard
     assert.deepStrictEqual(x.g.counted, { 'G|b': { at: 200 } });
 });
 
+t('record du contre-la-montre : synchronisé, le plus grand l\'emporte, symétrique', () => {
+    const SM = S;
+    assert.strictEqual(SM.kindOf('chessTrainer_timedRecord'), 'record');
+    assert.strictEqual(SM.merge('chessTrainer_timedRecord', 10, 14, 12), 14);
+    assert.strictEqual(SM.merge('chessTrainer_timedRecord', 10, 12, 14), 14);
+    assert.strictEqual(SM.mergeRaw('chessTrainer_timedRecord', null, '9', '11'), '11');
+});
+
 console.log(`\n${n} tests réussis.`);

@@ -356,7 +356,8 @@ function showHint() {
     const piece = (board[squareToIdx(entry.move.slice(0, 2))] || '').toUpperCase();
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
-    setStatus(`Indice : déplacez ${PIECE_HINT[piece] || 'une pièce'}.`, 'hint', 'Appuyez encore pour voir la solution.');
+    const cost = gameMode === 'training' && TRAIN_SOLUTION_PENALTY ? ' Voir la solution compte comme une erreur.' : '';
+    setStatus(`Indice : déplacez ${PIECE_HINT[piece] || 'une pièce'}.`, 'hint', 'Appuyez encore pour voir la solution.' + cost);
 }
 
 function showSolution() {

@@ -105,30 +105,36 @@
 .st-lg.active { border-color: color-mix(in srgb, currentColor 40%, transparent); background: color-mix(in srgb, currentColor 6%, transparent); }
 @media (hover: hover) { .st-lg:not(:disabled):hover { border-color: color-mix(in srgb, currentColor 22%, transparent); } }
 
-/* Points faibles : échiquiers miniatures */
-.st-weak { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.st-wcard { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); }
+/* « À confirmer » : un état à part, sous la légende des niveaux */
+.st-state { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin: 2px -8px 0; padding-top: 6px; border-top: 1px dashed var(--border); }
+.st-state .st-lg { flex: 0 1 220px; }
+.st-state small { font-size: 11.5px; color: var(--text-dim); }
+.stats-chip-sep { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--border); }
+.stats-chip.is-state { border-style: dashed; }
+
+/* Points faibles : une liste ; l'exercice est dans l'Entraînement */
+.st-wlist { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+.st-wrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 9px 12px; }
+.st-wrow + .st-wrow { border-top: 1px solid var(--border); }
+.st-wrow .st-errs { grid-area: auto; font-size: 12px; font-weight: 600; color: var(--lv-weak); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.st-wrow-txt { display: flex; flex-direction: column; min-width: 0; }
+.st-wrow-txt b { font-family: var(--font-note); font-weight: 500; font-size: 14px; }
+.st-wrow-txt small { font-size: 11.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-golink { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 10px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.st-golink .ico { width: 13px; height: 13px; fill: none; }
+@media (hover: hover) { .st-golink:hover { border-color: var(--board-accent); } }
+.st-rows > .st-golink { margin: 4px 0 8px; }
 /* Cases carrées de taille fixe (lignes vides comprises) ; pièces posées par-dessus, sans influer sur la grille */
 .st-mini { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--board-light); box-shadow: 0 0 0 1px var(--border-strong); }
 .st-mini span { position: relative; min-width: 0; min-height: 0; background: var(--board-light); }
 .st-mini span.d { background: var(--board-dark); }
 .st-mini span.hl::before { content: ''; position: absolute; inset: 0; background: rgba(214, 170, 40, .42); }
 .st-mini .piece-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.st-wcard-line { font-size: 11.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-wcard-move { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.st-wcard-move b { font-family: var(--font-note); font-weight: 500; font-size: 14px; }
-.st-wcard-move span { font-size: 12px; font-weight: 600; color: var(--lv-weak); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.st-wcard-acts { display: flex; gap: 6px; }
 .st-btn { flex: 1; min-height: 36px; padding: 7px 12px; font-size: 12.5px; gap: 6px; }
 .st-btn .ico { width: 13px; height: 13px; }
 .st-btn.st-ibtn { flex: none; width: 36px; padding: 0; }
 .st-btn .ico, .st-ibtn .ico { fill: none; }
 .st-btn.btn-primary .ico, .st-ibtn.pri .ico { fill: currentColor; }
-@media (max-width: 719px) {
-    .st-weak { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -14px; padding: 2px 14px 6px; }
-    .st-weak::-webkit-scrollbar { display: none; }
-    .st-wcard { flex: 0 0 min(72%, 260px); scroll-snap-align: start; }
-}
 
 /* Par ouverture */
 .st-h-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -338,6 +344,23 @@
 .trs-mastery { display: grid; grid-template-columns: 60px minmax(0, 1fr) 46px; align-items: center; gap: 10px; font-size: 12.5px; }
 .trs-mastery b { font-family: var(--font-note); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
 .trs-note { font-size: 12px; color: var(--text-dim); }
+.trs-filter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 10px 14px;
+    border: 1px solid var(--board-accent); border-radius: 14px; background: color-mix(in srgb, var(--board-accent) 8%, var(--surface)); font-size: 13px; }
+.trx.is-focus, .trs-day.is-focus { box-shadow: 0 0 0 2px var(--board-accent), var(--shadow-sm); }
+.trx-free { grid-column: 1 / -1; min-height: 0; cursor: default; gap: 12px; }
+@media (hover: hover) { .trx-free:hover { transform: none; } }
+.trx-free-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; }
+.trx-free-head > span:nth-child(2) { display: flex; flex-direction: column; gap: 3px; }
+.trx-go { display: inline-flex; align-items: center; gap: 6px; }
+.trx-opts { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.trx-opt { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; color: var(--text-muted); }
+.trx-seg .seg-btn { padding: 6px 11px; font-size: 12px; }
+@media (max-width: 719px) {
+    .trx-free-head { grid-template-columns: auto minmax(0, 1fr); }
+    .trx-go { grid-column: 1 / -1; justify-content: center; }
+    .trx-opt, .trx-seg { width: 100%; }
+    .trx-seg .seg-btn { flex: 1; padding: 7px 4px; }
+}
 .trs-empty { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 1px dashed var(--border-strong); border-radius: 16px; font-size: 14px; color: var(--text-muted); }
 .trs-empty b { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--text); }
 
