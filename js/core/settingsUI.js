@@ -312,6 +312,8 @@ function refreshNotation() {
     if (gs && gs.style.display !== 'none' && typeof _paintMovesBar === 'function') _paintMovesBar(navCursor === -1 ? moveHistory.length - 1 : navCursor);
     if (typeof refreshTree === 'function') refreshTree();
     if (typeof renderResumeCard === 'function') renderResumeCard();
+    if (typeof HomePanels !== 'undefined') HomePanels.render();             // Nouveautés à traiter, Dernières parties
+    if (typeof _online !== 'undefined' && _online.rows && document.getElementById('online-results')) _renderOnlineResults();
     const stats = document.getElementById('home-tab-stats');
     if (stats && !stats.classList.contains('hidden') && typeof initStats === 'function') initStats();
 }

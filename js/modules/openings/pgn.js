@@ -242,8 +242,9 @@ function onPgnFileChosen(event) {
     reader.readAsText(file);
 }
 
-function _pgnLineLabel(path, extra) {
-    return formatLinePrefix(_pathToSans(path)) + (path.length ? ' ' : '') + extra;
+// HTML (figurines du jeu actif) : ne pas repasser dans escapeHtml.
+function _pgnLineLabel(path) {
+    return formatLinePrefix(_pathToSans(path), true) + (path.length ? ' ' : '');
 }
 
 function runPgnImport() {
@@ -269,21 +270,21 @@ function runPgnImport() {
     if (r.skipped) html += `<div class="pgn-line">${pl(r.skipped, 'partie ignorée', 'parties ignorées')} (position de départ personnalisée).</div>`;
     if (r.implicit.length) {
         html += `<div class="pgn-note info">${ico('info')} ${pl(r.implicit.length, 'variante implicite reconnue', 'variantes implicites reconnues')} (numéro de coup qui revient en arrière, lu comme une variante) :</div><ul class="pgn-list">`;
-        r.implicit.slice(0, 8).forEach(v => { html += `<li>${escapeHtml(_pgnLineLabel(v.path, ''))}<strong>${formatSan(v.san, v.path.length % 2 ? 'b' : 'w')}</strong></li>`; });
+        r.implicit.slice(0, 8).forEach(v => { html += `<li>${_pgnLineLabel(v.path)}<strong>${formatSan(v.san, v.path.length % 2 ? 'b' : 'w')}</strong></li>`; });
         if (r.implicit.length > 8) html += `<li>… et ${r.implicit.length - 8} autre(s)</li>`;
         html += '</ul>';
     }
     if (r.conflicts.length) {
         html += `<div class="pgn-note warn">${ico('alert-triangle')} ${pl(r.conflicts.length, 'conflit', 'conflits')} : votre coup déjà enregistré a été conservé, la suite de la ligne n'a pas été importée.</div><ul class="pgn-list">`;
         r.conflicts.slice(0, 10).forEach(c => {
-            html += `<li>${escapeHtml(_pgnLineLabel(c.path, ''))}<br>PGN : <strong>${escapeHtml(c.pgnSan)}</strong> · conservé : <strong>${escapeHtml(c.keptSan)}</strong></li>`;
+            html += `<li>${_pgnLineLabel(c.path)}<br>PGN : <strong>${formatSan(c.pgnSan, c.path.length % 2 ? 'b' : 'w')}</strong> · conservé : <strong>${formatSan(c.keptSan, c.path.length % 2 ? 'b' : 'w')}</strong></li>`;
         });
         if (r.conflicts.length > 10) html += `<li>… et ${r.conflicts.length - 10} autre(s)</li>`;
         html += '</ul>';
     }
     if (r.errors.length) {
         html += `<div class="pgn-note warn">${ico('alert-triangle')} ${pl(r.errors.length, 'coup illisible ou illégal', 'coups illisibles ou illégaux')} (ligne abandonnée à cet endroit) :</div><ul class="pgn-list">`;
-        r.errors.slice(0, 8).forEach(e => { html += `<li>${escapeHtml(_pgnLineLabel(e.path, ''))}<strong>${escapeHtml(e.san)}</strong></li>`; });
+        r.errors.slice(0, 8).forEach(e => { html += `<li>${_pgnLineLabel(e.path)}<strong>${escapeHtml(e.san)}</strong></li>`; });
         if (r.errors.length > 8) html += `<li>… et ${r.errors.length - 8} autre(s)</li>`;
         html += '</ul>';
     }

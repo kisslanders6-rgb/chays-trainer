@@ -196,11 +196,11 @@ function _renderOnlineResults() {
         const opp  = row.color === 'w' ? h.Black : h.White;
         const date = (h.UTCDate || h.Date || '').replace(/\./g, '-');
         const res  = h.Result === '1/2-1/2' ? '½' : (h.Result === '1-0') === (row.color === 'w') ? 'gain' : h.Result === '*' ? '' : 'perte';
-        const at   = d ? _plyLabel(row.res.ply, row.r.moves[row.res.ply].san) : '';
+        const at   = d ? _plyLabel(row.res.ply, row.r.moves[row.res.ply].san, true) : '';
         return `<button class="online-row" data-action="openOnlineGame" data-arg="${i}">
             <span class="glyph" data-glyph="${row.color === 'w' ? 'K' : 'k'}"></span>
             <span class="online-main"><b>${escapeHtml(opp || '?')}</b><small>${escapeHtml(date)}${res ? ' · ' + res : ''}${prev ? ` · déjà analysée le ${escapeHtml(_shortDate(prev.first))}` : ''}</small></span>
-            <span class="online-verdict ${k.cls}">${k.label}${at ? ` · ${escapeHtml(at)}` : ''}${row.counted === 'counted' ? ' · comptée' : ''}</span>
+            <span class="online-verdict ${k.cls}">${k.label}${at ? ` · ${at}` : ''}${row.counted === 'counted' ? ' · comptée' : ''}</span>
           </button>`;
     }).join('') + '</div>';
     box.innerHTML = html;

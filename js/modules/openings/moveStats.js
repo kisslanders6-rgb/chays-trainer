@@ -202,7 +202,7 @@ function _uncoveredFrequent() {
             let next;
             try { next = Chess.play(pos, uci); } catch (err) { return; }
             if (openingDB[Chess.key(next)]) return;
-            out.push({ path: reach[k], uci, n, label: formatLinePrefix(_pathToSans(reach[k].concat(uci))) });
+            out.push({ path: reach[k], uci, n, label: formatLinePrefix(_pathToSans(reach[k].concat(uci)), true) });   // HTML
         });
     });
     return out.sort((a, b) => b.n - a.n).slice(0, 6);
@@ -236,7 +236,7 @@ function renderFreqPanel() {
 
     const todo = games ? _uncoveredFrequent() : [];
     if (todo.length) html += `<h4 class="freq-h">Réponses fréquentes de vos adversaires, pas encore préparées</h4><div class="freq-list">${todo.map((t, i) =>
-        `<button type="button" class="freq-row is-line" data-action="freqOpenLine" data-arg="${i}"><span>${escapeHtml(t.label)}</span><span class="freq-num">${t.n} parties</span></button>`).join('')}</div>`;
+        `<button type="button" class="freq-row is-line" data-action="freqOpenLine" data-arg="${i}"><span>${t.label}</span><span class="freq-num">${t.n} parties</span></button>`).join('')}</div>`;
     _freqTodo = todo;
 
     html += `<div class="freq-foot">

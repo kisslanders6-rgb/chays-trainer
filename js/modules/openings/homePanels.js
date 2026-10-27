@@ -23,12 +23,12 @@ const HomePanels = (function () {
     let shown = [];                                   // nouveautés affichées (clic : index)
 
     // Fin de ligne : les quatre derniers demi-coups, numérotés (« … 7. Cf3 Cc6 8. Fb5 »).
-    function lineTail(sans) {
+    function lineTail(sans) {                       // HTML : figurines du jeu actif
         const from = Math.max(0, sans.length - 4);
         let out = from ? '… ' : '';
         sans.slice(from).forEach((san, k) => {
             const i = from + k, n = Math.floor(i / 2) + 1;
-            out += (i % 2 === 0 ? `${n}. ` : k === 0 ? `${n}… ` : '') + formatSanText(san, i % 2 ? 'b' : 'w') + ' ';
+            out += (i % 2 === 0 ? `${n}. ` : k === 0 ? `${n}… ` : '') + formatSan(san, i % 2 ? 'b' : 'w') + ' ';
         });
         return out.trim();
     }
@@ -76,7 +76,7 @@ const HomePanels = (function () {
             const sans = _pathToSans(x.path), tail = lineTail(sans);
             return `<button type="button" class="hp-row" data-action="homeNovelty" data-arg="${i}">
                 <span class="glyph" data-glyph="${x.color === 'w' ? 'K' : 'k'}">${PIECE_SVG[x.color === 'w' ? 'K' : 'k'] || ''}</span>
-                <span class="rp-txt"><b>${escapeHtml(tail)}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''} · ${x.kind === 'novelty' ? 'coup adverse inconnu' : 'votre coup manque'}</small></span>
+                <span class="rp-txt"><b>${tail}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''} · ${x.kind === 'novelty' ? 'coup adverse inconnu' : 'votre coup manque'}</small></span>
                 ${ico('chevron-right')}
             </button>`;
         }).join('')}</div>${list.length > LIST_MAX ? `<p class="hp-more">et ${list.length - LIST_MAX} de plus</p>` : ''}`;

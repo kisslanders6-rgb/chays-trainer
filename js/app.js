@@ -294,15 +294,15 @@ function _readLastPlay() {
     return s;
 }
 
-// Fin de ligne lisible : « … 4. c3 Nf6 5. d4 » (les 5 derniers demi-coups).
+// Fin de ligne lisible : « … 4. c3 Cf6 5. d4 » (les 5 derniers demi-coups), en HTML (figurines du jeu actif).
 function _lineTail(path) {
     let sans;
     try { sans = _pathToSans(path); } catch (e) { return ''; }
     if (!sans.length) return 'Position de départ';
     const from = Math.max(0, sans.length - 5);
     return (from ? '… ' : '') + sans.slice(from).map((s, k) => {
-        const i = from + k;
-        return i % 2 === 0 ? `${i / 2 + 1}. ${s}` : (k === 0 ? `${(i + 1) / 2}... ${s}` : s);
+        const i = from + k, f = formatSan(s, i % 2 ? 'b' : 'w');
+        return i % 2 === 0 ? `${i / 2 + 1}. ${f}` : (k === 0 ? `${(i + 1) / 2}... ${f}` : f);
     }).join(' ');
 }
 
@@ -314,7 +314,7 @@ function renderResumeCard() {
         <button class="resume-card" data-action="resumeLastPlay">
           <span class="resume-ico">${ico('rotate-ccw')}</span>
           <span class="resume-txt"><b>Reprendre</b>
-            <small>${escapeHtml(s.rep)} · ${s.color === 'w' ? 'Blancs' : 'Noirs'} · ${escapeHtml(_lineTail(s.path))}</small></span>
+            <small>${escapeHtml(s.rep)} · ${s.color === 'w' ? 'Blancs' : 'Noirs'} · ${_lineTail(s.path)}</small></span>
           <span class="tr-arrow">${ico('chevron-right')}</span>
         </button>`;
 }

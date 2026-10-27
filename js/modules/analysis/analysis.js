@@ -400,13 +400,13 @@ function _anMergeHTML() {
     const plan = _anPlan(), pl = (n, a, b) => `${n} ${n > 1 ? b : a}`;
     const side = analysis.color === 'w' ? 'Blancs' : 'Noirs';
     const row = it => {
-        const sans = formatLinePrefix(_pathToSans(it.path));
+        const sans = formatLinePrefix(_pathToSans(it.path), true);
         const tag = { new: '<span class="an-tag is-new">nouveau</span>', same: '<span class="an-tag">déjà connu</span>',
                       conflict: `<span class="an-tag is-conflict">votre coup : ${formatSan(it.keptSan, analysis.color)}</span>`,
                       replace: `<span class="an-tag is-replace">remplace ${formatSan(it.keptSan, analysis.color)}</span>` }[it.status];
         const box = it.status === 'conflict' || it.status === 'replace'
             ? `<label class="an-replace"><input type="checkbox" data-action="analysisToggleReplace" data-arg="${escapeHtml(it.key)}"${it.status === 'replace' ? ' checked' : ''}> Remplacer</label>` : '';
-        return `<li class="is-${it.status}"><span>${escapeHtml(sans)}</span>${tag}${box}</li>`;
+        return `<li class="is-${it.status}"><span>${sans}</span>${tag}${box}</li>`;
     };
     const added = plan.items.filter(i => i.status === 'new' || i.status === 'replace').length;
     return `<div class="an-preview">

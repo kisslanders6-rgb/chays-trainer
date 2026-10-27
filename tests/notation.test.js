@@ -19,12 +19,13 @@ t('lettres françaises et anglaises : même texte en HTML et en texte simple', (
     assert.strictEqual(ctx.formatSan('Qd8#', 'b'), 'Qd8#');
 });
 
-t('figurines : dessin du jeu actif à la couleur du camp, texte simple en Unicode', () => {
+t('figurines : dessin du jeu actif à la couleur du camp, texte simple en lettres (plus de glyphes Unicode)', () => {
     ctx.appSettings.notation = 'fig';
     const html = ctx.formatSan('Nf3', 'w');
     assert(/^<span class="fig fig-w" style="--f:var\(--fig-wN\)" role="img" aria-label="Cavalier"><\/span>f3$/.test(html), html);
     assert(ctx.formatSan('exd8=Q+', 'b').includes('fig-b') && ctx.formatSan('e4', 'w') === 'e4');
-    assert.strictEqual(ctx.formatSanText('Nf3', 'b'), '♞f3');
+    assert.strictEqual(ctx.formatSanText('Nf3', 'b'), 'Cf3');
+    assert(!/[\u2654-\u265f]/.test(ctx.formatSanText('exd8=Q+', 'w') + ctx.formatSanText('Kxe2', 'b')));
     ctx.applyPieceSet();
     assert.strictEqual(props['--fig-bQ'], 'url("assets/pieces/maestro/bQ.svg")');
 });

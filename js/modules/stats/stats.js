@@ -113,11 +113,13 @@ function _statsRows() {
     return rows;
 }
 
+// Libellé « 1. e4 c5 2. Cf3 » d'un chemin ; html : figurines du jeu actif. Le cache dépend de l'écriture
+// des coups et du jeu de pièces (sinon un changement de réglage gardait les anciens libellés).
 const _lineLabels = {};
-function _movesLabel(path) {
-    const key = path.join(' ');
+function _movesLabel(path, html) {
+    const key = [html ? 'h' : 't', appSettings.notation, appSettings.pieceSet, path.join(' ')].join('|');
     if (!(key in _lineLabels)) {
-        try { _lineLabels[key] = formatLinePrefix(_pathToSans(path)); } catch (err) { _lineLabels[key] = key; }
+        try { _lineLabels[key] = formatLinePrefix(_pathToSans(path), html); } catch (err) { _lineLabels[key] = html ? escapeHtml(path.join(' ')) : path.join(' '); }
     }
     return _lineLabels[key];
 }
@@ -142,9 +144,9 @@ function _assignOpenings(rows) {
         if (!r.op || only.path.length > r.op.path.length) r.op = only;
     });
     rows.forEach(r => {
-        if (r.op) { r.gName = r.op.name; r.gPath = r.op.path; }
-        else if (r.path) { r.gPath = r.path.slice(0, 4); r.gName = _movesLabel(r.gPath); }
-        else { r.gName = 'Autres positions'; r.gPath = []; }
+        if (r.op) { r.gName = r.op.name; r.gPath = r.op.path; r.gHtml = escapeHtml(r.gName); }
+        else if (r.path) { r.gPath = r.path.slice(0, 4); r.gName = _movesLabel(r.gPath); r.gHtml = _movesLabel(r.gPath, true); }
+        else { r.gName = 'Autres positions'; r.gPath = []; r.gHtml = r.gName; }
         r.gKey = r.side + '|' + r.gName;
     });
 }
@@ -361,7 +363,7 @@ function initStats() {
             <div class="st-h"><h3>Points faibles</h3>${counts.weak ? `<button class="st-link" data-action="statsLegend" data-arg="weak">Tout voir</button>` : ''}</div>
             <div class="st-wlist">${weakest.map(r => `
                 <div class="st-wrow">
-                    <span class="st-wrow-txt"><b>${r.e.ply ? escapeHtml(_moveLabel(r.e, true)) : 'Coup à retrouver'}</b><small>${statsColor === 'all' ? (r.side === 'w' ? 'Blancs · ' : 'Noirs · ') : ''}${escapeHtml(r.gName)}</small></span>
+                    <span class="st-wrow-txt"><b>${r.e.ply ? escapeHtml(_moveLabel(r.e, true)) : 'Coup à retrouver'}</b><small>${statsColor === 'all' ? (r.side === 'w' ? 'Blancs · ' : 'Noirs · ') : ''}${r.gHtml}</small></span>
                     <span class="st-errs lv-${r.lv}"><span class="st-n">${r.e.failures} err. / ${r.e.attempts}</span></span>
                     <button class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" title="Voir la position" aria-label="Voir la position">${ico('eye')}</button>
                 </div>`).join('')}</div>
@@ -372,7 +374,7 @@ function initStats() {
     const scope = currentRepertoire + '|' + statsColor;
     if (scope !== statsScope) { statsScope = scope; statsOpen = null; statsAll = new Set(); }
     const groups = {};
-    rows.forEach(r => { (groups[r.gKey] = groups[r.gKey] || { key: r.gKey, side: r.side, name: r.gName, path: r.gPath, all: [], items: [] }).all.push(r); });
+    rows.forEach(r => { (groups[r.gKey] = groups[r.gKey] || { key: r.gKey, side: r.side, name: r.gName, html: r.gHtml, path: r.gPath, all: [], items: [] }).all.push(r); });
     Object.values(groups).forEach(g => { g.items = g.all.filter(r => statsFilter === 'all' || r.lv === statsFilter); g.counts = _countLevels(g.all); g.due = g.all.filter(r => isDue(r.e, now)).length; });
     const share = (g, l) => g.counts[l] / g.all.length;
     const sorters = {
@@ -410,8 +412,8 @@ function initStats() {
         const mastery = Math.round(100 * share(g, 'mastered'));
         return `<section class="st-line ${open ? 'open' : ''}">
             <button class="st-line-head" aria-expanded="${open}" data-action="statsLine" data-arg="${escapeHtml(g.key)}">
-                <span class="st-line-name"><b>${statsColor === 'all' ? `<span class="st-line-side">${g.side === 'w' ? 'Blancs' : 'Noirs'}</span>` : ''}${escapeHtml(g.name)}</b>
-                    ${g.path.length && g.name !== _movesLabel(g.path) ? `<small>${escapeHtml(_movesLabel(g.path))}</small>` : ''}</span>
+                <span class="st-line-name"><b>${statsColor === 'all' ? `<span class="st-line-side">${g.side === 'w' ? 'Blancs' : 'Noirs'}</span>` : ''}${g.html}</b>
+                    ${g.path.length && g.name !== _movesLabel(g.path) ? `<small>${_movesLabel(g.path, true)}</small>` : ''}</span>
                 <span class="st-line-bar">${levelBarHTML(g.counts)}<span>${mastery} % · ${g.all.length} pos.</span></span>
                 <span class="st-due ${g.due ? '' : 'none'}">${g.due ? g.due + ' à réviser' : 'à jour'}</span>
                 ${ico('chevron-right')}

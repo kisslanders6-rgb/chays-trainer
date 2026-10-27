@@ -30,12 +30,14 @@ function _applyUciRaw(uci) {
     return san;
 }
 
-function formatLinePrefix(sans) {
+// html : figurines du jeu actif (HTML déjà échappé, à ne pas repasser dans escapeHtml) ; sinon texte simple.
+function formatLinePrefix(sans, html) {
     if (!sans.length) return '(position de départ)';
+    const fmt = html ? formatSan : formatSanText;
     let out = '';
     sans.forEach((san, i) => {
         if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
-        out += formatSanText(san, i % 2 ? 'b' : 'w') + ' ';
+        out += fmt(san, i % 2 ? 'b' : 'w') + ' ';
     });
     return out.trim();
 }

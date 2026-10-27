@@ -65,10 +65,11 @@ const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur 
 // lettres françaises (C F T D R), anglaises, ou figurines.
 //   formatSan(san, couleur)     → HTML (échappé) : en mode figurines, la pièce du jeu actif, à la couleur du camp
 //                                 (<span class="fig">, image lue dans --fig-wN… écrites par applyPieceSet).
-//   formatSanText(san, couleur) → texte simple (barre d'état, title, copie) : figurines Unicode en mode figurines.
+//   formatSanText(san, couleur) → texte simple (barre d'état, title, copie) : en mode figurines, lettres
+//                                 françaises (les glyphes Unicode ♘♗ s'affichaient en emojis, sans rapport
+//                                 avec le jeu de pièces). Toute liste affichée passe donc par formatSan.
 // Le jeu « Invisibles » n'a pas de dessin de pièce : les figurines repassent aux lettres françaises.
 const _SAN_FR  = { N: 'C', B: 'F', R: 'T', Q: 'D', K: 'R' };
-const _SAN_FIG = { w: { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' }, b: { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' } };
 const _FIG_NAMES = { N: 'Cavalier', B: 'Fou', R: 'Tour', Q: 'Dame', K: 'Roi' };
 function _sanMode() {
     const s = typeof appSettings !== 'undefined' ? appSettings : { notation: 'en' };
@@ -77,8 +78,7 @@ function _sanMode() {
 function formatSanText(san, color) {
     const mode = _sanMode();
     if (!san || mode === 'en') return san || '';
-    const map = mode === 'fig' ? _SAN_FIG[color === 'b' ? 'b' : 'w'] : _SAN_FR;
-    return san.replace(/[NBRQK]/g, c => map[c]);
+    return san.replace(/[NBRQK]/g, c => _SAN_FR[c]);
 }
 function formatSan(san, color) {
     if (!san) return '';

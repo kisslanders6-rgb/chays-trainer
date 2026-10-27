@@ -238,7 +238,8 @@ function _profileColor(headers) {
     return null;
 }
 
-const _plyLabel = (ply, san) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${formatSanText(san, ply % 2 ? 'b' : 'w')}`;
+// html : figurines du jeu actif (HTML échappé) ; sinon texte simple (barre d'état).
+const _plyLabel = (ply, san, html) => `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${(html ? formatSan : formatSanText)(san, ply % 2 ? 'b' : 'w')}`;
 
 function runGameReview() {
     const out  = document.getElementById('review-result');
