@@ -55,8 +55,10 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 
 Prévisualisation locale : `.claude/launch.json` (serveur Node sur le port 8080) ou `npm start`.
 
+Skills du projet (`.claude/skills/`) : `cloture-lot` (vérifications et commit de fin de lot), `nouvelle-donnee` (champ d'entrée, clé de stockage, préférence), `exercice-finale` (catalogue des finales et verdicts), `apparence-ajout` (échiquier, jeu de pièces, style de flèches). Les tenir à jour quand une procédure qu'elles décrivent change.
+
 ## État et chantiers
 
 - Fait : notation standard, Jouer sans comptage, onglet Adversaire, refonte Finales « Velours », lot 1 (Aide, variantes implicites PGN, « Les deux » par défaut, Noyer + Maestro), lot 2 (journal des parties, « Traitée depuis », thème aux valeurs honnêtes, niveau retiré, mode libre synchronisé, clés unifiées), lot 3 (Stockfish 19 embarqué, mode Analyse, mise à jour automatique du moteur), lot 4 (finales jugées par Syzygy et moteur, adversaire calculé, 24 nouveaux exercices en 6 catégories, audit Statistiques / Entraînement), lot 5 (accueil trois colonnes, Statistiques sur téléphone, ColorScope et puce de répertoire, figurines du jeu actif, identité Noyer, échiquiers Érable / Marbre / Tournoi / Cerisier, pièces cburnett / california / cardinal / celtic, flèches Lichess / Pinceau / Fine et cavalier en L, accents dérivés et contrastes, Connexion / Création de compte, accueil Google, photo de profil, 18 avatars).
 - Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Restes à proposer : registre unique des réglages et `chessTrainer_schema` (migrations ordonnées), bouton « Ce coup n'était pas encore dans mon répertoire » (bouton dans `setStatus`), variantes implicites d'un PGN collé proposées comme réponses.
-- Icône et logo de marque : dessin actuel gardé, recoloré Noyer (choix du 26 octobre 2026). Les 48 icônes de l'interface (artefact) restent à choisir.
+- Icône et logo de marque : dessin actuel gardé, recoloré Noyer. Icônes de l'interface (`js/core/icons.js`) : choix clos le 27 octobre 2026, ne plus proposer d'alternatives.
