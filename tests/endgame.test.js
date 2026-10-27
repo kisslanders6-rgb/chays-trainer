@@ -94,6 +94,17 @@ t('catalogue : exercices jugés décrits par des données (plan, objectif, limit
     assert(ctx.ENDGAME_EXERCISES.filter(e => !e.kind).length >= 25);
 });
 
+// Sous 600 px, .st-seg s'étire (règle écrite pour ColorScope) : le filtre Toutes / À faire / Réussies, un .seg,
+// doit répartir ses boutons sur toute la largeur, sinon le fond du conteneur reste vide à droite.
+t('barre des Finales sur mobile : les trois filtres se partagent la largeur', () => {
+    assert(/<div class="seg st-seg" id="endgame-seg"/.test(fs.readFileSync('index.html', 'utf8')), '#endgame-seg porte .seg et .st-seg');
+    const css = fs.readFileSync('css/screens.css', 'utf8');
+    const mobile = css.slice(css.indexOf('@media (max-width: 599px)'));
+    const rule = mobile.match(/\.st-seg\.seg\s*\{([^}]*)\}/);
+    assert(rule, 'règle .st-seg.seg absente du bloc mobile');
+    assert(/display:\s*grid/.test(rule[1]) && /grid-auto-columns:\s*minmax\(0,\s*1fr\)/.test(rule[1]), 'colonnes égales attendues');
+});
+
 // ─── Juge commun et adversaire calculé (sans réseau : API Syzygy et moteur simulés) ──
 const { EndgameJudge, EndgameOpponent, _egJudgedOutcome } = ctx;
 const tests = [];
