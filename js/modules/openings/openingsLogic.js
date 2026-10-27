@@ -61,7 +61,8 @@ function _sanForKeyMove(key, uci) {
 }
 
 // Replace l'échiquier (avec historique navigable) après la suite de coups UCI donnée.
-function loadPositionFromPath(moves) {
+// opts.animateLast : le dernier coup est animé (position qui arrive d'un coup, comme au contre-la-montre).
+function loadPositionFromPath(moves, opts) {
     clearErrorFx();
     _resetHint();
     parseFEN(INIT_FEN);
@@ -69,6 +70,7 @@ function loadPositionFromPath(moves) {
     selected = null; legalMoves = []; hintPiece = null; awaitingPromotion = null;
     resetNavCursor();
     moves.forEach(u => { const m = _parseUci(u); applyMove(m.from, m.to, m.promo); });
+    if (opts && opts.animateLast && moves.length) { const m = _parseUci(moves[moves.length - 1]); animateNextMove(m.from, m.to); }
     renderMoves();
     renderBoard();
 }

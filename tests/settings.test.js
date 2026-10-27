@@ -125,4 +125,15 @@ t('appareils : déconnexion demandée par un autre appareil, levée à la reconn
     assert.strictEqual(c.run('isThisDeviceRevoked()'), false);
 });
 
+t('réponse adverse jamais plus courte que l\'animation du coup précédent', () => {
+    const c = boot();
+    c.run(`appSettings.motion = 'full'; appSettings.oppDelay = 'instant'; appSettings.anim = 'normal'`);
+    assert.strictEqual(c.run('moveAnimMs()'), 170);
+    assert.strictEqual(c.run('opponentDelay(750)'), 200);                 // 120 ms coupaient l'animation de 170 ms
+    c.run(`appSettings.anim = 'fast'`); assert.strictEqual(c.run('opponentDelay(750)'), 130);
+    c.run(`appSettings.anim = 'off'`); assert.strictEqual(c.run('moveAnimMs()'), 0); assert.strictEqual(c.run('opponentDelay(750)'), 120);
+    c.run(`appSettings.anim = 'normal'; appSettings.motion = 'reduced'`); assert.strictEqual(c.run('opponentDelay(750)'), 120);
+    c.run(`appSettings.motion = 'full'; appSettings.oppDelay = 'normal'`); assert.strictEqual(c.run('opponentDelay(750)'), 750);
+});
+
 console.log(`\n${n} tests réussis.`);

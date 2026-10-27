@@ -466,7 +466,7 @@ function _startDrill(key, seqLen, opts) {
     }
 
     if (fullPath && opts && opts.noContext) {
-        loadPositionFromPath(fullPath.slice(0, -1));
+        loadPositionFromPath(fullPath.slice(0, -1), { animateLast: true });   // contre-la-montre : le coup adverse est animé
         _drillReady();
     } else if (fullPath) {
         const n     = fullPath.length - 1;               // coups avant ma réponse

@@ -99,8 +99,7 @@ let moveAnim = null;
 // Ignorée après un glisser-déposer (la pièce a déjà été déplacée à la main), si l'animation des
 // pièces est coupée ou si les animations sont réduites (Paramètres, ou réglage de l'appareil).
 function animateNextMove(from, to) {
-    const off = appSettings.anim === 'off' || prefersReducedMotion();
-    moveAnim = (off || _dragJustEnded()) ? null : { from, to };
+    moveAnim = (!moveAnimMs() || _dragJustEnded() || from < 0 || to < 0) ? null : { from, to };
 }
 
 // Facteur de `zoom` CSS hérité par `el` (réglage « Taille du texte » : body { zoom }). Les longueurs
@@ -120,7 +119,7 @@ function _runMoveAnim(a) {
     t.style.zIndex = 5;                                   // la pièce passe au-dessus des autres cases
     const anim = pc.animate(
         [{ transform: `translate(${(fr.left - tr.left) / z}px, ${(fr.top - tr.top) / z}px)` }, { transform: 'translate(0, 0)' }],
-        { duration: appSettings.anim === 'fast' ? 100 : 170, easing: 'cubic-bezier(.22,.8,.3,1)' });
+        { duration: moveAnimMs(), easing: 'cubic-bezier(.22,.8,.3,1)' });
     anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; };
 }
 
@@ -191,7 +190,10 @@ function updateNavButtons() {
 
 // Affiche la position après le coup d'indice p (p = -1 : position initiale).
 function navGo(p) {
-    const len = moveHistory.length;
+    const len = moveHistory.length, was = _navPos();
+    // Un pas en avant rejoue le coup, un pas en arrière le défait : animés comme un coup joué.
+    if (p === was + 1 && moveHistory[p]) animateNextMove(moveHistory[p].from, moveHistory[p].to);
+    else if (p === was - 1 && moveHistory[was]) animateNextMove(moveHistory[was].to, moveHistory[was].from);
     if (p >= len - 1) {
         navCursor = -1;
         renderBoard();

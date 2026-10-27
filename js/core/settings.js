@@ -289,9 +289,18 @@ function prefersReducedMotion() {
     return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+// Durée de l'animation d'un coup (ms) ; 0 quand les pièces ne sont pas animées.
+function moveAnimMs() {
+    if (appSettings.anim === 'off' || prefersReducedMotion()) return 0;
+    return appSettings.anim === 'fast' ? 100 : 170;
+}
+
 // Délai de réponse de l'adversaire : facteur appliqué aux temporisations (entraînement, finales).
+// Jamais plus court que l'animation du coup précédent : la réponse redessine l'échiquier et la couperait net.
 function opponentDelay(ms) {
-    return { instant: Math.min(ms, 120), normal: ms, calm: Math.round(ms * 1.8) }[appSettings.oppDelay] || ms;
+    const d = { instant: Math.min(ms, 120), normal: ms, calm: Math.round(ms * 1.8) }[appSettings.oppDelay] || ms;
+    const anim = moveAnimMs();
+    return anim ? Math.max(d, anim + 30) : d;
 }
 
 // ─── Appareils du compte (clés « dev:<id> » des préférences synchronisées) ──
