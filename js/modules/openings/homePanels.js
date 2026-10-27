@@ -1,13 +1,13 @@
 /**
  * modules/openings/homePanels.js
  * ──────────────────────────────────────────────────────────────────────────
- * Panneaux de l'accueil Jouer, à côté des sélecteurs (trois colonnes sur grand écran, css/home.css) :
- *   « Mes répertoires »      chaque répertoire, ses positions, ses révisions dues, sa maîtrise ; un clic le choisit.
+ * Panneaux de l'accueil Jouer, sous les cartes Blancs / Noirs (css/home.css). Le répertoire se choisit dans la barre de
+ * contexte (puce et pastilles, renderRepertoireList) : il n'a plus de panneau à lui.
  *   « Nouveautés à traiter » parties du journal (chessTrainer_gameLedger) arrêtées sur une nouveauté adverse ou une
  *                            position sans réponse, pour le répertoire actif, tant que la réponse n'est pas enregistrée.
  *                            Un clic ouvre Jouer sur cette position.
  *   « Dernières parties »    les parties analysées le plus récemment et leur verdict pour le répertoire actif.
- * Sur un écran étroit, seules les nouveautés restent (les répertoires ont leur puce, les parties leur fenêtre).
+ * Sur un écran étroit, seules les nouveautés restent (les parties ont leur fenêtre).
  * Suggestion unique « Essayer Noyer + Maestro » pour une installation antérieure restée sur Sauge + Merida
  * (chessTrainer_looksTip, propre à l'appareil : 'tried' ou 'no' ; il n'existe pas de notification générique).
  */
@@ -47,23 +47,6 @@ const HomePanels = (function () {
             });
         });
         return out.sort((a, b) => b.at - a.at);
-    }
-
-    function repsHTML() {
-        const now = Date.now();
-        const rows = loadRepertoireList().map(name => {
-            const all = Object.values(readDBFor(name, 'w')).concat(Object.values(readDBFor(name, 'b')));
-            const due = all.filter(e => isDue(e, now)).length;
-            const mastered = all.filter(e => e.attempts >= 3 && !e.failures).length;
-            const pct = all.length ? Math.round(100 * mastered / all.length) : 0;
-            const cur = name === currentRepertoire;
-            return `<button type="button" class="hp-rep${cur ? ' is-cur' : ''}" data-action="selectRepertoire" data-arg="${escapeHtml(name)}" aria-pressed="${cur}">
-                <span class="rp-ini" aria-hidden="true">${escapeHtml((name.trim()[0] || '?').toUpperCase())}</span>
-                <span class="rp-txt"><b>${escapeHtml(name)}</b><small>${all.length} position${all.length > 1 ? 's' : ''}${due ? ` · ${due} à réviser` : ''}</small></span>
-                <span class="hp-pct" title="${pct} % de positions maîtrisées"><i style="width:${pct}%"></i></span>
-            </button>`;
-        }).join('');
-        return `<div class="hp-h"><h2>Mes répertoires</h2><button type="button" class="st-link" data-action="createRepertoire">Nouveau</button></div><div class="hp-list">${rows}</div>`;
     }
 
     function newsHTML() {
@@ -131,7 +114,6 @@ const HomePanels = (function () {
     function render() {
         const set = (id, fn) => { const el = document.getElementById(id); if (el) el.innerHTML = fn(); };
         set('looks-tip', tipHTML);
-        set('hp-reps', repsHTML);
         set('hp-news', newsHTML);
         set('hp-recent', recentHTML);
     }

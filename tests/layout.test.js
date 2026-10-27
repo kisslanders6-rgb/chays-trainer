@@ -67,4 +67,20 @@ t('« Invisibles » : interrupteur à part, absent de la grille des pièces', ()
     assert(/key === 'blindfold'[\s\S]{0,400}setPref\('pieceSet', 'blindfold'\)/.test(ui), 'l\'interrupteur écrit pieceSet');
 });
 
+// ─── Accueil Jouer : le répertoire ne s'affiche qu'une fois ──────────────────
+t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de panneau « Mes répertoires »', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const play = html.slice(html.indexOf('<div id="home-tab-play"'), html.indexOf('<!-- Onglet Statistiques -->'));
+    const scope = play.slice(play.indexOf('<div class="st-scope hp-scope">'), play.indexOf('<div class="hp-col hp-col-main">'));
+    ['id="repertoire-list"', 'id="hp-quick"', 'id="rep-menu-btn"'].forEach(s => assert(scope.includes(s), 'barre : ' + s));
+    assert.strictEqual((play.match(/class="[^"]*\brepertoire-list\b/g) || []).length, 1, 'une seule puce de répertoire dans Jouer');
+    assert(!/hp-reps|repertoire-select/.test(play), 'plus de panneau ni de sélecteur en double');
+    assert(!/repsHTML|hp-reps/.test(fs.readFileSync('js/modules/openings/homePanels.js', 'utf8')));
+    const app = fs.readFileSync('js/app.js', 'utf8');
+    assert(/filter\(n => n !== currentRepertoire\)\.slice\(0, HP_QUICK_MAX\)/.test(app), 'pastilles : les autres répertoires seulement');
+    assert(!/à réviser<\/span><span><b>\$\{streak\}/.test(app), '« Aujourd\'hui » ne répète plus les révisions du répertoire');
+    const home = fs.readFileSync('css/home.css', 'utf8');
+    assert(/@media \(max-width: 599px\) \{ \.hp-quick \{ display: none; \} \}/.test(home), 'téléphone : la puce seule');
+});
+
 console.log(`\n${n} tests réussis.`);

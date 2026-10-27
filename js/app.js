@@ -118,11 +118,27 @@ function switchHomeTab(tab) {
 
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────
 
+const HP_QUICK_MAX = 6;          // pastilles d'autres répertoires dans la barre de Jouer ; les suivants restent dans la liste de la puce
+
 function renderRepertoireList() {
     const html = RepPicker.html('selectRepertoire');      // puce et liste avec recherche (repPicker.js)
     document.querySelectorAll('.repertoire-list').forEach(c => { c.innerHTML = html; });
+    // Barre de Jouer : les autres répertoires en pastilles d'initiales (un clic le choisit), puis « + ».
+    const quick = document.getElementById('hp-quick');
+    if (quick) quick.innerHTML = loadRepertoireList().filter(n => n !== currentRepertoire).slice(0, HP_QUICK_MAX).map(n =>
+        `<button type="button" class="hp-q" data-action="selectRepertoire" data-arg="${escapeHtml(n)}" title="${escapeHtml(n)}" aria-label="Répertoire ${escapeHtml(n)}">${escapeHtml((n.trim()[0] || '?').toUpperCase())}</button>`).join('')
+        + `<button type="button" class="hp-q is-new" data-action="createRepertoire" title="Nouveau répertoire" aria-label="Nouveau répertoire">${ico('plus')}</button>`;
     renderResumeCard();
     renderHomeSummary();
+}
+
+// Position illustrant une couleur sur sa carte : la première réponse du répertoire (la plus courte, puis la plus
+// travaillée), après mon coup. Sans position : le roi seul.
+function _homeArtHTML(entries, color) {
+    const e = entries.filter(x => Array.isArray(x.path) && x.path.length).sort((a, b) => a.path.length - b.path.length || b.attempts - a.attempts)[0];
+    if (!e || typeof egMiniBoard !== 'function') return `<span class="glyph home-card-piece" data-glyph="${color === 'w' ? 'K' : 'k'}"></span>`;
+    try { return egMiniBoard({ fen: Chess.fen(Chess.replay(e.path)), player: color }); }
+    catch (err) { return `<span class="glyph home-card-piece" data-glyph="${color === 'w' ? 'K' : 'k'}"></span>`; }
 }
 
 // ─── ACCUEIL : SALUTATION, POSITIONS PAR COULEUR, CHIFFRES DU RÉPERTOIRE ──────
@@ -133,15 +149,18 @@ function renderHomeSummary() {
     const h = new Date().getHours(), name = appSettings.pseudo.trim();
     greet.textContent = (h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : '');
     const w = Object.values(readDBFor(currentRepertoire, 'w')), b = Object.values(readDBFor(currentRepertoire, 'b'));
-    const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
-    document.getElementById('home-meta-w').textContent = w.length ? pl(w.length, 'position', 'positions') : 'Aucune position';
-    document.getElementById('home-meta-b').textContent = b.length ? pl(b.length, 'position', 'positions') : 'Aucune position';
     const now = Date.now(), all = w.concat(b);
-    const due = all.filter(e => isDue(e, now)).length;
+    const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+    // Chiffres par couleur sur les cartes ; les totaux du répertoire sont dans la puce de la barre (une seule fois).
+    const meta = list => { const d = list.filter(e => isDue(e, now)).length; return list.length ? pl(list.length, 'position', 'positions') + (d ? ` · ${d} à réviser` : '') : 'Aucune position'; };
+    document.getElementById('home-meta-w').textContent = meta(w);
+    document.getElementById('home-meta-b').textContent = meta(b);
+    [['w', w], ['b', b]].forEach(([c, list]) => { const art = document.getElementById('home-art-' + c); if (art) art.innerHTML = _homeArtHTML(list, c); });
+    if (typeof refreshGlyphs === 'function') refreshGlyphs();
     const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
     // Répertoire vide : à la place des chiffres, par où commencer.
     document.getElementById('home-stats').innerHTML = !all.length ? `<p class="home-empty">${ico('lightbulb')}<span><b>Par où commencer ?</b> Choisissez une couleur et jouez une première ligne, en jouant aussi les coups de l’adversaire. Vous avez déjà vos lignes ? <button type="button" class="toast-link" data-action="homeImportPgn">Importez un PGN</button>.</span></p>` :
-        `<span><b>${due}</b>à réviser</span><span><b>${streak} j</b>d'affilée</span><span><b>${all.length}</b>${all.length > 1 ? 'positions' : 'position'}</span>`;
+        `<span><b>${streak} j</b>d'affilée</span>`;
     // Objectif quotidien (Paramètres › Jeu et entraînement) : positions jouées aujourd'hui, tous répertoires.
     const today = (readActivity()[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
     const box = document.getElementById('home-goal');
@@ -151,7 +170,7 @@ function renderHomeSummary() {
         box.classList.toggle('is-done', today >= goal);
         box.innerHTML = `<i aria-hidden="true"></i><span>Objectif du jour : <b>${Math.min(today, goal)} / ${goal}</b> positions${today >= goal ? ' · atteint' : ''}</span>`;
     }
-    HomePanels.render();                         // Mes répertoires, Nouveautés à traiter, Dernières parties
+    HomePanels.render();                         // Nouveautés à traiter, Dernières parties
 }
 
 // iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).
