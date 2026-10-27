@@ -209,7 +209,7 @@ const AccountUI = (function () {
     function viewChooser() {
         const c = chooser;
         return `<div class="account-auth">
-            <div class="panel-sub">Cet appareil contient <strong>${plural(c.local.positions, 'position', 'positions')}</strong> et votre compte en contient <strong>${plural(c.remote.positions, 'position', 'positions')}</strong>. Que faire ?</div>
+            <div class="panel-sub">Cet appareil contient <strong>${plural(c.local.positions, 'position', 'positions')}</strong> et le compte <strong>${esc((Auth.user() || {}).email || '')}</strong> en contient <strong>${plural(c.remote.positions, 'position', 'positions')}</strong>. Que faire ?</div>
             ${switched ? `<div class="pgn-note warn">${icon('alert-triangle')} Cet appareil contenait des données d'un autre compte.</div>` : ''}
             <div class="account-choices">
                 <button class="account-choice is-rec" data-act="strategy:merge">
@@ -415,7 +415,10 @@ const AccountUI = (function () {
         window.dispatchEvent(new CustomEvent('chays-sync-intent', { detail: { strategy, user: u.id } }));
     }
 
-    async function ensureIntent() {
+    // ask : connexion par un lien non demandé ici, ou changement de compte → les données de cet appareil
+    // ne partent jamais sans que l'utilisateur l'ait choisi (fenêtre « Première synchronisation »).
+    async function ensureIntent(opts) {
+        const ask = !!(opts && opts.ask);
         const u = Auth.user();
         if (!u || choosing) return;
         const cur = SyncIntent.get();
@@ -426,7 +429,7 @@ const AccountUI = (function () {
             if (!r.ok || Auth.user() !== u) return;                    // hors ligne : on réessaiera à la prochaine ouverture / connexion
             const local = countLocal(), remote = countRemote(r.docs);
             if (!local.has && !remote.has) return applyStrategy('merge');
-            if (local.has && !remote.has) {
+            if (local.has && !remote.has && !ask) {
                 applyStrategy('upload');
                 return toast(`Vos ${plural(local.positions, 'position', 'positions')} vont être sauvegardées dans votre compte.`);
             }
@@ -593,6 +596,14 @@ const AccountUI = (function () {
         else if (n.kind === 'confirmed') toast('Adresse confirmée : vous êtes connecté.');
         else if (n.kind === 'signed-in') toast('Vous êtes connecté.');
         else if (n.kind === 'error') toast(n.message);
+        else if (n.kind === 'confirm-link') {
+            // Lien que cet appareil n'a pas demandé : on nomme le compte avant de s'y connecter (texte simple, sans HTML).
+            const text = n.current
+                ? `Ce lien connecte cet appareil au compte ${n.email}, à la place de ${n.current}. Continuer ?`
+                : `Ce lien connecte cet appareil au compte ${n.email}. Continuez seulement s'il s'agit de votre adresse et que vous venez de demander ce lien.`;
+            if (typeof askConfirm === 'function') askConfirm(text, () => Auth.answerLink(true));
+            else Auth.answerLink(confirm(text));
+        }
     }
 
     function init() {
@@ -603,7 +614,7 @@ const AccountUI = (function () {
             if (ev === 'signed-in') {
                 switched = !!(data && data.switched);
                 if (isOpen() && view !== 'newpw') { view = 'account'; render(); }
-                updateButton(); ensureIntent();
+                updateButton(); ensureIntent({ ask: switched || !!(data && data.confirmed) });
                 welcomeIfNew();
             } else if (ev === 'signed-out') {
                 updateButton(); if (isOpen()) { view = 'auth'; linkMode = false; render(); }

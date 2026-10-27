@@ -15,7 +15,8 @@
  *   Auth.deleteAccount()    supprime le compte et ses données en ligne (fonction delete_my_account)
  *   Auth.refresh()          rafraîchit le jeton (aussi automatique, 60 s avant l'expiration)
  *   Auth.onChange(fn)       fn(événement, données) : signed-in | signed-out | refreshed | expired | notice
- *   Auth.takeNotice()       message issu d'un lien d'e-mail (confirmation, réinitialisation, lien expiré)
+ *   Auth.takeNotice()       message issu d'un lien d'e-mail (confirmation, réinitialisation, lien expiré,
+ *                           « confirm-link » : lien que cet appareil n'a pas demandé, à confirmer par Auth.answerLink)
  *
  * Effets de bord à la connexion : CloudClient.setSession(), SyncMeta.bindOwner() (remise à zéro si
  * c'est un autre compte que la dernière fois) et installSyncingAdapter(). À la déconnexion :
@@ -50,7 +51,7 @@ const Auth = (function () {
     const redirectQuery = () => (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)
         ? '?redirect_to=' + enc(location.origin + location.pathname) : '');
 
-    let session = null, refreshTimer = null, refreshing = null, notice = null;
+    let session = null, refreshTimer = null, refreshing = null, notice = null, pendingLink = null;
     const listeners = [];
     const emit = (ev, data) => listeners.forEach(fn => { try { fn(ev, data); } catch (e) { reportError('auth : écouteur ' + ev, e); } });
 
@@ -147,6 +148,20 @@ const Auth = (function () {
         return session && session.expires_at - nowS() < MARGIN_S ? refresh() : Promise.resolve({ ok: true });
     }
 
+    // ─── Démarches en cours ───────────────────────────────────────────────────
+    // Un lien #access_token=… n'est accepté sans confirmation que si CET appareil a lancé la démarche
+    // (inscription, mot de passe oublié, lien de connexion, changement d'adresse, fournisseur via Supabase).
+    // Sinon n'importe qui pourrait envoyer un lien portant ses propres jetons et recevoir les données de la victime.
+    const FLOW_KEY = 'chessTrainer_authFlow', FLOW_MAX_MS = 24 * 3600 * 1000;
+    const markFlow = kind => L().set(FLOW_KEY, JSON.stringify({ kind, at: Date.now() }));
+    function takeFlow() {
+        let o = null;
+        try { o = JSON.parse(L().get(FLOW_KEY)); } catch (e) { /* illisible : aucune démarche */ }
+        L().remove(FLOW_KEY);
+        const age = o && Number.isFinite(o.at) ? Date.now() - o.at : -1;
+        return age >= 0 && age < FLOW_MAX_MS ? o : null;
+    }
+
     // ─── Actions ──────────────────────────────────────────────────────────────
     async function signIn(email, password) {
         const r = await request('/token?grant_type=password', { body: { email, password } });
@@ -168,6 +183,7 @@ const Auth = (function () {
             emit('signed-in', { session: s, switched, fresh: true });
             return { ok: true, session: s, switched, needsConfirmation: false };
         }
+        markFlow('signup');
         return { ok: true, needsConfirmation: true };
     }
 
@@ -181,20 +197,26 @@ const Auth = (function () {
 
     async function recover(email) {
         const r = await request('/recover' + redirectQuery(), { body: { email } });
-        return r.error || !r.ok ? failure(r) : { ok: true };
+        if (r.error || !r.ok) return failure(r);
+        markFlow('recovery');
+        return { ok: true };
     }
 
     // Connexion sans mot de passe : un lien envoyé par e-mail (compte créé au besoin), traité par readHash.
     async function signInWithLink(email) {
         const r = await request('/otp' + redirectQuery(), { body: { email, create_user: true } });
-        return r.error || !r.ok ? failure(r) : { ok: true };
+        if (r.error || !r.ok) return failure(r);
+        markFlow('magiclink');
+        return { ok: true };
     }
 
     // Changement d'adresse : un lien de confirmation part vers la nouvelle adresse.
     async function updateEmail(email) {
         if (!session) return { ok: false, code: 'no_session', message: 'Session expirée : reconnectez-vous.' };
         const r = await request('/user' + redirectQuery(), { method: 'PUT', token: session.access_token, body: { email } });
-        return r.error || !r.ok ? failure(r) : { ok: true };
+        if (r.error || !r.ok) return failure(r);
+        markFlow('email_change');
+        return { ok: true };
     }
 
     // Profil complet côté service (méthodes de connexion associées, date de création).
@@ -244,6 +266,7 @@ const Auth = (function () {
         if (!/^https?:$/.test(location.protocol))
             return { ok: false, code: 'file', message: "La connexion avec Google n'est possible que depuis l'adresse en ligne de l'application." };
         if (provider === 'google' && googleClientId() && typeof crypto !== 'undefined' && crypto.subtle) return signInWithGoogleDirect();
+        markFlow('provider');
         location.assign(api('/authorize?provider=' + enc(provider) + '&redirect_to=' + enc(location.origin + location.pathname)));
         return { ok: true };
     }
@@ -321,13 +344,34 @@ const Auth = (function () {
             setNotice(r.ok ? { kind: 'signed-in' } : { kind: 'error', message: r.message });
             return;
         }
+        const flow = takeFlow();
         const r = await request('/user', { method: 'GET', token: h.access_token });
         if (r.error || !r.ok || !r.json.id) { setNotice({ kind: 'error', message: 'Lien invalide ou expiré : recommencez la démarche.' }); return; }
         const s = { access_token: h.access_token, refresh_token: h.refresh_token, expires_at: h.expires_at, user: { id: r.json.id, email: r.json.email } };
+        const kind = h.type === 'recovery' ? 'recovery' : h.type === 'signup' ? 'confirmed' : 'signed-in';
+        // Démarche inconnue de cet appareil (lien ouvert ailleurs, ou envoyé par un tiers), ou autre compte déjà
+        // connecté : rien n'est appliqué avant que l'utilisateur ait confirmé l'adresse du compte (acceptLink).
+        if (!flow || (session && session.user.id !== s.user.id)) {
+            pendingLink = { s, kind };
+            setNotice({ kind: 'confirm-link', email: s.user.email || '', current: session ? session.user.email || '' : '' });
+            return;
+        }
+        finishLink(s, kind, false);
+    }
+
+    function finishLink(s, kind, confirmed) {
         apply(s);
         const switched = activate(s);
-        emit('signed-in', { session: s, switched, fresh: true });
-        setNotice({ kind: h.type === 'recovery' ? 'recovery' : h.type === 'signup' ? 'confirmed' : 'signed-in' });
+        emit('signed-in', { session: s, switched, fresh: true, confirmed });
+        setNotice({ kind });
+    }
+
+    // Réponse à la notice « confirm-link » : true connecte au compte du lien, false l'oublie.
+    function answerLink(yes) {
+        const p = pendingLink; pendingLink = null;
+        if (!p || !yes) return false;
+        finishLink(p.s, p.kind, true);
+        return true;
     }
 
     // ─── Démarrage ────────────────────────────────────────────────────────────
@@ -349,7 +393,7 @@ const Auth = (function () {
 
     return {
         configured, init, refresh, refreshIfNeeded, signIn, signUp, signOut, recover, updatePassword, signInWithLink, updateEmail, fetchUser,
-        providers, signInWithProvider, signInWithIdToken, deleteAccount,
+        providers, signInWithProvider, signInWithIdToken, deleteAccount, answerLink,
         onChange: fn => { listeners.push(fn); },
         takeNotice: () => { const n = notice; notice = null; return n; },
         session: () => session,

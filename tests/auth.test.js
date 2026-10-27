@@ -164,7 +164,7 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
 
     await t('lien de réinitialisation (#…type=recovery) : connecté, notice « recovery », adresse nettoyée', async () => {
         const be2 = makeBackend(); const usr = be2.addUser('ana@test.fr', 'motdepasse1'); const tok = be2.token(usr);
-        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600&type=recovery` });
+        const c2 = boot({ backend: be2, mem: new Map([['chessTrainer_authFlow', JSON.stringify({ kind: 'x', at: Date.now() })]]), hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600&type=recovery` });
         c2.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
         assert.strictEqual(c2.run('Auth.isSignedIn()'), true); assert.strictEqual(c2.run('Auth.takeNotice().kind'), 'recovery');
         assert.strictEqual(c2.run('Auth.takeNotice()'), null); assert.strictEqual(c2.__replaced, '/app/');
@@ -174,9 +174,46 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
     });
     await t('lien de confirmation (#…type=signup) : connecté, notice « confirmed »', async () => {
         const be2 = makeBackend(); const usr = be2.addUser('ana@test.fr', 'motdepasse1'); const tok = be2.token(usr);
-        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=signup` });
+        const c2 = boot({ backend: be2, mem: new Map([['chessTrainer_authFlow', JSON.stringify({ kind: 'x', at: Date.now() })]]), hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=signup` });
         c2.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
         assert.strictEqual(c2.run('Auth.takeNotice().kind'), 'confirmed');
+    });
+    await t('lien que cet appareil n\'a pas demandé : rien n\'est appliqué avant confirmation (connexion forcée)', async () => {
+        const be2 = makeBackend(); const atk = be2.addUser('pirate@test.fr', 'x'); const tok = be2.token(atk);
+        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600` });
+        c2.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(c2.run('Auth.isSignedIn()'), false); assert.strictEqual(c2.mem.has('chessTrainer_session'), false);
+        const nt = c2.run('Auth.takeNotice()'); assert.strictEqual(nt.kind, 'confirm-link'); assert.strictEqual(nt.email, 'pirate@test.fr');
+        assert.strictEqual(c2.events.includes('signed-in'), false);
+        assert.strictEqual(c2.run('Auth.answerLink(false)'), false); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
+        assert.strictEqual(c2.run('Auth.answerLink(true)'), false);                      // réponse unique : le lien est oublié
+    });
+    await t('lien non demandé, puis confirmé : connecté, l\'événement le signale (pas d\'envoi automatique)', async () => {
+        const be2 = makeBackend(); const usr = be2.addUser('ana@test.fr', 'x'); const tok = be2.token(usr);
+        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=signup` });
+        c2.boot(); let got = null; c2.run('Auth.onChange((e, d) => { if (e === "signed-in") globalThis.__got = d; })');
+        await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(c2.run('Auth.answerLink(true)'), true); got = c2.run('globalThis.__got');
+        assert.strictEqual(c2.run('Auth.isSignedIn()'), true); assert.strictEqual(got.confirmed, true);
+        assert.strictEqual(c2.run('Auth.takeNotice().kind'), 'confirmed');
+    });
+    await t('démarche lancée ici mais lien d\'un AUTRE compte que celui connecté : confirmation demandée', async () => {
+        const be2 = makeBackend(); const ana = be2.addUser('ana@test.fr', 'motdepasse1'); const atk = be2.addUser('pirate@test.fr', 'x'); const tok = be2.token(atk);
+        const c2 = boot({ backend: be2 }); c2.boot(); await c2.run(`Auth.signIn('ana@test.fr', 'motdepasse1')`);
+        await c2.run(`Auth.recover('ana@test.fr')`);
+        const c3 = boot({ backend: be2, mem: c2.mem, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=recovery` });
+        c3.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(c3.run('Auth.user().email'), 'ana@test.fr');
+        const nt = c3.run('Auth.takeNotice()'); assert.strictEqual(nt.kind, 'confirm-link'); assert.strictEqual(nt.current, 'ana@test.fr');
+    });
+    await t('marque de démarche : posée par recover / lien / inscription, à usage unique, périmée après 24 h', async () => {
+        const c2 = boot({ backend: makeBackend() }); c2.boot();
+        await c2.run(`Auth.recover('a@test.fr')`); assert.strictEqual(JSON.parse(c2.mem.get('chessTrainer_authFlow')).kind, 'recovery');
+        const be2 = makeBackend(); const usr = be2.addUser('ana@test.fr', 'x'); const tok = be2.token(usr);
+        const old = new Map([['chessTrainer_authFlow', JSON.stringify({ kind: 'recovery', at: Date.now() - 25 * 3600 * 1000 })]]);
+        const c3 = boot({ backend: be2, mem: old, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=recovery` });
+        c3.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+        assert.strictEqual(c3.run('Auth.isSignedIn()'), false); assert.strictEqual(c3.mem.has('chessTrainer_authFlow'), false);
     });
     await t('lien expiré (#error=…otp_expired) : notice d\'erreur lisible, aucune session', async () => {
         const c2 = boot({ backend: makeBackend(), hash: '#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired' });
@@ -185,7 +222,7 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
     });
     await t('retour de Google (#access_token sans type) : connecté, notice « signed-in »', async () => {
         const be2 = makeBackend(); const usr = be2.addUser('g@test.fr', 'x'); const tok = be2.token(usr);
-        const c2 = boot({ backend: be2, hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600&provider_token=abc` });
+        const c2 = boot({ backend: be2, mem: new Map([['chessTrainer_authFlow', JSON.stringify({ kind: 'x', at: Date.now() })]]), hash: `#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600&provider_token=abc` });
         c2.boot(); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
         assert.strictEqual(c2.run('Auth.isSignedIn()'), true); assert.strictEqual(c2.run('Auth.takeNotice().kind'), 'signed-in');
     });

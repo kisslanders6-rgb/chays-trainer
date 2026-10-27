@@ -215,6 +215,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const dom = new JSDOM(`<!DOCTYPE html><body><div class="app"><nav><div class="topnav-right"></div></nav><div id="help-overlay" class="overlay hidden"></div></div></body>`,
             { url: `https://chays.test/app/#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&type=recovery`, runScripts: 'dangerously' });
         const w2 = dom.window; w2.fetch = be2.fetch; w2.eval('window.ico=()=>"";'); w2.matchMedia = () => ({ matches: false, addEventListener() {} });
+        w2.localStorage.setItem('chessTrainer_authFlow', JSON.stringify({ kind: 'recovery', at: Date.now() }));   // démarche lancée sur cet appareil
         const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
         ['js/core/utils.js', 'js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/settings.js', 'js/core/panelKit.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
         add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
@@ -223,6 +224,25 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         assert(visible(w2)); assert($(w2, '[data-form="newpw"]'));
         type(w2, 'input[name=password]', 'nouveau-mdp-9'); submit(w2, '[data-form="newpw"]'); await flush();
         assert.match(text(w2, '.account-msg'), /modifié/); assert.strictEqual(be2.users.get('ana@test.fr').password, 'nouveau-mdp-9');
+    });
+    await t('lien non demandé sur cet appareil : le compte est nommé, refus → pas connecté ; accord → connecté, rien n\'est envoyé sans choix', async () => {
+        for (const yes of [false, true]) {
+            const be2 = makeBackend(); const u = be2.addUser('pirate@test.fr', 'x'); const tok = be2.token(u);
+            const dom = new JSDOM(`<!DOCTYPE html><body><div class="app"><nav><div class="topnav-right"></div></nav><div id="help-overlay" class="overlay hidden"></div></div></body>`,
+                { url: `https://chays.test/app/#access_token=${tok.access_token}&refresh_token=${tok.refresh_token}&expires_in=3600`, runScripts: 'dangerously' });
+            const w2 = dom.window; w2.fetch = be2.fetch; w2.eval('window.ico=()=>"";'); w2.matchMedia = () => ({ matches: false, addEventListener() {} });
+            let asked = ''; w2.confirm = m => { asked = m; return yes; };
+            w2.localStorage.setItem('openingDB_Général_w', JSON.stringify({ k1: { move: 'e2e4', san: 'e4', attempts: 0, failures: 0 } }));
+            const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
+            ['js/core/utils.js', 'js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/settings.js', 'js/core/panelKit.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+            add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
+            ['js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+            await tick(40); await flush(); await tick(40); await flush();
+            assert.match(asked, /pirate@test\.fr/);
+            assert.strictEqual(w2.eval('Auth.isSignedIn()'), yes);
+            assert.strictEqual(w2.eval('SyncIntent.get()'), null);                            // aucun envoi automatique des données de l'appareil
+            if (yes) assert($(w2, '[data-act="strategy:upload"]'));                           // le choix est proposé
+        }
     });
     await t('échappement : un e-mail contenant du HTML s\'affiche comme texte (pas d\'injection)', async () => {
         const be2 = makeBackend(); be2.addUser('<img src=x onerror=alert(1)>@t.fr', 'motdepasse1');
