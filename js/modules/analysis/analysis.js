@@ -25,7 +25,7 @@ const CLOUD_EVAL_URL     = 'https://lichess.org/api/cloud-eval';
 
 const analysis = {
     rep: '', color: 'w', tree: { kids: [] }, dirty: false,
-    running: false, job: null, lines: [], fen: '', cloud: null, cloudFen: '',
+    running: false, job: null, wait: null, lines: [], fen: '', cloud: null, cloudFen: '',
     merge: null,          // aperçu ouvert : { all, replace: Set(clés) }
     lastMerge: null       // dernière fusion annulable : { added: [clés], opp: [[clé, uci]] }
 };
@@ -96,6 +96,7 @@ function openAnalysis(path, displayPly) {
 
 // Arrêt du calcul (sortie par le logo ou un onglet : le brouillon reste dans la session).
 function stopAnalysis() {
+    clearTimeout(analysis.wait);
     if (analysis.job) analysis.job.stop();
     analysis.job = null;
     analysis.lines = [];
@@ -159,12 +160,23 @@ function analysisPlayLine(i) {
 
 function analysisToggleEngine() {
     analysis.running = !analysis.running;
+    if (!analysis.running) clearTimeout(analysis.wait);
     if (!analysis.running && analysis.job) { analysis.job.stop(); analysis.job = null; }
     analysisPositionChanged();
 }
 
 function analysisSettingsChanged() {
     if (gameMode === 'analysis') { analysis.fen = ''; analysisPositionChanged(); }
+}
+
+const AN_SETTLE_MS = 120;
+
+function _anLaunch(fen) {
+    if (gameMode !== 'analysis' || !analysis.running || analysis.fen !== fen || analysis.job) return;
+    const job = analysis.job = Engine.analyse(fen,
+        { multipv: appSettings.engineLines, depth: appSettings.engineDepth, movetime: appSettings.engineTime * 1000 },
+        lines => { if (analysis.job === job) { analysis.lines = lines; _anPaintEngine(); } });
+    job.done.then(() => { if (analysis.job === job) { analysis.job = null; _anPaintEngine(); } });
 }
 
 // Position affichée changée (coup, navigation, clic dans l'arbre) : calcul relancé, panneau redessiné.
@@ -175,12 +187,9 @@ function analysisPositionChanged() {
         analysis.fen = fen;
         analysis.lines = [];
         if (analysis.job) { analysis.job.stop(); analysis.job = null; }
-        if (analysis.running) {
-            const job = analysis.job = Engine.analyse(fen,
-                { multipv: appSettings.engineLines, depth: appSettings.engineDepth, movetime: appSettings.engineTime * 1000 },
-                lines => { if (analysis.job === job) { analysis.lines = lines; _anPaintEngine(); } });
-            job.done.then(() => { if (analysis.job === job) { analysis.job = null; _anPaintEngine(); } });
-        }
+        // L'ancien calcul s'arrête tout de suite ; le nouveau attend que la navigation se pose (touche maintenue).
+        clearTimeout(analysis.wait);
+        if (analysis.running) analysis.wait = setTimeout(() => _anLaunch(fen), AN_SETTLE_MS);
         _anCloud(fen);
     }
     renderAnalysisPanel();

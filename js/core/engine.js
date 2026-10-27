@@ -25,6 +25,11 @@
  *
  * Un seul calcul à la fois : un nouveau calcul arrête le précédent (« stop », puis attente de son
  * « bestmove ») avant de démarrer ; seul le dernier demandé attend son tour, les autres sont annulés.
+ * stockfish.js met « go » en file tant qu'une recherche se termine mais exécute « stop » tout de suite :
+ * un « stop » peut donc arriver avant le « go » qu'il visait et se perdre. Il est renvoyé tant que le
+ * calcul arrêté parle encore ; sans « bestmove » après un délai de garde (grace), le Worker est jugé
+ * bloqué : il est terminé et recréé, et le calcul en attente repart sur le nouveau (restart).
+ * « uciok » et « readyok » ont aussi un délai : un moteur muet ne laisse jamais l'analyse en attente.
  * Variante : multi-thread si la page est isolée (crossOriginIsolated, en-têtes de vercel.json), sinon
  * mono-thread. Fils et mémoire : appSettings.engineThreads / engineHash (propres à l'appareil).
  * Tout calcul s'arrête quand la page passe en arrière-plan.
@@ -36,16 +41,26 @@ const Engine = (function () {
     const ENGINE_CACHE = 'chays-engine';
     let manifest = null, variant = null, worker = null, state = 'absent', loading = null, error = '', blobUrl = null;
     let threads = 0, hash = 0, wdlOn = false, gen = 0;          // gen : un chargement abandonné (reload) ne termine jamais
-    let cur = null, next = null, waiting = null;
+    let cur = null, next = null, waiting = null, strikes = 0;   // strikes : redémarrages sans « bestmove » depuis le dernier
     const listeners = new Set();
-    const INFO_EVERY_MS = 100;
+    const INFO_EVERY_MS = 100, RESEND_STOP_MS = 100, MAX_STRIKES = 3;
+    // Attente du « bestmove » après « stop » : au-delà, le moteur est jugé bloqué (mono-thread et réseau complet plus lents).
+    const grace = () => !variant ? 2000 : variant.net === 'full' ? 4000 : variant.threads ? 1200 : 2500;
+    // Attente de « uciok » (chargement du .wasm compris) et de « readyok ».
+    const loadTimeout = () => (variant && variant.net === 'full' ? 120000 : 30000);
+    const READY_TIMEOUT_MS = 15000;
 
     function setState(s) {
         state = s;
         listeners.forEach(fn => { try { fn(s); } catch (e) { if (typeof reportError === 'function') reportError('moteur', e); } });
     }
     const send = cmd => worker.postMessage(cmd);
-    const waitLine = test => new Promise(resolve => { waiting = { test, resolve }; });
+    // Attend une ligne précise ; rejetée si elle n'arrive pas à temps, résolue à null par reload() et fail().
+    const waitLine = (test, ms) => new Promise((resolve, reject) => {
+        const w = { test, resolve: l => { clearTimeout(t); resolve(l); } };
+        const t = setTimeout(() => { if (waiting === w) waiting = null; reject(new Error('le moteur ne répond pas')); }, ms);
+        waiting = w;
+    });
     const cores = () => (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2;
     const setting = (k, d) => (typeof appSettings !== 'undefined' && appSettings[k]) || d;
 
@@ -87,10 +102,11 @@ const Engine = (function () {
                     url = `${full.js.path}#${encodeURIComponent(blobUrl)}`;
                 }
             }
+            live();                                                     // reload() pendant la lecture du cache : pas de Worker orphelin
             worker = new Worker(url);
             worker.onmessage = e => onLine(String(e.data));
-            worker.onerror = e => fail(e.message || 'le moteur s\'est arrêté');
-            const ok = waitLine(l => l === 'uciok');
+            worker.onerror = e => { if (my === gen) fail(e.message || 'le moteur s\'est arrêté'); };
+            const ok = waitLine(l => l === 'uciok', loadTimeout());
             send('uci');
             await ok;
             live();
@@ -105,13 +121,21 @@ const Engine = (function () {
         return p;
     }
 
+    // Le chargement en cours est abandonné (gen) et son attente libérée : le prochain calcul recharge le moteur.
     function fail(msg) {
         error = msg;
+        gen++;
+        loading = null;
+        if (waiting) { const w = waiting; waiting = null; w.resolve(null); }
         if (worker) { try { worker.terminate(); } catch (e) { /* déjà arrêté */ } }
         worker = null;
-        [cur, next].forEach(j => { if (j) j.resolve({ best: null, lines: j.lines, cancelled: true }); });
-        cur = next = null;
+        cancelAll();
         setState('error');
+    }
+
+    function cancelAll() {
+        [cur, next].forEach(j => { if (j) { clearTimeout(j.guard); j.resolve({ best: null, lines: j.lines, cancelled: true }); } });
+        cur = next = null;
     }
 
     // Fils, mémoire et WDL : envoyés seulement s'ils ont changé ; « isready » attend que tout soit appliqué.
@@ -120,7 +144,7 @@ const Engine = (function () {
         if (t !== threads) { send(`setoption name Threads value ${t}`); threads = t; }
         if (h !== hash) { send(`setoption name Hash value ${h}`); hash = h; }
         if (!wdlOn) { send('setoption name UCI_ShowWDL value true'); wdlOn = true; }
-        const ok = waitLine(l => l === 'readyok');
+        const ok = waitLine(l => l === 'readyok', READY_TIMEOUT_MS);
         send('isready');
         await ok;
     }
@@ -135,9 +159,8 @@ const Engine = (function () {
 
     // Arrêt complet : le prochain calcul recharge le moteur (changement de réseau, moteur complet téléchargé…).
     function reload() {
-        [cur, next].forEach(j => { if (j) j.resolve({ best: null, lines: j.lines, cancelled: true }); });
-        cur = next = null;
-        gen++;                                                          // le chargement en cours, s'il y en a un, est abandonné
+        cancelAll();
+        gen++;                                                         // le chargement en cours, s'il y en a un, est abandonné
         loading = null;
         if (waiting) { const w = waiting; waiting = null; w.resolve(null); }
         if (worker) { try { worker.terminate(); } catch (e) { /* déjà arrêté */ } }
@@ -223,6 +246,8 @@ const Engine = (function () {
         const j = cur;
         if (!j) return;
         if (line.startsWith('bestmove')) { finish(j, line.split(' ')[1]); return; }
+        // Arrêté mais il calcule encore : son « stop » a pu être perdu, il est renvoyé (sans effet s'il était arrivé).
+        if (j.stopping && line.startsWith('info ') && Date.now() - j.stopAt >= RESEND_STOP_MS) { j.stopAt = Date.now(); send('stop'); }
         const info = parseInfo(line, j.white);
         if (!info) return;
         if (info.multipv === 1 && info.depth > j.depth) {               // nouvelle profondeur : les lignes secondaires suivent
@@ -242,6 +267,8 @@ const Engine = (function () {
     }
 
     function finish(j, best) {
+        clearTimeout(j.guard);
+        strikes = 0;
         emit(j, true);
         cur = null;
         j.resolve({ best: best && best !== '(none)' ? best : null, lines: j.lines.filter(Boolean), cancelled: false });
@@ -259,9 +286,16 @@ const Engine = (function () {
     }
 
     async function start(j) {
-        await applyOptions();
+        try { await applyOptions(); }
+        catch (e) {                                                     // pas de « readyok » : moteur bloqué, ce calcul repart après
+            if (j !== cur) return;
+            cur = null;
+            if (next) j.resolve({ best: null, lines: [], cancelled: true }); else next = j;
+            restart();
+            return;
+        }
         if (j !== cur || !worker) return;                               // moteur rechargé entre-temps : calcul déjà clos
-        if (j.stopping) { cur = null; j.resolve({ best: null, lines: [], cancelled: true }); pump(); return; }
+        if (j.stopping) { clearTimeout(j.guard); cur = null; j.resolve({ best: null, lines: [], cancelled: true }); pump(); return; }
         send(`setoption name MultiPV value ${j.multipv}`);
         send(`position fen ${j.fen}`);
         send(j.opts.depth ? `go depth ${j.opts.depth}` : j.opts.movetime ? `go movetime ${j.opts.movetime}` : 'go infinite');
@@ -269,7 +303,26 @@ const Engine = (function () {
 
     function stopJob(j) {
         if (j === next) { next = null; j.resolve({ best: null, lines: [], cancelled: true }); return; }
-        if (j === cur && !j.stopping) { j.stopping = true; if (worker) send('stop'); }
+        if (j === cur && !j.stopping) {
+            j.stopping = true;
+            j.stopAt = Date.now();
+            if (worker) send('stop');
+            j.guard = setTimeout(() => { if (cur === j) restart(); }, grace());
+        }
+    }
+
+    // Moteur bloqué : Worker terminé et recréé ; le calcul en attente (la position voulue) survit et repart.
+    // Après MAX_STRIKES redémarrages sans aucun « bestmove », le moteur passe en erreur.
+    function restart() {
+        const keep = next;
+        next = null;
+        if (++strikes >= MAX_STRIKES) {
+            fail('le moteur ne répond plus');
+            if (keep) keep.resolve({ best: null, lines: [], cancelled: true });
+            return;
+        }
+        reload();
+        if (keep) { next = keep; pump(); }
     }
 
     function analyse(fen, opts = {}, onInfo) {
