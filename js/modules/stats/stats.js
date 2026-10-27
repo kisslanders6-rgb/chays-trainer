@@ -365,7 +365,7 @@ function initStats() {
                 <div class="st-wrow">
                     <span class="st-wrow-txt"><b>${r.e.ply ? escapeHtml(_moveLabel(r.e, true)) : 'Coup à retrouver'}</b><small>${statsColor === 'all' ? (r.side === 'w' ? 'Blancs · ' : 'Noirs · ') : ''}${r.gHtml}</small></span>
                     <span class="st-errs lv-${r.lv}"><span class="st-n">${r.e.failures} err. / ${r.e.attempts}</span></span>
-                    <button class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" title="Voir la position" aria-label="Voir la position">${ico('eye')}</button>
+                    <button class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" data-origin="weak" title="Voir la position" aria-label="Voir la position">${ico('eye')}</button>
                 </div>`).join('')}</div>
             <button class="st-golink" data-action="statsGoTraining" data-arg="weak">S'exercer : Entraînement › Points faibles (${_plural(weakN, 'position')}) ${ico('chevron-right')}</button>
         </section>`;
@@ -404,7 +404,7 @@ function initStats() {
                 <span class="st-when ${d ? 'on' : ''}">${d ? 'Due' : _dueIn(dueOf(r.e))}</span>
                 <span class="st-acts">
                     <button class="st-ibtn pri" data-action="statsTrain" data-arg="${arg(r)}" title="S'entraîner sur cette position" aria-label="S'entraîner sur ${escapeHtml(_moveLabel(r.e))}">${ico('play')}</button>
-                    <button class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" title="Voir la position" aria-label="Voir ${escapeHtml(_moveLabel(r.e))}">${ico('eye')}</button>
+                    <button class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" data-origin="${escapeHtml(g.name)}" title="Voir la position" aria-label="Voir ${escapeHtml(_moveLabel(r.e))}">${ico('eye')}</button>
                 </span></div>`;
         }).join('');
         const more = open && items.length > shown.length
@@ -484,7 +484,7 @@ registerActions({
     },
     statsGoTraining: arg => statsGoTraining(arg),
     statsTrain: arg => { const { side, key } = _parseStatsArg(arg); startReviewQueue([{ color: side, key }], 'stats'); },
-    statsPreview: arg => { const { side, key } = _parseStatsArg(arg); openStatsPreview(side, key); }
+    statsPreview: (arg, el) => { const { side, key } = _parseStatsArg(arg); openStatsPreview(side, key, el && el.dataset.origin); }
 });
 
 // La bulle d'aide se ferme au clic ailleurs ou avec Échap.
@@ -501,11 +501,14 @@ document.addEventListener('keydown', e => {
 });
 
 // Aperçu en lecture seule de la position AVANT mon coup ; le coup attendu reste masqué.
+// origin : 'weak' (liste « Points faibles ») ou le nom de l'ouverture d'où l'on vient ; avec le défilement,
+// il sert au bouton de retour (statsBack), qui rouvre la même liste au même endroit.
 let statsPreviewTarget = null;
-function openStatsPreview(side, key) {
+function openStatsPreview(side, key, origin) {
     const e = readDBFor(currentRepertoire, side)[key];
     if (!e) return;
-    statsPreviewTarget = { color: side, key };
+    statsPreviewTarget = { color: side, key, origin: origin || '', scrollY: window.scrollY || 0 };
+    _renderStatsBack(_level(e), origin);
     playerColor = side;
     gameMode    = 'preview';
     showGameScreen(side);
@@ -518,6 +521,24 @@ function openStatsPreview(side, key) {
     }
     const pct = e.attempts ? Math.round(100 * e.failures / e.attempts) : 0;
     setStatus(`Aperçu · ${_moveLabel(e, true)}`, 'info', `${STATS_LEVELS[_level(e)].one} · ${pct} % d'erreurs (${e.failures}/${e.attempts}). Appuyez sur « S'entraîner » pour jouer le coup.`);
+}
+
+// Barre du haut pendant l'aperçu : « ‹ Statistiques », puis la catégorie de la position en puce (marque + niveau)
+// et la liste quittée (Points faibles ou nom de l'ouverture).
+function _renderStatsBack(lv, origin) {
+    const btn = document.getElementById('stats-back'), cat = document.getElementById('stats-cat');
+    if (!btn || !cat) return;
+    const where = origin === 'weak' ? 'Points faibles' : origin || '';
+    const label = `Retour aux Statistiques${where ? ' · ' + where : ''}`;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    cat.innerHTML = `<span class="lv-chip lv-${lv}">${_lvMark(lv)}${STATS_LEVELS[lv].one}</span>${where ? `<span class="tp-origin">· ${escapeHtml(where)}</span>` : ''}`;
+}
+
+function statsBack() {
+    const y = statsPreviewTarget ? statsPreviewTarget.scrollY : 0;
+    goHome('stats');
+    requestAnimationFrame(() => window.scrollTo({ top: y }));
 }
 
 // Bouton « S'entraîner » de l'aperçu.

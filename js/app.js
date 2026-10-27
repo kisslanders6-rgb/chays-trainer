@@ -224,9 +224,13 @@ function selectRepertoire(name) {
 
 // ─── DÉMARRAGE D'UNE PARTIE ───────────────────────────────────────────────────
 
+// data-modes : visible seulement dans ces modes ; data-modes-not : caché dans ces modes.
 function applyModeUI() {
     document.querySelectorAll('[data-modes]').forEach(el => {
         el.style.display = el.dataset.modes.split(',').includes(gameMode) ? '' : 'none';
+    });
+    document.querySelectorAll('[data-modes-not]').forEach(el => {
+        el.style.display = el.dataset.modesNot.split(',').includes(gameMode) ? 'none' : '';
     });
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
 }

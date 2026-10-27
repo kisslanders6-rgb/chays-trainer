@@ -159,9 +159,14 @@
 
             <!-- Meta dans l'écran de jeu -->
             <div class="topnav-tabs" id="topnav-tabs-game" style="display:none;">
-                <div class="topnav-meta">
+                <div class="topnav-meta" data-modes-not="preview">
                     <span class="repertoire-pill" id="repertoire-pill" onclick="goHome()" title="Changer de répertoire"></span>
                     <button class="color-badge" id="color-badge" onclick="switchColor()"></button>
+                </div>
+                <!-- Aperçu d'une position des Statistiques : retour + catégorie de la position (rempli par openStatsPreview) -->
+                <div class="topnav-meta topnav-preview" data-modes="preview">
+                    <button type="button" class="tp-back" id="stats-back" onclick="statsBack()" aria-label="Retour aux Statistiques"><svg class="ico" aria-hidden="true"><use href="#i-chevron-left"/></svg><span class="tp-back-label">Statistiques</span></button>
+                    <span class="tp-cat" id="stats-cat"></span>
                 </div>
             </div>
 
@@ -324,9 +329,6 @@
                             </button>
                             <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
                                 <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
-                            </button>
-                            <button class="btn btn-grow" data-modes="preview" onclick="goHome('stats')">
-                                <svg class="ico"><use href="#i-arrow-left"/></svg><span class="btn-label"><span class="desktop-only">Statistiques</span><span class="mobile-only">Stats</span></span>
                             </button>
                             <button class="btn btn-primary btn-grow" data-modes="preview" onclick="trainStatsPreview()" title="Jouer le coup de cette position (compte comme un essai)">
                                 <svg class="ico"><use href="#i-play"/></svg><span class="btn-label">S'entraîner</span>

@@ -90,4 +90,28 @@ t('Entraînement filtré sur une ouverture : seules ses positions sont proposée
     assert.strictEqual(ctx._trRows().map(r => r.key).sort().join(), 'k1,k2,k3');
 });
 
+t('aperçu : la barre du haut montre la catégorie de la position et la liste quittée, le retour rouvre la page au même endroit', () => {
+    const btn = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } }, cat = {};
+    const getById = ctx.document.getElementById;
+    ctx.document.getElementById = id => id === 'stats-back' ? btn : id === 'stats-cat' ? cat : null;
+    ctx._renderStatsBack('fragile', 'weak');
+    assert(cat.innerHTML.includes('lv-chip lv-fragile') && cat.innerHTML.includes('lv-mark lv-fragile') && cat.innerHTML.includes('Fragile</span>'), cat.innerHTML);
+    assert(cat.innerHTML.includes('· Points faibles'));
+    assert.strictEqual(btn.attrs['aria-label'], 'Retour aux Statistiques · Points faibles');
+    ctx._renderStatsBack('mastered', 'Partie espagnole');
+    assert(cat.innerHTML.includes('lv-chip lv-mastered') && cat.innerHTML.includes('· Partie espagnole'));
+    ctx._renderStatsBack('weak', undefined);
+    assert(!cat.innerHTML.includes('tp-origin') && btn.attrs['aria-label'] === 'Retour aux Statistiques', 'sans origine : la puce seule');
+    ctx.document.getElementById = getById;
+    const html = fs.readFileSync('index.html', 'utf8');
+    assert(/class="topnav-meta" data-modes-not="preview"/.test(html) && /class="topnav-meta topnav-preview" data-modes="preview"/.test(html), 'barre du haut : répertoire et couleur remplacés pendant l\'aperçu');
+    assert(!/stats-back[^>]*data-modes="preview"[^>]*class="btn/.test(html) && !/class="btn[^"]*stats-back/.test(html), 'plus de bouton de retour dans la barre de contrôle');
+
+    const calls = [];
+    Object.assign(ctx, { goHome: tab => calls.push('goHome:' + tab), requestAnimationFrame: f => f(), window: { scrollTo: o => calls.push('scroll:' + o.top) } });
+    vm.runInContext('statsPreviewTarget = { color: "w", key: "k", origin: "weak", scrollY: 444 }', ctx);
+    ctx.statsBack();
+    assert.strictEqual(calls.join(' '), 'goHome:stats scroll:444');
+});
+
 console.log(`\n${n} tests réussis.`);
