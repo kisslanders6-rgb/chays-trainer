@@ -46,7 +46,9 @@ function _settingRows() {
             { group: 'Échiquier', kind: 'toggle', key: 'lastMove', label: 'Surligner le dernier coup' },
             { group: 'Échiquier', kind: 'toggle', key: 'legalDots', label: 'Montrer les coups possibles', hint: 'Points sur les cases accessibles à la pièce choisie.' },
             { group: 'Échiquier', kind: 'seg', key: 'anim', label: 'Animation des pièces', opts: [['off', 'Aucune'], ['fast', 'Rapide'], ['normal', 'Normale']] },
-            { group: 'Pièces et flèches', kind: 'custom', label: 'Style des pièces', hint: () => _pieceCredit() + ' « Invisibles » masque les pièces pour s’entraîner à l’aveugle.', html: _piecesHTML, col: true },
+            { group: 'Pièces et flèches', kind: 'custom', label: 'Style des pièces', hint: () => _pieceCredit(), html: _piecesHTML, col: true },
+            { group: 'Pièces et flèches', kind: 'toggle', key: 'blindfold', label: 'Pièces invisibles', value: s.pieceSet === 'blindfold',
+              hint: 'Masque les pièces pour s’entraîner à l’aveugle ; les coups s’écrivent en lettres. Choisir un style de pièces le désactive.', search: 'invisibles aveugle' },
             { group: 'Pièces et flèches', kind: 'custom', label: 'Style des flèches', hint: 'Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.', html: _arrowsHTML, col: true },
             { group: 'Pièces et flèches', kind: 'toggle', key: 'knightArrows', label: 'Flèches en L pour le cavalier', hint: 'Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.' }
         ],
@@ -157,7 +159,8 @@ const BOARD_LABELS = { classic: 'Sauge', leather: 'Cuir vert', wood: 'Bois chaud
                        maple: 'Érable', marble: 'Marbre', tournament: 'Tournoi', cherry: 'Cerisier' };
 const _boardsHTML = () => `<div class="theme-options">${BOARD_THEMES.map(id =>
     `<button type="button" class="theme-opt${appSettings.boardTheme === id ? ' active' : ''}" data-board="${id}" data-pn="seg" data-key="boardTheme" data-v="${id}" aria-pressed="${appSettings.boardTheme === id}"><span class="theme-swatch"></span>${BOARD_LABELS[id]}</button>`).join('')}</div>`;
-const _piecesHTML = () => `<div class="theme-options">${PIECE_SET_IDS.map(id => { const s = PIECE_SETS[id];
+// « Invisibles » n'est pas un style mais un mode : interrupteur à part (clé blindfold, qui écrit pieceSet).
+const _piecesHTML = () => `<div class="theme-options">${PIECE_SET_IDS.filter(id => id !== 'blindfold').map(id => { const s = PIECE_SETS[id];
     return `<button type="button" class="theme-opt piece-opt${appSettings.pieceSet === id ? ' active' : ''}" data-piece="${id}" data-pn="seg" data-key="pieceSet" data-v="${id}" aria-pressed="${appSettings.pieceSet === id}"><span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`; }).join('')}</div>`;
 const _arrowsHTML = () => typeof arrowStylePreview !== 'function' ? '' : `<div class="theme-options">${ARROW_STYLE_IDS.map(id =>
     `<button type="button" class="theme-opt arrow-opt${appSettings.arrowStyle === id ? ' active' : ''}" data-arrow="${id}" data-pn="seg" data-key="arrowStyle" data-v="${id}" aria-pressed="${appSettings.arrowStyle === id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join('')}</div>`;
@@ -352,6 +355,12 @@ const SettingsPanel = PanelKit.create({
                 if (key === 'volume') { /* l'aperçu sonore se joue au relâchement */ }
             } else if (key === 'volume') playSound('move');
             return;
+        }
+        if (key === 'blindfold') {
+            // Le jeu de pièces quitté est retenu pour la séance ; sinon (rechargement) retour au jeu par défaut.
+            if (value) { SettingsPanel.state.piecesBefore = appSettings.pieceSet; setPref('pieceSet', 'blindfold'); }
+            else setPref('pieceSet', PIECE_SETS[SettingsPanel.state.piecesBefore] && SettingsPanel.state.piecesBefore !== 'blindfold' ? SettingsPanel.state.piecesBefore : DEFAULT_PIECE_SET);
+            return SettingsPanel.refresh();
         }
         setPref(key, value);
         if (key === 'sound' && value) playSound('move');

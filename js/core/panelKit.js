@@ -11,6 +11,9 @@
  *   sections : [{ id, icon, label, desc }]        render(sectionId | null, query) → HTML du contenu
  * Les contrôles (interrupteurs, segments, curseurs) se déclarent avec les fonctions ci-dessous et sont
  * gérés par le module appelant via `onControl(kind, key, value, el)`.
+ * Grilles de choix (.theme-options) : le nombre de colonnes (--cols) est choisi selon la largeur ET le nombre
+ * de tuiles, pour éviter une tuile seule en dernière ligne (balancedCols) ; recalculé à chaque rendu et
+ * quand la fenêtre change de largeur.
  */
 
 'use strict';
@@ -73,8 +76,10 @@ const PanelKit = (function () {
             const top = content.scrollTop;
             content.innerHTML = cfg.render(q ? null : st.section, q);
             content.scrollTop = keepScroll ? top : 0;
+            fitGrids(content);
             if (cfg.afterRender) cfg.afterRender(q ? null : st.section);
         }
+        if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitGrids(content)).observe(content);
 
         function open(section) {
             panels.forEach(p => { if (p !== api && p.isOpen()) p.close(); });
@@ -125,6 +130,29 @@ const PanelKit = (function () {
         return api;
     }
 
+    // ─── Grilles de choix ─────────────────────────────────────────────────────
+    // Colonnes essayées : de celles que permettent des tuiles un peu plus étroites (85 % de minTile) jusqu'à
+    // max − 2 (jamais moins de 3 si 3 tiennent). On garde celle dont la dernière ligne est la plus remplie, une
+    // tuile seule comptant pour rien ; à égalité, la plus large. 13 tuiles : 5 + 5 + 3, pas 4 + 4 + 4 + 1.
+    const GRID_GAP = 8;   // = gap de .pn .theme-options (css/panels.css)
+    function balancedCols(n, width, minTile = 112, maxCols = 6) {
+        const fit = t => Math.floor((width + GRID_GAP) / (t + GRID_GAP));
+        const max = Math.max(1, Math.min(maxCols, n, fit(minTile)));
+        const top = Math.max(max, Math.min(maxCols, n, fit(minTile * .85)));
+        let best = max, score = -1;
+        for (let c = top; c >= Math.max(Math.min(3, max), max - 2); c--) {
+            const last = n % c || c, s = last === 1 && c > 1 ? 0 : last / c;
+            if (s > score) { best = c; score = s; }
+        }
+        return best;
+    }
+    function fitGrids(root) {
+        root.querySelectorAll('.theme-options').forEach(g => {
+            const w = g.clientWidth;
+            if (w) g.style.setProperty('--cols', balancedCols(g.children.length, w));
+        });
+    }
+
     // Surligne la recherche dans un texte brut (le HTML existant est préservé).
     function mark(html, q) {
         if (!q) return html;
@@ -134,5 +162,5 @@ const PanelKit = (function () {
     const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const matches = (q, ...texts) => texts.some(t => norm(t).includes(norm(q)));
 
-    return { create, group, row, text, toggle, seg, range, button, mark, matches, esc };
+    return { create, group, row, text, toggle, seg, range, button, mark, matches, esc, balancedCols };
 })();

@@ -87,9 +87,10 @@
 .pn-input:focus { border-color: var(--board-accent); }
 .pn-input.is-short { width: 120px; }
 
-/* Grilles de choix (échiquiers, pièces, flèches) réutilisent .theme-opt (style.css) */
-.pn .theme-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
-.pn .theme-opt { min-width: 0; }
+/* Grilles de choix (échiquiers, pièces, flèches) réutilisent .theme-opt (style.css). --cols est posé par
+   PanelKit (balancedCols) selon la largeur et le nombre de tuiles ; une dernière ligne incomplète est centrée. */
+.pn .theme-options { --cols: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.pn .theme-opt { min-width: 0; flex: 0 0 calc((100% - (var(--cols) - 1) * 8px) / var(--cols)); }
 
 /* Aperçu de l'échiquier (Apparence) */
 .pn-preview { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 16px; }
