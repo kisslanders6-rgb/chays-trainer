@@ -1282,6 +1282,40 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     .controls { max-width: none; }
 }
 
+/* ─── ÉCHIQUIER À LA TAILLE DE L'ÉCRAN (920px+) ──────────────────────────────
+   La plus petite de deux places : la largeur laissée par le panneau (320 px au moins, 32 px d'écart) et la
+   hauteur sous la barre du haut, moins ce qui entoure l'échiquier (--board-chrome-h : marge du haut, marge
+   et contrôles du bas). --bw est la largeur des 8 cases, sans le liseré de 2 px ; arrondie à un multiple
+   de 8 quand round() existe, pour des cases entières (pas de filet entre deux cases). Jamais moins de 512 px
+   (l'ancienne taille fixe : un écran bas défile comme avant), jamais plus de 960 px. Après .sq : même
+   spécificité, c'est l'ordre qui décide. */
+@media (min-width: 920px) {
+    .game-screen-inner { padding-bottom: 16px; }       /* = la marge du bas comptée dans --board-chrome-h */
+    .game-main { container-type: inline-size; }
+    .side-panel { min-width: 320px; }
+    .board-col {
+        --board-chrome-h: 193px;
+        --bw: clamp(512px, min(100cqw - 352px, 100dvh - var(--topnav-h) - var(--board-chrome-h)), 960px);
+        width: calc(var(--bw) + 4px);
+    }
+    .board-wrap { width: calc(var(--bw) + 4px); }
+    #board { width: 100%; }
+    .sq { width: auto; height: auto; aspect-ratio: 1 / 1; font-size: calc(var(--bw) * .086); }
+    .coord { font-size: clamp(11px, calc(var(--bw) * .02), 15px); }
+    html[data-coords="out"] .board-col { --board-chrome-h: 214px; width: calc(var(--bw) + 22px); }
+    html[data-coords="out"] .board-wrap { width: calc(var(--bw) + 22px); }
+}
+@supports (width: round(down, 100px, 8px)) {
+    @media (min-width: 920px) {
+        .board-col { --bw: round(down, clamp(512px, min(100cqw - 352px, 100dvh - var(--topnav-h) - var(--board-chrome-h)), 960px), 8px); }
+    }
+}
+/* Grand écran : la colonne de jeu s'élargit, l'échiquier n'est plus bridé par la largeur */
+@media (min-width: 1440px) {
+    .game-screen-inner { max-width: 1600px; }
+    .game-main { max-width: 1520px; }
+}
+
 /* ─── MENU « ⋮ » DES RÉPERTOIRES (accueil, onglet Jouer) ─────────────────── */
 .repertoire-row { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
 .repertoire-row::before { content: ''; flex: 0 0 36px; }                 /* équilibre le bouton : les badges restent centrés */
