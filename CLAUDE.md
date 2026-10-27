@@ -40,6 +40,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 - Pour calculer sur une autre position que celle affichée : API `Chess` (`Chess.replay`, `Chess.play`, `Chess.san`, `Chess.key`, `Chess.snapshot`), jamais l'état global `board` / `turn`. Les lectures PGN passent par `_withEngineSnapshot`.
 - `Chess.fen(pos)` donne la FEN d'une position (`displayedFen()` pour celle affichée).
 - PGN (`pgn.js`) : les numéros de coup sont lus. Un numéro qui revient en arrière (`12. Cf3 Cd7 12... Cf6`) ouvre une **variante implicite** (`implicit: true`), comme des parenthèses.
+- Icônes : le sprite `_ICONS` (`icons.js`) ; ne renommez pas une icône sans ses usages (`tests/icons.test.js` vérifie chaque `#i-…` et `ico(…)`).
 - Un seul nom global par script (de préférence un objet, comme `Chess`, `EG`, `SyncModel`) : `npm test` refuse un nom déclaré deux fois.
 - Nouveau script : l'ajouter dans `index.html` ; `sw.js` le met en cache tout seul. Image remplacée : incrémenter `VERSION` dans `sw.js`.
 - Le script en ligne en tête d'`index.html` applique thème et échiquier avant le premier rendu : le garder cohérent avec `settings.js`.

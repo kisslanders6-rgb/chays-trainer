@@ -23,7 +23,7 @@ const _ICONS = {
     'database':      '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>',
     'skip-forward':  '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
     'x':             '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    'w-left':    '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+    'arrow-left':    '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
     'chevron-left':  '<path d="m15 18-6-6 6-6"/>',
     'chevron-right': '<path d="m9 18 6-6-6-6"/>',
     'chevron-up':    '<path d="m18 15-6-6-6 6"/>',
