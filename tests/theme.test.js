@@ -68,6 +68,13 @@ t('fonds sombres : les quatre palettes lues, gris neutre par défaut (plus de ve
     assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'neutral' \}/.test(settings));
 });
 
+t('barre système au lancement (index.html) : mêmes fonds sombres que style.css', () => {
+    const html = fs.readFileSync('index.html', 'utf8'), m = html.match(/var bars = (\{[^}]*\})/);
+    assert(m, 'table des barres dans le script de tête');
+    const bars = JSON.parse(m[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"'));
+    for (const [id, v] of Object.entries(DARK_BGS)) assert.strictEqual(bars[id], v.bg, id);
+});
+
 t('fonds sombres : textes secondaires lisibles sur les cartes et les fenêtres', () => {
     const bad = [];
     for (const [id, v] of Object.entries(DARK_BGS)) {
