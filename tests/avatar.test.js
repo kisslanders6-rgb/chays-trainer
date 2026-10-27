@@ -58,6 +58,29 @@ const settings = fs.readFileSync('js/core/settings.js', 'utf8'), icons = fs.read
         assert(calls.some(([u]) => u === `https://x.supabase.co/storage/v1/object/authenticated/avatars/${uid}/avatar-1793040000001.webp`));
     });
 
+    await t('photo refusée par le serveur : signalée indisponible, plus de nouvel essai à chaque affichage', async () => {
+        await new Promise(r => setTimeout(r, 0));
+        assert.strictEqual(AvatarPhoto.unavailable(), true);
+        const before = calls.length;
+        for (let i = 0; i < 5; i++) AvatarPhoto.src();
+        await new Promise(r => setTimeout(r, 0));
+        assert.strictEqual(calls.length, before);
+        const uid = '0b3c8e8a-1d2f-4c5b-9a7e-6f1d2c3b4a5e';
+        ctx.appSettings.avatarPhoto = uid + '/avatar-1793040000002.webp';                  // nouvelle photo : nouvel essai
+        assert.strictEqual(AvatarPhoto.unavailable(), false);
+        AvatarPhoto.src(); await new Promise(r => setTimeout(r, 0));
+        assert.strictEqual(calls.length, before + 1);
+    });
+
+    await t('composant .avatar : taille par --size, contenu en proportion, couleur « Échiquier » calibrée', () => {
+        const css = fs.readFileSync('css/account.css', 'utf8'), ui = fs.readFileSync('js/core/accountUI.js', 'utf8');
+        assert(/\.avatar \{[^}]*aspect-ratio: 1[^}]*overflow: hidden/.test(css));
+        assert(/\.avatar \.av-picto svg\.ico \{ width: 100%/.test(css), 'plus spécifique que .topnav-pill > .theme-toggle svg');
+        assert(/\.avatar \.av-photo \{[^}]*object-fit: cover/.test(css));
+        ['avatar topnav-avatar', 'avatar pn-avatar', 'avatar pn-choice'].forEach(c => assert(ui.includes(`class="${c}"`), c));
+        assert(ui.includes("theme: ['var(--theme-dark-deep)', 'var(--theme-light-refined)']"));
+    });
+
     await t('retirer : préférence vidée, copie locale effacée, fichier en ligne supprimé (son dossier seulement)', async () => {
         AvatarPhoto.remove();
         await new Promise(r => setTimeout(r, 0));

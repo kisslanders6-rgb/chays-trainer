@@ -22,7 +22,7 @@ const AvatarPhoto = (function () {
     const LOCAL_KEY = 'chessTrainer_avatarLocal';
     const BUCKET = 'avatars', SIZE = 256, THUMB = 128, QUALITY = .85;
     const listeners = [];
-    let fetching = null;
+    let fetching = null, failed = '';        // failed : chemin dont le téléchargement a été refusé (pas de nouvel essai à chaque rendu)
 
     const cfg = () => (typeof CLOUD_CONFIG !== 'undefined' ? CLOUD_CONFIG : { url: '' });
     const storageUrl = p => cfg().url.replace(/\/+$/, '') + '/storage/v1/object' + p;
@@ -41,7 +41,7 @@ const AvatarPhoto = (function () {
         const want = appSettings.avatarPhoto, local = readLocal();
         if (!want) return local && local.path === 'local' && !signedIn() ? local.data : null;
         if (local && local.path === want) return local.data;
-        if (signedIn() && !fetching) fetching = download(want).finally(() => { fetching = null; });
+        if (signedIn() && !fetching && failed !== want) fetching = download(want).finally(() => { fetching = null; });
         return null;
     }
 
@@ -49,7 +49,7 @@ const AvatarPhoto = (function () {
     async function download(path) {
         try {
             const r = await fetch(storageUrl(`/authenticated/${BUCKET}/${path}`), { headers: await headers() });
-            if (!r.ok) return;
+            if (!r.ok) { failed = path; emit(); return; }                // seau absent, photo supprimée, droits refusés
             const img = await loadImage(URL.createObjectURL(await r.blob()));
             const c = document.createElement('canvas');
             c.width = c.height = THUMB;
@@ -181,5 +181,8 @@ const AvatarPhoto = (function () {
         dataStore.remove(LOCAL_KEY);
     }
 
-    return { src, pick, remove, purge, save, onChange: fn => listeners.push(fn) };
+    // true : la photo du compte n'a pas pu être téléchargée (avatar dessiné affiché à la place).
+    const unavailable = () => !!appSettings.avatarPhoto && failed === appSettings.avatarPhoto;
+
+    return { src, unavailable, pick, remove, purge, save, onChange: fn => listeners.push(fn) };
 })();

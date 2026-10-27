@@ -156,8 +156,7 @@ html[data-board="cherry"] .pn-board { background: url("../assets/boards/cherry.w
 
 /* Compte */
 .pn-profile { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 20px; padding: 18px 16px; }
-.pn-avatar { position: relative; display: grid; place-items: center; width: 72px; height: 72px; flex: none; border-radius: 50%; font: 600 30px var(--font-display); box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--border-strong); }
-.pn-avatar .av-glyph { width: 46px; height: 46px; }
+.pn-avatar { --size: 72px; overflow: visible; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--border-strong); }   /* .avatar (account.css) ; la pastille d'état déborde */
 .pn-avatar i { position: absolute; right: 3px; bottom: 3px; width: 13px; height: 13px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--surface); }
 .pn-who { flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pn-who b { font: 600 22px/1.15 var(--font-display); color: var(--text); overflow-wrap: anywhere; }
@@ -166,8 +165,7 @@ html[data-board="cherry"] .pn-board { background: url("../assets/boards/cherry.w
 .pn-figures div { display: flex; flex-direction: column; font-size: 11.5px; color: var(--text-muted); }
 .pn-figures b { font: 600 20px var(--font-display); color: var(--text); font-variant-numeric: tabular-nums; }
 .pn-choices { display: flex; flex-wrap: wrap; gap: 10px; }
-.pn-choice { display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; font: 600 17px var(--font-display); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px transparent; transition: box-shadow .15s, transform .15s; }
-.pn-choice .av-glyph { width: 28px; height: 28px; }
+.pn-choice { --size: 42px; padding: 0; border: 0; cursor: pointer; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px transparent; transition: box-shadow .15s, transform .15s; }   /* .avatar */
 .pn-choice[aria-checked="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--board-accent); }
 .pn-choice:active { transform: scale(.92); }
 .pn-choice:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 4px; }
@@ -182,11 +180,8 @@ html[data-board="cherry"] .pn-board { background: url("../assets/boards/cherry.w
 .pn-status[data-level="offline"]::before { background: var(--text-dim); }
 .pn-status[data-level="error"]::before { background: var(--err); }
 
-/* Avatar dans la pilule de la barre du haut (js/core/accountUI.js) */
-.topnav-avatar { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font: 600 11px var(--font-display); }
-.topnav-avatar .av-glyph { width: 17px; height: 17px; }
-.av-glyph { display: block; }
-.av-glyph img { display: block; width: 100%; height: 100%; }
+/* Avatar dans la pilule de la barre du haut (js/core/accountUI.js) : .avatar de 22 px */
+.topnav-avatar { --size: 22px; }
 
 /* ─── Téléphone : plein écran, liste puis détail ─── */
 @media (max-width: 640px) {

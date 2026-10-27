@@ -89,14 +89,22 @@
 .account-swap { align-self: flex-start; font-weight: 600; }
 .account-switch { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted); }
 
-/* Avatars : monogrammes, pictogrammes au trait, photo */
-.av-mono { line-height: 1; }
-.av-mono.is-two { font-size: .82em; letter-spacing: -.02em; }
-.av-picto { display: grid; place-items: center; width: 62%; height: 62%; }
-.av-picto .ico { width: 100%; height: 100%; fill: none; stroke: currentColor; }
-.av-photo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
-.pn-avatar .av-photo, .topnav-avatar .av-photo { position: absolute; inset: 0; }
-.topnav-avatar { position: relative; overflow: hidden; }
+/* Avatar : un seul composant (barre du haut, carte de profil, choix du motif). Carré rogné en cercle ;
+   seule --size change d'un emplacement à l'autre, tout le contenu en dérive (calc sur --size : un pourcentage
+   de hauteur ne se résout pas dans un <button>), et aucune règle voisine comme « .topnav-pill > .theme-toggle svg »
+   ne peut l'écraser. */
+.avatar { --size: 22px; position: relative; display: grid; place-items: center; width: var(--size); height: var(--size);
+          aspect-ratio: 1; flex: none; border-radius: 50%; overflow: hidden; isolation: isolate;
+          font: 600 calc(var(--size) * .44) / 1 var(--font-display); }
+.avatar .av-mono { line-height: 1; }
+.avatar .av-mono.is-two { font-size: .82em; letter-spacing: -.02em; }
+.avatar .av-glyph { display: block; width: calc(var(--size) * .64); height: calc(var(--size) * .64); }
+.avatar .av-glyph img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.avatar .av-picto { display: grid; place-items: center; width: calc(var(--size) * .62); height: calc(var(--size) * .62); }
+.avatar .av-picto svg.ico { width: 100%; height: 100%; fill: none; stroke: currentColor; }
+.avatar .av-photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+/* Pastille d'état au plus près du coin du bouton : elle ne recouvre plus le cercle de l'avatar. */
+.topnav-pill > #account-btn.has-session::after { top: 3px; right: 3px; }
 
 /* Recadrage de la photo (avatarPhoto.js) */
 .avp-layer { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .55); }

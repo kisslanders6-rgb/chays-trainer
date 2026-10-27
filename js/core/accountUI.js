@@ -80,7 +80,8 @@ const AccountUI = (function () {
     const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 
     // ─── Avatar (pseudo, pièce ou initiale, couleur : Compte › Profil) ─────────
-    const AVATAR_TINTS = { theme: ['var(--board-dark)', 'var(--board-light)'], sapin: ['#2f4a26', '#efe3c9'], noyer: ['#5a3c26', '#f1e3cc'], nuit: ['#2c3f62', '#e3e9f3'],
+    // « Échiquier » : teintes de l'échiquier calibrées pour rester lisibles (style.css), pas les cases brutes.
+    const AVATAR_TINTS = { theme: ['var(--theme-dark-deep)', 'var(--theme-light-refined)'], sapin: ['#2f4a26', '#efe3c9'], noyer: ['#5a3c26', '#f1e3cc'], nuit: ['#2c3f62', '#e3e9f3'],
                            ardoise: ['#3b3f44', '#ebebe7'], prune: ['#4b3560', '#efe7f6'], ivoire: ['#efe3c9', '#26381e'] };
     // Photo (avatarPhoto.js) si elle existe et qu'aucun motif précis n'est demandé ; sinon le motif choisi.
     function avatarInner(glyph, color) {
@@ -112,7 +113,7 @@ const AccountUI = (function () {
         const u = Auth.user();
         btn.classList.toggle('has-session', !!u);
         btn.dataset.sync = u ? syncStatus.level : '';
-        btn.innerHTML = u ? `<span class="topnav-avatar" style="${avatarStyle()}">${avatarInner()}</span>` : SVG_USER_BTN;
+        btn.innerHTML = u ? `<span class="avatar topnav-avatar" style="${avatarStyle()}">${avatarInner()}</span>` : SVG_USER_BTN;
         const who = (appSettings.pseudo || '').trim() || (u && u.email);
         btn.title = u ? `Compte — ${who}` : 'Compte (non connecté)';
         btn.setAttribute('aria-label', btn.title);
@@ -251,19 +252,21 @@ const AccountUI = (function () {
     function _profileCard() {
         const u = Auth.user() || {}, f = _figures(), name = (appSettings.pseudo || '').trim();
         return `<div class="pn-group"><div class="pn-profile">
-            <span class="pn-avatar" style="${avatarStyle()}">${avatarInner()}<i style="background:${syncStatus.level === 'error' ? 'var(--err)' : syncStatus.level === 'offline' ? 'var(--text-dim)' : syncStatus.level === 'busy' ? '#d9a21b' : 'var(--ok)'}"></i></span>
+            <span class="avatar pn-avatar" style="${avatarStyle()}">${avatarInner()}<i style="background:${syncStatus.level === 'error' ? 'var(--err)' : syncStatus.level === 'offline' ? 'var(--text-dim)' : syncStatus.level === 'busy' ? '#d9a21b' : 'var(--ok)'}"></i></span>
             <div class="pn-who"><b id="acct-name">${esc(name || u.email || '')}</b><small id="acct-sub">${esc(_subLine(u, name))}</small></div>
             <div class="pn-figures"><div><b>${f.positions}</b>positions</div><div><b>${f.streak} j</b>d'affilée</div><div><b>${f.today}</b>aujourd'hui</div></div>
         </div></div>`;
     }
 
     function sectionProfil() {
-        const choice = (key, v, inner, style, label) => `<button type="button" class="pn-choice" role="radio" aria-checked="${appSettings[key] === v}" aria-label="${label}" data-pn="seg" data-key="${key}" data-v="${v}" style="${style}">${inner}</button>`;
+        const choice = (key, v, inner, style, label) => `<button type="button" class="avatar pn-choice" role="radio" aria-checked="${appSettings[key] === v}" aria-label="${label}" data-pn="seg" data-key="${key}" data-v="${v}" style="${style}">${inner}</button>`;
         return _profileCard()
             + PanelKit.group('Identité', [
                 PanelKit.row('Pseudo', 'Affiché sur l’accueil (« Bonsoir, … ») et dans la barre du haut.',
                     `<input class="pn-input" type="text" maxlength="24" autocomplete="nickname" placeholder="Votre pseudo" value="${esc(appSettings.pseudo)}" data-pn="text" data-key="pseudo" aria-label="Pseudo">`),
-                PanelKit.row('Photo', appSettings.avatarPhoto || (typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src())
+                PanelKit.row('Photo', typeof AvatarPhoto !== 'undefined' && AvatarPhoto.unavailable()
+                        ? 'Photo indisponible : elle n’a pas pu être téléchargée depuis votre compte (stockage « avatars » absent ou photo supprimée). L’avatar dessiné la remplace.'
+                        : appSettings.avatarPhoto || (typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src())
                         ? 'Votre photo remplace l’avatar dessiné.' : 'Recadrée en carré ; enregistrée avec votre compte (sinon, sur cet appareil seulement).',
                     `<div class="pn-actions"><button class="btn" type="button" data-act="photo-pick">Choisir une photo</button>${typeof AvatarPhoto !== 'undefined' && AvatarPhoto.src() ? '<button class="btn" type="button" data-act="photo-remove" data-key="avatarPhoto">Retirer</button>' : ''}</div>`),
                 PanelKit.row('Avatar', 'Une initiale, une pièce ou un pictogramme, sur la couleur de votre choix (« Échiquier » : les couleurs de l’échiquier actif).',
