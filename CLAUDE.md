@@ -44,6 +44,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 - Icônes : le sprite `_ICONS` (`icons.js`) ; ne renommez pas une icône sans ses usages (`tests/icons.test.js` vérifie chaque `#i-…` et `ico(…)`).
 - Un seul nom global par script (de préférence un objet, comme `Chess`, `EG`, `SyncModel`) : `npm test` refuse un nom déclaré deux fois.
 - Nouveau script : l'ajouter dans `index.html` ; `sw.js` le met en cache tout seul. Image remplacée : incrémenter `VERSION` dans `sw.js`.
+- Icônes de l'app : PNG 192, 512, masquable et iOS par `swift scripts/export-icons.swift` (`assets/brand/chays-icone.svg`) ; `favicon.ico` (16, 32, 48 px, `assets/brand/chays-favicon.svg`) et `icon-mono-512.png` (manifeste `monochrome`) par `swift scripts/export-favicons.swift` ; `assets/icons/icon.svg` est le favicon adaptatif clair / sombre, écrit à la main (croix épaissie, sans gravure). `tests/pwaIcons.test.js` vérifie balises, manifeste et cache.
 - Le script en ligne en tête d'`index.html` applique thème et échiquier avant le premier rendu : le garder cohérent avec `settings.js`.
 - Panneaux (`css/panels.css`) : `.pn-content` est une colonne flex qui défile ; ses enfants ont `flex-shrink: 0`, sinon les volets en `overflow: hidden` sont écrasés.
 

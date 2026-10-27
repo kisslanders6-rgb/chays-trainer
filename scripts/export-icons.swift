@@ -1,13 +1,14 @@
 // scripts/export-icons.swift — régénère les icônes PNG à partir d'assets/brand/chays-icone.svg
 // (rendu SVG natif de macOS). Usage, depuis la racine du projet :
 //   swift scripts/export-icons.swift
+// Favicon (.ico) et icône monochrome : scripts/export-favicons.swift ; favicon vectoriel : assets/icons/icon.svg.
 // Les variables CSS du SVG (--ct-encre…) sont remplacées par leurs valeurs de repli avant le rendu.
 import AppKit
 
 let svgPath = "assets/brand/chays-icone.svg"
 let targets: [(String, Int)] = [
     ("icon-512", 512), ("icon-maskable-512", 512), ("icon-192", 192),
-    ("apple-touch-icon", 180), ("favicon-64", 64), ("favicon-32", 32)
+    ("apple-touch-icon", 180)
 ]
 
 var svg = try! String(contentsOfFile: svgPath, encoding: .utf8)

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="69 69 374 374" role="img" aria-labelledby="titre">
+  <title id="titre">Chays Trainer — favicon</title>
+  <desc>Source de favicon.ico (16, 32, 48 px) : le roi de chays-icone.svg plein cadre sur fond noyer, croix épaissie,
+        gravure retirée. Le fond reste visible sur un onglet clair comme sombre.</desc>
+  <rect x="69" y="69" width="374" height="374" rx="64" fill="#2c1f16"/>
+  <g fill="#dbc09a" stroke="#dbc09a" stroke-width="5" stroke-linejoin="round">
+    <path d="M193.5 395.9 H318.5 C324.2 404.4 327 414.3 327 424.3 H185 C185 414.3 187.8 404.4 193.5 395.9 Z"/>
+    <path d="M236.1 241.1 C231.9 280.9 240.4 317.8 231.9 349 C227.6 366 216.2 378.8 204.9 388.8 H307.1 C295.8 378.8 284.4 366 280.1 349 C271.6 317.8 280.1 280.9 275.9 241.1 Z"/>
+    <path d="M209.1 138.9 C229 155.9 243.2 160.2 256 150.2 C268.8 160.2 283 155.9 302.9 138.9 C291.5 161.6 284.4 181.4 281.6 201.3 H230.4 C227.6 181.4 220.5 161.6 209.1 138.9 Z"/>
+    <path d="M219.1 211.3 A36.9 9.2 0 1 0 292.9 211.3 A36.9 9.2 0 1 0 219.1 211.3 Z"/>
+    <path d="M230.4 231.2 A25.6 6.4 0 1 0 281.6 231.2 A25.6 6.4 0 1 0 230.4 231.2 Z"/>
+  </g>
+  <path d="M209 410.1 H303" fill="none" stroke="#8c6a4e" stroke-width="6"/>
+  <path d="M256 92 V132 M240 108 H272" fill="none" stroke="#dbc09a" stroke-width="18" stroke-linecap="round"/>
+</svg>
