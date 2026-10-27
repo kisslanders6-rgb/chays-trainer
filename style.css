@@ -245,34 +245,8 @@ body { font-family: var(--font-sans); background: var(--bg); color: var(--text);
     gap: 8px;
 }
 
-.repertoire-pill {
-    font-size: 11px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    background: var(--bg-inset);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.14s;
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-}
-@media (hover: hover) { .repertoire-pill:hover { border-color: var(--accent); color: var(--accent); } }
-
-.color-badge {
-    font-size: 10.5px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-}
-.badge-white { background: var(--board-light); color: #2c2410; }
-.badge-black { background: var(--accent); color: var(--accent-text); }
+.game-rep { display: flex; min-width: 0; }
+.game-rep-title { font-size: 12.5px; font-weight: 600; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .theme-toggle {
     width: 32px;
@@ -979,16 +953,6 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
 @media (hover: hover) { .color-btn-w:hover { background-color: color-mix(in srgb, var(--side-w-bg) 88%, #fff); } }
 @media (hover: hover) { .color-btn-b:hover { background-color: color-mix(in srgb, var(--side-b-bg) 82%, var(--board-dark)); } }
 
-/* 4. Badge de couleur (en partie) */
-.color-badge { border: 1px solid transparent; transition: background-color .2s, color .2s, border-color .2s; }
-.badge-white { background: var(--side-w-bg); color: var(--side-w-fg); border-color: var(--side-w-border); }
-.badge-black { background: var(--side-b-bg); color: var(--side-b-fg); border-color: var(--side-b-border); }
-button.color-badge { font-family: inherit; line-height: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-@media (hover: hover) { button.color-badge:not(:disabled):hover { border-color: var(--accent); } }
-button.color-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.color-badge:disabled { cursor: default; }
-.color-badge .ico { width: 12px; height: 12px; opacity: .7; }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    SÉLECTEUR DE STYLE DE PIÈCES (Paramètres)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1016,10 +980,9 @@ button.color-badge:disabled { cursor: default; }
 .glyph { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }
 .glyph svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); pointer-events: none; }
 .color-btn .glyph       { width: 1em; height: 1em; }          /* taille = font-size du bouton */
-.color-badge .glyph     { width: 1.35em; height: 1.35em; vertical-align: -0.35em; }
 
 /* Conteneurs qui portent désormais une icône + du texte */
-.tab-title, .seg-btn, .side-tab, .color-badge, .panel-close {
+.tab-title, .seg-btn, .side-tab, .panel-close {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
 }
 .tab-title  { display: flex; gap: 9px; }
@@ -1699,6 +1662,18 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .cs-both .glyph:first-child { left: 0; }
 .cs-both .glyph:last-child { right: 0; }
 @media (prefers-reduced-motion: reduce) { .cs-thumb { transition: none; } }
+/* size 'sm' : barre du haut de l'écran de jeu ; sur téléphone, les rois seuls (libellé en infobulle et pour les lecteurs d'écran) */
+.cs-sm { padding: 2px; box-shadow: none; }
+.cs-sm .cs-thumb { top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / var(--n)); }
+.cs-sm .cs-opt { min-height: 28px; padding: 3px 11px; gap: 5px; font-size: 12px; }
+.cs-sm .cs-opt .glyph { width: 16px; height: 16px; }
+@media (max-width: 599px) {
+    .cs-sm .cs-opt { padding: 3px 9px; }
+    .cs-sm .cs-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* locked : couleur imposée, le choix reste visible */
+.cs-locked .cs-opt { cursor: default; }
+.cs-locked .cs-opt[aria-checked="false"] { opacity: .4; }
 
 /* ─── CHOIX DU RÉPERTOIRE (RepPicker, repPicker.js) ───
    Puce : initiale, nom, indicateurs. Liste : fenêtre flottante, ou panneau du bas sur téléphone. */
@@ -1713,6 +1688,18 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .rp-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
 .rp-txt b { font-size: 13.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rp-txt small { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+/* size 'sm' : barre du haut en jeu, même hauteur et même arrondi que la capsule de couleur (.cs-sm) ; téléphone : l'initiale seule */
+.rp-chip.rp-sm { min-height: 35px; gap: 8px; padding: 0 11px 0 4px; border-radius: 999px; box-shadow: none; min-width: 0; }
+.rp-sm .rp-ini { width: 26px; height: 26px; border-radius: 50%; font-size: 12.5px; }
+.rp-sm .rp-txt b { font-size: 12.5px; font-weight: 600; max-width: 160px; }
+.rp-sm > .ico { width: 12px; height: 12px; }
+.rp-chip.rp-sm:disabled { cursor: default; padding-right: 13px; }
+@media (hover: hover) { .rp-chip.rp-sm:disabled:hover { border-color: var(--border); } }
+@media (max-width: 599px) {
+    .rp-chip.rp-sm { gap: 4px; padding: 0 8px 0 4px; }
+    .rp-chip.rp-sm:disabled { padding-right: 4px; }
+    .rp-sm .rp-txt { display: none; }
+}
 
 .rp-layer { position: fixed; inset: 0; z-index: 900; }
 .rp-backdrop { position: absolute; inset: 0; }

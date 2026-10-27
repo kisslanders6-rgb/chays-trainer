@@ -160,8 +160,10 @@
             <!-- Meta dans l'écran de jeu -->
             <div class="topnav-tabs" id="topnav-tabs-game" style="display:none;">
                 <div class="topnav-meta" data-modes-not="preview">
-                    <span class="repertoire-pill" id="repertoire-pill" onclick="goHome()" title="Changer de répertoire"></span>
-                    <button class="color-badge" id="color-badge" onclick="switchColor()"></button>
+                    <span class="game-rep" id="game-rep"></span>   <!-- puce du répertoire (RepPicker « sm », renderGameRep) ; titre de l'exercice en Finales -->
+
+                    <div class="game-side" id="game-side"></div>   <!-- capsule Blancs / Noirs (ColorScope, renderGameSide) -->
+
                 </div>
                 <!-- Aperçu d'une position des Statistiques : retour + catégorie de la position (rempli par openStatsPreview) -->
                 <div class="topnav-meta topnav-preview" data-modes="preview">

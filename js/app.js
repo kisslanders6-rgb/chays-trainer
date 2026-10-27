@@ -216,8 +216,7 @@ function repMenuAction(action) {
 function selectRepertoire(name) {
     currentRepertoire = name;
     renderRepertoireList();
-    const pill = document.getElementById('repertoire-pill');
-    if (pill) pill.textContent = currentRepertoire;
+    renderGameRep();
     initStats();
     initTraining();
 }
@@ -248,20 +247,9 @@ function showGameScreen(color) {
     gs.style.display = 'flex';
     gs.classList.remove('hidden');
 
-    // Badge de couleur : bouton de changement de couleur en « Jouer » et en Entraînement.
-    const badge  = document.getElementById('color-badge');
-    const mixed  = gameMode === 'training' && typeof trainingState !== 'undefined' && trainingState.mixed;
     if (typeof _renderSessionBar === 'function') _renderSessionBar();
-    badge.disabled = (gameMode !== 'play' && gameMode !== 'training') || (gameMode === 'training' && !!trainingState.session);   // séance guidée : couleur imposée
-    badge.title    = badge.disabled ? '' : mixed ? 'Blancs et Noirs mélangés — cliquer pour réviser seulement les ' + (color === 'w' ? 'Noirs' : 'Blancs')
-                                              : `Passer aux ${color === 'w' ? 'Noirs' : 'Blancs'}`;
-    badge.innerHTML = `<span class="glyph" data-glyph="${color === 'w' ? 'K' : 'k'}"></span> ${color === 'w' ? 'BLANCS' : 'NOIRS'}`
-                    + (mixed ? ` ${ico('shuffle')}` : badge.disabled ? '' : ` ${ico('arrow-left-right')}`);
-    if (typeof refreshGlyphs === 'function') refreshGlyphs();
-    badge.className   = 'color-badge ' + (color === 'w' ? 'badge-white' : 'badge-black');
-
-    const pill = document.getElementById('repertoire-pill');
-    if (pill) pill.textContent = currentRepertoire;
+    renderGameSide();
+    renderGameRep();
 
     applyModeUI();
 }
@@ -275,10 +263,52 @@ function startGame(color) {
 }
 
 // Badge de couleur de la barre du haut : même répertoire, autre couleur.
-function switchColor() {
-    const other = playerColor === 'w' ? 'b' : 'w';
-    if (gameMode === 'play') startGame(other);
-    else if (gameMode === 'training') switchTrainingColor(other);
+// Puce du répertoire de la barre du haut (RepPicker « sm ») : la liste s'ouvre au clic, et choisir un autre
+// répertoire relance le mode en cours avec la même couleur. Séance guidée : puce verrouillée. Finales : titre
+// de l'exercice (pas de répertoire).
+function renderGameRep() {
+    const host = document.getElementById('game-rep');
+    if (!host) return;
+    if (gameMode === 'endgame' && typeof endgameState !== 'undefined' && endgameState.ex) {
+        host.innerHTML = `<span class="game-rep-title">${escapeHtml(endgameState.ex.title)}</span>`;
+        return;
+    }
+    const session = gameMode === 'training' && typeof trainingState !== 'undefined' && !!trainingState.session;
+    host.innerHTML = RepPicker.html('gameRepertoire', { size: 'sm', locked: session });
+}
+
+function switchGameRepertoire(name) {
+    const mode = gameMode, color = playerColor, mixed = mode === 'training' && trainingState.mixed;
+    selectRepertoire(name);
+    if (mode === 'play') startGame(color);
+    else if (mode === 'training') {
+        startTraining(mixed ? 'mix' : color);
+        if (gameMode !== 'training') goHome('training');        // rien à réviser dans ce répertoire : retour à l'Entraînement
+    }
+    // Analyse : le brouillon reste, « Ajouter au répertoire » visera le nouveau répertoire.
+}
+registerActions({ gameRepertoire: switchGameRepertoire });
+
+// Capsule de couleur de la barre du haut (ColorScope compact). Jouer : Blancs / Noirs. Entraînement libre :
+// Blancs / Noirs / Les deux (mélangés). Couleur imposée (séance guidée, finale, analyse) : capsule verrouillée.
+function renderGameSide() {
+    const training = gameMode === 'training' && typeof trainingState !== 'undefined';
+    const mixed = training && trainingState.mixed;
+    const locked = !(gameMode === 'play' || (training && !trainingState.session));
+    const hint = training && trainingState.session ? 'Couleur fixée par la séance guidée' : gameMode === 'endgame' ? 'Couleur fixée par l\'exercice' : 'Couleur fixe dans ce mode';
+    ColorScope.render(document.getElementById('game-side'), {
+        options: training && !locked ? ['w', 'b', 'mix'] : ['w', 'b'], value: mixed ? 'mix' : playerColor,
+        size: 'sm', locked, lockedHint: hint, label: 'Couleur jouée', onChange: switchColor
+    });
+}
+
+function switchColor(to) {
+    if (gameMode === 'play') startGame(to);
+    else if (gameMode === 'training') {
+        if (to === 'mix') startTraining('mix');
+        else switchTrainingColor(to);
+    }
+    renderGameSide();      // couleur refusée (rien à réviser) : la capsule revient sur la couleur jouée
 }
 
 // ─── REPRENDRE (dernière partie du mode « Jouer ») ─────────────────────────────

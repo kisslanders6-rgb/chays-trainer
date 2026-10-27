@@ -329,9 +329,7 @@ function startEndgame(id) {
     playerColor = ex.player;
     gameMode    = 'endgame';
     endgameState.errors = 0; endgameState.hints = 0; endgameState.tried = false;
-    showGameScreen(ex.player);
-    const pill = document.getElementById('repertoire-pill');
-    if (pill) pill.textContent = ex.title;
+    showGameScreen(ex.player);          // la barre du haut affiche ex.title (renderGameRep)
     _egLoadPosition();
 }
 

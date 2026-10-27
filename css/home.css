@@ -76,7 +76,7 @@
     height: 2px; border-radius: 1px; background: var(--board-accent);
 }
 @media (hover: hover) { .topnav-tab:hover { background: transparent; color: var(--text); } }
-.topnav-meta, .topnav-meta .repertoire-pill { min-width: 0; }
+.topnav-meta { min-width: 0; }
 
 @media (min-width: 1200px) { .topnav-wm { --wm-size: 20px; } .topnav-tabs { --tab-px: 22px; } }
 @media (min-width: 1440px) { .topnav-tabs { --tab-px: 26px; } }

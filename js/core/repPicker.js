@@ -4,7 +4,9 @@
  * Choix du répertoire : une puce (initiale, nom, indicateurs) qui ouvre une liste avec recherche.
  *   Ordinateur : fenêtre flottante sous la puce. Téléphone (≤ 719 px ou pointeur grossier) : panneau du bas.
  *
- *   RepPicker.html(action) → la puce ; choisir un répertoire appelle UI_ACTIONS[action](nom).
+ *   RepPicker.html(action, { size?, locked? }) → la puce ; choisir un répertoire appelle UI_ACTIONS[action](nom).
+ *     size 'sm' : version de la barre du haut en jeu (ronde, sans indicateurs ; initiale seule sur téléphone, cf. .rp-sm).
+ *     locked : puce désactivée (séance guidée : le répertoire ne change pas en cours de séance).
  *   Indicateurs : positions et révisions dues de chaque répertoire. Dernière ligne : « Nouveau répertoire ».
  * Clavier : flèches dans la liste, Entrée pour choisir, Échap pour fermer (la puce reprend le focus).
  */
@@ -22,11 +24,18 @@ const RepPicker = (function () {
     const initial = name => escapeHtml((name.trim()[0] || '?').toUpperCase());
     const meta = s => `${s.n} position${s.n > 1 ? 's' : ''}${s.due ? ` · ${s.due} à réviser` : ''}`;
 
-    function html(act) {
+    function html(act, { size, locked = false } = {}) {
+        const name = escapeHtml(currentRepertoire);
+        if (size === 'sm') {
+            const title = locked ? `Répertoire « ${name} » (fixé par la séance guidée)` : `Répertoire « ${name} » : changer`;
+            return `<button type="button" class="rp-chip rp-sm" data-rp-action="${act}" aria-haspopup="dialog" aria-expanded="false" title="${title}" aria-label="${title}"${locked ? ' disabled' : ''}>
+                <span class="rp-ini" aria-hidden="true">${initial(currentRepertoire)}</span><span class="rp-txt"><b>${name}</b></span>${locked ? '' : ico('chevron-down')}
+            </button>`;
+        }
         const s = stats(currentRepertoire);
         return `<button type="button" class="rp-chip" data-rp-action="${act}" aria-haspopup="dialog" aria-expanded="false" title="Changer de répertoire">
             <span class="rp-ini" aria-hidden="true">${initial(currentRepertoire)}</span>
-            <span class="rp-txt"><b>${escapeHtml(currentRepertoire)}</b><small>${meta(s)}</small></span>${ico('chevron-down')}
+            <span class="rp-txt"><b>${name}</b><small>${meta(s)}</small></span>${ico('chevron-down')}
         </button>`;
     }
 
