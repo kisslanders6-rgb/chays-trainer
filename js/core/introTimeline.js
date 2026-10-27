@@ -8,8 +8,9 @@
  * Uniquement transform, opacity et propriétés de couleur déclarées avec @property (css/splash.css).
  *
  * API (appelée par splash.js) :
- *   IntroTimeline.land(splash) → Promise résolue quand tout est en place (true) ou annulée par
+ *   IntroTimeline.land(splash, speed?) → Promise résolue quand tout est en place (true) ou annulée par
  *                                release() (false) — jamais rejetée —, ou null si impossible
+ *                                speed : facteur appliqué à tous les temps (0,55 pour l'ouverture courte, splash.js)
  *   IntroTimeline.release()    → annule les animations restantes (après le retrait du splash)
  */
 
@@ -63,13 +64,15 @@ const IntroTimeline = (function () {
         if (COLORS.some(p => kf[0][p] && kf[0][p] !== kf[1][p])) anim(el, kf, options);
     }
 
-    function cascade(nodes, delay, step) {
+    function cascade(nodes, delay, step, duration) {
         Array.from(nodes).forEach((n, i) => anim(n,
             [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
-            { duration: T.enterDur, delay: delay + i * step, easing: EASE.out }));
+            { duration, delay: delay + i * step, easing: EASE.out }));
     }
 
-    function land(splash) {
+    function land(splash, speed = 1) {
+        const S = {};                                    // temps de cet atterrissage
+        Object.keys(T).forEach(k => { S[k] = T[k] * speed; });
         release();
         const stage = splash.querySelector('.sp-stage');
         const piece = splash.querySelector('.sp-piece');
@@ -81,16 +84,16 @@ const IntroTimeline = (function () {
         // Le tracé est terminé : on rend la main au CSS, pour que les couleurs du logo puissent glisser.
         piece.querySelectorAll('[pathLength]').forEach(el => el.getAnimations().forEach(a => a.cancel()));
 
-        const flight = { duration: T.flipDur, easing: EASE.flip };
+        const flight = { duration: S.flipDur, easing: EASE.flip };
         const z = splash.getBoundingClientRect().width / splash.offsetWidth || 1;
         flip(piece, navPiece, flight, z);
-        if (wm) flip(wm, navWm, Object.assign({}, flight, { delay: T.wmLag }), z);
-        recolor(stage, navPiece, { duration: T.flipDur, easing: EASE.soft });
+        if (wm) flip(wm, navWm, Object.assign({}, flight, { delay: S.wmLag }), z);
+        recolor(stage, navPiece, { duration: S.flipDur, easing: EASE.soft });
         const veil = splash.querySelector('.sp-veil');
-        if (veil) anim(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: T.veilDur, delay: T.veil, easing: EASE.soft });
+        if (veil) anim(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: S.veilDur, delay: S.veil, easing: EASE.soft });
         const tabs = document.querySelector('.topnav-tabs:not([style*="none"])');
-        cascade([...(tabs ? tabs.querySelectorAll('.topnav-tab') : []), ...document.querySelectorAll('.topnav-right > *')], T.tabs, T.tabsStep);
-        cascade(document.querySelectorAll('.home-tab:not(.hidden) [data-stagger]'), T.home, T.homeStep);
+        cascade([...(tabs ? tabs.querySelectorAll('.topnav-tab') : []), ...document.querySelectorAll('.topnav-right > *')], S.tabs, S.tabsStep, S.enterDur);
+        cascade(document.querySelectorAll('.home-tab:not(.hidden) [data-stagger]'), S.home, S.homeStep, S.enterDur);
 
         // Une animation annulée rejette `finished` (AbortError) : on le transforme en résultat.
         return Promise.all(running.map(a => a.finished)).then(() => true, () => false);

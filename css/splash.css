@@ -6,12 +6,16 @@
    couleurs de l'identité Noyer (roi #dbc09a, laiton #c99a4b sur #2c1f16), glisse vers celles du thème pendant le vol
    (js/core/introTimeline.js).
 
+     Première ouverture du jour, « la plume » (script en ligne d'index.html) :
      0          icône de l'écran système, au pixel près (.sp-handoff : même PNG, 240 px, centrée) ;
                 la pièce (.sp-piece, 71,7 × 163,9 px) est posée exactement dessus
-     0–1,3 s    la pièce se trace par-dessus l'icône, qui s'efface (0,3 → 0,8), puis se remplit
-     1,05–1,75  la scène remonte pour centrer pièce + signature ; la signature s'écrit (1,08 → 1,86)
-     2 s        fin de la suspension (spHold) : la sortie attend aussi que l'app soit prête
+     0–1,55 s   la pièce se trace par-dessus l'icône, qui s'efface (0,3 → 0,8) ; un point de laiton (.sp-nib)
+                conduit le trait ; l'encre monte de la base vers la croix (0,65 → 1,45)
+     1,05–1,75  la scène remonte pour centrer pièce + signature ; la plume écrit la signature (1,56 → 1,98)
+     2 s        fin de la suspension (spHold) : la sortie attend aussi que l'app soit prête ; un toucher l'écourte
      + 1,3 s    atterrissage : vol vers la barre du haut, voile qui s'efface, accueil en cascade
+     Ouvertures suivantes (html.splash-quick) : roi déjà dessiné, la gravure se réécrit (0,42 s), suspension de
+     0,45 s, atterrissage accéléré (× 0,55) : moins d'une seconde quand l'app est prête.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @property --ct-encre  { syntax: '<color>'; inherits: true; initial-value: #dbc09a; }
@@ -57,8 +61,20 @@ html.splashing { background: var(--sp-bg); }
 .sp-piece { display: block; width: 71.7px; height: 163.9px; overflow: visible; }
 .sp-piece, .sp-wm { transform-origin: 0 0; will-change: transform, opacity; backface-visibility: hidden; }
 .sp-wm { --wm-size: 40px; }
-.sp-wm .ct-wm-1 { animation: spWrite .64s var(--sp-ease-out) 1.08s both; }
-.sp-wm .ct-wm-2 { animation: spRise .52s var(--sp-ease-out) 1.34s both; }
+.sp-wm .ct-wm-1 { animation: spWrite .42s linear 1.56s both; }       /* au rythme de la plume (même intervalle) */
+.sp-wm .ct-wm-2 { animation: spRise .46s var(--sp-ease-out) 1.8s both; }
+
+/* La plume : point de laiton au bout du trait (placé par le script en ligne) ; contours sans remplissage, l'encre
+   (.sp-ink, copie des parties pleines) monte dessous. */
+.sp-nib { position: absolute; left: 0; top: 0; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; opacity: 0;
+          background: #f3d79a; box-shadow: 0 0 8px 2px color-mix(in srgb, var(--ct-laiton) 75%, transparent); pointer-events: none; }
+.sp-outline .plein { fill-opacity: 0; }
+
+/* Ouvertures suivantes : le roi est déjà là (pas de tracé), la signature reste cachée, sortie rapide */
+.splashing.splash-quick .splash { animation-duration: .45s; }
+.splash-quick .sp-handoff { animation-duration: .2s; animation-delay: 0s; }
+.splash-quick .sp-stage { animation: none; transform: translateY(var(--sp-shift)); }
+.splash-quick .sp-wm { visibility: hidden; }
 @keyframes spWrite { from { clip-path: inset(-15% 100% -15% 0); } to { clip-path: inset(-15% -2% -15% 0); } }
 @keyframes spRise  { from { opacity: 0; transform: translateY(.4em); } to { opacity: 1; transform: none; } }
 

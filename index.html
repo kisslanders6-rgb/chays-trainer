@@ -15,7 +15,8 @@
     <link rel="icon" href="assets/icons/favicon.ico" sizes="32x32" />
     <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
     <!-- Thème appliqué avant le premier affichage (sinon éclair du thème clair) ; écran de lancement
-         une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://).
+         une fois par session d'onglet, sauf ouvert depuis le disque (masque CSS refusé en file://) :
+         version longue une fois par jour (chessTrainer_splashDay), sinon courte (html.splash-quick).
          Pendant le lancement, la barre système prend le fond de l'écran de lancement (#2c1f16, comme
          l'écran système de la PWA) ; themeColor.js repasse à la couleur du thème à la sortie. -->
     <script>
@@ -45,6 +46,10 @@
                 if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) {
                     d.classList.add('splashing');
                     sessionStorage.setItem('chays_splash', '1');
+                    // Version longue (« la plume ») à la première ouverture du jour sur cet appareil, courte ensuite.
+                    var n = new Date(), day = n.getFullYear() + '-' + (n.getMonth() + 1) + '-' + n.getDate();
+                    if (localStorage.getItem('chessTrainer_splashDay') === day) d.classList.add('splash-quick');
+                    else localStorage.setItem('chessTrainer_splashDay', day);
                     var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#2c1f16';
                 }
             } catch (e) {}
@@ -71,42 +76,93 @@
     <svg class="sp-logo sp-piece" viewBox="186 34 140 320" aria-hidden="true" focusable="false">
       <g id="piece">
         <g id="socle" stroke-width="5">
-          <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="380" data-fill="820" d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
-          <path id="socle-plinthe" class="laiton" pathLength="1" data-t="1000" data-d="300" d="M209.2 334.9 H302.8"/>
+          <path id="socle-base" class="plein" pathLength="1" data-t="0" data-d="300" data-nib d="M198.8 321.9 H313.2 C318.4 329.7 321 338.8 321 347.9 H191 C191 338.8 193.6 329.7 198.8 321.9 Z"/>
+          <path id="socle-plinthe" class="laiton" pathLength="1" data-t="1100" data-d="160" d="M209.2 334.9 H302.8"/>
         </g>
         <g id="corps" stroke-width="5">
-          <path id="corps-fut" class="plein" pathLength="1" data-t="120" data-d="640" data-fill="820" d="M237.8 180.2 C233.9 216.6 241.7 250.4 233.9 279 C230 294.6 219.6 306.3 209.2 315.4 H302.8 C292.4 306.3 282 294.6 278.1 279 C270.3 250.4 278.1 216.6 274.2 180.2 Z"/>
+          <path id="corps-fut" class="plein" pathLength="1" data-t="280" data-d="460" data-nib d="M237.8 180.2 C233.9 216.6 241.7 250.4 233.9 279 C230 294.6 219.6 306.3 209.2 315.4 H302.8 C292.4 306.3 282 294.6 278.1 279 C270.3 250.4 278.1 216.6 274.2 180.2 Z"/>
         </g>
         <g id="couronne" stroke-width="5">
-          <path id="couronne-tete" class="plein" pathLength="1" data-t="360" data-d="480" data-fill="860" d="M213.1 86.6 C231.3 102.2 244.3 106.1 256 97 C267.7 106.1 280.7 102.2 298.9 86.6 C288.5 107.4 282 125.6 279.4 143.8 H232.6 C230 125.6 223.5 107.4 213.1 86.6 Z"/>
-          <path id="anneau-haut" class="laiton" pathLength="1" data-t="560" data-d="380" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
-          <path id="anneau-bas" class="laiton" pathLength="1" data-t="620" data-d="340" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
-          <path id="croix" class="laiton" pathLength="1" data-t="760" data-d="320" d="M256 39.8 V84 M239.1 58 H272.9"/>
+          <path id="couronne-tete" class="plein" pathLength="1" data-t="700" data-d="340" data-nib d="M213.1 86.6 C231.3 102.2 244.3 106.1 256 97 C267.7 106.1 280.7 102.2 298.9 86.6 C288.5 107.4 282 125.6 279.4 143.8 H232.6 C230 125.6 223.5 107.4 213.1 86.6 Z"/>
+          <path id="anneau-haut" class="laiton" pathLength="1" data-t="1000" data-d="160" d="M222.2 152.9 A33.8 8.5 0 1 0 289.8 152.9 A33.8 8.5 0 1 0 222.2 152.9"/>
+          <path id="anneau-bas" class="laiton" pathLength="1" data-t="1040" data-d="150" d="M232.6 171.1 A23.4 5.9 0 1 0 279.4 171.1 A23.4 5.9 0 1 0 232.6 171.1"/>
+          <path id="croix" class="laiton" pathLength="1" data-t="1060" data-d="200" data-nib d="M256 39.8 V84 M239.1 58 H272.9"/>
         </g>
         <g id="gravure" stroke-width="4">
-          <path id="gravure-trait" class="grave" pathLength="1" data-t="640" data-d="460" data-from="encre" data-swap="900" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
+          <path id="gravure-trait" class="grave" pathLength="1" data-t="1270" data-d="280" data-nib data-from="encre" data-swap="1500" d="M279.4 158.1 C300.2 168.5 279.4 186.7 261.2 197.1 C240.4 210.1 235.2 237.4 250.8 255.6 C266.4 273.8 287.2 273.8 283.3 293.3 C280.7 305 256 308.9 235.2 310.2"/>
         </g>
       </g>
     </svg>
     <span class="ct-wm sp-wm"><span class="ct-wm-1">Chays</span><span class="ct-wm-2">Trainer</span></span>
+    <span class="sp-nib" aria-hidden="true"></span>
     </div>
 </div>
 <script>
-    /* Trace le logo dès le premier affichage, d'après ses attributs : data-t / data-d (tracé), data-fill
-       (remplissage), data-from + data-swap (la gravure passe de l'encre à sa couleur). */
+    /* Ouverture du jour, « la plume » : le logo se trace d'après ses attributs data-t / data-d ; un point de laiton
+       (.sp-nib) conduit les tracés marqués data-nib, puis écrit la signature ; l'encre monte dans la pièce de la base
+       vers la croix (copie remplie sous les contours, découverte par un rectangle) ; data-from + data-swap : la gravure
+       passe de l'encre à sa couleur. Ouvertures suivantes (html.splash-quick, cf. script de tête) : le roi est déjà là,
+       seule la gravure se réécrit (« la gravure », 0,42 s). */
     (function () {
-        var sp = document.getElementById('splash');
-        if (!document.documentElement.classList.contains('splashing') || !sp || !sp.animate
+        var d = document.documentElement, sp = document.getElementById('splash');
+        if (!d.classList.contains('splashing') || !sp || !sp.animate
             || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         var DRAW = 'cubic-bezier(.65, 0, .35, 1)', SOFT = 'cubic-bezier(.4, 0, .2, 1)';
-        var encre = getComputedStyle(sp.querySelector('.sp-stage')).getPropertyValue('--ct-encre').trim();
-        sp.querySelectorAll('.sp-logo [pathLength]').forEach(function (el) {
+        var stage = sp.querySelector('.sp-stage'), svg = sp.querySelector('.sp-piece'), css = getComputedStyle(stage);
+        var encre = css.getPropertyValue('--ct-encre').trim(), laiton = css.getPropertyValue('--ct-laiton').trim();
+        var trace = function (el, t, dur) {
             el.style.strokeDasharray = '1 1';
             el.animate([{ strokeDashoffset: 1, opacity: 0 }, { opacity: 1, offset: .02 }, { strokeDashoffset: 0, opacity: 1 }],
-                       { duration: +el.dataset.d, delay: +el.dataset.t, easing: DRAW, fill: 'both' });
-            if (el.dataset.fill) el.animate([{ fillOpacity: 0 }, { fillOpacity: 1 }], { duration: 520, delay: +el.dataset.fill, easing: SOFT, fill: 'both' });
+                       { duration: dur, delay: t, easing: DRAW, fill: 'both' });
+        };
+        var grav = document.getElementById('gravure-trait');
+        if (d.classList.contains('splash-quick')) {
+            if (grav) { trace(grav, 0, 420); grav.animate([{ stroke: laiton }, { stroke: laiton, offset: .7 }, { stroke: getComputedStyle(grav).stroke }], { duration: 420, easing: SOFT, fill: 'both' }); }
+            return;
+        }
+        var INK = [650, 1450], WM = [1560, 1980];               // encre qui monte, signature écrite (ms)
+        sp.querySelectorAll('.sp-logo [pathLength]').forEach(function (el) {
+            trace(el, +el.dataset.t, +el.dataset.d);
             if (el.dataset.from) el.animate([{ stroke: encre }, { stroke: getComputedStyle(el).stroke }], { duration: 480, delay: +el.dataset.swap, easing: SOFT, fill: 'both' });
         });
+        // Encre : copie des parties pleines, sous les contours (qui restent sans remplissage), découverte de bas en haut.
+        var NS = 'http://www.w3.org/2000/svg', g = document.getElementById('piece'), ink = document.createElementNS(NS, 'g');
+        var clip = document.createElementNS(NS, 'clipPath'), rect = document.createElementNS(NS, 'rect');
+        clip.id = 'sp-ink-clip';
+        [['x', 186], ['y', 354], ['width', 140], ['height', 320]].forEach(function (a) { rect.setAttribute(a[0], a[1]); });
+        clip.appendChild(rect);
+        g.querySelectorAll('.plein').forEach(function (p) { var c = p.cloneNode(); c.removeAttribute('id'); c.removeAttribute('pathLength'); c.removeAttribute('data-nib'); ink.appendChild(c); });
+        ink.setAttribute('clip-path', 'url(#sp-ink-clip)');
+        ink.setAttribute('class', 'sp-ink');
+        svg.insertBefore(clip, g); svg.insertBefore(ink, g);
+        g.classList.add('sp-outline');
+        // Plume : suit le bout du tracé en cours, puis la ligne de base de « Chays » pendant que la signature s'écrit.
+        var nib = sp.querySelector('.sp-nib'), wm1 = sp.querySelector('.ct-wm-1');
+        var seq = Array.prototype.map.call(sp.querySelectorAll('[data-nib]'), function (el) { return [el, +el.dataset.t, +el.dataset.d]; })
+            .filter(function (s) { return typeof s[0].getTotalLength === 'function'; });     // sans géométrie SVG : encre seule, sans plume
+        var ease = function (x) { return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+        var t0 = performance.now();
+        var place = function (x, y) {                          // coordonnées écran → repère de la scène (zoom compris)
+            var s = stage.getBoundingClientRect(), k = stage.offsetWidth / s.width || 1;
+            nib.style.transform = 'translate(' + ((x - s.left) * k) + 'px, ' + ((y - s.top) * k) + 'px)';
+        };
+        var tick = function (now) {
+            if (!d.classList.contains('splashing') || d.classList.contains('splash-out')) { nib.style.opacity = 0; rect.setAttribute('y', 34); return; }
+            var e = now - t0, cur = null, i;
+            for (i = 0; i < seq.length; i++) if (e >= seq[i][1] && e <= seq[i][1] + seq[i][2]) cur = seq[i];
+            var r = svg.getBoundingClientRect(), sx = r.width / 140, sy = r.height / 320;
+            if (cur) {
+                var pt = cur[0].getPointAtLength(cur[0].getTotalLength() * ease((e - cur[1]) / cur[2]));
+                place(r.left + (pt.x - 186) * sx, r.top + (pt.y - 34) * sy); nib.style.opacity = 1;
+            } else if (e >= WM[0] && e <= WM[1]) {
+                var w = wm1.getBoundingClientRect(), f = (e - WM[0]) / (WM[1] - WM[0]);
+                place(w.left + w.width * f, w.bottom - w.height * .18); nib.style.opacity = 1;
+            } else nib.style.opacity = 0;
+            var p = Math.min(1, Math.max(0, (e - INK[0]) / (INK[1] - INK[0])));
+            rect.setAttribute('y', 354 - 320 * ease(p));
+            if (e < WM[1] + 60) requestAnimationFrame(tick); else nib.style.opacity = 0;
+        };
+        requestAnimationFrame(tick);
     })();
 </script>
 
