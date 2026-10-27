@@ -225,7 +225,7 @@ function _syncEngineToNavCursor() {
 
 function _commitMove(from, to, promo, newDbKey, statusMsg, statusType, statusDetail) {
     _resetHint();
-    playMoveSound(from, to);                // avant applyMove : détecte la capture
+    playMoveSound(from, to, promo);         // avant applyMove : détecte la capture
     animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
     if (typeof refreshTree === 'function') refreshTree();

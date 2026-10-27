@@ -476,7 +476,7 @@ function _startDrill(key, seqLen, opts) {
         setStatus('Mise en situation…', 'info', ctx.length ? 'Touchez l\'échiquier pour passer.' : trainingState.reason);
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
-            playMoveSound(m.from, m.to);
+            playMoveSound(m.from, m.to, m.promo);
             animateNextMove(m.from, m.to);
             applyMove(m.from, m.to, m.promo);            // applyMove appelle renderMoves()
             renderBoard();
@@ -606,7 +606,7 @@ function _playOpponentReply(opp) {
     _later(() => {
         const m   = _parseUci(opp);
         const san = formatSanText(toAlgebraic(m.from, m.to, m.promo), turn);
-        playMoveSound(m.from, m.to);
+        playMoveSound(m.from, m.to, m.promo);
         animateNextMove(m.from, m.to);
         applyMove(m.from, m.to, m.promo);
         selected = null; legalMoves = []; hintPiece = null;

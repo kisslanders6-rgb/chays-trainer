@@ -96,7 +96,7 @@ const LOCAL_PREFS = {
     motion:   { ok: _oneOf(['system', 'reduced', 'full']), def: 'system' },
     textSize: { ok: _oneOf(['s', 'm', 'l']), def: 'm' },
     contrast: { ok: _bool, def: false },
-    announce: { ok: _bool, def: false },
+    announce: { ok: _oneOf(['off', 'sr', 'voice']), def: 'off' },                    // annonce des coups (sound.js)
     engineNet:     { ok: _oneOf(['lite', 'full']), def: 'lite' },                       // réseau du moteur (complet : téléchargé sur l'appareil)
     engineThreads: { ok: v => Number.isInteger(v) && v >= 0 && v <= 64, def: 0 },       // 0 : automatique (moitié des cœurs)
     engineHash:    { ok: _oneOf([16, 32, 64, 128, 256, 512]), def: 64 }                 // Mo
@@ -122,6 +122,7 @@ function loadSettings() {
     const s = dataStore.getJSON(SETTINGS_KEY, null) || {}, out = {};
     if (typeof s.volume !== 'number' && Number.isFinite(Number(s.volume))) s.volume = Number(s.volume);
     if (typeof s.volume === 'number') s.volume = Math.min(1, Math.max(0, s.volume));
+    if (typeof s.announce === 'boolean') s.announce = s.announce ? 'sr' : 'off';      // ancien interrupteur (avant octobre 2026)
     Object.entries(LOCAL_PREFS).forEach(([name, d]) => { out[name] = d.ok(s[name]) ? s[name] : d.def; });
     return Object.assign(out, _syncedValues(s));
 }

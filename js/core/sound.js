@@ -4,6 +4,7 @@
  * Effets sonores synthétisés avec la Web Audio API (aucun fichier externe) :
  *   'move'    clic feutré       'capture' impact plus marqué       'error'  buzz grave discret
  * Respecte appSettings.sound / appSettings.volume (cf. settings.js).
+ * Annonce des coups (spokenMove, announceMove, Voice) : lecteurs d'écran ou synthèse vocale, réglage announce.
  */
 
 'use strict';
@@ -104,26 +105,90 @@ function playSound(kind) {
 }
 
 // À appeler AVANT d'appliquer le coup (détecte la capture, prise en passant comprise).
-function playMoveSound(from, to) {
+function playMoveSound(from, to, promo) {
     const p = board[from];
     const capture = !!board[to] || (!!p && p.toUpperCase() === 'P' && (from % 8) !== (to % 8));
     playSound(capture ? 'capture' : 'move');
-    announceMove(from, to, capture);
+    announceMove(from, to, capture, promo);
 }
 
-// Annonce des coups aux lecteurs d'écran (Paramètres › Accessibilité) : « Cavalier f3 », « pion prend d5 ».
+// ─── ANNONCE DES COUPS (Paramètres › Accessibilité) ──────────────────────────
+// appSettings.announce : 'off' | 'sr' (région aria-live, lue par VoiceOver / TalkBack) | 'voice' (synthèse
+// vocale de l'appareil, Web Speech API). Phrase en toutes lettres : « Blancs : Cavalier prend f3, échec ».
 const _SPOKEN = { K: 'Roi', Q: 'Dame', R: 'Tour', B: 'Fou', N: 'Cavalier', P: 'Pion' };
-function announceMove(from, to, capture) {
-    if (!appSettings.announce) return;
+
+// Phrase d'un coup en notation anglaise (SAN) : roque, prise, promotion, échec et mat compris.
+function spokenMove(san, white) {
+    const who = white ? 'Blancs' : 'Noirs', end = /#$/.test(san) ? ', échec et mat' : /\+$/.test(san) ? ', échec' : '';
+    const s = san.replace(/[+#!?]+$/, '');
+    if (/^O-O-O/.test(s)) return `${who} : grand roque${end}`;
+    if (/^O-O/.test(s)) return `${who} : petit roque${end}`;
+    const m = s.match(/^([KQRBN])?([a-h]?[1-8]?)(x)?([a-h][1-8])(?:=([QRBN]))?/);
+    if (!m) return `${who} : ${san}`;
+    const piece = _SPOKEN[m[1] || 'P'], promo = m[5] ? `, promotion en ${_SPOKEN[m[5]]}` : '';
+    return `${who} : ${piece} ${m[3] ? 'prend ' : ''}${m[4]}${promo}${end}`;
+}
+
+function announceMove(from, to, capture, promo) {
+    const mode = appSettings.announce;
+    if (mode !== 'sr' && mode !== 'voice') return;
+    const p = board[from] || '', white = p !== '' && p === p.toUpperCase();
+    let san = '';
+    try {
+        const pos = Chess.snapshot(), last = p.toUpperCase() === 'P' && (to < 8 || to >= 56);
+        san = Chess.san(pos, squareToName(from) + squareToName(to) + (promo || (last ? 'q' : '')));
+    } catch (e) { san = (capture ? 'x' : '') + squareToName(to); }
+    announceText(spokenMove(san, white));
+}
+
+// Région live : déclarée dans index.html (une région créée au moment d'écrire est souvent ignorée), vidée puis
+// remplie au tour suivant, après le rendu de l'échiquier qui reprend le focus (sinon l'annonce est avalée).
+let _srTimer = null;
+function announceText(text) {
+    const mode = appSettings.announce;
+    if (mode === 'voice' && Voice.available()) { Voice.say(text); return; }
+    if (mode !== 'sr' && mode !== 'voice') return;
     let live = document.getElementById('sr-moves');
     if (!live) {
         live = document.createElement('div');
-        live.id = 'sr-moves'; live.className = 'sr-only'; live.setAttribute('aria-live', 'polite');
+        live.id = 'sr-moves'; live.className = 'sr-only';
+        live.setAttribute('aria-live', 'polite'); live.setAttribute('aria-atomic', 'true');
         document.body.appendChild(live);
     }
-    const p = board[from] || '', t = p.toUpperCase();
-    const castle = t === 'K' && Math.abs((to % 8) - (from % 8)) === 2;
-    const who = p ? (p === t ? 'Blancs' : 'Noirs') : '';
-    live.textContent = castle ? `${who} : ${(to % 8) > 4 ? 'petit' : 'grand'} roque`
-        : `${who} : ${_SPOKEN[t] || ''} ${capture ? 'prend ' : ''}${squareToName(to)}`;
+    live.textContent = '';
+    clearTimeout(_srTimer);
+    _srTimer = setTimeout(() => { live.textContent = text; }, 60);
 }
+
+// Synthèse vocale : voix française si l'appareil en a une. Débloquée au premier toucher (iOS n'accepte de
+// parler qu'après un geste) ; chaque annonce coupe la précédente. L'énoncé en cours est gardé en mémoire
+// (Chrome l'arrête sinon en cours de lecture).
+const Voice = (function () {
+    const api = () => (typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined' ? speechSynthesis : null);
+    let voice = null, current = null;
+    const pick = () => {
+        const s = api(); if (!s) return;
+        const all = s.getVoices();
+        voice = all.find(v => /^fr-FR/i.test(v.lang) && v.localService) || all.find(v => /^fr/i.test(v.lang)) || null;
+    };
+    if (api()) {
+        pick();
+        try { api().addEventListener('voiceschanged', pick); } catch (e) { api().onvoiceschanged = pick; }
+        if (typeof addEventListener === 'function')
+            addEventListener('pointerdown', () => { try { api().speak(new SpeechSynthesisUtterance('')); } catch (e) { /* ignoré */ } }, { once: true, capture: true });
+    }
+    return {
+        available: () => !!api(),
+        hasFrench: () => !!voice,
+        say(text) {
+            const s = api(); if (!s) return;
+            s.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'fr-FR'; u.rate = 1.05;
+            if (voice) u.voice = voice;
+            current = u;
+            u.onend = u.onerror = () => { if (current === u) current = null; };
+            s.speak(u);
+        }
+    };
+})();

@@ -99,7 +99,11 @@ function _settingRows() {
             { group: null, kind: 'seg', key: 'motion', label: 'Animations', opts: [['system', 'Selon l’appareil'], ['reduced', 'Réduites'], ['full', 'Complètes']] },
             { group: null, kind: 'seg', key: 'textSize', label: 'Taille du texte', opts: [['s', 'Petite'], ['m', 'Normale'], ['l', 'Grande']] },
             { group: null, kind: 'toggle', key: 'contrast', label: 'Contraste renforcé', hint: 'Bordures et textes secondaires plus marqués.' },
-            { group: null, kind: 'toggle', key: 'announce', label: 'Annoncer les coups', hint: 'Les coups joués sont lus par les lecteurs d’écran.' }
+            { group: null, kind: 'seg', key: 'announce', label: 'Annoncer les coups',
+              hint: typeof Voice !== 'undefined' && Voice.available()
+                  ? 'Lecteur d’écran : lu par VoiceOver ou TalkBack. Voix : la synthèse vocale de l’appareil' + (Voice.hasFrench() ? '.' : ' (aucune voix française trouvée : accent étranger possible).')
+                  : 'Lu par les lecteurs d’écran (VoiceOver, TalkBack). Ce navigateur n’a pas de synthèse vocale.',
+              opts: [['off', 'Non'], ['sr', 'Lecteur d’écran']].concat(typeof Voice !== 'undefined' && Voice.available() ? [['voice', 'Voix']] : []) }
         ],
         donnees: [
             { group: null, kind: 'custom', html: () => '<div id="backup-status" class="pn-backup"></div>', search: 'sauvegarde restaurer télécharger json', col: true },
