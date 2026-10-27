@@ -32,6 +32,8 @@
                 // Aucun choix : Noyer pour une nouvelle installation (une installation antérieure garde ses défauts, cf. settings.js)
                 if (!b && (localStorage.getItem('chessTrainer_looksDefaults') || !(localStorage.getItem('chessTrainer_repertoires') || localStorage.getItem('chessTrainer_settings')))) b = 'walnut';
                 if (typeof b === 'string' && /^[a-z]+$/.test(b)) d.setAttribute('data-board', b);
+                var g = p.darkBg && p.darkBg.v;       // fond du mode sombre (gris neutre si aucun choix)
+                d.setAttribute('data-dark', typeof g === 'string' && /^[a-z]+$/.test(g) ? g : 'neutral');
             } catch (e) {}
             try {
                 if (location.protocol !== 'file:' && !sessionStorage.getItem('chays_splash')) {

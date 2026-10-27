@@ -38,6 +38,8 @@ function _settingRows() {
             { group: null, kind: 'custom', html: _previewHTML, search: 'aperçu échiquier' },
             { group: 'Interface', kind: 'seg', key: 'theme', label: 'Mode', hint: '« Système » suit le réglage clair / sombre de l’appareil.',
               opts: [['light', 'Clair'], ['dark', 'Sombre'], ['system', 'Système']], value: themeMode() },
+            { group: 'Interface', kind: 'seg', key: 'darkBg', label: 'Fond du mode sombre', hint: 'Les accents suivent toujours l’échiquier. Noir OLED : écran éteint derrière l’interface.',
+              opts: [['neutral', 'Gris neutre'], ['night', 'Bleu nuit'], ['oled', 'Noir OLED'], ['green', 'Vert Nocturne']] },
             { group: 'Échiquier', kind: 'custom', label: 'Thème de l’échiquier', hint: 'Les couleurs de l’interface en dérivent.', html: _boardsHTML, col: true },
             { group: 'Échiquier', kind: 'toggle', key: 'coords', label: 'Coordonnées', hint: 'Lettres et chiffres des cases.' },
             { group: 'Échiquier', kind: 'seg', key: 'coordPos', label: 'Emplacement des coordonnées', opts: [['in', 'Dans les cases'], ['out', 'Autour de l’échiquier']], off: !s.coords },
@@ -290,7 +292,7 @@ function setPref(key, value) {
             if (typeof initEndgame === 'function') initEndgame();
             break;
         case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
-        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion':
+        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg':
             applyDisplayPrefs(); break;
         case 'lastMove': _redrawBoardViews(); break;
         case 'notation': refreshNotation(); break;

@@ -49,7 +49,39 @@ t('style.css : aucun accent écrit à la main par échiquier', () => {
 
 t('tous les échiquiers lus (13)', () => assert.strictEqual(Object.keys(boards).length, 13, Object.keys(boards).join()));
 
-for (const [mode, M] of Object.entries(MODES)) {
+// Fonds du mode sombre (préférence darkBg) : le bloc [data-theme="dark"] (gris neutre) et ses variantes data-dark.
+const varsOf = sel => {
+    const i = css.indexOf(sel + ' {'); assert(i >= 0, sel);
+    const body = css.slice(i, css.indexOf('}', i)), out = {};
+    for (const m of body.matchAll(/--([a-z-]+):\s*(#[0-9a-f]{6})/gi)) out[m[1]] = m[2];
+    return out;
+};
+const base = varsOf('[data-theme="dark"]');
+const DARK_BGS = { neutral: base };
+for (const id of ['night', 'oled', 'green']) DARK_BGS[id] = Object.assign({}, base, varsOf(`html[data-theme="dark"][data-dark="${id}"]`));
+
+t('fonds sombres : les quatre palettes lues, gris neutre par défaut (plus de vert hors « Nocturne »)', () => {
+    assert.strictEqual(base.bg, '#121314');
+    assert.strictEqual(DARK_BGS.green.bg, '#0f1711');
+    const settings = fs.readFileSync('js/core/settings.js', 'utf8');
+    assert(/const DARK_BGS\s*=\s*\['neutral', 'night', 'oled', 'green'\]/.test(settings), 'liste des fonds dans settings.js');
+    assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'neutral' \}/.test(settings));
+});
+
+t('fonds sombres : textes secondaires lisibles sur les cartes et les fenêtres', () => {
+    const bad = [];
+    for (const [id, v] of Object.entries(DARK_BGS)) {
+        const s = hex(v.surface), e = hex(v['bg-elevated']);
+        if (Math.min(contrast(hex(v['text-muted']), s), contrast(hex(v['text-muted']), e)) < 4.5) bad.push(`${id} texte atténué`);
+        if (contrast(hex(v['text-dim']), s) < 4.5) bad.push(`${id} texte discret`);
+        if (contrast(hex(v.text), e) < 7) bad.push(`${id} texte`);
+    }
+    assert.strictEqual(bad.join(' ; '), '');
+});
+
+const CASES = [['light', MODES.light]].concat(Object.entries(DARK_BGS).map(([id, v]) =>
+    [`sombre ${id}`, Object.assign({}, MODES.dark, { surface: hex(v.surface), bg: hex(v.bg) })]));
+for (const [mode, M] of CASES) {
     t(`${mode} : texte des boutons sur l'accent, accent comme texte sur les cartes et repères ≥ 4,5:1`, () => {
         const bad = [];
         Object.entries(boards).forEach(([id, d]) => {

@@ -49,21 +49,25 @@
     --lv-mastered: var(--ok);
 }
 
-/* ─── THÈME SOMBRE (vert nuit, « Nocturne ») ─────────────────────────────────
+/* ─── THÈME SOMBRE ────────────────────────────────────────────────────────────
    Élévation : fond (--bg) < cartes (--surface) < fenêtres et menus (--bg-elevated), chaque niveau
-   un cran plus clair ; bordures à faible contraste ; reflet clair d'un pixel en haut des surfaces. */
+   un cran plus clair ; bordures à faible contraste ; reflet clair d'un pixel en haut des surfaces.
+   Fond au choix (préférence darkBg → data-dark sur <html>) : gris neutre (ci-dessous, par défaut),
+   bleu nuit, noir OLED ou vert « Nocturne ». Les accents restent dérivés de l'échiquier (HARMONISATION) ;
+   contrastes vérifiés pour chaque fond × échiquier par tests/theme.test.js. */
 [data-theme="dark"] {
-    --bg: #0f1711;
-    --bg-elevated: #1b271d;
-    --bg-inset: #0a100b;
-    --surface: #141e16;
-    --surface-hover: #1a261c;
-    --border: #243126;
-    --border-strong: #35473a;
+    --bg: #121314;
+    --bg-elevated: #1f2123;
+    --bg-inset: #0c0d0e;
+    --surface: #18191b;
+    --surface-hover: #202225;
+    --border: #2a2c2f;
+    --border-strong: #3c3f43;
+    --overlay: rgba(6, 7, 8, .7);
 
-    --text: #ece6d6;
-    --text-muted: #a9b2a0;
-    --text-dim: #7f8a77;
+    --text: #ece8e1;
+    --text-muted: #a9abae;
+    --text-dim: #83868a;
 
     --accent: #4f8a3c;
     --accent-bright: #6eae55;
@@ -86,10 +90,27 @@
     --lv-fragile-ink: #f29a55;
     --lv-progress: #e6b443;
     --lv-solid: #9fcb64;
-    --lv-unsure: #6f7a68;
+    --lv-unsure: #74777c;
     color-scheme: dark;
 }
-[data-theme="dark"] .overlay { background: rgba(5, 9, 6, .7); }
+html[data-theme="dark"][data-dark="night"] {
+    --bg: #0e141c; --bg-elevated: #1a2330; --bg-inset: #090e14; --surface: #131b25; --surface-hover: #1a2431;
+    --border: #233041; --border-strong: #344559; --overlay: rgba(5, 8, 13, .7);
+    --text: #e6e9ee; --text-muted: #a3afbf; --text-dim: #7c899b; --lv-unsure: #6f7a8a;
+}
+/* Noir OLED : fond éteint ; bordures un peu plus marquées, sans quoi les cartes semblent flotter. */
+html[data-theme="dark"][data-dark="oled"] {
+    --bg: #000000; --bg-elevated: #161616; --bg-inset: #000000; --surface: #0b0b0b; --surface-hover: #151515;
+    --border: #262626; --border-strong: #3a3a3a; --overlay: rgba(0, 0, 0, .78);
+    --text: #ececec; --text-muted: #a6a6a6; --text-dim: #808080; --lv-unsure: #737373;
+}
+/* Vert « Nocturne » : l'ancien fond sombre, gardé au choix. */
+html[data-theme="dark"][data-dark="green"] {
+    --bg: #0f1711; --bg-elevated: #1b271d; --bg-inset: #0a100b; --surface: #141e16; --surface-hover: #1a261c;
+    --border: #243126; --border-strong: #35473a; --overlay: rgba(5, 9, 6, .7);
+    --text: #ece6d6; --text-muted: #a9b2a0; --text-dim: #7f8a77; --lv-unsure: #6f7a68;
+}
+[data-theme="dark"] .overlay { background: var(--overlay); }
 [data-theme="dark"] .panel, [data-theme="dark"] .menu { border-color: var(--border-strong); }
 [data-theme="dark"] #board { box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
 [data-theme="dark"] .btn-primary, [data-theme="dark"] .tr-hero-n { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }

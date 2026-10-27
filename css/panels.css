@@ -240,7 +240,9 @@ html[data-text="l"] body { zoom: 1.1; }
 
 /* Contraste renforcé */
 html[data-contrast="on"] { --border: var(--border-strong); --text-dim: var(--text-muted); }
-html[data-contrast="on"][data-theme="dark"] { --text-muted: #cfd6c6; --border-strong: #4d6352; }
+html[data-contrast="on"][data-theme="dark"] { --text-muted: #d2d4d7; --border-strong: #565a5f; }
+html[data-contrast="on"][data-theme="dark"][data-dark="night"] { --text-muted: #ccd4df; --border-strong: #4d6078; }
+html[data-contrast="on"][data-theme="dark"][data-dark="green"] { --text-muted: #cfd6c6; --border-strong: #4d6352; }
 html[data-contrast="on"][data-theme="light"]  { --text-muted: #3a4135; --border-strong: #a99f86; }
 
 /* Animations réduites (réglage de l'appli) */

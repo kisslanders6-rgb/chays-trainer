@@ -36,4 +36,4 @@ function syncThemeColor() {
 
 syncThemeColor();
 new MutationObserver(syncThemeColor)
-    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-board', 'class'] });
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-board', 'data-dark', 'class'] });
