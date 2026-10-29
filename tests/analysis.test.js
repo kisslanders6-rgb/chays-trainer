@@ -56,4 +56,34 @@ t('lignes Lichess : roque « roi prend tour » converti (e1h1 → e1g1), autres 
     jeq(run('_anCastleFix')(fen, ['b5c6', 'd7c6']), ['b5c6', 'd7c6']);
 });
 
+// Moteur simulé : chaque calcul lancé est noté ; une position « rare » n'a pas d'évaluation Lichess.
+function engineSim() {
+    const launched = [], timers = [];
+    let fen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    Object.assign(ctx, {
+        gameMode: 'analysis', appSettings: { engineLines: 3, engineDepth: 30, engineTime: 0, cloudEval: false },
+        displayedFen: () => fen,
+        setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout: id => { if (id) timers[id - 1] = null; },
+        document: { addEventListener() {}, getElementById: () => null, hidden: false }
+    });
+    run('Engine').analyse = f => { const j = { fen: f, stopped: false, stop() { j.stopped = true; }, done: new Promise(() => {}) }; launched.push(j); return j; };
+    run('analysis.running = true; analysis.paused = false; analysis.job = null; analysis.fen = ""');
+    const settle = () => { const fns = timers.splice(0); fns.forEach(fn => fn && fn()); };
+    return { launched, settle, go: f => { fen = f; run('analysisPositionChanged()'); settle(); } };
+}
+
+t('« Arrêter » suspend la position affichée seulement : la suivante est calculée', () => {
+    const sim = engineSim();
+    sim.go('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1');
+    assert.strictEqual(sim.launched.length, 1);
+    run('analysisToggleEngine()');
+    assert.ok(sim.launched[0].stopped);
+    assert.strictEqual(run('_anOn()'), false);
+    sim.go('rnbqkbnr/1ppppppp/p7/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+    assert.strictEqual(sim.launched.length, 2, 'position suivante : calcul relancé');
+    assert.strictEqual(run('_anOn()'), true);
+    run('analysisToggleEngine()'); run('analysisToggleEngine()');      // pause puis « Reprendre » sur place
+    assert.strictEqual(sim.launched.length, 3);
+});
+
 console.log(`\n${n} tests réussis.`);

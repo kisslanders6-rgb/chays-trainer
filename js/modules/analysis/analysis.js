@@ -26,6 +26,7 @@ const CLOUD_EVAL_URL     = 'https://lichess.org/api/cloud-eval';
 const analysis = {
     rep: '', color: 'w', tree: { kids: [] }, dirty: false,
     running: false, job: null, wait: null, lines: [], fen: '', cloud: null, cloudFen: '',
+    paused: false,        // « Arrêter » : calcul suspendu sur la position affichée seulement ; la suivante le relance
     retries: 0,           // nouveaux essais d'un calcul annulé par le moteur (Worker mort, erreur), sur la même position
     bar: null,            // dernière ligne montrée par la barre d'évaluation, gardée le temps du calcul suivant
     merge: null,          // aperçu ouvert : { all, replace: Set(clés) }
@@ -90,6 +91,7 @@ function openAnalysis(path, displayPly) {
     loadPositionFromPath(path);
     if (displayPly !== undefined && displayPly < path.length - 1) navGo(displayPly);
     analysis.running = appSettings.engineAuto;
+    analysis.paused = false;
     if (typeof setSheetOpen === 'function') setSheetOpen(true);
     setStatus('Analyse', 'info', resume ? 'Brouillon de cette session repris. Rien n’est enregistré tant que vous n’ajoutez pas au répertoire.'
                                         : 'Jouez librement les deux camps : rien n’est enregistré tant que vous n’ajoutez pas au répertoire.');
@@ -161,22 +163,34 @@ function analysisPlayLine(i) {
 
 // ─── MOTEUR ───────────────────────────────────────────────────────────────────
 
+// Moteur en marche sur la position affichée (ni arrêté ni en pause).
+const _anOn = () => analysis.running && !analysis.paused;
+
+// « Arrêter » suspend le calcul de la position affichée (ses lignes restent) ; la position suivante le relance,
+// pour que l'évaluation ne manque jamais ailleurs que là où on l'a arrêtée.
 function analysisToggleEngine() {
-    analysis.running = !analysis.running;
-    if (!analysis.running) { clearTimeout(analysis.wait); analysis.bar = null; }
-    if (!analysis.running && analysis.job) { analysis.job.stop(); analysis.job = null; }
+    clearTimeout(analysis.wait);
     analysis.retries = 0;
-    analysisPositionChanged();
+    if (_anOn()) {
+        analysis.paused = true;
+        if (analysis.job) { analysis.job.stop(); analysis.job = null; }
+        _anPaintEngine();
+        return;
+    }
+    analysis.running = true;
+    analysis.paused = false;
+    if (analysis.fen && analysis.fen === displayedFen()) { _anLaunch(analysis.fen); _anPaintEngine(); }
+    else analysisPositionChanged();
 }
 
 function analysisSettingsChanged() {
     if (gameMode === 'analysis') { analysis.fen = ''; analysisPositionChanged(); }
 }
 
-const AN_SETTLE_MS = 120, AN_RETRIES = 4;
+const AN_SETTLE_MS = 120, AN_RETRIES = 4, AN_RETRY_SLOW_MS = 10000;
 
 function _anLaunch(fen) {
-    if (gameMode !== 'analysis' || !analysis.running || analysis.fen !== fen || analysis.job) return;
+    if (gameMode !== 'analysis' || !_anOn() || analysis.fen !== fen || analysis.job) return;
     const job = analysis.job = Engine.analyse(fen,
         { multipv: appSettings.engineLines, depth: appSettings.engineDepth, movetime: appSettings.engineTime * 1000 },
         lines => { if (analysis.job === job) { analysis.lines = lines; analysis.retries = 0; _anPaintEngine(); } });
@@ -184,9 +198,10 @@ function _anLaunch(fen) {
         if (analysis.job !== job) return;
         analysis.job = null;
         // Annulé par le moteur lui-même (Worker mort, erreur, rechargement) alors que la position n'a pas changé :
-        // le calcul est relancé, de plus en plus tard ; l'évaluation déjà affichée reste en place.
-        if (r && r.cancelled && analysis.running && analysis.retries < AN_RETRIES && !document.hidden) {
-            const wait = 500 * 2 ** analysis.retries++;
+        // le calcul est relancé, de plus en plus tard puis toutes les 10 s ; l'évaluation déjà affichée reste en place.
+        if (r && r.cancelled && _anOn() && !document.hidden) {
+            const wait = analysis.retries < AN_RETRIES ? 500 * 2 ** analysis.retries : AN_RETRY_SLOW_MS;
+            analysis.retries++;
             clearTimeout(analysis.wait);
             analysis.wait = setTimeout(() => _anLaunch(fen), wait);
         }
@@ -202,6 +217,7 @@ function analysisPositionChanged() {
         analysis.fen = fen;
         analysis.lines = [];
         analysis.retries = 0;
+        analysis.paused = false;
         if (analysis.job) { analysis.job.stop(); analysis.job = null; }
         // L'ancien calcul s'arrête tout de suite ; le nouveau attend que la navigation se pose (touche maintenue).
         clearTimeout(analysis.wait);
@@ -230,8 +246,8 @@ function _anCastleFix(fen, moves) {
 // Évaluation déjà calculée par Lichess (scores du point de vue des Blancs, comme le moteur local).
 function _anCloud(fen) {
     analysis.cloud = null;
+    analysis.cloudFen = fen;                       // avant tout retour : une réponse tardive d'une autre position est ignorée
     if (!appSettings.cloudEval || (typeof Net !== 'undefined' && !Net.online())) return;
-    analysis.cloudFen = fen;
     fetch(`${CLOUD_EVAL_URL}?fen=${encodeURIComponent(fen)}&multiPv=${appSettings.engineLines}`)
         .then(r => (r.ok ? r.json() : null))
         .then(d => {
@@ -314,6 +330,7 @@ function _anPaintEngine() {
     const depth = lines[0] ? lines[0].depth : 0;
     const name = info ? `Stockfish ${info.version.split('.')[0]} ${info.net === 'full' ? 'complet' : 'léger'}` : 'Stockfish';
     const state = !analysis.running ? 'arrêté'
+                : analysis.paused ? (depth && !cloud ? `en pause · prof. ${depth}` : 'en pause')
                 : st === 'loading' ? 'chargement…'
                 : !analysis.job && analysis.retries ? 'reprise…'
                 : st === 'error' ? 'indisponible'
@@ -326,12 +343,13 @@ function _anPaintEngine() {
             ${cloud ? '' : `<button type="button" class="an-use" data-action="analysisUseLine" data-arg="${i}" title="Recopier cette variante dans le brouillon">${ico('plus')}</button>`}
         </div>`).join('');
     const empty = !analysis.running ? '<p class="an-empty">Moteur arrêté. Lancez-le pour voir les meilleurs coups.</p>'
+                : analysis.paused ? '<p class="an-empty">Calcul en pause sur cette position : « Reprendre » le relance.</p>'
                 : st === 'error' ? `<p class="an-empty">Le moteur n’a pas pu démarrer (${escapeHtml(Engine.error())}).</p>`
                 : st === 'loading' ? `<p class="an-empty">${appSettings.engineNet === 'full' ? 'Chargement du moteur complet…' : 'Chargement du moteur (environ 1,8 Mo la première fois)…'}</p>`
                 : analysis.fen && !Chess.legalMoves(Chess.fromFen(analysis.fen)).length ? '<p class="an-empty">Partie terminée : aucun coup à calculer.</p>'
                 : '<p class="an-empty">Calcul…</p>';
     box.innerHTML = `<div class="an-h"><b>${ico('cpu')} ${name}</b><small>${state}</small>
-            <button type="button" class="an-toggle${analysis.running ? ' is-on' : ''}" data-action="analysisToggleEngine" aria-pressed="${analysis.running}">${analysis.running ? 'Arrêter' : 'Lancer'}</button></div>
+            <button type="button" class="an-toggle${_anOn() ? ' is-on' : ''}" data-action="analysisToggleEngine" aria-pressed="${_anOn()}">${_anOn() ? 'Arrêter' : analysis.paused ? 'Reprendre' : 'Lancer'}</button></div>
         <div class="an-lines">${rows || empty}</div>`;
     _anPaintEvalBar(lines[0]);
     if (typeof renderAnnotations === 'function') renderAnnotations();
@@ -342,7 +360,7 @@ function _anPaintEvalBar(l) {
     if (!bar) return;
     // Entre deux positions, la barre garde la dernière évaluation au lieu de se vider à chaque coup.
     if (l && analysis.running) analysis.bar = l;
-    else if (analysis.running && Engine.status() !== 'error') l = analysis.bar;
+    else if (_anOn() && Engine.status() !== 'error') l = analysis.bar;
     const has = !!(l && analysis.running) || !!(analysis.cloud && analysis.cloud.length);
     bar.classList.toggle('is-empty', !has);
     const w = has ? _anWin(l) : 0.5;
@@ -498,7 +516,7 @@ if (typeof Engine !== 'undefined') Engine.onStatus(() => { if (gameMode === 'ana
 // Retour au premier plan : le calcul arrêté par la mise en arrière-plan reprend s'il n'avait pas atteint sa limite,
 // sans effacer les lignes affichées (elles sont remplacées dès que le moteur parle).
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden || gameMode !== 'analysis' || !analysis.running || analysis.job) return;
+    if (document.hidden || gameMode !== 'analysis' || !_anOn() || analysis.job) return;
     const l = analysis.lines[0], limit = appSettings.engineDepth || Infinity;
     if (l && l.depth >= limit) return;
     analysis.retries = 0;

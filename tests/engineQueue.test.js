@@ -158,5 +158,13 @@ const positions = w => w.sent.filter(c => c.startsWith('position'));
         assert.ok(workers[0].sent.filter(c => c === 'isready').length >= 2);
     });
 
+    await t('profondeur et temps : les deux limites partent dans le même « go »', async () => {
+        const { Engine, workers } = boot(standard);
+        Engine.analyse(FEN_A, { depth: 30, movetime: 5000 }); await flush();
+        Engine.analyse(FEN_B, { depth: 0, movetime: 0 }); await flush();
+        const gos = workers[0].sent.filter(c => c.startsWith('go'));
+        assert.deepStrictEqual(gos, ['go depth 30 movetime 5000', 'go infinite']);
+    });
+
     console.log(`\n${n} tests réussis.`);
 })().catch(e => { console.error('ÉCHEC :', e); process.exit(1); });

@@ -306,7 +306,9 @@ const Engine = (function () {
         if (j.stopping) { clearTimeout(j.guard); cur = null; j.resolve({ best: null, lines: [], cancelled: true }); pump(); return; }
         send(`setoption name MultiPV value ${j.multipv}`);
         send(`position fen ${j.fen}`);
-        send(j.opts.depth ? `go depth ${j.opts.depth}` : j.opts.movetime ? `go movetime ${j.opts.movetime}` : 'go infinite');
+        // Profondeur et temps se combinent : le premier atteint arrête le calcul.
+        const lim = [j.opts.depth ? `depth ${j.opts.depth}` : '', j.opts.movetime ? `movetime ${j.opts.movetime}` : ''].filter(Boolean);
+        send(lim.length ? `go ${lim.join(' ')}` : 'go infinite');
         j.heard = Date.now();
         j.probing = false;
         j.watch = setTimeout(() => watch(j), silence());
