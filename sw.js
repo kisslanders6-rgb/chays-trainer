@@ -16,7 +16,7 @@
  * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
  * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v16';
+const VERSION = 'v17';
 const CACHE   = 'chays-trainer-' + VERSION;
 const ENGINE_CACHE = 'chays-engine';
 const ENGINE_FILE  = /\/engine\/\d+\.\d+\.\d+\//;
@@ -91,12 +91,17 @@ self.addEventListener('fetch', e => {
     }
     if (url.origin !== self.location.origin) return;            // API Chess.com / Lichess / Supabase : on ne s'en mêle pas
 
-    if (ENGINE_FILE.test(url.pathname)) {                        // moteur : fichiers versionnés, jamais modifiés
+    // Moteur : fichiers versionnés, jamais modifiés. Rangés sans le fragment et rendus dans une réponse neuve
+    // (sans adresse) : le Worker garde ainsi l'adresse demandée, dont le fragment « #blob:… » qui désigne le
+    // .wasm du moteur complet. Une réponse sortie telle quelle du cache imposerait le fragment du premier
+    // chargement, une adresse blob: révoquée depuis.
+    if (ENGINE_FILE.test(url.pathname)) {
+        const key = url.origin + url.pathname + url.search;
         e.respondWith(
-            caches.open(ENGINE_CACHE).then(cache => cache.match(req).then(hit => hit || fetch(req).then(res => {
-                if (res.ok) cache.put(req, res.clone());
+            caches.open(ENGINE_CACHE).then(cache => cache.match(key).then(hit => hit || fetch(key).then(res => {
+                if (res.ok) cache.put(key, res.clone());
                 return res;
-            })))
+            }))).then(res => new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers }))
         );
         return;
     }

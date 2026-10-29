@@ -86,6 +86,17 @@ const Engine = (function () {
     const pick = net => manifest.variants.find(v => v.net === net && v.threads === isolated())
                      || manifest.variants.find(v => v.net === net && !v.threads);
 
+    // Script du moteur complet rangé par un ancien service worker avec le fragment de son premier chargement :
+    // le Worker y lirait une adresse blob: révoquée et attendrait sans fin. Supprimé, il est repris du réseau.
+    async function dropStaleScript(v) {
+        try {
+            const c = await caches.open(ENGINE_CACHE), href = new URL(v.js.path, location.href).href;
+            const stale = (await c.keys()).filter(r => r.url.split('#')[0] === href && r.url.includes('#'));
+            const hit = await c.match(href);
+            if (stale.length || (hit && hit.url.includes('#'))) await c.delete(href);
+        } catch (e) { /* cache illisible : le chargement continue */ }
+    }
+
     function load() {
         if (state === 'ready') return Promise.resolve();
         if (loading) return loading;
@@ -99,6 +110,7 @@ const Engine = (function () {
             if (setting('engineNet', 'lite') === 'full' && typeof caches !== 'undefined') {
                 const full = pick('full'), hit = full && await (await caches.open(ENGINE_CACHE)).match(full.wasm.url);
                 if (hit) {                                                  // moteur complet téléchargé : passé au Worker en blob:
+                    await dropStaleScript(full);
                     const blob = await hit.blob();
                     live();
                     if (blobUrl) URL.revokeObjectURL(blobUrl);
