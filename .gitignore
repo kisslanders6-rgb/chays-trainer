@@ -7,3 +7,7 @@ ChaysTrainer_backup_*.json
 
 # Dépendances des tests (jsdom)
 node_modules/
+
+# Added by dev-llm — worker worktrees and scratch files
+.opencode-worktrees/
+.dev-worker/
