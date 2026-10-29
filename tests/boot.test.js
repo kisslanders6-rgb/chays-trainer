@@ -44,7 +44,8 @@ async function boot(storage = {}) {
         assert.deepStrictEqual(errors, []);
         assert(!w.document.getElementById('onboarding-overlay').classList.contains('hidden'), 'présentation absente');
         assert(/Une seule réponse/.test(w.document.getElementById('onboarding-box').textContent));
-        assert(w.document.querySelector('#home-stats .home-empty'), 'accueil vide : « Par où commencer ? » absent');
+        assert(w.document.querySelector('#hp-today .hp-start'), 'accueil vide : « Par quelle couleur commencer ? » absent');
+        assert(w.document.getElementById('hp-grid').classList.contains('is-empty'), 'accueil vide : Jouer et À traiter masqués');
         w.close();
     });
 
@@ -54,6 +55,8 @@ async function boot(storage = {}) {
         assert.deepStrictEqual(errors, []);
         assert(w.document.getElementById('onboarding-overlay').classList.contains('hidden'));
         assert.deepStrictEqual(Object.keys(JSON.parse(w.localStorage.getItem('openingDB_Général_w'))), [legacy + ' KQkq -']);
+        assert(w.document.querySelector('#hp-today [data-action="homeReview"]'), 'position due : « Commencer la révision »');
+        assert(/1 position\s*à réviser/.test(w.document.querySelector('#hp-today .hp-title').textContent));
         w.close();
     });
 

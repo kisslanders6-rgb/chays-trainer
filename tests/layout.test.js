@@ -71,7 +71,7 @@ t('« Invisibles » : interrupteur à part, absent de la grille des pièces', ()
 t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de panneau « Mes répertoires »', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     const play = html.slice(html.indexOf('<div id="home-tab-play"'), html.indexOf('<!-- Onglet Statistiques -->'));
-    const scope = play.slice(play.indexOf('<div class="st-scope hp-scope">'), play.indexOf('<div class="hp-col hp-col-main">'));
+    const scope = play.slice(play.indexOf('<div class="st-scope hp-scope">'), play.indexOf('<div id="looks-tip">'));
     ['id="repertoire-list"', 'id="hp-quick"', 'id="rep-menu-btn"'].forEach(s => assert(scope.includes(s), 'barre : ' + s));
     assert.strictEqual((play.match(/class="[^"]*\brepertoire-list\b/g) || []).length, 1, 'une seule puce de répertoire dans Jouer');
     assert(!/hp-reps|repertoire-select/.test(play), 'plus de panneau ni de sélecteur en double');
@@ -81,6 +81,21 @@ t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de pannea
     assert(!/à réviser<\/span><span><b>\$\{streak\}/.test(app), '« Aujourd\'hui » ne répète plus les révisions du répertoire');
     const home = fs.readFileSync('css/home.css', 'utf8');
     assert(/@media \(max-width: 599px\) \{ \.hp-quick \{ display: none; \} \}/.test(home), 'téléphone : la puce seule');
+});
+
+t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule action qui lance la Révision du jour', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const play = html.slice(html.indexOf('<div id="home-tab-play"'), html.indexOf('<!-- Onglet Statistiques -->'));
+    const at = id => play.indexOf(`id="${id}"`);
+    assert(at('hp-today') > 0 && at('hp-today') < at('hp-play') && at('hp-play') < at('hp-news'), 'ordre téléphone : Aujourd\'hui, Jouer, À traiter');
+    assert(!/home-card|home-stats|home-goal|hp-recent/.test(play), 'plus d\'anciens blocs (cartes, chiffres, objectif à part, Dernières parties à part)');
+    const app = fs.readFileSync('js/app.js', 'utf8');
+    assert(/homeReview: \(\) => startDailyReview\(\)/.test(app), '« Commencer la révision » → startDailyReview');
+    assert.strictEqual((app.match(/class="hp-cta"/g) || []).length, 2, 'une action pleine par état : dû, à jour');
+    assert(/class="hp-cta\$\{primary \? '' : ' is-quiet'\}"/.test(app), 'répertoire vide : Blancs en plein, Noirs en discret');
+    const tr = fs.readFileSync('js/modules/training/trainingUI.js', 'utf8');
+    assert(/function startDailyReview\(\) \{\s*_trColor = 'mix';\s*_trOpening = null;[\s\S]{0,120}startTrainingExercise\('due'\);/.test(tr),
+        'Révision du jour : les deux couleurs, sans filtre d\'ouverture');
 });
 
 console.log(`\n${n} tests réussis.`);

@@ -1,13 +1,12 @@
 /**
  * modules/openings/homePanels.js
  * ──────────────────────────────────────────────────────────────────────────
- * Panneaux de l'accueil Jouer, sous les cartes Blancs / Noirs (css/home.css). Le répertoire se choisit dans la barre de
- * contexte (puce et pastilles, renderRepertoireList) : il n'a plus de panneau à lui.
- *   « Nouveautés à traiter » parties du journal (chessTrainer_gameLedger) arrêtées sur une nouveauté adverse ou une
- *                            position sans réponse, pour le répertoire actif, tant que la réponse n'est pas enregistrée.
- *                            Un clic ouvre Jouer sur cette position.
- *   « Dernières parties »    les parties analysées le plus récemment et leur verdict pour le répertoire actif.
- * Sur un écran étroit, seules les nouveautés restent (les parties ont leur fenêtre).
+ * Bloc « À traiter » de l'accueil Jouer (css/home.css), à côté de « Aujourd'hui » et « Jouer » (app.js). Deux vues :
+ *   « Nouveautés »  parties du journal (chessTrainer_gameLedger) arrêtées sur une nouveauté adverse ou une position
+ *                   sans réponse, pour le répertoire actif, tant que la réponse n'est pas enregistrée. Chaque ligne
+ *                   montre la position à traiter ; un clic ouvre Jouer dessus.
+ *   « Parties »     les parties analysées le plus récemment et leur verdict pour le répertoire actif.
+ * La vue par défaut est « Nouveautés » ; sans nouveauté ni partie, un état vide renvoie vers l'analyse des parties.
  * Suggestion unique « Essayer Noyer + Maestro » pour une installation antérieure restée sur Sauge + Merida
  * (chessTrainer_looksTip, propre à l'appareil : 'tried' ou 'no' ; il n'existe pas de notification générique).
  */
@@ -17,7 +16,7 @@
 const HomePanels = (function () {
     const LIST_MAX = 5;
     const KINDS = { theory: ['Théorique', 'ok'], mistake: ['Erreur', 'err'], out: ['Hors répertoire', 'info'],
-                    novelty: ['Nouveauté', 'warn'], treated: ['Traitée depuis', 'new'] };
+                    novelty: ['Nouveauté', 'warn'], treated: ['Traitée depuis', 'new'], missing: ['Sans réponse', 'err'] };
     const date = t => (t ? new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
     const srcName = id => ({ lichess: 'Partie Lichess', chesscom: 'Partie Chess.com' }[_gameSrc(id)] || 'PGN collé');
     let shown = [];                                   // nouveautés affichées (clic : index)
@@ -49,37 +48,49 @@ const HomePanels = (function () {
         return out.sort((a, b) => b.at - a.at);
     }
 
-    function newsHTML() {
+    let pane = 'news';                               // 'news' | 'games'
+
+    // Vignette : la position à traiter (après la ligne), de mon côté.
+    const thumb = (color, path) => typeof _miniBoardHTML === 'function' ? _miniBoardHTML({ side: color, path, k: INIT_FEN }, true) : '';
+
+    function newsRows() {
         const list = novelties();
         shown = list.slice(0, LIST_MAX);
-        const head = `<div class="hp-h"><h2>Nouveautés à traiter</h2>${list.length ? `<span class="hp-n">${list.length}</span>` : ''}</div>`;
-        if (!list.length) return head + `<p class="hp-empty">Aucune nouveauté en attente. Analysez vos parties : chaque coup adverse que votre répertoire ne couvre pas apparaîtra ici.
-            <button type="button" class="toast-link" data-action="homeGames">Analyser mes parties</button></p>`;
-        return head + `<div class="hp-list">${shown.map((x, i) => {
-            const sans = _pathToSans(x.path), tail = lineTail(sans);
+        if (!list.length) return `<div class="hp-empty">${ico('check')}<b>Aucune nouveauté en attente</b>
+            <button type="button" class="st-link" data-action="homeGames">Analyser mes parties</button></div>`;
+        return shown.map((x, i) => {
+            const tail = lineTail(_pathToSans(x.path)), [label, cls] = KINDS[x.kind === 'novelty' ? 'novelty' : 'missing'];
             return `<button type="button" class="hp-row" data-action="homeNovelty" data-arg="${i}">
-                <span class="glyph" data-glyph="${x.color === 'w' ? 'K' : 'k'}">${PIECE_SVG[x.color === 'w' ? 'K' : 'k'] || ''}</span>
-                <span class="rp-txt"><b>${tail}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''} · ${x.kind === 'novelty' ? 'coup adverse inconnu' : 'votre coup manque'}</small></span>
-                ${ico('chevron-right')}
+                <span class="hp-thumb">${thumb(x.color, x.path)}</span>
+                <span class="hp-row-txt"><b>${tail}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''}</small></span>
+                <span class="hp-row-end"><span class="hp-go-label">Répondre ${ico('chevron-right')}</span><span class="hp-kind ${cls}">${label}</span></span>
             </button>`;
-        }).join('')}</div>${list.length > LIST_MAX ? `<p class="hp-more">et ${list.length - LIST_MAX} de plus</p>` : ''}`;
+        }).join('') + (list.length > LIST_MAX ? `<p class="hp-more">et ${list.length - LIST_MAX} de plus</p>` : '');
     }
 
-    function recentHTML() {
+    function gameRows() {
         const ledger = readLedger();
         const ids = Object.keys(ledger).filter(id => ['w', 'b'].some(c => ledger[id].v && ledger[id].v[currentRepertoire + '|' + c]))
             .sort((a, b) => (ledger[b].last || 0) - (ledger[a].last || 0)).slice(0, LIST_MAX);
-        const head = `<div class="hp-h"><h2>Dernières parties</h2><button type="button" class="st-link" data-action="homeGames">Analyser</button></div>`;
-        if (!ids.length) return head + `<p class="hp-empty">Aucune partie analysée pour ce répertoire.</p>`;
-        return head + `<div class="hp-list">${ids.map(id => {
+        if (!ids.length) return `<div class="hp-empty">${ico('target')}<b>Aucune partie analysée</b>
+            <button type="button" class="st-link" data-action="homeGames">Analyser mes parties</button></div>`;
+        return ids.map(id => {
             const g = ledger[id], c = ['w', 'b'].find(k => g.v[currentRepertoire + '|' + k]), v = g.v[currentRepertoire + '|' + c];
             const [label, cls] = KINDS[v.kind] || ['', ''];
             return `<div class="hp-row is-static">
-                <span class="glyph" data-glyph="${c === 'w' ? 'K' : 'k'}">${PIECE_SVG[c === 'w' ? 'K' : 'k'] || ''}</span>
-                <span class="rp-txt"><b>${escapeHtml(g.vs ? 'contre ' + g.vs : srcName(id))}</b><small>${date(g.at || g.last)}</small></span>
-                ${label ? `<span class="hp-kind ${cls}">${label}</span>` : ''}
+                <span class="hp-thumb">${Array.isArray(v.path) ? thumb(c, v.path) : ''}</span>
+                <span class="hp-row-txt"><b>${escapeHtml(g.vs ? 'contre ' + g.vs : srcName(id))}</b><small>${c === 'w' ? 'Blancs' : 'Noirs'} · ${date(g.at || g.last)}</small></span>
+                ${label ? `<span class="hp-row-end"><span class="hp-kind ${cls}">${label}</span></span>` : ''}
             </div>`;
-        }).join('')}</div>`;
+        }).join('');
+    }
+
+    function inboxHTML() {
+        const n = novelties().length;
+        const tab = (id, label) => `<button type="button" role="tab" aria-selected="${pane === id}" data-action="homePane" data-arg="${id}">${label}</button>`;
+        return `<div class="hp-h"><h2>À traiter</h2>${n ? `<span class="hp-count">${n}</span>` : ''}
+                <div class="hp-tabs" role="tablist" aria-label="À traiter">${tab('news', 'Nouveautés')}${tab('games', 'Parties')}</div></div>
+            <div class="hp-list">${pane === 'news' ? newsRows() : gameRows()}</div>`;
     }
 
     // ─── Suggestion Noyer + Maestro ───────────────────────────────────────────
@@ -114,8 +125,7 @@ const HomePanels = (function () {
     function render() {
         const set = (id, fn) => { const el = document.getElementById(id); if (el) el.innerHTML = fn(); };
         set('looks-tip', tipHTML);
-        set('hp-news', newsHTML);
-        set('hp-recent', recentHTML);
+        set('hp-news', inboxHTML);
     }
 
     function openNovelty(i) {
@@ -127,6 +137,6 @@ const HomePanels = (function () {
                                                                     : 'Aucune réponse enregistrée ici : jouez votre coup pour l\'enregistrer.');
     }
 
-    registerActions({ homeNovelty: openNovelty, homeGames: () => showGameReview(), looksTip });
+    registerActions({ homeNovelty: openNovelty, homeGames: () => showGameReview(), homePane: p => { pane = p; render(); }, looksTip });
     return { render, novelties };
 })();

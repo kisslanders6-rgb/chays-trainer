@@ -27,7 +27,7 @@
    Par défaut, tout élément cliquable s'enfonce légèrement ; l'emporte sur les survols (même spécificité,
    feuille chargée après). Exclus : les cartes qui ont leur propre :active, et les boutons positionnés
    par transform (œil du mot de passe). */
-:where(button, [role="button"], [data-action], [onclick]):not(:disabled, .topnav-brand, .home-card, .tr-card, .account-eye):active {
+:where(button, [role="button"], [data-action], [onclick]):not(:disabled, .topnav-brand, .tr-card, .account-eye):active {
     transform: scale(var(--press-scale));
     transition-duration: .05s;
 }

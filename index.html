@@ -264,13 +264,18 @@
             <!-- Onglet Jouer -->
             <div id="home-tab-play" class="home-tab home-play">
                 <!-- Barre de contexte collante comme Statistiques et Entraînement : puce du répertoire (seul endroit où il se
-                     choisit), pastilles des autres répertoires (changement direct), menu ⋮. Puis, au-delà de 1 200 px
-                     (requête de conteneur, css/home.css) : cartes Blancs / Noirs en grand · Reprendre, Aujourd'hui, modes ;
-                     dessous, Nouveautés à traiter · Dernières parties. Une seule colonne sinon. -->
-                <div class="hp-grid">
+                     choisit), pastilles des autres répertoires, outils (parties, PGN), menu ⋮. Puis trois blocs rendus par
+                     app.js et homePanels.js : « Aujourd'hui » (révisions dues, objectif, une seule action), « Jouer »
+                     (Blancs / Noirs, Reprendre) et « À traiter » (nouveautés des parties, dernières parties).
+                     Au-delà de 1 000 px (requête de conteneur, css/home.css) : Aujourd'hui à gauche, Jouer et À traiter à droite. -->
+                <div class="hp-grid" id="hp-grid">
                     <div class="st-scope hp-scope">
                         <div class="st-rep repertoire-list" id="repertoire-list"></div>
                         <div class="hp-quick" id="hp-quick" aria-label="Autres répertoires"></div>
+                        <div class="hp-tools">
+                            <button type="button" class="hp-tool" data-action="homeGames" title="Analyser mes parties"><svg class="ico"><use href="#i-target"/></svg><span>Analyser mes parties</span></button>
+                            <button type="button" class="hp-tool" data-action="homeImportPgn" title="Importer un PGN"><svg class="ico"><use href="#i-upload"/></svg><span>Importer</span></button>
+                        </div>
                         <div class="menu-wrap hp-menu">
                             <button class="menu-btn" id="rep-menu-btn" onclick="toggleRepMenu()" title="Actions sur les répertoires" aria-label="Actions sur les répertoires" aria-haspopup="true" aria-expanded="false">
                                 <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -285,42 +290,25 @@
                             </div>
                         </div>
                     </div>
-                    <div class="hp-col hp-col-main">
-                        <div id="looks-tip"></div>
-                        <div class="home-hero" data-stagger>
-                            <span class="home-greet" id="home-greet">Bonjour</span>
-                            <h1 class="home-title">Quelle couleur aujourd'hui&nbsp;?</h1>
-                        </div>
-
-                        <div class="home-cards">
-                            <button class="home-card is-white" type="button" onclick="startGame('w')" data-stagger>
-                                <span class="home-card-head"><span class="home-card-name">Blancs</span><span class="home-card-meta" id="home-meta-w"></span></span>
-                                <span class="home-card-art" id="home-art-w"><span class="glyph home-card-piece" data-glyph="K"></span></span>
-                                <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                    <div id="looks-tip"></div>
+                    <section class="hp-today" id="hp-today" aria-label="Aujourd'hui" data-stagger></section>
+                    <section class="hp-play" id="hp-play" aria-label="Jouer" data-stagger>
+                        <div class="hp-h"><h2>Jouer</h2><span class="hp-n" id="hp-play-n"></span></div>
+                        <div class="hp-sides">
+                            <button class="hp-side" type="button" onclick="startGame('w')">
+                                <span class="hp-side-art" id="home-art-w"></span>
+                                <span class="hp-side-txt"><b>Blancs</b><small id="home-meta-w"></small><span id="home-bar-w"></span></span>
+                                <span class="hp-go" aria-hidden="true"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
                             </button>
-                            <button class="home-card is-black" type="button" onclick="startGame('b')" data-stagger>
-                                <span class="home-card-head"><span class="home-card-name">Noirs</span><span class="home-card-meta" id="home-meta-b"></span></span>
-                                <span class="home-card-art" id="home-art-b"><span class="glyph home-card-piece" data-glyph="k"></span></span>
-                                <span class="home-card-foot">Jouer <svg class="ico"><use href="#i-chevron-right"/></svg></span>
+                            <button class="hp-side" type="button" onclick="startGame('b')">
+                                <span class="hp-side-art" id="home-art-b"></span>
+                                <span class="hp-side-txt"><b>Noirs</b><small id="home-meta-b"></small><span id="home-bar-b"></span></span>
+                                <span class="hp-go" aria-hidden="true"><svg class="ico"><use href="#i-chevron-right"/></svg></span>
                             </button>
                         </div>
-                    </div>
-                    <div class="hp-col">
-                        <div id="resume-slot" data-stagger></div>
-                        <section class="hp-today" data-stagger aria-label="Aujourd'hui">
-                            <span class="hp-eyebrow">Aujourd'hui</span>
-                            <div class="home-goal" id="home-goal" role="status" hidden></div>
-                            <div class="home-stats" id="home-stats"></div>
-                        </section>
-                        <div class="hp-modes" data-stagger>
-                            <button type="button" class="hp-mode" data-action="homeGames"><svg class="ico"><use href="#i-target"/></svg>Analyser mes parties</button>
-                            <button type="button" class="hp-mode" data-action="homeImportPgn"><svg class="ico"><use href="#i-upload"/></svg>Importer un PGN</button>
-                        </div>
-                    </div>
-                    <div class="hp-col hp-bottom">
-                        <section class="hp-panel" id="hp-news" aria-label="Nouveautés à traiter"></section>
-                        <section class="hp-panel hp-wide" id="hp-recent" aria-label="Dernières parties"></section>
-                    </div>
+                        <div id="resume-slot"></div>
+                    </section>
+                    <section class="hp-inbox" id="hp-news" aria-label="À traiter" data-stagger></section>
                 </div>
             </div>
 

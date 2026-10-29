@@ -257,6 +257,16 @@ function startTrainingExercise(kind) {
     if (pick) startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
 }
 
+// Accueil Jouer : « Commencer la révision » lance la Révision du jour du répertoire actif, les deux couleurs,
+// sans filtre d'ouverture (la séance est celle de l'Entraînement : elle compte).
+function startDailyReview() {
+    _trColor = 'mix';
+    _trOpening = null;
+    _trFocus = null;
+    trainingState.lastSummary = null;
+    startTrainingExercise('due');
+}
+
 function _startLine(line) {
     trainingState.lastSummary = null;
     startSession({ kind: 'line', label: 'Ligne complète', line });

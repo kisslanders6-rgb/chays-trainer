@@ -132,45 +132,118 @@ function renderRepertoireList() {
     renderHomeSummary();
 }
 
-// Position illustrant une couleur sur sa carte : la première réponse du répertoire (la plus courte, puis la plus
-// travaillée), après mon coup. Sans position : le roi seul.
+// Position illustrant une couleur : la première réponse du répertoire (la plus courte, puis la plus travaillée),
+// après mon coup. Sans position : la position de départ, de mon côté.
 function _homeArtHTML(entries, color) {
     const e = entries.filter(x => Array.isArray(x.path) && x.path.length).sort((a, b) => a.path.length - b.path.length || b.attempts - a.attempts)[0];
-    if (!e || typeof egMiniBoard !== 'function') return `<span class="glyph home-card-piece" data-glyph="${color === 'w' ? 'K' : 'k'}"></span>`;
-    try { return egMiniBoard({ fen: Chess.fen(Chess.replay(e.path)), player: color }); }
-    catch (err) { return `<span class="glyph home-card-piece" data-glyph="${color === 'w' ? 'K' : 'k'}"></span>`; }
+    return _miniBoardHTML({ side: color, path: e ? e.path : [], k: INIT_FEN }, true);
 }
 
-// ─── ACCUEIL : SALUTATION, POSITIONS PAR COULEUR, CHIFFRES DU RÉPERTOIRE ──────
+// ─── ACCUEIL : AUJOURD'HUI, JOUER ─────────────────────────────────────────────
+// « Aujourd'hui » n'a qu'une action, selon l'état : révisions dues → Révision du jour (séance d'Entraînement,
+// startDailyReview) ; tout est à jour → une nouvelle ligne dans la couleur la moins fournie ; répertoire vide →
+// choisir une couleur. L'objectif du jour (anneau) et la série accompagnent l'action qui les fait avancer.
+
+const HOME_PLAN_MAX = 4;          // ouvertures listées sous « Au programme » ; les autres sont résumées
+
+// Positions du répertoire actif groupées par ouverture nommée (même regroupement que les Statistiques).
+function _homePlan(list) {
+    const rows = list.map(x => ({ side: x.color, k: x.key, e: x.e, path: x.e.path && x.e.path.length ? x.e.path : null }));
+    _assignOpenings(rows);
+    const groups = new Map();
+    rows.forEach(r => { const g = groups.get(r.gKey) || { side: r.side, html: r.gHtml, n: 0 }; g.n++; groups.set(r.gKey, g); });
+    return [...groups.values()].sort((a, b) => b.n - a.n);
+}
+
+function _homePlanHTML(title, list, muted) {
+    if (!list.length) return '';
+    const groups = _homePlan(list), shown = groups.slice(0, HOME_PLAN_MAX), max = Math.max(...shown.map(g => g.n));
+    const rest = groups.slice(HOME_PLAN_MAX).reduce((n, g) => n + g.n, 0);
+    return `<div class="hp-plan${muted ? ' is-muted' : ''}"><div class="hp-h"><h3>${title}</h3><span class="hp-n">${list.length}</span></div>
+        ${shown.map(g => `<div class="hp-plan-row"><i class="hp-k is-${g.side}" title="${g.side === 'w' ? 'Blancs' : 'Noirs'}"></i>
+            <span class="hp-plan-name">${g.html}</span><span class="hp-plan-bar"><i style="width:${Math.round(100 * g.n / max)}%"></i></span><b>${g.n}</b></div>`).join('')}
+        ${rest ? `<p class="hp-plan-more">et ${rest} dans ${groups.length - HOME_PLAN_MAX} autre${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''} ouverture${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''}</p>` : ''}</div>`;
+}
+
+// Anneau de l'objectif du jour (positions jouées aujourd'hui, tous répertoires).
+function _homeGoalHTML(done, goal) {
+    const C = 2 * Math.PI * 26, p = Math.min(1, done / goal);
+    return `<div class="hp-goal${done >= goal ? ' is-done' : ''}" role="img" aria-label="Objectif du jour : ${Math.min(done, goal)} sur ${goal} positions">
+        <svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="26"/><circle class="v" cx="30" cy="30" r="26" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - p)).toFixed(1)}"/></svg>
+        <span><b>${Math.min(done, goal)}/${goal}</b><small>aujourd'hui</small></span></div>`;
+}
 
 function renderHomeSummary() {
-    const greet = document.getElementById('home-greet');
-    if (!greet) return;
+    const host = document.getElementById('hp-today');
+    if (!host) return;
+    const now = Date.now(), pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+    const rows = [];
+    ['w', 'b'].forEach(color => { const db = readDBFor(currentRepertoire, color); Object.keys(db).forEach(key => rows.push({ color, key, e: db[key] })); });
+    const side = c => rows.filter(r => r.color === c), due = rows.filter(r => isDue(r.e, now));
+    document.getElementById('hp-grid').classList.toggle('is-empty', !rows.length);
+
+    // Jouer : position, chiffres et maîtrise par couleur.
+    document.getElementById('hp-play-n').textContent = pl(rows.length, 'position', 'positions');
+    ['w', 'b'].forEach(c => {
+        const list = side(c), d = list.filter(r => isDue(r.e, now)).length, counts = {};
+        document.getElementById('home-meta-' + c).textContent = !list.length ? 'Aucune position'
+            : pl(list.length, 'position', 'positions') + ' · ' + (d ? pl(d, 'due', 'dues') : 'à jour');
+        document.getElementById('home-art-' + c).innerHTML = _homeArtHTML(list.map(r => r.e), c);
+        STATS_LEVEL_ORDER.forEach(l => { counts[l] = 0; });
+        list.filter(r => r.e.attempts > 0).forEach(r => { counts[_level(r.e)]++; });
+        document.getElementById('home-bar-' + c).innerHTML = STATS_MASTERY_LEVELS.some(l => counts[l]) ? levelBarHTML(counts, 'hp-bar') : '';
+    });
+
     const h = new Date().getHours(), name = appSettings.pseudo.trim();
-    greet.textContent = (h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : '');
-    const w = Object.values(readDBFor(currentRepertoire, 'w')), b = Object.values(readDBFor(currentRepertoire, 'b'));
-    const now = Date.now(), all = w.concat(b);
-    const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
-    // Chiffres par couleur sur les cartes ; les totaux du répertoire sont dans la puce de la barre (une seule fois).
-    const meta = list => { const d = list.filter(e => isDue(e, now)).length; return list.length ? pl(list.length, 'position', 'positions') + (d ? ` · ${d} à réviser` : '') : 'Aucune position'; };
-    document.getElementById('home-meta-w').textContent = meta(w);
-    document.getElementById('home-meta-b').textContent = meta(b);
-    [['w', w], ['b', b]].forEach(([c, list]) => { const art = document.getElementById('home-art-' + c); if (art) art.innerHTML = _homeArtHTML(list, c); });
-    if (typeof refreshGlyphs === 'function') refreshGlyphs();
-    const streak = typeof _streak === 'function' ? _streak(readActivity()) : 0;
-    // Répertoire vide : à la place des chiffres, par où commencer.
-    document.getElementById('home-stats').innerHTML = !all.length ? `<p class="home-empty">${ico('lightbulb')}<span><b>Par où commencer ?</b> Choisissez une couleur et jouez une première ligne, en jouant aussi les coups de l’adversaire. Vous avez déjà vos lignes ? <button type="button" class="toast-link" data-action="homeImportPgn">Importez un PGN</button>.</span></p>` :
-        `<span><b>${streak} j</b>d'affilée</span>`;
-    // Objectif quotidien (Paramètres › Jeu et entraînement) : positions jouées aujourd'hui, tous répertoires.
-    const today = (readActivity()[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
-    const box = document.getElementById('home-goal');
-    if (box) {
-        box.hidden = !all.length;
-        box.style.setProperty('--p', Math.min(100, Math.round(100 * today / goal)) + '%');
-        box.classList.toggle('is-done', today >= goal);
-        box.innerHTML = `<i aria-hidden="true"></i><span>Objectif du jour : <b>${Math.min(today, goal)} / ${goal}</b> positions${today >= goal ? ' · atteint' : ''}</span>`;
+    const greet = escapeHtml((h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : ''));
+    const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
+    const head = `<span class="hp-greet">${greet}${streak ? `<span class="hp-streak">${pl(streak, 'jour', 'jours')} d'affilée</span>` : ''}</span>`;
+
+    // Répertoire vide : par quelle couleur commencer.
+    if (!rows.length) {
+        const pick = (c, primary) => `<button type="button" class="hp-pick" onclick="startGame('${c}')">
+            ${_miniBoardHTML({ side: c, path: [], k: INIT_FEN }, true)}
+            <span><b>${c === 'w' ? 'Blancs' : 'Noirs'}</b><small>${c === 'w' ? '1. ?' : 'contre 1. e4, 1. d4…'}</small>
+            <span class="hp-cta${primary ? '' : ' is-quiet'}">${ico('play')}Commencer</span></span></button>`;
+        host.innerHTML = `<div class="hp-start">${head}<h2 class="hp-title">Par quelle couleur commencer&nbsp;?</h2>
+            <div class="hp-picks">${pick('w', true)}${pick('b', false)}</div>
+            <div class="hp-alts"><button type="button" class="hp-alt" data-action="homeImportPgn">${ico('upload')}Importer un PGN</button>
+            <button type="button" class="hp-alt" data-action="homeGames">${ico('target')}Partir de mes parties</button></div></div>`;
+        HomePanels.render();
+        return;
     }
-    HomePanels.render();                         // Nouveautés à traiter, Dernières parties
+
+    let board, title, sub, cta, plan;
+    if (due.length) {
+        // La position la plus en retard, telle qu'elle sera posée (avant mon coup).
+        const next = due.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
+        const op = next.e.path && next.e.path.length ? openingNameOf(next.e.path) : null;
+        const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
+        board = _miniBoardHTML({ side: next.color, path: next.e.path && next.e.path.length ? next.e.path : null, k: next.key }, false)
+              + `<span class="hp-cap">${op ? escapeHtml(op.name) + ' · ' : ''}${next.color === 'w' ? 'Blancs' : 'Noirs'}</span>`;
+        title = `<em>${due.length}</em> ${due.length > 1 ? 'positions' : 'position'}<br>à réviser`;
+        sub = `Environ <b>${minutes} min</b>` + (today < goal ? ` · encore ${goal - today} pour l'objectif` : ' · objectif atteint');
+        cta = `<button type="button" class="hp-cta" data-action="homeReview">${ico('play')}Commencer la révision</button>
+               <button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
+        plan = _homePlanHTML('Au programme', due);
+    } else {
+        // À jour : la prochaine révision, et une ligne à ajouter dans la couleur la moins fournie.
+        const soon = rows.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e)), first = soon[0];
+        const c = side('w').length <= side('b').length ? 'w' : 'b';
+        const horizon = _dayStart(now, 2), upcoming = rows.filter(r => dueOf(r.e) < horizon);
+        board = _miniBoardHTML({ side: first.color, path: first.e.path && first.e.path.length ? first.e.path : null, k: first.key }, false)
+              + `<span class="hp-check">${ico('check')}</span>`;
+        title = `Tout est <em>à jour</em>.`;
+        sub = `Prochaine révision <b>${_inLabel(dueOf(first.e))}</b>`;
+        cta = `<button type="button" class="hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>
+               <button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
+        plan = _homePlanHTML('D’ici demain', upcoming, true);
+    }
+    host.innerHTML = `<div class="hp-day${due.length ? '' : ' is-done'}">${_homeGoalHTML(today, goal)}
+        <div class="hp-day-in"><div class="hp-day-board">${board}</div>
+        <div class="hp-day-txt">${head}<h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p><div class="hp-ctas">${cta}</div></div></div>
+        ${plan}</div>`;
+    HomePanels.render();                         // À traiter : nouveautés des parties, dernières parties
 }
 
 // iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).
@@ -406,7 +479,8 @@ function goHome(tab) {
     renderRepertoireList();
 }
 
-registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt(), homeImportPgn: () => showPgnImport() });
+registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt(), homeImportPgn: () => showPgnImport(),
+    homeReview: () => startDailyReview(), homeAddLine: c => startGame(c), homeExercises: () => openTrainingFrom({ color: 'all' }) });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 
