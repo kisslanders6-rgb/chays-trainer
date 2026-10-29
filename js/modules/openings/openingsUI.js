@@ -85,6 +85,7 @@ function renderBoard() {
     if (typeof renderFreqPanel === 'function') renderFreqPanel();          // onglet « Adversaire » : position affichée
     if (typeof _syncHintBtn === 'function') _syncHintBtn();
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
+    else if (_liveAnim) _resumeMoveAnim();
 }
 
 // ─── PIÈCES VECTORIELLES & ANIMATION DE DÉPLACEMENT ──────────────────────────
@@ -94,6 +95,7 @@ function pieceHTML(p) {
 }
 
 let moveAnim = null;
+let _liveAnim = null;      // animation en cours : { from, to, t0, ms, pos }, reprise si l'échiquier est redessiné
 
 // Demande une animation (case de départ → case d'arrivée) au prochain renderBoard().
 // Ignorée après un glisser-déposer (la pièce a déjà été déplacée à la main), si l'animation des
@@ -108,19 +110,32 @@ function _zoomOf(el, cssWidth = el.offsetWidth) {
     return el.getBoundingClientRect().width / cssWidth || 1;
 }
 
-function _runMoveAnim(a) {
+// `elapsed` : temps déjà écoulé (ms) quand l'animation est reprise après un nouveau rendu.
+function _runMoveAnim(a, elapsed = 0) {
     const b  = document.getElementById('board');
     const f  = b.querySelector(`.sq[data-idx="${a.from}"]`);
     const t  = b.querySelector(`.sq[data-idx="${a.to}"]`);
     const pc = t && t.querySelector('.piece');
-    if (!f || !pc || !pc.animate) return;
+    if (!f || !pc || !pc.animate) { _liveAnim = null; return; }
     const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
     const z  = _zoomOf(t);
+    const ms = elapsed ? a.ms : moveAnimMs();
     t.style.zIndex = 5;                                   // la pièce passe au-dessus des autres cases
     const anim = pc.animate(
         [{ transform: `translate(${(fr.left - tr.left) / z}px, ${(fr.top - tr.top) / z}px)` }, { transform: 'translate(0, 0)' }],
-        { duration: moveAnimMs(), easing: 'cubic-bezier(.22,.8,.3,1)' });
-    anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; };
+        { duration: ms, easing: 'cubic-bezier(.22,.8,.3,1)' });
+    if (elapsed) anim.currentTime = elapsed;
+    const live = _liveAnim = { from: a.from, to: a.to, t0: performance.now() - elapsed, ms, pos: board.join() };
+    anim.onfinish = anim.oncancel = () => { t.style.zIndex = ''; if (_liveAnim === live) _liveAnim = null; };
+}
+
+// renderBoard() reconstruit les cases et couperait net une animation en cours (par exemple un clic
+// sur une pièce pendant que le coup adverse glisse encore) : elle reprend là où elle en était,
+// pourvu que la position affichée n'ait pas changé.
+function _resumeMoveAnim() {
+    const a = _liveAnim, elapsed = performance.now() - a.t0;
+    if (elapsed >= a.ms || board.join() !== a.pos) { _liveAnim = null; return; }
+    _runMoveAnim(a, elapsed);
 }
 
 // ─── BARRE DE COUPS ───────────────────────────────────────────────────────────

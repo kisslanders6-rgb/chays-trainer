@@ -57,6 +57,31 @@ async function boot(storage = {}) {
         w.close();
     });
 
+    await t('animation d\'un coup : un nouveau rendu pendant le glissement la reprend au même point', async () => {
+        const { w, errors } = await boot();
+        const calls = [];
+        w.Element.prototype.animate = function (frames, opts) {
+            const a = { el: this, opts, currentTime: 0, onfinish: null, oncancel: null, cancel() {} };
+            calls.push(a); return a;
+        };
+        w.eval(`parseFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                board[36] = board[52]; board[52] = ''; animateNextMove(52, 36); renderBoard();`);
+        assert.strictEqual(calls.length, 1, 'animation non lancée');
+        assert.strictEqual(calls[0].opts.duration, 170);
+        await new Promise(r => setTimeout(r, 60));
+        w.eval('renderBoard()');                                                   // clic sur une pièce, par exemple
+        assert.strictEqual(calls.length, 2, 'animation coupée par le rendu');
+        assert(calls[1].el.closest('.sq').dataset.idx === '36');
+        assert(calls[1].currentTime >= 50 && calls[1].currentTime < 170, 'reprise au mauvais instant : ' + calls[1].currentTime);
+        await new Promise(r => setTimeout(r, 150));
+        w.eval('renderBoard()');                                                   // animation terminée : rien à reprendre
+        assert.strictEqual(calls.length, 2);
+        w.eval(`animateNextMove(52, 36); renderBoard(); board[28] = board[36]; board[36] = ''; renderBoard();`);
+        assert.strictEqual(calls.length, 3, 'position changée : pas de reprise');
+        assert.deepStrictEqual(errors, []);
+        w.close();
+    });
+
     console.log(`\n${n} tests réussis.`);
     process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
