@@ -131,5 +131,32 @@ const positions = w => w.sent.filter(c => c.startsWith('position'));
         assert.deepStrictEqual(positions(workers[1]), [`position fen ${FEN_B}`]);
     });
 
+    await t('Worker tué en plein calcul : sondé, puis recréé, et le même calcul repart avec ses lignes', async () => {
+        const { Engine, workers, advance } = boot(standard);
+        const seen = [];
+        const a = Engine.analyse(FEN_A, { depth: 0 }, lines => seen.push(lines.length)); await flush();
+        workers[0].say(infoLine); await advance(200);
+        assert.deepStrictEqual(seen, [1]);
+        workers[0].dead = true;                                                  // le navigateur l'a arrêté, sans message
+        await advance(4000);
+        assert.strictEqual(workers[0].sent.at(-1), 'isready');                   // sonde d'abord
+        assert.strictEqual(workers.length, 1);
+        await advance(4000);
+        assert.strictEqual(workers.length, 2);
+        assert.deepStrictEqual(positions(workers[1]), [`position fen ${FEN_A}`]);
+        workers[1].say(infoLine); await advance(200);
+        a.stop(); assert.strictEqual((await a.done).best, 'e2e4');
+        assert.strictEqual((await a.done).cancelled, false);
+    });
+
+    await t('calcul fini sans bestmove (mat en « go infinite ») : la sonde reçoit readyok, rien n\'est recréé', async () => {
+        const { Engine, workers, advance } = boot(standard);
+        Engine.analyse(FEN_A, { depth: 0 }); await flush();
+        workers[0].say('info depth 0 score mate 0'); await flush();
+        await advance(20000);
+        assert.strictEqual(workers.length, 1);
+        assert.ok(workers[0].sent.filter(c => c === 'isready').length >= 2);
+    });
+
     console.log(`\n${n} tests réussis.`);
 })().catch(e => { console.error('ÉCHEC :', e); process.exit(1); });

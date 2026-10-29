@@ -26,6 +26,8 @@ const CLOUD_EVAL_URL     = 'https://lichess.org/api/cloud-eval';
 const analysis = {
     rep: '', color: 'w', tree: { kids: [] }, dirty: false,
     running: false, job: null, wait: null, lines: [], fen: '', cloud: null, cloudFen: '',
+    retries: 0,           // nouveaux essais d'un calcul annulé par le moteur (Worker mort, erreur), sur la même position
+    bar: null,            // dernière ligne montrée par la barre d'évaluation, gardée le temps du calcul suivant
     merge: null,          // aperçu ouvert : { all, replace: Set(clés) }
     lastMerge: null       // dernière fusion annulable : { added: [clés], opp: [[clé, uci]] }
 };
@@ -100,6 +102,7 @@ function stopAnalysis() {
     if (analysis.job) analysis.job.stop();
     analysis.job = null;
     analysis.lines = [];
+    analysis.bar = null;
     analysis.merge = null;
 }
 
@@ -160,8 +163,9 @@ function analysisPlayLine(i) {
 
 function analysisToggleEngine() {
     analysis.running = !analysis.running;
-    if (!analysis.running) clearTimeout(analysis.wait);
+    if (!analysis.running) { clearTimeout(analysis.wait); analysis.bar = null; }
     if (!analysis.running && analysis.job) { analysis.job.stop(); analysis.job = null; }
+    analysis.retries = 0;
     analysisPositionChanged();
 }
 
@@ -169,14 +173,25 @@ function analysisSettingsChanged() {
     if (gameMode === 'analysis') { analysis.fen = ''; analysisPositionChanged(); }
 }
 
-const AN_SETTLE_MS = 120;
+const AN_SETTLE_MS = 120, AN_RETRIES = 4;
 
 function _anLaunch(fen) {
     if (gameMode !== 'analysis' || !analysis.running || analysis.fen !== fen || analysis.job) return;
     const job = analysis.job = Engine.analyse(fen,
         { multipv: appSettings.engineLines, depth: appSettings.engineDepth, movetime: appSettings.engineTime * 1000 },
-        lines => { if (analysis.job === job) { analysis.lines = lines; _anPaintEngine(); } });
-    job.done.then(() => { if (analysis.job === job) { analysis.job = null; _anPaintEngine(); } });
+        lines => { if (analysis.job === job) { analysis.lines = lines; analysis.retries = 0; _anPaintEngine(); } });
+    job.done.then(r => {
+        if (analysis.job !== job) return;
+        analysis.job = null;
+        // Annulé par le moteur lui-même (Worker mort, erreur, rechargement) alors que la position n'a pas changé :
+        // le calcul est relancé, de plus en plus tard ; l'évaluation déjà affichée reste en place.
+        if (r && r.cancelled && analysis.running && analysis.retries < AN_RETRIES && !document.hidden) {
+            const wait = 500 * 2 ** analysis.retries++;
+            clearTimeout(analysis.wait);
+            analysis.wait = setTimeout(() => _anLaunch(fen), wait);
+        }
+        _anPaintEngine();
+    });
 }
 
 // Position affichée changée (coup, navigation, clic dans l'arbre) : calcul relancé, panneau redessiné.
@@ -186,6 +201,7 @@ function analysisPositionChanged() {
     if (fen !== analysis.fen) {
         analysis.fen = fen;
         analysis.lines = [];
+        analysis.retries = 0;
         if (analysis.job) { analysis.job.stop(); analysis.job = null; }
         // L'ancien calcul s'arrête tout de suite ; le nouveau attend que la navigation se pose (touche maintenue).
         clearTimeout(analysis.wait);
@@ -299,7 +315,9 @@ function _anPaintEngine() {
     const name = info ? `Stockfish ${info.version.split('.')[0]} ${info.net === 'full' ? 'complet' : 'léger'}` : 'Stockfish';
     const state = !analysis.running ? 'arrêté'
                 : st === 'loading' ? 'chargement…'
+                : !analysis.job && analysis.retries ? 'reprise…'
                 : st === 'error' ? 'indisponible'
+                : !lines.length && analysis.fen && !Chess.legalMoves(Chess.fromFen(analysis.fen)).length ? 'position finale'
                 : cloud ? `Lichess · prof. ${depth}` : depth ? `prof. ${depth}${analysis.job ? '' : ' · terminé'}` : 'calcul…';
     const rows = lines.map((l, i) => `<div class="an-line">
             <button type="button" class="an-play" data-action="analysisPlayLine" data-arg="${i}" title="Jouer ${escapeHtml(_anPvText(l.pv, 1))}">
@@ -309,7 +327,9 @@ function _anPaintEngine() {
         </div>`).join('');
     const empty = !analysis.running ? '<p class="an-empty">Moteur arrêté. Lancez-le pour voir les meilleurs coups.</p>'
                 : st === 'error' ? `<p class="an-empty">Le moteur n’a pas pu démarrer (${escapeHtml(Engine.error())}).</p>`
-                : st === 'loading' ? `<p class="an-empty">${appSettings.engineNet === 'full' ? 'Chargement du moteur complet…' : 'Chargement du moteur (environ 1,8 Mo la première fois)…'}</p>` : '';
+                : st === 'loading' ? `<p class="an-empty">${appSettings.engineNet === 'full' ? 'Chargement du moteur complet…' : 'Chargement du moteur (environ 1,8 Mo la première fois)…'}</p>`
+                : analysis.fen && !Chess.legalMoves(Chess.fromFen(analysis.fen)).length ? '<p class="an-empty">Partie terminée : aucun coup à calculer.</p>'
+                : '<p class="an-empty">Calcul…</p>';
     box.innerHTML = `<div class="an-h"><b>${ico('cpu')} ${name}</b><small>${state}</small>
             <button type="button" class="an-toggle${analysis.running ? ' is-on' : ''}" data-action="analysisToggleEngine" aria-pressed="${analysis.running}">${analysis.running ? 'Arrêter' : 'Lancer'}</button></div>
         <div class="an-lines">${rows || empty}</div>`;
@@ -320,6 +340,9 @@ function _anPaintEngine() {
 function _anPaintEvalBar(l) {
     const bar = document.getElementById('eval-bar');
     if (!bar) return;
+    // Entre deux positions, la barre garde la dernière évaluation au lieu de se vider à chaque coup.
+    if (l && analysis.running) analysis.bar = l;
+    else if (analysis.running && Engine.status() !== 'error') l = analysis.bar;
     const has = !!(l && analysis.running) || !!(analysis.cloud && analysis.cloud.length);
     bar.classList.toggle('is-empty', !has);
     const w = has ? _anWin(l) : 0.5;
@@ -472,9 +495,13 @@ registerActions({
 
 if (typeof Engine !== 'undefined') Engine.onStatus(() => { if (gameMode === 'analysis') _anPaintEngine(); });
 
-// Retour au premier plan : le calcul arrêté par la mise en arrière-plan reprend s'il n'avait pas atteint sa limite.
+// Retour au premier plan : le calcul arrêté par la mise en arrière-plan reprend s'il n'avait pas atteint sa limite,
+// sans effacer les lignes affichées (elles sont remplacées dès que le moteur parle).
 document.addEventListener('visibilitychange', () => {
     if (document.hidden || gameMode !== 'analysis' || !analysis.running || analysis.job) return;
     const l = analysis.lines[0], limit = appSettings.engineDepth || Infinity;
-    if (!l || l.depth < limit) { analysis.fen = ''; analysisPositionChanged(); }
+    if (l && l.depth >= limit) return;
+    analysis.retries = 0;
+    clearTimeout(analysis.wait);
+    _anLaunch(analysis.fen);
 });

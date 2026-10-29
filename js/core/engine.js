@@ -30,6 +30,9 @@
  * calcul arrêté parle encore ; sans « bestmove » après un délai de garde (grace), le Worker est jugé
  * bloqué : il est terminé et recréé, et le calcul en attente repart sur le nouveau (restart).
  * « uciok » et « readyok » ont aussi un délai : un moteur muet ne laisse jamais l'analyse en attente.
+ * Pendant un calcul, un Worker silencieux (tué par le navigateur : mémoire, mise en veille) est sondé par
+ * « isready » (stockfish.js y répond même en pleine recherche) ; toujours muet, il est recréé et le calcul
+ * repart dessus avec ses lignes déjà affichées (watch).
  * Variante : multi-thread si la page est isolée (crossOriginIsolated, en-têtes de vercel.json), sinon
  * mono-thread. Fils et mémoire : appSettings.engineThreads / engineHash (propres à l'appareil).
  * Tout calcul s'arrête quand la page passe en arrière-plan.
@@ -46,6 +49,8 @@ const Engine = (function () {
     const INFO_EVERY_MS = 100, RESEND_STOP_MS = 100, MAX_STRIKES = 3;
     // Attente du « bestmove » après « stop » : au-delà, le moteur est jugé bloqué (mono-thread et réseau complet plus lents).
     const grace = () => !variant ? 2000 : variant.net === 'full' ? 4000 : variant.threads ? 1200 : 2500;
+    // Silence toléré pendant un calcul avant de sonder le moteur, puis avant de le déclarer mort.
+    const silence = () => (variant && variant.net === 'full' ? 8000 : 4000);
     // Attente de « uciok » (chargement du .wasm compris) et de « readyok ».
     const loadTimeout = () => (variant && variant.net === 'full' ? 120000 : 30000);
     const READY_TIMEOUT_MS = 15000;
@@ -134,7 +139,7 @@ const Engine = (function () {
     }
 
     function cancelAll() {
-        [cur, next].forEach(j => { if (j) { clearTimeout(j.guard); j.resolve({ best: null, lines: j.lines, cancelled: true }); } });
+        [cur, next].forEach(j => { if (j) { clearTimeout(j.guard); clearTimeout(j.watch); j.resolve({ best: null, lines: j.lines, cancelled: true }); } });
         cur = next = null;
     }
 
@@ -245,6 +250,8 @@ const Engine = (function () {
         if (waiting && waiting.test(line)) { const w = waiting; waiting = null; w.resolve(line); return; }
         const j = cur;
         if (!j) return;
+        j.heard = Date.now();
+        j.probing = false;
         if (line.startsWith('bestmove')) { finish(j, line.split(' ')[1]); return; }
         // Arrêté mais il calcule encore : son « stop » a pu être perdu, il est renvoyé (sans effet s'il était arrivé).
         if (j.stopping && line.startsWith('info ') && Date.now() - j.stopAt >= RESEND_STOP_MS) { j.stopAt = Date.now(); send('stop'); }
@@ -268,6 +275,7 @@ const Engine = (function () {
 
     function finish(j, best) {
         clearTimeout(j.guard);
+        clearTimeout(j.watch);
         strikes = 0;
         emit(j, true);
         cur = null;
@@ -299,6 +307,28 @@ const Engine = (function () {
         send(`setoption name MultiPV value ${j.multipv}`);
         send(`position fen ${j.fen}`);
         send(j.opts.depth ? `go depth ${j.opts.depth}` : j.opts.movetime ? `go movetime ${j.opts.movetime}` : 'go infinite');
+        j.heard = Date.now();
+        j.probing = false;
+        j.watch = setTimeout(() => watch(j), silence());
+    }
+
+    // Calcul silencieux : une sonde « isready » ; sans aucune réponse ensuite, le Worker est mort.
+    // Un calcul fini sans « bestmove » (mat, profondeur maximale en « go infinite ») répond à la sonde : rien ne change.
+    function watch(j) {
+        if (j !== cur || j.stopping) return;
+        const quiet = Date.now() - j.heard;
+        if (quiet < silence()) { j.watch = setTimeout(() => watch(j), silence() - quiet); return; }
+        if (!j.probing) {
+            j.probing = true;
+            j.heard = Date.now();
+            send('isready');
+            j.watch = setTimeout(() => watch(j), silence());
+            return;
+        }
+        cur = null;
+        if (next) j.resolve({ best: null, lines: j.lines.filter(Boolean), cancelled: true });
+        else { j.depth = 0; next = j; }                                 // même calcul, mêmes lignes affichées, nouveau Worker
+        restart();
     }
 
     function stopJob(j) {
@@ -317,6 +347,7 @@ const Engine = (function () {
         const keep = next;
         next = null;
         if (++strikes >= MAX_STRIKES) {
+            strikes = 0;                                                // la prochaine demande repart avec un compte neuf
             fail('le moteur ne répond plus');
             if (keep) keep.resolve({ best: null, lines: [], cancelled: true });
             return;
