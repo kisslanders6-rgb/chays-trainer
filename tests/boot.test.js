@@ -85,6 +85,40 @@ async function boot(storage = {}) {
         w.close();
     });
 
+    await t('écran de jeu, cinq modes : barre d\'onglets du bas cachée, outils propres au mode, pastille de l\'échiquier', async () => {
+        const start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
+        const { w, errors } = await boot({ chessTrainer_onboarded: '1',
+            'openingDB_Général_w': JSON.stringify({ [start]: { move: 'e2e4', san: 'e4', attempts: 3, failures: 1, path: ['e2e4'], ply: 1, due: 1 } }) });
+        const $ = s => w.document.querySelector(s);
+        const shown = el => !!el && !el.closest('[style*="display: none"]') && !el.closest('[hidden]');
+        const tabsHidden = () => $('#topnav-tabs-setup').style.display === 'none';
+        const pill = $('#board-pill');
+        assert(pill && pill.hidden, 'pastille absente ou visible par défaut');
+        w.eval(`showBoardPill('Toucher pour passer')`);
+        assert(!pill.hidden && pill.textContent === 'Toucher pour passer');
+        w.eval('hideBoardPill()');
+        assert(pill.hidden);
+
+        w.eval(`startGame('w')`);
+        assert(tabsHidden(), 'play');
+        assert(shown($('#side-tab-moves')) && shown($('#opp-suites').parentElement));
+        assert(!shown($('#preview-lichess')));
+        w.eval(`startTraining('w')`);
+        assert(tabsHidden(), 'training');
+        assert(!shown($('#side-tab-moves')), 'training : onglets cachés');
+        w.eval(`startEndgame(ENDGAME_EXERCISES[0].id)`);
+        assert(tabsHidden(), 'endgame');
+        w.eval(`openStatsPreview('w', '${start}', 'weak')`);
+        assert(tabsHidden(), 'preview');
+        assert(shown($('#preview-lichess')), 'aperçu : bouton Lichess absent');
+        w.eval(`startGame('w'); openAnalysis()`);
+        assert(tabsHidden(), 'analysis');
+        assert(!shown($('#side-tab-moves')), 'analyse : onglet Coups visible');
+        assert(!shown($('#preview-lichess')));
+        assert.deepStrictEqual(errors, []);
+        w.close();
+    });
+
     console.log(`\n${n} tests réussis.`);
     process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

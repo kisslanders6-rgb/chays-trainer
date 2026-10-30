@@ -65,9 +65,11 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     await t('validation : e-mail invalide, mot de passe vide → message, aucun appel réseau', async () => {
         const k = be.log.length;
         type(w, 'input[name=email]', 'pas-un-mail'); type(w, 'input[name=password]', 'x'); submit(w, '[data-form="auth"]');
-        assert.match(text(w, '.account-msg'), /invalide/);
+        assert.match(text(w, '[data-field="email"] .acct-ferr'), /invalide/);                     // erreur en ligne, sous le champ
+        assert.strictEqual($(w, 'input[name=email]').getAttribute('aria-invalid'), 'true');
         type(w, 'input[name=email]', 'ana@test.fr'); type(w, 'input[name=password]', ''); submit(w, '[data-form="auth"]');
-        assert.match(text(w, '.account-msg'), /mot de passe/i); assert.strictEqual(be.log.length, k);
+        assert(!$(w, '[data-field="email"] .acct-ferr'));
+        assert.match(text(w, '[data-field="password"] .acct-ferr'), /mot de passe/i); assert.strictEqual(be.log.length, k);
     });
     await t('afficher / masquer le mot de passe', async () => {
         click(w, '[data-act="eye"]'); assert.strictEqual($(w, 'input[name=password]').type, 'text'); assert.match(text(w, '[data-act="eye"]'), /Masquer/);
@@ -75,7 +77,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     });
     await t('mauvais mot de passe → message d\'erreur affiché dans la fenêtre', async () => {
         type(w, 'input[name=email]', 'ana@test.fr'); type(w, 'input[name=password]', 'faux-faux'); submit(w, '[data-form="auth"]'); await flush();
-        assert.match(text(w, '.account-msg'), /incorrect/); assert.strictEqual($(w, '.account-submit').disabled, false);
+        assert.match(text(w, '[data-field="password"] .acct-ferr'), /incorrect/); assert.strictEqual($(w, '.account-submit').disabled, false);
     });
     await t('après l\'erreur : l\'autre vue est proposée, l\'e-mail déjà rempli ; retour à la connexion', async () => {
         assert.match(text(w, '[data-act="swap"]'), /Créer un compte avec cette adresse/);
@@ -97,7 +99,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     await t('connexion réussie (cloud vide, appareil vide) → vue Compte, e-mail, pastille verte, intention « merge » silencieuse', async () => {
         type(w, 'input[name=password]', 'motdepasse1'); submit(w, '[data-form="auth"]'); await flush();
         assert.match(text(w, '#acct-name'), /ana@test\.fr/);
-        click(w, '[data-pn="section"][data-key="appareils"]'); assert.match(text(w, '#account-sync-text'), /Connecté/);
+        click(w, '[data-pn="section"][data-key="synchronisation"]'); assert.match(text(w, '#account-sync-text'), /Connecté/);
         assert($(w, '#account-btn').classList.contains('has-session')); assert.match($(w, '#account-btn').title, /ana@test\.fr/);
         assert.strictEqual(JSON.parse(w.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'merge');
     });
@@ -112,7 +114,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     });
     await t('déconnexion simple : retour au formulaire, données locales intactes', async () => {
         w.localStorage.setItem('openingDB_Général_w', '{"p":{"move":"e2e4"}}');
-        click(w, '#account-btn'); click(w, '[data-pn="section"][data-key="donnees"]'); click(w, '[data-act="signout"]'); await flush();
+        click(w, '#account-btn'); click(w, '[data-pn="section"][data-key="securite"]'); click(w, '[data-act="signout"]'); await flush();
         assert($(w, '[data-form="auth"]')); assert.strictEqual(w.localStorage.getItem('openingDB_Général_w'), '{"p":{"move":"e2e4"}}');
         assert.match($(w, '#account-btn').title, /non connecté/);
     });
@@ -139,26 +141,30 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
     };
     await t('première synchro — les deux côtés ont des données → fenêtre de choix avec les deux comptes de positions', async () => {
         const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
-        assert(visible(w2)); assert.match(text(w2, '.panel-sub'), /2 positions/); assert.match(text(w2, '.panel-sub'), /3 positions/);
+        assert(visible(w2)); assert.match(text(w2, '.acct-vs'), /2.*Cet appareil.*3.*Compte/s);
         assert.strictEqual(w2.document.querySelectorAll('.account-choice').length, 3); assert(!w2.localStorage.getItem('chessTrainer_syncIntent'));
+        assert.strictEqual($(w2, '.account-choice[aria-checked="true"]').dataset.act, 'choose:merge');       // fusion choisie d'avance
+        assert.strictEqual(w2.document.querySelectorAll('#account-overlay .btn-primary').length, 1);        // une seule action pleine
+        click(w2, '[data-act="choose:upload"]'); assert(!w2.localStorage.getItem('chessTrainer_syncIntent'));  // choisir une carte n'envoie rien
+        assert.strictEqual($(w2, '.account-choice[aria-checked="true"]').dataset.act, 'choose:upload');
     });
     await t('choix « Fusionner » : intention enregistrée, tout marqué à envoyer, événement émis, aucune confirmation', async () => {
         const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
         let evt = null; w2.addEventListener('chays-sync-intent', e => { evt = e.detail; });
-        click(w2, '[data-act="strategy:merge"]');
+        click(w2, '[data-act="choose:merge"]'); click(w2, '[data-act="strategy-go"]');
         assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'merge'); assert.strictEqual(evt.strategy, 'merge');
         assert('openingDB_Général_w' in w2.eval('SyncMeta').dirtySnapshot()); assert.strictEqual(w2.__confirms.length, 0); assert.strictEqual(w2.__exports, 0);
         assert($(w2, '#acct-name'));
     });
     await t('choix « Envoyer cet appareil » : demande confirmation avant d\'appliquer', async () => {
         const w2 = await mkBoth({ confirmAnswer: false }); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
-        click(w2, '[data-act="strategy:upload"]'); assert.strictEqual(w2.__confirms.length, 1); assert(!w2.localStorage.getItem('chessTrainer_syncIntent'));
+        click(w2, '[data-act="choose:upload"]'); click(w2, '[data-act="strategy-go"]'); assert.strictEqual(w2.__confirms.length, 1); assert(!w2.localStorage.getItem('chessTrainer_syncIntent'));
     });
     await t('choix « Récupérer mon compte » : confirmation, sauvegarde locale seulement si demandée, rien n\'est marqué à envoyer', async () => {
         for (const backupFirst of [true, false]) {
             const w2 = await mkBoth(); w2.__backupFirst = backupFirst;
             await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
-            click(w2, '[data-act="strategy:download"]');
+            click(w2, '[data-act="choose:download"]'); click(w2, '[data-act="strategy-go"]');
             assert.strictEqual(w2.__confirms.length, 1); assert.strictEqual(w2.__exports, backupFirst ? 1 : 0);
             assert.strictEqual(JSON.parse(w2.localStorage.getItem('chessTrainer_syncIntent')).strategy, 'download'); assert.deepStrictEqual(Object.keys(w2.eval('SyncMeta').dirtySnapshot()), []);
         }
@@ -169,7 +175,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         await w2.eval('AccountUI').ensureIntent(); assert(visible(w2)); assert($(w2, '.account-choices'));
     });
     await t('intention déjà enregistrée pour ce compte : aucune nouvelle question', async () => {
-        const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush(); click(w2, '[data-act="strategy:merge"]');
+        const w2 = await mkBoth(); await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush(); click(w2, '[data-act="strategy-go"]');
         w2.document.getElementById('account-overlay').classList.add('hidden'); await w2.eval('AccountUI').ensureIntent(); assert(!visible(w2));
     });
     await t('autre compte sur l\'appareil : avertissement affiché dans le choix', async () => {
@@ -187,7 +193,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         let reloaded = 0; try { Object.defineProperty(w2.location, 'reload', { value: () => { reloaded++; } }); } catch (e) {}
         await w2.eval('Auth').signIn('ana@test.fr', 'motdepasse1'); await flush();
         w2.eval('dataStore').set('openingDB_Général_w', '{"p":1}'); w2.eval('dataStore').set('chessTrainer_theme', 'light');
-        click(w2, '#account-btn'); click(w2, '[data-pn="section"][data-key="donnees"]');
+        click(w2, '#account-btn'); click(w2, '[data-pn="section"][data-key="securite"]');
         let threw = null; try { click(w2, '[data-act="signout-erase"]'); await flush(); } catch (e) { threw = e; }
         assert.match(w2.__confirms[0], /1 modification non synchronisée sera définitivement perdue/);
         assert.strictEqual(w2.localStorage.getItem('openingDB_Général_w'), null); assert.strictEqual(w2.localStorage.getItem('chessTrainer_session'), null);
@@ -200,7 +206,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const w2 = await bootA({ backend: makeBackend({ confirmEmail: true }) });
         click(w2, '#account-btn'); click(w2, '[data-act="view:signup"]');
         type(w2, 'input[name=email]', 'new@test.fr'); type(w2, 'input[name=password]', 'court'); submit(w2, '[data-form="auth"]');
-        assert.match(text(w2, '.account-msg'), /8 caractères/);
+        assert.match(text(w2, '[data-field="password"] .acct-ferr'), /8 caractères/);
         type(w2, 'input[name=password]', 'motdepasse1'); submit(w2, '[data-form="auth"]'); await flush();
         assert.match(text(w2, '.account-msg'), /confirmation.*new@test\.fr/); assert.match(text(w2, '.account-submit'), /Se connecter/);
     });
@@ -241,7 +247,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
             assert.match(asked, /pirate@test\.fr/);
             assert.strictEqual(w2.eval('Auth.isSignedIn()'), yes);
             assert.strictEqual(w2.eval('SyncIntent.get()'), null);                            // aucun envoi automatique des données de l'appareil
-            if (yes) assert($(w2, '[data-act="strategy:upload"]'));                           // le choix est proposé
+            if (yes) assert($(w2, '[data-act="choose:upload"]'));                           // le choix est proposé
         }
     });
     await t('échappement : un e-mail contenant du HTML s\'affiche comme texte (pas d\'injection)', async () => {

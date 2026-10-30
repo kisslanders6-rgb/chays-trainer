@@ -83,6 +83,7 @@ function renderBoard() {
     if (focused !== null) { const f = el.querySelector(`.sq[data-idx="${focused}"]`); if (f) f.focus({ preventScroll: true }); }
     if (typeof renderAnnotations === 'function') renderAnnotations(true);
     if (typeof renderFreqPanel === 'function') renderFreqPanel();          // onglet « Adversaire » : position affichée
+    if (typeof renderOppSuites === 'function') renderOppSuites();          // suites adverses sous la barre d'état (Jouer)
     if (typeof _syncHintBtn === 'function') _syncHintBtn();
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
     else if (_liveAnim) _resumeMoveAnim();
@@ -166,12 +167,46 @@ function renderMoves() {
 // ─── BARRE DE STATUT ──────────────────────────────────────────────────────────
 
 // Barre d'état : un titre court, et éventuellement un détail grisé sur une seconde ligne.
-function setStatus(msg, type = 'info', detail = '') {
+// opts = { action, run, icon?, title? } : bouton facultatif à droite (« reçu » d'un coup enregistré, par exemple),
+// créé en DOM (textContent) ; tout nouvel appel à setStatus le retire. Sans opts, rendu inchangé.
+function setStatus(msg, type = 'info', detail = '', opts = null) {
     const dot  = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
     dot.className  = 'status-dot ' + { ok: 'dot-ok', err: 'dot-err', info: 'dot-info', new: 'dot-new', hint: 'dot-hint' }[type];
     text.replaceChildren(Object.assign(document.createElement('span'), { className: 'status-title', textContent: msg }));
     if (detail) text.append(Object.assign(document.createElement('span'), { className: 'status-detail', textContent: detail }));
+    const bar = document.getElementById('status-bar');
+    if (!bar) return;
+    const old = bar.querySelector('.status-act');
+    if (old) old.remove();
+    bar.classList.toggle('has-act', !!(opts && opts.action));
+    if (!opts || !opts.action) return;
+    const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-soft status-act' });
+    if (opts.title) btn.title = opts.title;
+    if (opts.icon && typeof ico === 'function') btn.innerHTML = ico(opts.icon);      // icône du sprite, sans texte inséré
+    btn.append(Object.assign(document.createElement('span'), { textContent: opts.action }));
+    btn.addEventListener('click', () => { if (typeof opts.run === 'function') opts.run(); });
+    bar.append(btn);
+}
+
+// ─── PASTILLE SUR L'ÉCHIQUIER ─────────────────────────────────────────────────
+// Message court posé sur l'échiquier, hors du flux (aucune hauteur ajoutée) : « Toucher pour passer » pendant
+// la mise en situation de l'Entraînement, par exemple. onTap facultatif : un toucher sur la pastille l'appelle.
+
+function showBoardPill(text, onTap) {
+    const pill = document.getElementById('board-pill');
+    if (!pill) return;
+    pill.textContent = text;
+    pill.onclick = typeof onTap === 'function' ? () => onTap() : null;
+    pill.classList.toggle('is-tap', typeof onTap === 'function');
+    pill.hidden = false;
+}
+
+function hideBoardPill() {
+    const pill = document.getElementById('board-pill');
+    if (!pill) return;
+    pill.hidden = true;
+    pill.onclick = null;
 }
 
 // ─── NAVIGATION VISUELLE (Précédent / Suivant) ────────────────────────────────

@@ -16,7 +16,7 @@
  * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
  * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v17';
+const VERSION = 'v18';
 const CACHE   = 'chays-trainer-' + VERSION;
 const ENGINE_CACHE = 'chays-engine';
 const ENGINE_FILE  = /\/engine\/\d+\.\d+\.\d+\//;

@@ -304,7 +304,9 @@ function executePlayerMove(from, to, promo) {
         openingDB[key] = newEntry(movStr, san, pathNow.concat(movStr));
         saveDB();
         noteChange(1);
-        _commitMove(from, to, promo, key, `Nouveau coup enregistré : ${formatSanText(san, turn)}`, 'new');
+        const mover = turn, ply = pathNow.length;
+        _commitMove(from, to, promo, key);
+        _showReceipt(key, san, mover, ply);
 
     } else if (_solutionKey === key) {
         if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info');
@@ -390,12 +392,24 @@ function _syncHintBtn() {
     const el  = document.getElementById('board');
     if (el) el.classList.toggle('show-solution', fx);
     const sol = (gameMode === 'play' || gameMode === 'training') && _hintKey === key && turn === playerColor && navCursor === -1;
+    const off = _hintBlocked();
     document.querySelectorAll('.tb-hint').forEach(b => {
+        b.disabled = !!off;
+        b.title = off || (sol ? `Voir la solution (Espace)${gameMode === 'training' ? ' — compte une erreur' : ''}`
+                              : `Indice (Espace)${gameMode === 'play' ? ' — Jouer ne compte rien' : gameMode === 'training' ? ' — ne compte pas comme une erreur' : ''}`);
         if (b.dataset.sol === String(sol)) return;
         b.dataset.sol = String(sol);
         b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>` : `${ico('lightbulb')}<span class="btn-label">Indice</span>`;
-        b.title       = sol ? `Voir la solution (Espace)${gameMode === 'training' ? ' — compte une erreur' : ''}` : 'Indice (Espace)';
     });
+}
+
+// Jouer : raison pour laquelle l'Indice est indisponible dans la position AFFICHÉE ('' s'il est disponible).
+function _hintBlocked() {
+    if (gameMode !== 'play') return '';
+    let pos;
+    try { pos = Chess.fromFen(displayedFen()); } catch (e) { return ''; }
+    if (pos.turn !== playerColor) return 'Au tour de l\'adversaire';
+    return openingDB[Chess.key(pos)] ? '' : 'Position inconnue : jouez votre coup pour l\'enregistrer';
 }
 
 function _resetHint() { _hintKey = null; _solutionKey = null; _solutionMove = null; }
@@ -614,7 +628,43 @@ function undoMove() {
     });
 }
 
+// ─── REÇU DE COUP (Jouer) ─────────────────────────────────────────────────────
+// Mon coup vient de devenir la réponse d'une position inconnue : la barre d'état le confirme et propose
+// « Annuler » sans confirmation, tant que la position affichée est celle d'après ce coup. Tout autre message
+// de la barre d'état retire le bouton (setStatus) ; une autre action (◀, coup, mode) invalide le reçu.
+
+let _receiptKey = null;        // clé de la position AVANT le coup enregistré
+
+function _showReceipt(key, san, mover, ply) {
+    const num = Math.floor(ply / 2) + 1, prefix = mover === 'w' ? `${num}.` : `${num}…`;
+    setStatus(`Réponse enregistrée : ${prefix} ${formatSanText(san, mover)}`, 'new',
+        `${currentRepertoire} · ${mover === 'w' ? 'Blancs' : 'Noirs'}`,
+        { action: 'Annuler', icon: 'rotate-ccw', run: undoRecordedMove, title: 'Retirer ce coup du répertoire (il va dans la corbeille, 30 jours)' });
+    _receiptKey = key;
+}
+
+// Le reçu est-il encore valable ? Position actuelle affichée, dernier coup = mon coup enregistré, toujours au répertoire.
+function _receiptValid() {
+    if (_receiptKey === null || gameMode !== 'play' || navCursor !== -1 || !moveHistory.length) return false;
+    const last = moveHistory[moveHistory.length - 1];
+    return last.turnBefore === playerColor && _keyBeforeMove(last) === _receiptKey && !!openingDB[_receiptKey]
+        && !!document.querySelector('#status-bar .status-act');
+}
+
+// « Annuler » du reçu : l'entrée part à la corbeille (comme « Corriger », sans la fenêtre de confirmation),
+// puis le coup est défait. Si le reçu n'est plus valable, c'est « Corriger » (undoMove, avec confirmation).
+function undoRecordedMove() {
+    if (!_receiptValid()) { _receiptKey = null; undoMove(); return; }
+    const key = _receiptKey;
+    _receiptKey = null;
+    if (!_deleteEntries([key])) { setStatus('Impossible d\'annuler', 'err', 'La corbeille n\'a pas pu garder ce coup.'); return; }
+    performUndo();
+    if (typeof refreshTree === 'function') refreshTree();
+    setStatus('Coup retiré du répertoire', 'info', 'Il reste 30 jours dans la corbeille. Jouez un autre coup.');
+}
+
 function performUndo() {
+    _receiptKey = null;
     const last       = moveHistory.pop();
     board            = last.boardBefore.slice();
     turn             = last.turnBefore;
@@ -631,6 +681,7 @@ function performUndo() {
 // ─── RÉINITIALISATION ─────────────────────────────────────────────────────────
 
 function resetGame() {
+    _receiptKey = null;
     clearErrorFx();
     _resetHint();
     parseFEN(INIT_FEN);

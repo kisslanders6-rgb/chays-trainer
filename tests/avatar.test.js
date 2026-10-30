@@ -77,7 +77,8 @@ const settings = fs.readFileSync('js/core/settings.js', 'utf8'), icons = fs.read
         assert(/\.avatar \{[^}]*aspect-ratio: 1[^}]*overflow: hidden/.test(css));
         assert(/\.avatar \.av-picto svg\.ico \{ width: 100%/.test(css), 'plus spécifique que .topnav-pill > .theme-toggle svg');
         assert(/\.avatar \.av-photo \{[^}]*object-fit: cover/.test(css));
-        ['avatar topnav-avatar', 'avatar pn-avatar', 'avatar pn-choice'].forEach(c => assert(ui.includes(`class="${c}"`), c));
+        assert(ui.includes('class="avatar topnav-avatar"'));
+        ['acct-id-avatar', 'acct-tile-avatar', 'acct-studio-avatar'].forEach(c => assert(ui.includes(`avatarHTML('${c}'`), c));
         assert(ui.includes("theme: ['var(--theme-dark-deep)', 'var(--theme-light-refined)']"));
     });
 

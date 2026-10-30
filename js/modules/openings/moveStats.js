@@ -260,6 +260,34 @@ function renderFreqPanel() {
 
 let _freqTodo = [];
 
+// ─── SUITES ADVERSES (Jouer, sous la barre d'état) ────────────────────────────
+// Au tour de l'adversaire, dans une position connue : les trois réponses les plus jouées (_freqRows), chacune avec
+// une pastille « préparé » (réponse enregistrée après ce coup) ou « à préparer ». Un toucher joue le coup pour
+// l'adversaire (action freqPlay, comme l'onglet Adversaire) ; rien n'est compté.
+const OPP_SUITES_MAX = 3;
+
+function renderOppSuites() {
+    const box = document.getElementById('opp-suites');
+    if (!box) return;
+    let rows = [];
+    if (gameMode === 'play') {
+        const key = Chess.key(Chess.fromFen(displayedFen()));
+        // En Jouer, une position au trait de l'adversaire suit toujours mon coup du répertoire (ou le départ, avec les Noirs).
+        if (key.split(' ')[1] !== playerColor) {
+            try { rows = _freqRows(key).slice(0, OPP_SUITES_MAX); } catch (e) { rows = []; }
+        }
+    }
+    box.hidden = !rows.length;
+    if (!rows.length) { box.innerHTML = ''; return; }
+    const opp = playerColor === 'w' ? 'b' : 'w';
+    box.innerHTML = `<span class="opp-suites-h">Suites adverses</span><div class="opp-suites-list">${rows.map(r => {
+        const pct = r.lichPct ?? r.ownPct;
+        return `<button type="button" class="opp-suite" data-action="freqPlay" data-arg="${escapeHtml(r.uci)}" title="Jouer ${escapeHtml(formatSanText(r.san, opp))} pour l’adversaire · ${r.covered ? 'préparé' : 'à préparer'}">
+            <i class="opp-dot ${r.covered ? 'is-ok' : 'is-todo'}" aria-hidden="true"></i><b>${formatSan(r.san, opp)}</b>${pct ? `<span class="opp-pct">${_pct(pct)}</span>` : ''}
+            <span class="sr-only">${r.covered ? 'préparé' : 'à préparer'}</span></button>`;
+    }).join('')}</div>`;
+}
+
 function _freqLoadLichess(key) {
     _freqLich = { key, moves: null, error: '' };
     fetchExplorer(key).then(moves => {

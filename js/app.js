@@ -93,7 +93,7 @@ function applySyncedPrefs() {
     if (typeof renderAnnotations === 'function') renderAnnotations();
     if (typeof SettingsPanel !== 'undefined' && SettingsPanel.isOpen()) SettingsPanel.refresh();
     if (typeof AccountUI !== 'undefined' && AccountUI.refresh) AccountUI.refresh();
-    // Déconnexion demandée depuis un autre appareil (Compte › Appareils et synchro).
+    // Déconnexion demandée depuis un autre appareil (Compte › Synchronisation).
     if (isThisDeviceRevoked() && typeof Auth !== 'undefined' && Auth.isSignedIn()) {
         Auth.signOut();
         touchDevice(true);                 // demande levée localement : une reconnexion ne redéclenchera pas la déconnexion
@@ -165,13 +165,25 @@ function _homePlanHTML(title, list, muted) {
         ${rest ? `<p class="hp-plan-more">et ${rest} dans ${groups.length - HOME_PLAN_MAX} autre${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''} ouverture${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''}</p>` : ''}</div>`;
 }
 
-// Anneau de l'objectif du jour (positions jouées aujourd'hui, tous répertoires).
+// Anneau de l'objectif du jour (positions jouées aujourd'hui, tous répertoires) : anneau commun (Ring, rings.js).
 function _homeGoalHTML(done, goal) {
-    const C = 2 * Math.PI * 26, p = Math.min(1, done / goal);
-    return `<div class="hp-goal${done >= goal ? ' is-done' : ''}" role="img" aria-label="Objectif du jour : ${Math.min(done, goal)} sur ${goal} positions">
-        <svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="26"/><circle class="v" cx="30" cy="30" r="26" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - p)).toFixed(1)}"/></svg>
-        <span><b>${Math.min(done, goal)}/${goal}</b><small>aujourd'hui</small></span></div>`;
+    const n = Math.min(done, goal);
+    return Ring.html({ value: done, max: goal, size: 64, label: `${n}/${goal}`, sub: done >= goal ? 'atteint' : 'auj.',
+        ariaLabel: `Objectif du jour : ${n} sur ${goal} positions`, cls: 'hp-goal' });
 }
+
+// Prévision des 7 prochains jours (dueForecast, storage.js) : une barre fine par jour avec son total.
+function _homeForecastHTML(entries, now) {
+    const fc = dueForecast(entries, 7, now), max = Math.max(1, ...fc), d0 = new Date(now);
+    const day = i => i === 0 ? 'auj.' : new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).toLocaleDateString('fr-FR', { weekday: 'short' });
+    return `<div class="hp-plan hp-fc-wrap"><div class="hp-h"><h3>7 prochains jours</h3><span class="hp-n">${fc.reduce((a, b) => a + b, 0)}</span></div>
+        <ol class="hp-fc" aria-label="Révisions prévues sur les 7 prochains jours">${fc.map((v, i) =>
+            `<li aria-label="${escapeHtml(day(i))} : ${v} ${v > 1 ? 'positions' : 'position'}"><b class="hp-fc-n">${v}</b>`
+            + `<i style="height:${v ? Math.max(3, Math.round(36 * v / max)) : 2}px"></i><span aria-hidden="true">${escapeHtml(day(i))}</span></li>`).join('')}</ol></div>`;
+}
+
+// Fin de ligne menant à une position (sans mon dernier coup : la position telle qu'elle sera posée).
+const _homeLineBefore = path => _lineTail(path.slice(0, -1));
 
 function renderHomeSummary() {
     const host = document.getElementById('hp-today');
@@ -181,6 +193,7 @@ function renderHomeSummary() {
     ['w', 'b'].forEach(color => { const db = readDBFor(currentRepertoire, color); Object.keys(db).forEach(key => rows.push({ color, key, e: db[key] })); });
     const side = c => rows.filter(r => r.color === c), due = rows.filter(r => isDue(r.e, now));
     document.getElementById('hp-grid').classList.toggle('is-empty', !rows.length);
+    ['hp-play', 'hp-news'].forEach(id => document.getElementById(id).classList.add('edge-card'));   // bord à bord sur téléphone
 
     // Jouer : position, chiffres et maîtrise par couleur.
     document.getElementById('hp-play-n').textContent = pl(rows.length, 'position', 'positions');
@@ -194,57 +207,67 @@ function renderHomeSummary() {
         document.getElementById('home-bar-' + c).innerHTML = STATS_MASTERY_LEVELS.some(l => counts[l]) ? levelBarHTML(counts, 'hp-bar') : '';
     });
 
+    // Surtitre : salutation · série.
     const h = new Date().getHours(), name = appSettings.pseudo.trim();
-    const greet = escapeHtml((h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : ''));
     const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
-    const head = `<span class="hp-greet">${greet}${streak ? `<span class="hp-streak">${pl(streak, 'jour', 'jours')} d'affilée</span>` : ''}</span>`;
+    const head = `<p class="hp-over">${escapeHtml((h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : ''))}`
+        + `${streak ? ` · <span class="hp-streak">${pl(streak, 'jour', 'jours')} d'affilée</span>` : ''}</p>`;
 
-    // Répertoire vide : par quelle couleur commencer.
+    // Répertoire vide : par quelle couleur commencer (une carte choisie, une seule action pleine).
     if (!rows.length) {
-        const pick = (c, primary) => `<button type="button" class="hp-pick" onclick="startGame('${c}')">
-            ${_miniBoardHTML({ side: c, path: [], k: INIT_FEN }, true)}
-            <span><b>${c === 'w' ? 'Blancs' : 'Noirs'}</b><small>${c === 'w' ? '1. ?' : 'contre 1. e4, 1. d4…'}</small>
-            <span class="hp-cta${primary ? '' : ' is-quiet'}">${ico('play')}Commencer</span></span></button>`;
-        host.innerHTML = `<div class="hp-start">${head}<h2 class="hp-title">Par quelle couleur commencer&nbsp;?</h2>
-            <div class="hp-picks">${pick('w', true)}${pick('b', false)}</div>
-            <div class="hp-alts"><button type="button" class="hp-alt" data-action="homeImportPgn">${ico('upload')}Importer un PGN</button>
-            <button type="button" class="hp-alt" data-action="homeGames">${ico('target')}Partir de mes parties</button></div></div>`;
+        const pick = c => `<button type="button" class="hp-pick is-${c}" data-action="homePick" data-arg="${c}" aria-pressed="${c === 'w'}">
+            ${_miniBoardHTML({ side: c, path: [], k: INIT_FEN }, true, { label: c === 'w' ? 'Blancs' : 'Noirs' })}
+            <span><b>${c === 'w' ? 'Blancs' : 'Noirs'}</b><small>${c === 'w' ? '1. ?' : 'contre 1. e4, 1. d4…'}</small></span></button>`;
+        host.innerHTML = `<div class="hp-start edge-card">${head}<h2 class="hp-title">Par quelle couleur commencer&nbsp;?</h2>
+            <div class="hp-picks">${pick('w')}${pick('b')}</div>
+            <div class="hp-ctas"><button type="button" class="btn btn-primary hp-cta" id="hp-start-cta" data-action="homeAddLine" data-arg="w">${ico('play')}<span>Commencer avec les Blancs</span></button></div>
+            <div class="hp-alts"><button type="button" class="hp-link" data-action="homeImportPgn">${ico('upload')}Importer un PGN</button>
+            <button type="button" class="hp-link" data-action="homeGames">${ico('target')}Partir de mes parties</button></div></div>`;
         HomePanels.render();
         return;
     }
 
-    let board, title, sub, cta, plan;
+    const link = `<button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
+    let title, sub, focus = '', cta, plan;
     if (due.length) {
         // La position la plus en retard, telle qu'elle sera posée (avant mon coup).
         const next = due.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
-        const op = next.e.path && next.e.path.length ? openingNameOf(next.e.path) : null;
+        const path = next.e.path && next.e.path.length ? next.e.path : null, op = path ? openingNameOf(path) : null;
+        const d0 = dueOf(next.e), late = d0 ? Math.floor((now - d0) / DAY_MS) : 0, colors = new Set(due.map(r => r.color));
         const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
-        board = _miniBoardHTML({ side: next.color, path: next.e.path && next.e.path.length ? next.e.path : null, k: next.key }, false)
-              + `<span class="hp-cap">${op ? escapeHtml(op.name) + ' · ' : ''}${next.color === 'w' ? 'Blancs' : 'Noirs'}</span>`;
         title = `<em>${due.length}</em> ${due.length > 1 ? 'positions' : 'position'}<br>à réviser`;
-        sub = `Environ <b>${minutes} min</b>` + (today < goal ? ` · encore ${goal - today} pour l'objectif` : ' · objectif atteint');
-        cta = `<button type="button" class="hp-cta" data-action="homeReview">${ico('play')}Commencer la révision</button>
-               <button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
+        sub = `Environ <b>${minutes} min</b> · ${colors.size > 1 ? 'Blancs et Noirs' : colors.has('w') ? 'Blancs' : 'Noirs'}`
+            + (today < goal ? ` · encore ${goal - today} pour l'objectif` : '');
+        focus = `<div class="hp-focus">${_miniBoardHTML({ side: next.color, path, k: next.key }, false, { cls: 'hp-focus-board', label: 'Position la plus en retard, avant votre coup' })}
+            <span class="hp-focus-txt"><span class="hp-focus-over">La plus en retard${late >= 1 ? ` · ${late} j` : ''}</span>
+            <b>${op ? escapeHtml(op.name) : 'Position de départ'}</b><span class="hp-focus-line">${path ? _homeLineBefore(path) : ''}</span>
+            <small>${next.color === 'w' ? 'Blancs' : 'Noirs'}</small></span></div>`;
+        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeReview">${ico('play')}Commencer la révision</button>${link}`;
         plan = _homePlanHTML('Au programme', due);
     } else {
-        // À jour : la prochaine révision, et une ligne à ajouter dans la couleur la moins fournie.
-        const soon = rows.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e)), first = soon[0];
+        // À jour : la prochaine révision, une ligne à ajouter dans la couleur la moins fournie, la prévision.
+        const first = rows.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
         const c = side('w').length <= side('b').length ? 'w' : 'b';
-        const horizon = _dayStart(now, 2), upcoming = rows.filter(r => dueOf(r.e) < horizon);
-        board = _miniBoardHTML({ side: first.color, path: first.e.path && first.e.path.length ? first.e.path : null, k: first.key }, false)
-              + `<span class="hp-check">${ico('check')}</span>`;
         title = `Tout est <em>à jour</em>.`;
-        sub = `Prochaine révision <b>${_inLabel(dueOf(first.e))}</b>`;
-        cta = `<button type="button" class="hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>
-               <button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
-        plan = _homePlanHTML('D’ici demain', upcoming, true);
+        sub = `Prochaine révision <b>${_inLabel(dueOf(first.e))}</b>` + (today >= goal ? ' · objectif atteint' : '');
+        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>${link}`;
+        plan = _homeForecastHTML(rows.map(r => r.e), now);
     }
-    host.innerHTML = `<div class="hp-day${due.length ? '' : ' is-done'}">${_homeGoalHTML(today, goal)}
-        <div class="hp-day-in"><div class="hp-day-board">${board}</div>
-        <div class="hp-day-txt">${head}<h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p><div class="hp-ctas">${cta}</div></div></div>
-        ${plan}</div>`;
+    host.innerHTML = `<div class="hp-day edge-card${due.length ? '' : ' is-done'}">${head}
+        <div class="hp-head"><div><h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p></div>${_homeGoalHTML(today, goal)}</div>
+        ${focus}<div class="hp-ctas">${cta}</div>${plan}</div>`;
     HomePanels.render();                         // À traiter : nouveautés des parties, dernières parties
 }
+
+// Répertoire vide : la carte choisie donne sa couleur à l'unique action.
+function _homePick(c) {
+    document.querySelectorAll('#hp-today .hp-pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.arg === c)));
+    const cta = document.getElementById('hp-start-cta');
+    if (!cta) return;
+    cta.dataset.arg = c;
+    cta.querySelector('span').textContent = 'Commencer avec les ' + (c === 'w' ? 'Blancs' : 'Noirs');
+}
+registerActions({ homePick: _homePick });
 
 // iOS n'applique :active au toucher qu'en présence d'un écouteur touchstart (retour d'appui, css/feedback.css).
 document.addEventListener('touchstart', () => {}, { passive: true });
@@ -480,7 +503,7 @@ function goHome(tab) {
 }
 
 registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt(), homeImportPgn: () => showPgnImport(),
-    homeReview: () => startDailyReview(), homeAddLine: c => startGame(c), homeExercises: () => openTrainingFrom({ color: 'all' }) });
+    homeReview: () => startDailyReview(), homeAddLine: c => startGame(c), homeExercises: () => switchHomeTab('training') });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 

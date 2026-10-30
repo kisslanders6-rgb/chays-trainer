@@ -313,13 +313,11 @@
             </div>
 
             <!-- Onglet Statistiques -->
-            <!-- Barre de contexte collante (répertoire, couleur, aide), puis le contenu rendu par stats.js -->
+            <!-- Barre de contexte collante (répertoire, couleur), puis le contenu rendu par stats.js -->
             <div id="home-tab-stats" class="home-tab hidden">
                 <div class="st-scope">
                     <div class="st-rep" id="stats-rep"></div>
                     <div class="st-seg" id="stats-color"></div>
-                    <button class="st-info-btn" id="stats-info-btn" data-action="statsInfo" aria-expanded="false" aria-controls="stats-info" title="Comment lire ces statistiques" aria-label="Comment lire ces statistiques"><svg class="ico"><use href="#i-info"/></svg></button>
-                    <div class="st-info" id="stats-info" role="note" hidden></div>
                 </div>
                 <div id="stats-body" class="st-body"></div>
             </div>
@@ -356,12 +354,16 @@
                     <div class="board-wrap">
                         <div class="eval-bar is-empty" id="eval-bar" data-modes="analysis" role="img" aria-label="Évaluation indisponible"></div>
                         <div id="board" role="group" aria-label="Échiquier — flèches pour se déplacer, Entrée pour jouer"></div>
+                        <!-- Pastille posée sur l'échiquier, hors du flux (showBoardPill / hideBoardPill, openingsUI.js) -->
+                        <div class="board-pill" id="board-pill" role="status" hidden></div>
                     </div>
 
                     <!--
                         Barre de contrôle (commune à tous les modes) ; chaque bouton choisit ses modes avec
                         data-modes (cf. applyModeUI dans app.js).
-                          Ordinateur : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
+                          Ordinateur (920 px+) : une seule rangée de 48 px, ‹ [ action ] › puis les outils en icônes,
+                                       après un filet (hauteur comptée dans --board-chrome-h).
+                          Tablette   : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
                           Mobile     : une seule barre d'icônes uniformes, dans l'ordre
                                        précédent · suivant · retourner · indice · autres actions (classes tb-*).
                     -->
@@ -435,6 +437,9 @@
                             <button class="btn btn-tool" onclick="openAnalysis()" title="Analyser la position avec le moteur">
                                 <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyse</span>
                             </button>
+                            <button class="btn btn-tool" id="preview-lichess" data-needs-network onclick="openLichessAnalysis()" title="Ouvrir la position sur Lichess (nouvel onglet)">
+                                <svg class="ico"><use href="#i-external-link"/></svg><span class="btn-label">Lichess</span>
+                            </button>
                         </div>
                         <div class="controls controls-tools" data-modes="analysis">
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
@@ -454,10 +459,13 @@
                     <!-- Mobile : poignée du tiroir (toucher = ouvrir / fermer, glisser vers le haut / le bas) -->
                     <button class="sheet-handle" id="sheet-handle" onclick="toggleSheet()" aria-label="Agrandir le panneau" aria-expanded="false"><span></span></button>
                     <div class="endgame-card" id="endgame-card" data-modes="endgame"></div>
+                    <!-- Barre d'état (setStatus) : titre, détail, et bouton facultatif .status-act (reçu d'un coup enregistré) -->
                     <div class="status-bar" id="status-bar">
                         <div class="status-dot dot-info" id="status-dot"></div>
                         <div class="status-text" id="status-text">Initialisation...</div>
                     </div>
+                    <!-- Suites adverses (Jouer, au trait de l'adversaire) : renderOppSuites, moveStats.js -->
+                    <div class="opp-suites" id="opp-suites" data-modes="play" hidden></div>
                     <div class="side-lower">
                         <div class="side-tabs" data-modes="play">
                             <button class="side-tab active" id="side-tab-moves" onclick="showSideTab('moves')">Coups</button>
@@ -488,44 +496,58 @@
     </div>
 
     <!-- ─── OVERLAY ANALYSE D'UNE PARTIE ───────────────────────────────────── -->
+    <!-- « Boîte de réception » (lot 7) : source en segments (Lichess, Chess.com, PGN collé), formulaire replié en une
+         ligne après l'analyse (#online-done), compteurs filtrants, liste à gauche et partie choisie à droite dès 920 px. -->
     <div id="review-overlay" class="overlay hidden">
-        <div class="panel">
+        <div class="panel review-panel" id="review-panel">
             <div class="panel-head">
                 <div class="panel-title"><svg class="ico"><use href="#i-target"/></svg> Analyser mes parties</div>
                 <button class="panel-x" onclick="closeGameReview()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
-            <div class="panel-sub">Répertoire : <strong id="review-target" style="color:var(--accent)"></strong>. Chaque partie s'arrête sur le premier coup sorti du répertoire ; si ce coup est le vôtre, il compte comme une erreur (une seule fois par partie).</div>
-            <div class="tr-seg review-tabs" role="tablist">
-                <button class="tr-seg-btn" id="review-tab-online" role="tab" onclick="setReviewTab('online')"><svg class="ico"><use href="#i-download"/></svg> Mes parties en ligne</button>
-                <button class="tr-seg-btn" id="review-tab-paste" role="tab" onclick="setReviewTab('paste')"><svg class="ico"><use href="#i-upload"/></svg> Coller un PGN</button>
-            </div>
+            <div class="panel-sub">Répertoire : <strong id="review-target" style="color:var(--accent)"></strong></div>
 
-            <div id="review-pane-online">
-                <div class="online-form">
-                    <div class="tr-seg" role="group" aria-label="Site">
-                        <button class="tr-seg-btn" id="online-site-chesscom" onclick="setOnlineSite('chesscom')">Chess.com</button>
-                        <button class="tr-seg-btn" id="online-site-lichess" onclick="setOnlineSite('lichess')">Lichess</button>
+            <div id="online-done" class="online-done" hidden></div>
+
+            <div id="online-form" class="online-src">
+                <div class="tr-seg online-seg online-sites" role="radiogroup" aria-label="Source">
+                    <button type="button" class="tr-seg-btn" id="online-site-lichess" role="radio" data-action="setOnlineSite" data-arg="lichess"><span class="online-site lc" aria-hidden="true">li</span>Lichess</button>
+                    <button type="button" class="tr-seg-btn" id="online-site-chesscom" role="radio" data-action="setOnlineSite" data-arg="chesscom"><span class="online-site cc" aria-hidden="true">c</span>Chess.com</button>
+                    <button type="button" class="tr-seg-btn" id="online-site-pgn" role="radio" data-action="setOnlineSite" data-arg="pgn"><svg class="ico"><use href="#i-upload"/></svg>PGN collé</button>
+                </div>
+
+                <div id="review-pane-online" class="online-pane">
+                    <div class="online-field">
+                        <svg class="ico" aria-hidden="true"><use href="#i-search"/></svg>
+                        <input id="online-user" class="online-input" type="text" placeholder="pseudo Lichess" autocomplete="username" spellcheck="false" onkeydown="if (event.key === 'Enter') runOnlineFetch()" aria-label="Pseudo Lichess" aria-describedby="online-user-err" />
                     </div>
-                    <input id="online-user" class="online-input" type="text" placeholder="Votre pseudo" autocomplete="username" spellcheck="false" onkeydown="if (event.key === 'Enter') runOnlineFetch()" aria-label="Pseudo" />
-                    <select id="online-count" class="online-input online-count" aria-label="Nombre de parties">
-                        <option value="5">5 parties</option><option value="10">10 parties</option><option value="20">20 parties</option><option value="50">50 parties</option>
-                    </select>
+                    <div id="online-user-err" class="online-field-err" role="alert" hidden></div>
+                    <div class="online-count-row">
+                        <span id="online-count-lbl">Dernières parties</span>
+                        <div class="tr-seg online-seg" id="online-count" role="radiogroup" aria-labelledby="online-count-lbl">
+                            <button type="button" class="tr-seg-btn" role="radio" data-action="setOnlineCount" data-arg="5">5</button>
+                            <button type="button" class="tr-seg-btn" role="radio" data-action="setOnlineCount" data-arg="10">10</button>
+                            <button type="button" class="tr-seg-btn" role="radio" data-action="setOnlineCount" data-arg="20">20</button>
+                            <button type="button" class="tr-seg-btn" role="radio" data-action="setOnlineCount" data-arg="50">50</button>
+                        </div>
+                    </div>
+                    <p class="net-note online-offline">Hors ligne · le PGN collé marche sans Internet</p>
+                    <button type="button" class="btn btn-primary online-go" id="online-fetch-btn" data-needs-network onclick="runOnlineFetch()">Analyser</button>
+                    <div id="online-last" class="online-last" hidden></div>
                 </div>
-                <div class="pgn-note info net-note">Hors ligne : la récupération des parties reviendra avec la connexion. L'onglet « Coller un PGN » fonctionne sans Internet.</div>
-                <button class="panel-close" id="online-fetch-btn" data-needs-network style="border-color:var(--ok);color:var(--ok);" onclick="runOnlineFetch()">Récupérer mes parties</button>
-                <div id="online-results" class="pgn-result"></div>
+
+                <div id="review-pane-paste" class="online-pane hidden">
+                    <div class="review-color">
+                        <span>J'avais les</span>
+                        <div id="review-color"></div>
+                        <small style="color:var(--text-dim)">Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.</small>
+                    </div>
+                    <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" aria-label="PGN de la partie" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
+                    <button type="button" class="btn btn-primary online-go" onclick="runGameReview()">Analyser la partie</button>
+                    <div id="review-result" class="pgn-result"></div>
+                </div>
             </div>
 
-            <div id="review-pane-paste" class="hidden">
-                <div class="review-color">
-                    <span>J'avais les</span>
-                    <div id="review-color"></div>
-                    <small style="color:var(--text-dim)">Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.</small>
-                </div>
-                <textarea id="review-text" class="pgn-area" rows="9" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;]&#10;[Site &quot;Chess.com&quot;]&#10;…&#10;1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 1-0"></textarea>
-                <button class="panel-close" style="border-color:var(--ok);color:var(--ok);" onclick="runGameReview()">Analyser la partie</button>
-                <div id="review-result" class="pgn-result"></div>
-            </div>
+            <div id="online-results" class="online-results"></div>
         </div>
     </div>
 
@@ -630,6 +652,7 @@
 <script src="js/core/panelKit.js"></script>
 <script src="js/core/dropdown.js"></script>
 <script src="js/core/colorScope.js"></script>
+<script src="js/core/rings.js"></script>
 <script src="js/core/repPicker.js"></script>
 <script src="js/core/network.js"></script>
 <script src="js/core/storageAdapter.js"></script>

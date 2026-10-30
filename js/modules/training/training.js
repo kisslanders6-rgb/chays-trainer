@@ -91,6 +91,7 @@ function stopTraining() {
     trainingState.timers = [];
     trainingState.busy   = false;
     trainingState.ctxSkip = null;
+    if (typeof hideBoardPill === 'function') hideBoardPill();
 }
 
 function _inLabel(t) {
@@ -300,7 +301,8 @@ function quitTraining() {
     goHome(back);
 }
 
-// Barre au-dessus de l'échiquier : progression de la séance, ou chrono.
+// Barre au-dessus de l'échiquier : progression de la séance, ou chrono. Barre fine, compteur « 7 / 18 »
+// en Plex Mono ; sur ordinateur, elle tient dans la marge du haut (aucune hauteur ajoutée à l'échiquier).
 function _renderSessionBar() {
     const el = document.getElementById('tr-progress');
     if (!el) return;
@@ -311,18 +313,18 @@ function _renderSessionBar() {
     if (S.kind === 'timed') {
         const left = Math.max(0, S.end - Date.now()), s = Math.ceil(left / 1000);
         el.innerHTML = `<div class="tr-prog-bar tr-prog-time" role="img" aria-label="Temps restant"><i style="width:${(100 * left / TRAIN_TIMED_MS).toFixed(1)}%"></i></div>
-            <div class="tr-prog-l"><span><b>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</b> restantes</span><span><b>${S.score}</b> bon${S.score > 1 ? 's' : ''} coup${S.score > 1 ? 's' : ''}</span></div>`;
+            <div class="tr-prog-l"><span><b class="tr-prog-n">${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</b> restantes</span><span><b class="tr-prog-n">${S.score}</b> bon${S.score > 1 ? 's' : ''} coup${S.score > 1 ? 's' : ''}</span></div>`;
         return;
     }
     if (S.kind === 'line') {
-        el.innerHTML = `<div class="tr-prog-l"><span>Ligne complète · <b>${escapeHtml(S.line.name)}</b></span><span>${S.results.size} coup${S.results.size > 1 ? 's' : ''} · ${okFirst} du premier coup</span></div>`;
+        el.innerHTML = `<div class="tr-prog-l"><span>Ligne complète · <b>${escapeHtml(S.line.name)}</b></span><span><b class="tr-prog-n">${S.results.size}</b> ${S.results.size > 1 ? 'coups' : 'coup'} · ${okFirst} du premier coup</span></div>`;
         return;
     }
     const n = S.items.length, pos = Math.min(n, (S.cur >= 0 ? S.cur : S.i) + 1);
-    const again = S.items.filter(x => x.second).length;
-    el.innerHTML = `<div class="tr-prog-bar${n > 40 ? ' dense' : ''}" role="img" aria-label="Position ${pos} sur ${n}">${S.items.map((x, i) =>
+    const again = S.items.filter(x => x.second && !x.res).length;
+    el.innerHTML = `<div class="tr-prog-bar${n > 40 ? ' dense' : ''}" role="progressbar" aria-label="${escapeHtml(S.label)}" aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="${pos}" aria-valuetext="Position ${pos} sur ${n}">${S.items.map((x, i) =>
         `<i class="${i === S.cur ? 'cur' : x.res === 'ok' ? 'ok' : x.res === 'ko' ? 'ko' : x.res === 'skip' ? 'skip' : x.second ? 'again' : ''}"></i>`).join('')}</div>
-        <div class="tr-prog-l"><span><b>${pos} / ${n}</b> ${escapeHtml(S.label.toLowerCase())}</span><span>${okFirst} du premier coup${again ? ` · ${again} à revoir à la fin` : ''}</span></div>`;
+        <div class="tr-prog-l"><span><b class="tr-prog-n">${pos} / ${n}</b> ${escapeHtml(S.label.toLowerCase())}</span><span>${okFirst} du premier coup${again ? ` · ${again} à revoir à la fin` : ''}</span></div>`;
 }
 
 // ─── POIDS DE TIRAGE (répétition espacée, sélection probabiliste continue) ──
@@ -473,7 +475,7 @@ function _startDrill(key, seqLen, opts) {
         const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
         const ctx   = fullPath.slice(start, n);
         loadPositionFromPath(fullPath.slice(0, start));
-        setStatus('Mise en situation…', 'info', ctx.length ? 'Touchez l\'échiquier pour passer.' : trainingState.reason);
+        setStatus('Mise en situation…', 'info', ctx.length ? '' : trainingState.reason);
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
             playMoveSound(m.from, m.to, m.promo);
@@ -488,6 +490,7 @@ function _startDrill(key, seqLen, opts) {
             loadPositionFromPath(fullPath.slice(0, -1));
             _drillReady();
         };
+        if (ctx.length && typeof showBoardPill === 'function') showBoardPill('Toucher pour passer', () => { if (trainingState.ctxSkip) trainingState.ctxSkip(); });
     } else {
         // Dernier recours : aucune ligne connue → position posée directement (historique vide inévitable).
         loadPositionFromPath([]);
@@ -525,6 +528,7 @@ function _positionPosed() {
 
 function _drillReady() {
     trainingState.ctxSkip = null;
+    if (typeof hideBoardPill === 'function') hideBoardPill();
     const key = trainingState.current;
     if (positionKey() !== key) {
         const entry = openingDB[key];
@@ -545,8 +549,20 @@ function _drillReady() {
     trainingState.busy = false;
     _positionPosed();
     _renderSessionBar();
-    setStatus(`À vous de jouer${_seqLabel()}`, 'info',
-              trainingState.reason + (trainingState.ok && !trainingState.session ? ` · ${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''}` : ''));
+    setStatus(`À vous de jouer${_seqLabel()}`, 'info', _readyDetail());
+}
+
+// Sous-texte de « À vous de jouer ». En séance, la barre de progression dit déjà où l'on en est :
+// seulement l'ouverture (ou le deuxième passage). En mode libre : la raison du tirage et les réussites.
+function _readyDetail() {
+    const S = trainingState.session;
+    if (!S) return trainingState.reason + (trainingState.ok ? ` · ${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''}` : '');
+    const it = S.items[S.cur];
+    if (it && it.second) return 'Deuxième passage';
+    if (S.kind === 'line') return '';
+    const e = openingDB[trainingState.current];
+    const op = e && e.path && e.path.length && typeof openingNameOf === 'function' ? openingNameOf(e.path) : null;
+    return op ? op.name : '';
 }
 
 // ─── LIGNE COMPLÈTE (depuis la position initiale) ─────────────────────────────

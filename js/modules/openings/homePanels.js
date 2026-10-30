@@ -4,8 +4,9 @@
  * Bloc « À traiter » de l'accueil Jouer (css/home.css), à côté de « Aujourd'hui » et « Jouer » (app.js). Deux vues :
  *   « Nouveautés »  parties du journal (chessTrainer_gameLedger) arrêtées sur une nouveauté adverse ou une position
  *                   sans réponse, pour le répertoire actif, tant que la réponse n'est pas enregistrée. Chaque ligne
- *                   montre la position à traiter ; un clic ouvre Jouer dessus.
- *   « Parties »     les parties analysées le plus récemment et leur verdict pour le répertoire actif.
+ *                   montre la position à traiter ; « Répondre » ouvre Jouer dessus.
+ *   « Parties »     les parties analysées le plus récemment et leur verdict (.vbadge) pour le répertoire actif ;
+ *                   « Répondre » sur celles qui attendent encore une réponse.
  * La vue par défaut est « Nouveautés » ; sans nouveauté ni partie, un état vide renvoie vers l'analyse des parties.
  * Suggestion unique « Essayer Noyer + Maestro » pour une installation antérieure restée sur Sauge + Merida
  * (chessTrainer_looksTip, propre à l'appareil : 'tried' ou 'no' ; il n'existe pas de notification générique).
@@ -19,7 +20,7 @@ const HomePanels = (function () {
                     novelty: ['Nouveauté', 'warn'], treated: ['Traitée depuis', 'new'], missing: ['Sans réponse', 'err'] };
     const date = t => (t ? new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
     const srcName = id => ({ lichess: 'Partie Lichess', chesscom: 'Partie Chess.com' }[_gameSrc(id)] || 'PGN collé');
-    let shown = [];                                   // nouveautés affichées (clic : index)
+    let shown = [], shownGames = [];                  // lignes à traiter affichées (clic : index)
 
     // Fin de ligne : les quatre derniers demi-coups, numérotés (« … 7. Cf3 Cc6 8. Fb5 »).
     function lineTail(sans) {                       // HTML : figurines du jeu actif
@@ -53,35 +54,42 @@ const HomePanels = (function () {
     // Vignette : la position à traiter (après la ligne), de mon côté.
     const thumb = (color, path) => typeof _miniBoardHTML === 'function' ? _miniBoardHTML({ side: color, path, k: INIT_FEN }, true) : '';
 
+    // Une ligne : vignette, texte, badge de verdict (.vbadge) et, s'il y a une réponse à jouer, « Répondre ».
+    const BADGE = { ok: 'is-ok', err: 'is-err', info: 'is-muted', warn: 'is-warn', new: 'is-accent' };
+    function row(thumbHTML, txt, kind, answer) {
+        const [label, cls] = KINDS[kind] || ['', ''];
+        return `<div class="hp-row${answer ? '' : ' is-static'}">
+                <span class="hp-thumb">${thumbHTML}</span><span class="hp-row-txt">${txt}</span>
+                <span class="hp-row-end">${label ? `<span class="vbadge ${BADGE[cls]}">${label}</span>` : ''}${answer || ''}</span></div>`;
+    }
+    const answerBtn = (action, i) => `<button type="button" class="btn btn-soft hp-answer" data-action="${action}" data-arg="${i}">Répondre</button>`;
+
     function newsRows() {
         const list = novelties();
         shown = list.slice(0, LIST_MAX);
         if (!list.length) return `<div class="hp-empty">${ico('check')}<b>Aucune nouveauté en attente</b>
             <button type="button" class="st-link" data-action="homeGames">Analyser mes parties</button></div>`;
-        return shown.map((x, i) => {
-            const tail = lineTail(_pathToSans(x.path)), [label, cls] = KINDS[x.kind === 'novelty' ? 'novelty' : 'missing'];
-            return `<button type="button" class="hp-row" data-action="homeNovelty" data-arg="${i}">
-                <span class="hp-thumb">${thumb(x.color, x.path)}</span>
-                <span class="hp-row-txt"><b>${tail}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''}</small></span>
-                <span class="hp-row-end"><span class="hp-go-label">Répondre ${ico('chevron-right')}</span><span class="hp-kind ${cls}">${label}</span></span>
-            </button>`;
-        }).join('') + (list.length > LIST_MAX ? `<p class="hp-more">et ${list.length - LIST_MAX} de plus</p>` : '');
+        return shown.map((x, i) => row(thumb(x.color, x.path),
+            `<b>${lineTail(_pathToSans(x.path))}</b><small>${escapeHtml(x.vs ? 'contre ' + x.vs : srcName(x.id))}${x.at ? ' · ' + date(x.at) : ''}</small>`,
+            x.kind === 'novelty' ? 'novelty' : 'missing', answerBtn('homeNovelty', i))).join('')
+            + (list.length > LIST_MAX ? `<p class="hp-more">et ${list.length - LIST_MAX} de plus</p>` : '');
     }
 
+    // Parties : « Répondre » seulement sur celles qui attendent encore une réponse (les mêmes que les Nouveautés).
     function gameRows() {
-        const ledger = readLedger();
+        const ledger = readLedger(), todo = novelties();
         const ids = Object.keys(ledger).filter(id => ['w', 'b'].some(c => ledger[id].v && ledger[id].v[currentRepertoire + '|' + c]))
             .sort((a, b) => (ledger[b].last || 0) - (ledger[a].last || 0)).slice(0, LIST_MAX);
+        shownGames = [];
         if (!ids.length) return `<div class="hp-empty">${ico('target')}<b>Aucune partie analysée</b>
             <button type="button" class="st-link" data-action="homeGames">Analyser mes parties</button></div>`;
         return ids.map(id => {
             const g = ledger[id], c = ['w', 'b'].find(k => g.v[currentRepertoire + '|' + k]), v = g.v[currentRepertoire + '|' + c];
-            const [label, cls] = KINDS[v.kind] || ['', ''];
-            return `<div class="hp-row is-static">
-                <span class="hp-thumb">${Array.isArray(v.path) ? thumb(c, v.path) : ''}</span>
-                <span class="hp-row-txt"><b>${escapeHtml(g.vs ? 'contre ' + g.vs : srcName(id))}</b><small>${c === 'w' ? 'Blancs' : 'Noirs'} · ${date(g.at || g.last)}</small></span>
-                ${label ? `<span class="hp-row-end"><span class="hp-kind ${cls}">${label}</span></span>` : ''}
-            </div>`;
+            const open = todo.find(x => x.id === id && x.color === c);
+            if (open) shownGames.push(open);
+            return row(Array.isArray(v.path) ? thumb(c, v.path) : '',
+                `<b>${escapeHtml(g.vs ? 'contre ' + g.vs : srcName(id))}</b><small>${c === 'w' ? 'Blancs' : 'Noirs'} · ${date(g.at || g.last)}</small>`,
+                v.kind, open ? answerBtn('homeGameAnswer', shownGames.length - 1) : '');
         }).join('');
     }
 
@@ -103,7 +111,7 @@ const HomePanels = (function () {
             || appSettings.boardTheme !== 'classic' || appSettings.pieceSet !== 'merida') return '';
         return `<div class="looks-tip" role="note"><span class="looks-tip-sw" aria-hidden="true"></span>
             <span><b>Nouvelle apparence</b> L'échiquier Noyer et les pièces Maestro sont les nouveaux défauts. Les essayer ?</span>
-            <span class="looks-tip-acts"><button type="button" class="btn btn-primary" data-action="looksTip" data-arg="try">Essayer</button><button type="button" class="st-link" data-action="looksTip" data-arg="no">Non merci</button></span></div>`;
+            <span class="looks-tip-acts"><button type="button" class="btn btn-soft" data-action="looksTip" data-arg="try">Essayer</button><button type="button" class="st-link" data-action="looksTip" data-arg="no">Non merci</button></span></div>`;
     }
     function looksTip(arg) {
         if (arg === 'try') {
@@ -128,8 +136,9 @@ const HomePanels = (function () {
         set('hp-news', inboxHTML);
     }
 
-    function openNovelty(i) {
-        const x = shown[Number(i)];
+    // « Répondre » : Jouer sur la position à traiter (rien n'est compté en Jouer).
+    function openNovelty(i, list = shown) {
+        const x = list[Number(i)];
         if (!x) return;
         startGame(x.color);
         loadPositionFromPath(x.path);
@@ -137,6 +146,6 @@ const HomePanels = (function () {
                                                                     : 'Aucune réponse enregistrée ici : jouez votre coup pour l\'enregistrer.');
     }
 
-    registerActions({ homeNovelty: openNovelty, homeGames: () => showGameReview(), homePane: p => { pane = p; render(); }, looksTip });
+    registerActions({ homeNovelty: i => openNovelty(i), homeGameAnswer: i => openNovelty(i, shownGames), homeGames: () => showGameReview(), homePane: p => { pane = p; render(); }, looksTip });
     return { render, novelties };
 })();

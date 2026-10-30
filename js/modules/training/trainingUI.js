@@ -1,15 +1,17 @@
 /**
  * modules/training/trainingUI.js
  * ──────────────────────────────────────────────────────────────────────────
- * Onglet Entraînement : un menu d'exercices (le moteur est dans training.js).
- *   - Barre de contexte : répertoire, Blancs / Noirs / Les deux (comme l'onglet Statistiques).
- *   - Bilan de la dernière séance, s'il y en a un : réussites du premier coup, erreurs à revoir,
- *     niveaux avant → après ; « Revoir les erreurs » relance une séance sur elles.
- *   - « Révision du jour » (carte Velours) : les positions dues ; à côté, les révisions des 7 prochains jours.
- *   - Autres exercices : Points faibles, Ligne complète (choix de l'ouverture), À confirmer,
- *     Contre-la-montre, Mode libre (tirage sans fin, réglé dans sa carte et dans Paramètres).
- *   - Filtre d'ouverture posé par les Statistiques (openTrainingFrom) : les exercices ne portent
- *     que sur les positions de cette ouverture, jusqu'à ce qu'il soit retiré.
+ * Onglet Entraînement : un menu d'exercices « Rampe » (le moteur est dans training.js).
+ *   - Barre de contexte : répertoire, Blancs / Noirs / Les deux (comme l'onglet Statistiques), et la puce
+ *     retirable du filtre d'ouverture posé par les Statistiques (openTrainingFrom).
+ *   - Trois blocs : bilan de la dernière séance (anneau du premier coup, puces, « avant → après » repliable),
+ *     « Révision du jour » (carte Velours : nombre dû, durée estimée, 7 prochains jours), puis la liste des
+ *     exercices (Points faibles, Ligne complète, À confirmer, Contre-la-montre, Mode libre et ses réglages)
+ *     et la maîtrise par couleur.
+ *   - Un seul bouton plein, choisi par _trPrimary : positions dues, sinon erreurs de la dernière séance,
+ *     sinon l'exercice mis en avant (_trFocus), sinon Points faibles. Les autres actions sont tonales.
+ *   - Filtre d'ouverture : les exercices ne portent que sur les positions de cette ouverture, jusqu'à ce
+ *     qu'il soit retiré.
  */
 
 'use strict';
@@ -18,6 +20,7 @@ const TRAIN_SECONDS_PER_POSITION = 30;      // pour la durée estimée de la sé
 const TRAIN_WEAK_MAX   = 20;                // positions par séance « Points faibles » / « À confirmer »
 let _trColor   = 'mix';                     // 'mix' | 'w' | 'b' ; « Les deux » à chaque lancement
 let _trLineOpen = false;                    // liste des ouvertures (Ligne complète) dépliée
+let _trFreeOpen = false;                    // réglages du mode libre dépliés
 let _trOpening = null;                      // { key, name } : ouverture choisie depuis les Statistiques
 let _trFocus = null;                        // exercice mis en avant à l'arrivée depuis les Statistiques
 
@@ -47,6 +50,7 @@ function openTrainingFrom({ color, opening, focus }) {
     _trOpening = opening || null;
     _trFocus = focus || null;
     _trLineOpen = false;
+    _trFreeOpen = false;
     trainingState.lastSummary = null;
     switchHomeTab('training');
     const el = document.querySelector(`#training-panel [data-focus="${_trFocus}"]`);
@@ -73,58 +77,96 @@ function _trOpenings() {
 
 // Révisions prévues sur 7 jours (jours du calendrier : robuste aux changements d'heure).
 function _trForecast(rows, now) {
-    const days = Array.from({ length: 8 }, (_, i) => ({ t: _dayStart(now, i), n: 0 }));
-    rows.forEach(r => {
-        const d = dueOf(r.e);
-        if (d <= now) { days[0].n++; return; }
-        const i = days.findIndex((day, k) => k < 7 && d >= day.t && d < days[k + 1].t);
-        if (i >= 0) days[i].n++;
-    });
-    return days.slice(0, 7);
+    return dueForecast(rows.map(r => r.e), 7, now).map((n, i) => ({ t: _dayStart(now, i), n }));
 }
 
-// ─── BILAN DE LA DERNIÈRE SÉANCE ──────────────────────────────────────────────
+// ─── ACTION PRINCIPALE ────────────────────────────────────────────────────────
+// Un seul bouton plein dans le menu. state : { due, retry, focus, avail: { weak, unsure, timed, free } }
+// (nombres de positions dues, d'erreurs de la dernière séance, exercice mis en avant, exercices disponibles).
+// Renvoie 'due', 'retry', l'exercice mis en avant, 'weak', un autre exercice disponible, ou null.
+const TRAIN_PRIMARY_KINDS = ['weak', 'unsure', 'timed', 'free'];
+function _trPrimary(state) {
+    const { due = 0, retry = 0, focus = null, avail = {} } = state || {};
+    if (due > 0) return 'due';
+    if (retry > 0) return 'retry';
+    if (focus && TRAIN_PRIMARY_KINDS.includes(focus) && avail[focus]) return focus;
+    return TRAIN_PRIMARY_KINDS.find(k => avail[k]) || null;
+}
 
-function _trSummaryHTML(s) {
+// Bouton qui lance une séance : plein (primary) ou tonal.
+const _trBtn = (primary, action, arg, label, icon, extra = '') =>
+    `<button type="button" class="btn ${primary ? 'btn-primary' : 'btn-soft'}" data-action="${action}"${arg != null ? ` data-arg="${arg}"` : ''}${extra}>${ico(icon)}<span>${label}</span></button>`;
+
+// ─── BILAN DE LA DERNIÈRE SÉANCE ──────────────────────────────────────────────
+// Anneau du premier coup, puces (erreurs, niveaux montés, descendus), actions, puis la liste « avant → après »
+// (repliée sur téléphone, dépliée sur bureau).
+
+function _trSummaryHTML(s, primary) {
     if (!s) return '';
-    const label = r => {
-        const op = r.e.path ? openingNameOf(r.e.path) : null;
-        return `<span><span class="trb-move">${_moveLabel(r.e, false, true)}</span><small>${r.color === 'w' ? 'Blancs' : 'Noirs'}${op ? ' · ' + escapeHtml(op.name) : ''}</small></span>`;
-    };
-    const lv = l => `${_lvMark(l)}<span>${STATS_LEVELS[l].one}</span>`;
-    const missed = s.rows.filter(r => !r.ok);
+    const side = r => r.color === 'w' ? 'Blancs' : 'Noirs';
+    const where = r => { const op = r.e.path ? openingNameOf(r.e.path) : null; return side(r) + (op ? ' · ' + escapeHtml(op.name) : ''); };
+    const chip = l => `<span class="lv-chip lv-${l}">${STATS_LEVELS[l].one}</span>`;
     const rank = l => STATS_LEVEL_ORDER.indexOf(l);
-    const moved = s.rows.filter(r => r.lvAfter !== r.lvBefore).sort((a, b) => (rank(b.lvAfter) - rank(b.lvBefore)) - (rank(a.lvAfter) - rank(a.lvBefore)));
-    const pct = s.total ? Math.round(100 * s.ok / s.total) : 0;
+    const missed = s.rows.filter(r => !r.ok);
+    const up = s.rows.filter(r => rank(r.lvAfter) > rank(r.lvBefore)).length;
+    const down = s.rows.filter(r => rank(r.lvAfter) < rank(r.lvBefore)).length;
     const timed = s.kind === 'timed';
+    const pct = s.total ? Math.round(100 * s.ok / s.total) : 0;
     const title = timed ? (s.newRecord ? 'Nouveau record !' : `${s.score} bon${s.score > 1 ? 's' : ''} coup${s.score > 1 ? 's' : ''}`)
         : s.early ? 'Séance interrompue' : pct >= 80 ? 'Très bonne séance' : pct >= 60 ? 'Bonne séance' : 'Séance utile';
-    const sub = timed ? `Record : ${s.record} bon${s.record > 1 ? 's' : ''} coup${s.record > 1 ? 's' : ''}. ${missed.length ? `${missed.length} erreur${missed.length > 1 ? 's' : ''} en route.` : ''}`
-        : missed.length ? `${missed.length} position${missed.length > 1 ? 's' : ''} ratée${missed.length > 1 ? 's' : ''} au premier essai : elle${missed.length > 1 ? 's reviendront' : ' reviendra'} vite en révision.` : 'Aucune erreur au premier essai.';
+    const ring = timed
+        ? Ring.html({ value: s.score, max: Math.max(1, s.record, s.score), size: 64, stroke: 6, label: String(s.score), ariaLabel: `${s.score} bons coups, record ${s.record}` })
+        : Ring.html({ value: s.ok, max: s.total, size: 64, stroke: 6, label: `${s.ok}/${s.total}`, ariaLabel: `${s.ok} sur ${s.total} du premier coup` });
+    const badges = [
+        missed.length ? `<span class="vbadge is-err">${missed.length} à revoir</span>` : '',
+        up ? `<span class="vbadge is-ok">${ico('chevron-up')}${up} niveau${up > 1 ? 'x' : ''} monté${up > 1 ? 's' : ''}</span>` : '',
+        down ? `<span class="vbadge is-warn">${ico('chevron-down')}${down} descendu${down > 1 ? 's' : ''}</span>` : ''
+    ].join('');
+    const nMiss = missed.length;
+    const acts = timed ? _trBtn(false, 'trainingEx', 'timed', 'Rejouer', 'rotate-ccw')
+        : _trBtn(primary, 'trainingRetry', null, nMiss > 1 ? `Revoir les ${nMiss} erreurs` : 'Revoir l\'erreur', 'rotate-ccw',
+                 nMiss ? '' : ' disabled title="Aucune erreur au premier essai : rien à revoir"')
+          + (s.kind === 'line' ? _trBtn(false, 'trainingReplayLine', null, 'Rejouer la ligne', 'play') : '');
+    // Ratées d'abord, puis les niveaux qui ont bougé.
+    const rows = s.rows.slice().sort((a, b) => (a.ok - b.ok) || (Math.abs(rank(b.lvAfter) - rank(b.lvBefore)) - Math.abs(rank(a.lvAfter) - rank(a.lvBefore))));
+    const list = rows.filter(r => !r.ok || r.lvAfter !== r.lvBefore).slice(0, 12).map(r => `
+        <li class="trr-move">${ico(r.ok ? 'check' : 'x', r.ok ? 'is-ok' : 'is-err')}<span class="sr-only">${r.ok ? 'Réussie' : 'Ratée'}</span>
+            <span class="trr-move-san">${_moveLabel(r.e, false, true)}</span><span class="trr-move-op">${where(r)}</span>
+            <span class="trr-move-lv">${r.lvAfter !== r.lvBefore ? `<i class="lv-mark lv-${r.lvBefore}" title="${STATS_LEVELS[r.lvBefore].one}"></i><span class="trr-arr" aria-label="devient">→</span>` : ''}${chip(r.lvAfter)}</span></li>`).join('');
+    const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 600px)').matches;
     return `
-        <section class="trb" aria-label="Bilan de la dernière séance">
-            <div class="vel-card vel-dark trb-hero">
-                <div class="trb-ring" style="--p:${timed ? 100 : pct}"><div><b>${timed ? s.score : `${s.ok}/${s.total}`}</b><span>${timed ? 'bons coups' : 'du premier coup'}</span></div></div>
-                <div class="trb-main">
-                    <span class="st-eyebrow">${escapeHtml(s.label)}${s.line ? ' · ' + escapeHtml(s.line.name) : ''} · ${s.minutes} min</span>
-                    <b class="trb-title">${title}</b>
-                    <span class="trb-sub">${sub}</span>
-                    <span class="trb-acts">
-                        ${missed.length && !timed ? `<button class="st-cta" data-action="trainingRetry">Revoir ${missed.length > 1 ? `les ${missed.length} erreurs` : 'l\'erreur'} ${ico('play')}</button>` : ''}
-                        ${s.kind === 'line' ? `<button class="st-cta" data-action="trainingReplayLine">Rejouer la ligne ${ico('play')}</button>` : ''}
-                        ${timed ? `<button class="st-cta" data-action="trainingEx" data-arg="timed">Rejouer ${ico('play')}</button>` : ''}
-                        <button class="trb-close" data-action="trainingCloseSummary">Fermer</button>
-                    </span>
-                </div>
+        <section class="trr-bilan edge-card" aria-label="Bilan de la dernière séance">
+            <div class="trr-bilan-head">${ring}
+                <div class="trr-bilan-t"><span class="st-eyebrow">${escapeHtml(s.label)}${s.line ? ' · ' + escapeHtml(s.line.name) : ''} · ${s.minutes} min</span>
+                    <b>${title}</b><small>${timed ? `Record : ${s.record}` : 'du premier coup'}</small></div>
+                <button type="button" class="icon-btn trr-close" data-action="trainingCloseSummary" aria-label="Fermer le bilan" title="Fermer le bilan">${ico('x')}</button>
             </div>
-            ${missed.length ? `<div class="trb-card"><div class="st-h"><h3>À revoir</h3><span class="st-sub">${missed.length} erreur${missed.length > 1 ? 's' : ''}</span></div>
-                <div class="trb-list">${missed.slice(0, 8).map(r => `<div class="trb-row"><span class="trb-ic ko" aria-label="Ratée">✗</span>${label(r)}<span class="trb-lv">${lv(r.lvAfter)}</span></div>`).join('')}</div></div>` : ''}
-            ${moved.length ? `<div class="trb-card"><div class="st-h"><h3>Niveaux</h3><span class="st-sub">avant → après</span></div>
-                <div class="trb-list">${moved.slice(0, 8).map(r => `<div class="trb-row"><span class="trb-ic ${r.ok ? 'ok' : 'ko'}" aria-label="${r.ok ? 'Réussie' : 'Ratée'}">${r.ok ? '✓' : '✗'}</span>${label(r)}<span class="trb-lv">${_lvMark(r.lvBefore)}<span class="trb-arr">→</span>${lv(r.lvAfter)}</span></div>`).join('')}</div></div>` : ''}
+            ${badges ? `<div class="trr-badges">${badges}</div>` : ''}
+            <div class="trr-acts">${acts}</div>
+            ${list ? `<details class="trr-detail"${wide ? ' open' : ''}><summary>${ico('chevron-down')}<span>Avant → après</span></summary><ul class="trr-moves">${list}</ul></details>` : ''}
         </section>`;
 }
 
 // ─── ONGLET ───────────────────────────────────────────────────────────────────
+
+// Filtre d'ouverture : puce retirable dans la barre de contexte.
+function _trRenderFilter() {
+    const scope = document.querySelector('#home-tab-training .st-scope');
+    if (!scope) return;
+    let el = document.getElementById('training-filter');
+    if (!_trOpening) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('span'); el.id = 'training-filter'; el.className = 'trr-filter'; scope.appendChild(el); }
+    el.innerHTML = `${ico('git-branch')}<span>${escapeHtml(_trOpening.name)}</span>
+        <button type="button" class="trr-filter-x" data-action="trainingAllOpenings" aria-label="Retirer le filtre d'ouverture" title="Toutes les ouvertures">${ico('x')}</button>`;
+}
+
+// Stepper − / + sur les valeurs proposées aussi dans les Paramètres.
+const TRAIN_FREE_STEPS = { maxPlies: [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']], seqLen: [[1, '1'], [3, '3'], [5, '5'], [TRAIN_SEQ_END, 'Variante']] };
+function _trStep(name, dir) {
+    const vals = TRAIN_FREE_STEPS[name].map(o => o[0]), v = trainingSettings[name];
+    const next = dir > 0 ? vals.find(x => x > v) : vals.slice().reverse().find(x => x < v);
+    return next == null ? null : next;
+}
 
 function initTraining() {
     const panel = document.getElementById('training-panel');
@@ -139,105 +181,114 @@ function initTraining() {
         onChange: c => UI_ACTIONS.trainingColor(c) });
     const rep = document.getElementById('training-rep');
     if (rep) rep.innerHTML = repertoireDropdownHTML('trainingRep');
+    _trRenderFilter();
 
     const rows = _trRows(), now = Date.now();
-    const summary = _trSummaryHTML(trainingState.lastSummary);
-    const filter = _trOpening ? `<div class="trs-filter" role="status"><span>Ouverture : <b>${escapeHtml(_trOpening.name)}</b></span>
-        <button class="st-link" data-action="trainingAllOpenings">Toutes les ouvertures</button></div>` : '';
+    const s = trainingState.lastSummary;
+    const retry = s && s.kind !== 'timed' ? s.rows.filter(r => !r.ok).length : 0;
     if (!rows.length) {
-        panel.innerHTML = summary + filter + `<div class="trs-empty">
-            <b>Rien à réviser pour l'instant</b>
-            <span>Jouez vos lignes dans « Jouer »${_trColor === 'mix' ? '' : ` avec les ${_trColor === 'w' ? 'Blancs' : 'Noirs'}`} : elles apparaîtront ici pour être révisées.</span>
-        </div>`;
+        panel.innerHTML = `<div class="trr">${_trSummaryHTML(s, false).replace(/btn-primary/g, 'btn-soft')}
+            <div class="trr-empty edge-card">
+                <b>Rien à réviser</b>
+                <span>${_trOpening ? 'Aucune position de cette ouverture' : 'Aucune position'}${_trColor === 'mix' ? '' : ` avec les ${_trColor === 'w' ? 'Blancs' : 'Noirs'}`} dans ce répertoire.</span>
+                ${_trBtn(true, 'trainingAddLine', null, 'Ajouter une ligne', 'plus')}
+            </div></div>`;
         return;
     }
 
-    // ── Révision du jour ──
     const due = rows.filter(r => isDue(r.e, now));
-    const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
-    const next = due.length ? 0 : Math.min(...rows.map(r => dueOf(r.e)));
-    const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a;
-    const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor] + (_trOpening ? ' · ' + escapeHtml(_trOpening.name) : '');
-    const hero = `
-        <div class="vel-card vel-dark trs-day${_trFocus === 'due' ? ' is-focus' : ''}" data-focus="due">
-            <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
-            ${due.length ? `
-            <div class="st-big"><b>${due.length}</b><span>${due.length > 1 ? 'positions dues' : 'position due'}</span></div>
-            <div class="st-today-sub">Environ ${minutes} min · les erreurs reviennent en fin de séance</div>
-            <button class="st-cta" data-action="trainingEx" data-arg="due">Commencer ${ico('play')}</button>` : `
-            <div class="st-big st-big-text"><b>À jour</b></div>
-            <div class="st-today-sub">Prochaine révision ${Number.isFinite(next) && next ? _inLabel(next) : 'bientôt'}. Les exercices ci-dessous restent disponibles.</div>`}
-            <span class="st-foot">${streak} jour${streak > 1 ? 's' : ''} d'affilée · ${Math.min(today, appSettings.dailyGoal)} / ${appSettings.dailyGoal} position${appSettings.dailyGoal > 1 ? 's' : ''} aujourd'hui${today >= appSettings.dailyGoal ? ' · objectif atteint' : ''}</span>
-        </div>`;
-
-    // ── 7 prochains jours + maîtrise par couleur ──
-    const days = _trForecast(rows, now), max = Math.max(1, ...days.map(d => d.n));
-    const dayName = (t, i) => i === 0 ? 'auj.' : i === 1 ? 'dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' });
-    const mastery = _trSides().filter(has).map(c => {
-        const list = rows.filter(r => r.color === c), counts = {};
-        STATS_LEVEL_ORDER.forEach(l => { counts[l] = list.filter(r => r.lv === l).length; });
-        return `<div class="trs-mastery"><span>${c === 'w' ? 'Blancs' : 'Noirs'}</span>${levelBarHTML(counts, 'tr-bar')}<b>${Math.round(100 * counts.mastered / list.length)} %</b></div>`;
-    }).join('');
-    const plan = `
-        <section class="trs-plan">
-            <span class="trs-eyebrow">Prochains jours</span>
-            <div class="trs-bars" role="img" aria-label="Révisions prévues sur 7 jours">${days.map((d, i) =>
-                `<div title="${d.n} révision${d.n > 1 ? 's' : ''}"><span class="trs-bar-n">${d.n || ''}</span><i class="${i ? '' : 'today'}" style="height:${Math.round(100 * d.n / max)}%"></i><span>${dayName(d.t, i)}</span></div>`).join('')}</div>
-            ${mastery}
-        </section>`;
-
-    // ── Autres exercices ──
     const weak = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').length;
     const unsure = rows.filter(r => r.lv === 'unsure').length;
-    const openings = _trOpenings();
-    const record = Number(dataStore.getJSON(TRAIN_RECORD_KEY, 0)) || 0;
-    const freeOpts = [trainingSettings.fromStart ? 'début de partie' : 'position ciblée', trainingSettings.maxPlies ? `≤ ${trainingSettings.maxPlies} coups` : 'toute profondeur',
-                      trainingSettings.seqLen >= TRAIN_SEQ_END ? 'variante' : trainingSettings.seqLen > 1 ? `${trainingSettings.seqLen} coups` : '1 coup'].join(', ');
-    const card = (kind, icon, lvl, title, text, meta, n, extra) => `
-        <button class="trx ${extra || ''}${_trFocus === kind ? ' is-focus' : ''}" data-focus="${kind}" data-action="trainingEx" data-arg="${kind}" ${n === 0 ? 'disabled' : ''} ${kind === 'line' ? `aria-expanded="${_trLineOpen}"` : ''}>
-            <span class="trx-ic ${lvl ? 'lv-' + lvl : ''}">${ico(icon)}</span>
-            <b>${title}</b><span class="trx-txt">${text}</span><span class="trx-meta">${meta}</span>
-        </button>`;
-    const lineList = _trLineOpen ? `
-        <div class="trx-lines" role="group" aria-label="Choisir une ouverture">
-            ${openings.length ? openings.map((o, i) => `<button class="trx-line" data-action="trainingLine" data-arg="${i}">
-                <span><b>${_trColor === 'mix' ? `<span class="st-line-side">${o.color === 'w' ? 'Blancs' : 'Noirs'}</span>` : ''}${escapeHtml(o.name)}</b><small>${escapeHtml(_movesLabel(o.path))}</small></span>
-                <span class="trx-line-n">${o.n} pos.</span>${ico('play')}</button>`).join('')
-              : '<div class="trs-note">Aucune ouverture reconnue dans ce répertoire : jouez vos lignes dans « Jouer ».</div>'}
-        </div>` : '';
-    // Mode libre : la carte porte ses réglages (aussi dans Paramètres › Jeu).
-    const seg = (name, label, opts) => `<div class="trx-opt"><span id="trx-opt-${name}">${label}</span>
-        <div class="seg trx-seg" role="radiogroup" aria-labelledby="trx-opt-${name}">${opts.map(([v, t]) =>
-            `<button class="seg-btn${trainingSettings[name] === v ? ' active' : ''}" role="radio" aria-checked="${trainingSettings[name] === v}" data-action="trainingOpt" data-arg="${name}:${v}">${t}</button>`).join('')}</div></div>`;
-    const freeCard = `
-        <div class="trx trx-free" data-focus="free">
-            <div class="trx-free-head">
-                <span class="trx-ic">${ico('shuffle')}</span>
-                <span><b>Mode libre</b><span class="trx-txt">Tirage sans fin, les plus fragiles plus souvent. Vous arrêtez quand vous voulez.</span></span>
-                <button class="btn btn-primary trx-go" data-action="trainingEx" data-arg="free" ${rows.length ? '' : 'disabled'}>${ico('play')}<span>Commencer</span></button>
-            </div>
-            <div class="trx-opts" role="group" aria-label="Réglages du mode libre">
-                ${seg('fromStart', 'D’où partir', [[0, 'Position ciblée'], [1, 'Début de partie']])}
-                ${seg('maxPlies', 'Jusqu’où', [[0, 'Toutes'], [5, '≤ 5'], [10, '≤ 10'], [20, '≤ 20']])}
-                ${seg('seqLen', 'Coups à enchaîner', [[1, '1'], [3, '3'], [5, '5'], [TRAIN_SEQ_END, 'Variante']])}
-            </div>
-            <span class="trx-meta">${freeOpts}</span>
-        </div>`;
-    const exercises = `
-        <section class="st-sec">
-            <div class="st-h"><h3>Autres exercices</h3><span class="st-sub">chacun se termine par un bilan</span></div>
-            <div class="trx-grid">
-                ${card('weak', 'target', 'weak', 'Points faibles', 'Les positions à retravailler et fragiles, les plus ratées d\'abord.', `${Math.min(weak, TRAIN_WEAK_MAX)} position${weak > 1 ? 's' : ''}`, weak, 'big')}
-                ${card('line', 'git-branch', '', 'Ligne complète', 'Une ouverture jouée du premier coup jusqu\'au bout de la variante.', `${openings.length} ouverture${openings.length > 1 ? 's' : ''}`, openings.length)}
-                ${card('unsure', 'check', 'unsure', 'À confirmer', 'Les positions jouées moins de 3 fois, pour les ancrer.', `${Math.min(unsure, TRAIN_WEAK_MAX)} position${unsure > 1 ? 's' : ''}`, unsure)}
-                ${card('timed', 'lightbulb', 'progress', 'Contre-la-montre', 'Un maximum de bons coups en 3 minutes. Une erreur coûte 10 s.', record ? `Record : ${record} coup${record > 1 ? 's' : ''}` : 'Pas encore de record', rows.length)}
-                ${freeCard}
-            </div>
-            ${lineList}
-            ${TRAIN_SOLUTION_PENALTY ? '<p class="trs-note">L\'indice (la pièce à jouer) ne compte pas. Voir la solution compte comme une erreur.</p>' : ''}
+    const primary = _trPrimary({ due: due.length, retry, focus: _trFocus, avail: { weak: weak > 0, unsure: unsure > 0, timed: true, free: true } });
+    const freeOpen = _trFreeOpen || primary === 'free';
+
+    // ── Révision du jour ──
+    const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
+    const next = due.length ? 0 : Math.min(...rows.map(r => dueOf(r.e)));
+    const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
+    const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor] + (_trOpening ? ' · ' + escapeHtml(_trOpening.name) : '');
+    const days = _trForecast(rows, now), max = Math.max(1, ...days.map(d => d.n));
+    const dayName = (t, i) => i === 0 ? 'auj.' : i === 1 ? 'dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' });
+    const forecast = `<div class="trr-fc" role="img" aria-label="Révisions prévues sur 7 jours : ${days.map(d => d.n).join(', ')}">${days.map((d, i) =>
+        `<div title="${d.n} révision${d.n > 1 ? 's' : ''}"><b>${d.n || ''}</b><i style="height:${Math.max(3, Math.round(36 * d.n / max))}px"></i><span>${dayName(d.t, i)}</span></div>`).join('')}</div>`;
+    const hero = `
+        <section class="vel-card vel-dark trr-day edge-card${_trFocus === 'due' ? ' is-focus' : ''}" data-focus="due" aria-label="Révision du jour">
+            <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
+            ${due.length ? `<div class="trr-big"><b>${due.length}</b><span>${due.length > 1 ? 'positions dues' : 'position due'} · ≈ ${minutes} min</span></div>`
+                         : `<div class="trr-big is-text"><b>À jour</b><span>Prochaine révision ${Number.isFinite(next) && next ? _inLabel(next) : 'bientôt'}</span></div>`}
+            ${forecast}
+            ${due.length ? _trBtn(primary === 'due', 'trainingEx', 'due', 'Commencer', 'play') : ''}
+            <span class="trr-foot"><span>${streak} jour${streak > 1 ? 's' : ''} d'affilée</span><span>${Math.min(today, goal)} / ${goal} aujourd'hui</span></span>
         </section>`;
 
-    panel.innerHTML = summary + filter + `<div class="trs-top">${hero}${plan}</div>` + exercises;
+    // ── Exercices ──
+    const openings = _trOpenings();
+    const record = Number(dataStore.getJSON(TRAIN_RECORD_KEY, 0)) || 0;
+    const freeOpts = [trainingSettings.fromStart ? 'début' : 'ciblée', trainingSettings.maxPlies ? `≤ ${trainingSettings.maxPlies}` : 'toutes',
+                      trainingSettings.seqLen >= TRAIN_SEQ_END ? 'variante' : `${trainingSettings.seqLen} coup${trainingSettings.seqLen > 1 ? 's' : ''}`].join(' · ');
+    const row = (kind, icon, lvl, title, n, small, opts = {}) => `
+        <button type="button" class="trr-row${_trFocus === kind ? ' is-focus' : ''}" data-focus="${kind}" data-action="${opts.expanded != null ? 'trainingToggle' : 'trainingEx'}" data-arg="${kind}"
+            ${lvl ? `style="--c:var(--lv-${lvl})"` : ''} ${n === 0 ? `disabled title="${opts.empty}"` : ''} ${opts.expanded != null ? `aria-expanded="${opts.expanded}"` : ''}>
+            <span class="trr-ic">${ico(icon)}</span>
+            <span class="trr-t"><b>${title}</b>${small ? `<small>${small}</small>` : ''}</span>
+            ${n != null ? `<span class="trr-n">${n}</span>` : ''}${ico(opts.expanded == null ? 'chevron-right' : opts.expanded ? 'chevron-up' : 'chevron-down')}
+        </button>`;
+    const lineList = _trLineOpen ? `
+        <div class="trr-sub" role="group" aria-label="Choisir une ouverture">
+            ${openings.length ? openings.map((o, i) => `<button type="button" class="trr-line" data-action="trainingLine" data-arg="${i}">
+                <span class="trr-t"><b>${_trColor === 'mix' ? `<span class="trr-side">${o.color === 'w' ? 'Blancs' : 'Noirs'}</span>` : ''}${escapeHtml(o.name)}</b><small>${_movesLabel(o.path, true)}</small></span>
+                <span class="trr-n">${o.n} pos.</span>${ico('play')}</button>`).join('')
+              : '<div class="trr-note">Aucune ouverture reconnue dans ce répertoire.</div>'}
+        </div>` : '';
+    // Mode libre : la carte porte ses réglages (aussi dans Paramètres › Jeu).
+    const stepper = (name, label) => {
+        const cur = TRAIN_FREE_STEPS[name].find(o => o[0] === trainingSettings[name]);
+        const btn = (dir, txt, aria) => { const v = _trStep(name, dir);
+            return `<button type="button" class="trr-step-btn" data-action="trainingOpt" data-arg="${name}:${v}" aria-label="${aria}" ${v == null ? 'disabled' : ''}>${txt}</button>`; };
+        return `<div class="trr-opt"><span id="trr-opt-${name}">${label}</span>
+            <span class="trr-step" role="group" aria-labelledby="trr-opt-${name}">${btn(-1, '−', 'Moins')}<output aria-live="polite">${cur ? cur[1] : trainingSettings[name]}</output>${btn(1, '+', 'Plus')}</span></div>`;
+    };
+    const freePanel = freeOpen ? `
+        <div class="trr-sub trr-free" role="group" aria-label="Réglages du mode libre">
+            <div class="trr-opt"><span id="trr-opt-fromStart">Partir du début de partie</span>
+                <button type="button" class="pn-switch" role="switch" aria-checked="${!!trainingSettings.fromStart}" aria-labelledby="trr-opt-fromStart"
+                    data-action="trainingOpt" data-arg="fromStart:${trainingSettings.fromStart ? 0 : 1}"></button></div>
+            ${stepper('maxPlies', 'Jusqu’où')}
+            ${stepper('seqLen', 'Coups à enchaîner')}
+            ${_trBtn(primary === 'free', 'trainingEx', 'free', 'Lancer le mode libre', 'play')}
+        </div>` : '';
+    const label = { weak: 'Points faibles', unsure: 'À confirmer', timed: 'Contre-la-montre' }[primary];
+    const count = { weak: Math.min(weak, TRAIN_WEAK_MAX), unsure: Math.min(unsure, TRAIN_WEAK_MAX) }[primary];
+    const cta = label ? `<div class="trr-cta">${_trBtn(true, 'trainingEx', primary, label + (count ? ` · ${count} position${count > 1 ? 's' : ''}` : ''), 'play')}</div>` : '';
+    const exercises = `
+        <section class="trr-ex" aria-labelledby="trr-ex-h">
+            <div class="trr-h"><h3 id="trr-ex-h">Exercices</h3></div>
+            <div class="trr-list edge-card">
+                ${row('weak', 'target', 'weak', 'Points faibles', Math.min(weak, TRAIN_WEAK_MAX), '', { empty: 'Aucune position fragile ni à retravailler' })}
+                ${row('line', 'git-branch', '', 'Ligne complète', openings.length, '', { empty: 'Aucune ouverture reconnue', expanded: _trLineOpen })}
+                ${lineList}
+                ${row('unsure', 'check', 'unsure', 'À confirmer', Math.min(unsure, TRAIN_WEAK_MAX), '', { empty: 'Aucune position à confirmer' })}
+                ${row('timed', 'lightbulb', 'progress', 'Contre-la-montre', null, `3 min · ${record ? `record ${record}` : 'pas encore de record'}`)}
+                ${row('free', 'shuffle', '', 'Mode libre', null, freeOpts, { expanded: freeOpen })}
+                ${freePanel}
+                ${cta}
+            </div>
+        </section>`;
+
+    // ── Maîtrise par couleur ──
+    const mastery = _trSides().filter(has).map(c => {
+        const list = rows.filter(r => r.color === c), counts = {};
+        if (!list.length) return '';
+        STATS_LEVEL_ORDER.forEach(l => { counts[l] = list.filter(r => r.lv === l).length; });
+        return `<div class="trr-m"><span>${c === 'w' ? 'Blancs' : 'Noirs'}</span>${levelBarHTML(counts, 'tr-bar')}<b>${Math.round(100 * counts.mastered / list.length)} %</b></div>`;
+    }).join('');
+    const mast = `
+        <section class="trr-mast" aria-labelledby="trr-mast-h">
+            <div class="trr-h"><h3 id="trr-mast-h">Maîtrise</h3><span>${rows.length} position${rows.length > 1 ? 's' : ''}</span></div>
+            <div class="trr-mast-in edge-card">${mastery}${unsure ? `<div class="trr-m"><span></span><span class="lv-chip lv-unsure">${unsure} à confirmer</span></div>` : ''}</div>
+        </section>`;
+
+    panel.innerHTML = `<div class="trr${s ? ' has-bilan' : ''}">${_trSummaryHTML(s, primary === 'retry')}${hero}${exercises}${mast}</div>`;
 }
 
 // ─── LANCEMENT DES EXERCICES ──────────────────────────────────────────────────
@@ -272,20 +323,43 @@ function _startLine(line) {
     startSession({ kind: 'line', label: 'Ligne complète', line });
 }
 
+// Bouton occupé le temps de préparer la séance (aria-busy), puis lancement à l'image suivante.
+// Sans bouton (appel direct, tests) : lancement immédiat.
+function _trLaunch(el, fn) {
+    if (!el || !el.isConnected) { fn(); return; }
+    el.setAttribute('aria-busy', 'true');
+    el.disabled = true;
+    const label = el.querySelector('span');
+    if (label) label.textContent = 'Préparation…';
+    setTimeout(() => {
+        fn();
+        if (el.isConnected) { el.removeAttribute('aria-busy'); el.disabled = false; }
+    }, 30);
+}
+
 registerActions({
     trainingColor: c => { _trColor = c; _trLineOpen = false; _trFocus = null; initTraining(); },
     trainingRep: name => { if (name !== currentRepertoire) selectRepertoire(name); },
-    trainingEx: kind => { if (kind !== 'line') trainingState.lastSummary = null; startTrainingExercise(kind); },
-    trainingLine: i => { const o = _trOpenings()[Number(i)]; if (o) _startLine({ color: o.color, path: o.path, name: o.name }); },
-    trainingReplayLine: () => { const s = trainingState.lastSummary; if (s && s.line) _startLine(s.line); },
-    trainingRetry: () => {
+    trainingEx: (kind, el) => _trLaunch(el, () => { if (kind !== 'line') trainingState.lastSummary = null; startTrainingExercise(kind); }),
+    trainingToggle: kind => {
+        if (kind === 'line') _trLineOpen = !_trLineOpen;
+        if (kind === 'free') _trFreeOpen = !_trFreeOpen;
+        initTraining();
+    },
+    trainingLine: (i, el) => { const o = _trOpenings()[Number(i)]; if (o) _trLaunch(el, () => _startLine({ color: o.color, path: o.path, name: o.name })); },
+    trainingReplayLine: (a, el) => { const s = trainingState.lastSummary; if (s && s.line) _trLaunch(el, () => _startLine(s.line)); },
+    trainingRetry: (a, el) => {
         const s = trainingState.lastSummary;
         if (!s) return;
         const items = s.rows.filter(r => !r.ok).map(r => ({ color: r.color, key: r.key }));
-        trainingState.lastSummary = null;
-        startSession({ kind: 'retry', label: 'Erreurs à revoir', items });
+        if (!items.length) return;
+        _trLaunch(el, () => {
+            trainingState.lastSummary = null;
+            if (!startSession({ kind: 'retry', label: 'Erreurs à revoir', items })) initTraining();
+        });
     },
     trainingCloseSummary: () => { trainingState.lastSummary = null; initTraining(); },
     trainingAllOpenings: () => { _trOpening = null; _trFocus = null; initTraining(); },
-    trainingOpt: arg => { const [name, v] = arg.split(':'); setTrainingOption(name, v); }
+    trainingAddLine: () => { if (_trColor === 'w' || _trColor === 'b') startGame(_trColor); else switchHomeTab('play'); },
+    trainingOpt: arg => { const [name, v] = arg.split(':'); if (v !== 'null') { _trFreeOpen = true; setTrainingOption(name, v); } }
 });

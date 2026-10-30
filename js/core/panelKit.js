@@ -13,7 +13,9 @@
  * gérés par le module appelant via `onControl(kind, key, value, el)`.
  * Grilles de choix (.theme-options) : le nombre de colonnes (--cols) est choisi selon la largeur ET le nombre
  * de tuiles, pour éviter une tuile seule en dernière ligne (balancedCols) ; recalculé à chaque rendu et
- * quand la fenêtre change de largeur.
+ * quand la fenêtre change de largeur. Largeur minimale d'une tuile et colonnes au plus : data-min / data-max.
+ * Repère local (localMark) : réglage propre à l'appareil ; une rubrique { local: true } le porte dans la liste.
+ * Recherche : un élément data-pn="query" data-key="mot" relance la recherche sur ce mot (suggestions).
  */
 
 'use strict';
@@ -34,6 +36,8 @@ const PanelKit = (function () {
             `<button type="button" role="radio" aria-checked="${String(v) === String(value)}" data-pn="seg" data-key="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
     const range = (key, value, min, max, step, out, label) =>
         `<label class="pn-range"><input type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${esc(label || '')}" data-pn="range" data-key="${key}"><output>${out}</output></label>`;
+    const localMark = (title = 'Propre à cet appareil') =>
+        `<span class="pn-local" role="img" title="${esc(title)}" aria-label="${esc(title)}">${ico('devices')}</span>`;
     const button = (label, act, opts = {}) =>
         `<button type="button" class="btn${opts.primary ? ' btn-primary' : ''}${opts.danger ? ' btn-danger' : ''}" data-pn="act" data-key="${act}"${opts.attrs || ''}>${opts.icon ? ico(opts.icon) : ''}${label}</button>`;
 
@@ -72,7 +76,7 @@ const PanelKit = (function () {
             const title = typeof cfg.title === 'function' ? cfg.title() : cfg.title;
             titleEl.textContent = st.drill && !q && cur && narrow() && !single ? cur.label : title;
             nav.innerHTML = sections.map(s => `<button type="button" class="${s.id === st.section && !q ? 'is-on' : ''}" data-pn="section" data-key="${s.id}"${s.id === st.section && !q ? ' aria-current="true"' : ''}>
-                ${ico(s.icon)}<span>${s.label}<small>${s.desc || ''}</small></span>${s.badge ? `<i class="pn-badge">${s.badge}</i>` : ''}${ico('chevron-right', 'pn-chev')}</button>`).join('');
+                ${ico(s.icon)}<span>${s.label}<small>${s.desc || ''}</small></span>${s.badge ? `<i class="pn-badge">${s.badge}</i>` : s.local ? localMark() : ''}${ico('chevron-right', 'pn-chev')}</button>`).join('');
             const top = content.scrollTop;
             content.innerHTML = cfg.render(q ? null : st.section, q);
             content.scrollTop = keepScroll ? top : 0;
@@ -100,6 +104,7 @@ const PanelKit = (function () {
             const kind = el.dataset.pn, key = el.dataset.key;
             if (kind === 'close') return close();
             if (kind === 'back') { st.drill = false; st.q = ''; if (searchEl) searchEl.value = ''; return refresh(false); }
+            if (kind === 'query') { st.q = key; if (searchEl) { searchEl.value = key; searchEl.focus({ preventScroll: true }); } return refresh(false); }
             if (kind === 'section') { st.section = key; st.drill = true; st.q = ''; if (searchEl) searchEl.value = ''; refresh(false); content.focus({ preventScroll: true }); return; }
             if (kind === 'toggle') return cfg.onControl('toggle', key, el.getAttribute('aria-checked') !== 'true', el);
             if (kind === 'seg') return cfg.onControl('seg', key, el.dataset.v, el);
@@ -149,7 +154,7 @@ const PanelKit = (function () {
     function fitGrids(root) {
         root.querySelectorAll('.theme-options').forEach(g => {
             const w = g.clientWidth;
-            if (w) g.style.setProperty('--cols', balancedCols(g.children.length, w));
+            if (w) g.style.setProperty('--cols', balancedCols(g.children.length, w, Number(g.dataset.min) || undefined, Number(g.dataset.max) || undefined));
         });
     }
 
@@ -162,5 +167,5 @@ const PanelKit = (function () {
     const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const matches = (q, ...texts) => texts.some(t => norm(t).includes(norm(q)));
 
-    return { create, group, row, text, toggle, seg, range, button, mark, matches, esc, balancedCols };
+    return { create, group, row, text, toggle, seg, range, button, localMark, mark, matches, esc, balancedCols };
 })();

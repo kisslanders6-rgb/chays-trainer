@@ -36,33 +36,72 @@ function _egBump(id, fn) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  4. ÉCRAN D'ACCUEIL « FINALES »
+//  4. ÉCRAN D'ACCUEIL « FINALES » (bibliothèque)
 // ═══════════════════════════════════════════════════════════════════════════
-function egMiniBoard(ex) {
-    const rows  = ex.fen.split(' ')[0].split('/');
-    const cells = new Array(64).fill('');
-    for (let r = 0; r < 8; r++) {
-        let c = 0;
-        for (const ch of rows[r]) { if (ch >= '1' && ch <= '8') c += Number(ch); else cells[(7 - r) * 8 + c++] = ch; }
-    }
-    const flip  = ex.player === 'b';
-    const ranks = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
-    const files = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
-    let html = '';
-    ranks.forEach(r => files.forEach(c => {
-        const p = cells[r * 8 + c];
-        html += `<i class="eg-sq ${(r + c) % 2 === 1 ? 'l' : 'd'}">${p ? pieceHTML(p) : ''}</i>`;
-    }));
-    return `<div class="eg-mini" aria-hidden="true">${html}</div>`;
-}
+// Objectif : libellé et icône du sprite.
+const EG_GOALS = { mate: ['Mater', 'flag'], win: ['Gagner', 'target'], draw: ['Annuler', 'shield-check'] };
 
-const _egDots = n => '●'.repeat(n) + '○'.repeat(5 - n);
-
-// Filtre (barre de contexte) : 'all' | 'todo' (pas encore réussi) | 'done' (réussi). Les exercices écartés
-// restent sur le parcours, estompés, pour que le chemin garde sa forme.
-let egFilter = 'all';
+// Catalogue dans l'ordre des catégories, puis du fichier : ordre de « À suivre » et des sections.
+const _egCatalogue = () => ENDGAME_CATEGORIES.flatMap(c => ENDGAME_EXERCISES.filter(e => e.cat === c.id));
 
 const _egWon = (prog, e) => !!(prog[e.id] && prog[e.id].wins > 0);
+const _egNext = prog => _egCatalogue().find(e => !_egWon(prog, e)) || null;
+
+// État d'un exercice d'après la progression : 'perfect' | 'done' | 'tried' | 'todo'.
+function _egState(prog, e) {
+    const p = prog[e.id];
+    return p && p.wins > 0 ? (p.perfect ? 'perfect' : 'done') : p && p.tries ? 'tried' : 'todo';
+}
+const _egTries = n => `${n} essai${n > 1 ? 's' : ''}`;
+
+// Roi du jeu de pièces actif (comme ColorScope) ; data-glyph le fait redessiner au changement de jeu.
+function _egKing(side) {
+    const p = side === 'b' ? 'k' : 'K';
+    return `<span class="glyph eg-king" data-glyph="${p}" aria-hidden="true">${(typeof PIECE_SVG !== 'undefined' && PIECE_SVG[p]) || ''}</span>`;
+}
+const _egDotsHTML = n => `<span class="eg-dots" role="img" aria-label="Difficulté ${n} sur 5">${[1, 2, 3, 4, 5].map(i => `<i${i <= n ? ' class="on"' : ''}></i>`).join('')}</span>`;
+const _egGoalTag = ex => `<span class="eg-tag eg-goal-tag">${ico(EG_GOALS[ex.goal][1])}${EG_GOALS[ex.goal][0]}</span>`;
+const _egSideTag = ex => `<span class="eg-tag">${_egKing(ex.player)}${EG_SIDE[ex.player]}</span>`;
+
+// Limite de l'exercice : « 20 coups au plus », « tenir 12 coups », « 12 coups pour conclure ».
+const _egBudgetText = ex => ex.maxMoves ? `${ex.maxMoves} coups au plus` : ex.hold ? `tenir ${ex.hold} coups` : ex.keep ? `${ex.keep} coups pour conclure` : '';
+
+// État à droite d'une ligne : coche laiton (sans faute), coche verte (réussi), essais (en cours), difficulté sinon.
+function _egStateHTML(prog, ex) {
+    const st = _egState(prog, ex);
+    if (st === 'perfect') return `<span class="eg-st is-perfect" role="img" aria-label="Réussi sans faute" title="Réussi sans faute">${ico('check')}</span>`;
+    if (st === 'done')    return `<span class="eg-st is-done" role="img" aria-label="Réussi" title="Réussi">${ico('check')}</span>`;
+    if (st === 'tried')   return `<span class="eg-st is-tried">${_egTries(prog[ex.id].tries)}</span>`;
+    return _egDotsHTML(ex.level);
+}
+
+// Origine du jugement, annoncée avant la séance d'après le catalogue (le juge la confirme au premier verdict).
+const _egMen = fen => fen.split(' ')[0].replace(/[\d/]/g, '');
+function _egExpectedSource(ex) {
+    if (ex.kind) return 'local';
+    const men = _egMen(ex.fen);
+    if (['Kkp', 'KPk'].includes(men.split('').sort().join(''))) return 'kpk';
+    return men.length <= EndgameJudge.MAX_PIECES ? 'syzygy' : 'engine';
+}
+
+// Pastille d'origine du jugement. Syzygy hors ligne : la réponse vient forcément du cache (« Réponse gardée »).
+function _egSourceBadge(source, exact) {
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (source === 'syzygy') return offline ? `<span class="vbadge is-muted eg-src">${ico('database')}Réponse gardée · exact</span>`
+                                            : `<span class="vbadge is-muted eg-src">${ico('cloud')}Tables Syzygy · exact</span>`;
+    if (source === 'engine' || exact === false) return `<span class="vbadge is-muted is-dashed eg-src">${ico('cpu')}Moteur · verdict estimé</span>`;
+    return `<span class="vbadge is-muted eg-src">${ico('check')}Calcul exact</span>`;
+}
+
+function _egMini(ex, cls) {
+    return typeof _miniBoardHTML === 'function' ? _miniBoardHTML({ side: ex.player, k: ex.fen }, false, { cls, label: ex.title }) : '';
+}
+
+// Filtre (barre de contexte) : 'all' | 'todo' (pas encore réussi) | 'done' (réussi).
+let egFilter = 'all';
+// Exercice choisi pour l'aperçu de la colonne de droite (bureau) ; null : « À suivre ».
+let egSel = null;
+
 const _egShown = (prog, e) => egFilter === 'all' || (egFilter === 'done') === _egWon(prog, e);
 
 function _egVisible(prog) {
@@ -78,99 +117,157 @@ function startRandomEndgame() {
     startEndgame(pool[Math.floor(Math.random() * pool.length)].id);
 }
 
-// Objectif avec sa limite : « Les Blancs jouent et font mat · 12 coups au plus ».
-function _egGoalLine(ex) {
-    return egObjective(ex) + (ex.maxMoves ? ` · ${ex.maxMoves} coups au plus` : ex.hold ? ` · tenir ${ex.hold} coups` : '');
+// Carte d'aperçu (Velours sombre) : « À suivre » par défaut, l'exercice choisi sinon. Son « Commencer » est la
+// seule action pleine de l'écran. mode 'sheet' : même contenu dans le panneau du bas (téléphone).
+function _egPreviewHTML(ex, prog, mode) {
+    const cat = ENDGAME_CATEGORIES.find(c => c.id === ex.cat), p = prog[ex.id], st = _egState(prog, ex);
+    const isNext = (_egNext(prog) || {}).id === ex.id;
+    const tag = mode === 'sheet' ? 'Aperçu' : isNext ? 'À suivre' : 'Choisi';
+    const progress = st === 'perfect' ? 'Réussi sans faute' : st === 'done' ? `Réussi · ${_egTries(p.tries || p.wins)}`
+                   : st === 'tried' ? `${_egTries(p.tries)}, pas encore réussi` : 'Jamais tenté';
+    const plan = (ex.plan || ex.tips || []).length;
+    return `<section class="vel-card vel-dark eg-pv${mode === 'sheet' ? ' is-sheet' : ' edge-card'}" aria-label="${escapeHtml(`${tag} : ${ex.title}`)}">
+        <span class="st-eyebrow">${escapeHtml(tag)} · ${escapeHtml(cat ? cat.label : '')}</span>
+        <div class="eg-pv-row">
+            ${_egMini(ex, 'eg-pos')}
+            <div class="eg-pv-txt">
+                <h3 class="eg-pv-title">${escapeHtml(ex.title)}</h3>
+                <div class="eg-tags">${_egGoalTag(ex)}${_egSideTag(ex)}${_egBudgetText(ex) ? `<span class="eg-tag">${escapeHtml(_egBudgetText(ex))}</span>` : ''}</div>
+                <span class="eg-pv-meta">${_egDotsHTML(ex.level)}<span class="eg-pv-prog is-${st}">${escapeHtml(progress)}</span></span>
+            </div>
+        </div>
+        <ul class="eg-pv-facts">
+            ${plan ? `<li>${ico('lightbulb')}${plan} étape${plan > 1 ? 's' : ''} de plan en indice</li>` : ''}
+            <li>${_egSourceBadge(_egExpectedSource(ex), _egExpectedSource(ex) !== 'engine')}</li>
+        </ul>
+        <button type="button" class="btn btn-primary eg-go" data-action="startEndgame" data-arg="${escapeHtml(ex.id)}">Commencer ${ico('play')}</button>
+    </section>`;
 }
 
-// Onglet Finales (direction « Velours », comme Statistiques et Entraînement) :
-//   - barre de contexte : Toutes / À faire / Réussies, et « Au hasard » ;
-//   - « À suivre » (carte sombre) : premier exercice non réussi du catalogue, déjà rangé par difficulté ;
-//   - « Parcours » (carte claire) : réussites, sans faute, en cours, une barre par catégorie ;
-//   - un chemin de ronds par catégorie ; le trait se colore jusqu'au prochain exercice. Rien n'est verrouillé.
-// Anneau des ronds : laiton = sans faute, vert = réussi, vert vif + halo = à suivre, orange = en cours.
+function _egDoneHTML(prog) {
+    const all = ENDGAME_EXERCISES, perfect = all.filter(e => prog[e.id] && prog[e.id].perfect).length;
+    return `<section class="vel-card vel-dark eg-pv edge-card" aria-label="Parcours terminé">
+        <span class="st-eyebrow">Parcours terminé</span>
+        <h3 class="eg-pv-title">Tout est réussi</h3>
+        <span class="eg-pv-meta">${perfect} sur ${all.length} sans faute. Rejouez au hasard pour garder la main.</span>
+        <button type="button" class="btn btn-primary eg-go" data-action="egRandom">${ico('shuffle')} Au hasard</button>
+    </section>`;
+}
+
+// Bibliothèque :
+//   - colonne de l'aperçu (en tête sur téléphone, à droite sur bureau) : « À suivre » ou l'exercice choisi ;
+//   - puces de catégorie à anneau (réussis / total) qui font défiler jusqu'à la section ;
+//   - une section par catégorie : lignes bord à bord sur téléphone, grille de cartes à partir de 720 px.
+// Une ligne ou une carte ouvre l'aperçu (panneau du bas sous 920 px) : elle ne lance rien.
 function initEndgame() {
     const panel = document.getElementById('endgame-panel');
     if (!panel) return;
     const prog = readEndgameProgress();
-    const won = e => _egWon(prog, e);
     const all = ENDGAME_EXERCISES, N = all.length;
-    const done = all.filter(won).length;
+    const done = all.filter(e => _egWon(prog, e)).length;
     const perfect = all.filter(e => prog[e.id] && prog[e.id].perfect).length;
-    const tried = all.filter(e => !won(e) && prog[e.id] && prog[e.id].tries).length;
-    const pl = (n, one, many) => n > 1 ? many : one;
+    const tried = all.filter(e => _egState(prog, e) === 'tried').length;
 
     const seg = document.getElementById('endgame-seg');
     if (seg) seg.innerHTML = [['all', 'Toutes', N], ['todo', 'À faire', N - done], ['done', 'Réussies', done]].map(([f, label, n]) =>
         `<button class="seg-btn${egFilter === f ? ' active' : ''}" data-action="egFilter" data-arg="${f}" aria-pressed="${egFilter === f}">${label}<span class="egv-n"> · ${n}</span></button>`).join('');
 
-    // ── À suivre ──
-    const next = all.find(e => !won(e));
-    let hero;
-    if (next) {
-        const cat = ENDGAME_CATEGORIES.find(c => c.id === next.cat), p = prog[next.id];
-        hero = `<section class="vel-card vel-dark egv-next" aria-label="Exercice à suivre">
-            <span class="st-eyebrow">À suivre · ${escapeHtml(cat ? cat.label : '')}</span>
-            <div class="egv-next-row">
-                <span class="egv-ring egv-ring-lg">${egMiniBoard(next)}</span>
-                <div class="egv-next-txt">
-                    <b class="egv-next-title">${escapeHtml(next.title)}</b>
-                    <span>${escapeHtml(_egGoalLine(next))}</span>
-                    <span class="egv-meta">Difficulté ${_egDots(next.level)} · ${p && p.tries ? `${p.tries} essai${pl(p.tries, '', 's')}` : 'jamais tenté'}</span>
-                </div>
-            </div>
-            <button class="st-cta" data-action="startEndgame" data-arg="${escapeHtml(next.id)}">Commencer ${ico('play')}</button>
-            <span class="st-foot">L'adversaire répond seul · chaque coup est jugé</span>
-        </section>`;
-    } else {
-        hero = `<section class="vel-card vel-dark egv-next" aria-label="Parcours terminé">
-            <span class="st-eyebrow">Parcours terminé</span>
-            <div class="st-big st-big-text"><b>Tout est réussi</b></div>
-            <div class="st-today-sub">${perfect} sur ${N} sans faute. Rejouez au hasard pour garder la main.</div>
-            <button class="st-cta" data-action="egRandom">Au hasard ${ico('play')}</button>
-            <span class="st-foot">L'adversaire répond seul · chaque coup est jugé</span>
-        </section>`;
-    }
+    if (egSel && !ENDGAME_BY_ID[egSel]) egSel = null;
+    const next = _egNext(prog), shown = egSel ? ENDGAME_BY_ID[egSel] : next;
+    const tracks = ENDGAME_CATEGORIES.map(cat => ({ cat, list: _egCatalogue().filter(e => e.cat === cat.id) })).filter(t => t.list.length);
+    const visible = tracks.map(t => ({ cat: t.cat, list: t.list.filter(e => _egShown(prog, e)) })).filter(t => t.list.length);
+    const currentCat = shown ? shown.cat : '';
 
-    // ── Parcours ──
-    const tracks = ENDGAME_CATEGORIES.map(cat => ({ cat, list: all.filter(e => e.cat === cat.id) })).filter(t => t.list.length);
-    const summary = `<section class="vel-card vel-light egv-sum" aria-label="Parcours">
-        <span class="st-eyebrow">Parcours · finales théoriques</span>
-        <div class="st-big"><b>${done}</b><span>sur ${N} réussie${pl(done, '', 's')}</span></div>
-        <div class="st-today-sub">${perfect} sans faute · ${tried} en cours</div>
-        <div class="egv-bars">${tracks.map(({ cat, list }) => {
-            const w = list.filter(won).length;
-            return `<div class="egv-bar-row"><span>${escapeHtml(cat.label)}</span><span class="egv-bar"><i style="width:${Math.round(100 * w / list.length)}%"></i></span><b>${w} / ${list.length}</b></div>`;
-        }).join('')}</div>
-        <span class="st-foot">Coups jugés par un calcul exact ou par les tables Syzygy</span>
-    </section>`;
+    const chips = `<nav class="eg-chips" aria-label="Catégories">${visible.map(({ cat }) => {
+        const list = tracks.find(t => t.cat === cat).list;
+        return Ring.chip({ value: list.filter(e => _egWon(prog, e)).length, max: list.length, text: cat.label, action: 'egJump', arg: cat.id, current: cat.id === currentCat });
+    }).join('')}</nav>`;
 
-    // ── Chemins ──
-    const paths = tracks.map(({ cat, list }) => {
-        const nextId = (list.find(e => !won(e)) || {}).id;
-        const reach = nextId ? list.findIndex(e => e.id === nextId) : list.length - 1;
-        const fill = list.length > 1 ? (reach / (list.length - 1)).toFixed(3) : 0;
-        return `<section class="st-sec egv-track">
-            <div class="st-h"><h3>${escapeHtml(cat.label)}</h3><span class="egv-count">${list.filter(won).length} / ${list.length}</span></div>
-            <p class="egv-desc">${escapeHtml(cat.desc)}</p>
-            <div class="egv-path"><div class="egv-row" style="--fill:${fill}">${list.map(ex => {
-                const p = prog[ex.id];
-                const state = p && p.perfect ? 'perfect' : won(ex) ? 'done' : ex.id === nextId ? 'next' : p && p.tries ? 'tried' : 'todo';
-                const st = { perfect: 'Sans faute', done: 'Réussi', next: 'À suivre', tried: 'En cours' }[state] || _egDots(ex.level);
-                return `<button class="egv-node is-${state}${_egShown(prog, ex) ? '' : ' is-dim'}" data-action="startEndgame" data-arg="${escapeHtml(ex.id)}" title="${escapeHtml(ex.title)} · ${escapeHtml(egObjective(ex))}">
-                    <span class="egv-ring">${egMiniBoard(ex)}</span>
-                    <b>${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</b>
-                    <span class="egv-st"${state === 'todo' ? ` aria-label="Difficulté ${ex.level} sur 5"` : ''}>${st}</span>
-                </button>`;
-            }).join('')}</div></div>
+    const sections = visible.map(({ cat, list }) => {
+        const full = tracks.find(t => t.cat === cat).list, w = full.filter(e => _egWon(prog, e)).length;
+        return `<section class="eg-sec" id="eg-sec-${escapeHtml(cat.id)}" aria-labelledby="eg-sec-h-${escapeHtml(cat.id)}">
+            <div class="eg-sec-h"><h3 id="eg-sec-h-${escapeHtml(cat.id)}">${escapeHtml(cat.label)}</h3><span class="eg-sec-n">${w} / ${full.length}</span>
+                <span class="eg-sec-bar" aria-hidden="true"><i style="width:${Math.round(100 * w / full.length)}%"></i></span></div>
+            <p class="eg-sec-desc">${escapeHtml(cat.desc)}</p>
+            <div class="eg-list">${list.map(ex => `<button type="button" class="eg-card${shown && ex.id === shown.id && egSel ? ' is-sel' : ''}" data-action="egPreview" data-arg="${escapeHtml(ex.id)}" aria-haspopup="dialog">
+                ${_egMini(ex, 'eg-pos')}
+                <span class="eg-card-txt"><b>${escapeHtml(ex.title)}</b>
+                    <span class="eg-card-mt">${_egGoalTag(ex)}${_egKing(ex.player)}<span class="sr-only">${EG_SIDE[ex.player]}</span>${_egBudgetText(ex) ? `<span class="eg-card-budget">${escapeHtml(_egBudgetText(ex))}</span>` : ''}</span></span>
+                <span class="eg-card-end">${_egStateHTML(prog, ex)}</span>
+            </button>`).join('')}</div>
         </section>`;
     }).join('');
 
-    panel.innerHTML = `<div class="st-now">${hero}${summary}</div>${paths}`;
+    const empty = visible.length ? '' : `<div class="eg-empty"><b>${egFilter === 'done' ? 'Aucune finale réussie' : 'Tout est réussi'}</b><span>${egFilter === 'done' ? `${N} à faire` : `${done} sur ${N}`}</span></div>`;
+    const preview = shown ? _egPreviewHTML(shown, prog, 'aside') : _egDoneHTML(prog);
+    const sum = `<section class="eg-sum" aria-label="Parcours"><span class="st-eyebrow">Parcours</span>
+        <div class="eg-sum-big"><b>${done}</b><span>sur ${N} réussie${done > 1 ? 's' : ''}</span></div>
+        <span class="eg-sum-sub">${perfect} sans faute · ${tried} en cours</span></section>`;
+
+    panel.innerHTML = `<div class="egl">
+        <aside class="egl-aside"><div id="eg-preview">${preview}</div>${sum}</aside>
+        <div class="egl-main">${chips}${sections}${empty}</div>
+    </div>`;
 
     // Précalcule la base KPK pendant que l'utilisateur choisit (≈ 0,25 s).
     const warm = () => { try { EG.buildKpk(); } catch (e) { reportError('finales : préparation de la base roi + pion', e); } };
     if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 1500 }); else setTimeout(warm, 400);
+}
+
+// ─── Aperçu : colonne de droite (bureau) ou panneau du bas ───────────────────
+const _egWide = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(min-width: 920px)').matches;
+
+function previewEndgame(id) {
+    if (!ENDGAME_BY_ID[id]) return;
+    if (!_egWide()) { _egOpenSheet(id); return; }
+    egSel = id;
+    const host = document.getElementById('eg-preview');
+    if (!host) return;
+    host.innerHTML = _egPreviewHTML(ENDGAME_BY_ID[id], readEndgameProgress(), 'aside');
+    document.querySelectorAll('#endgame-panel .eg-card').forEach(c => c.classList.toggle('is-sel', c.dataset.arg === id));
+    document.querySelectorAll('#endgame-panel .eg-chips .ring-chip').forEach(c => c.setAttribute('aria-current', String(c.dataset.arg === ENDGAME_BY_ID[id].cat)));
+}
+
+let _egSheetReturn = null;
+function _egOpenSheet(id) {
+    _egCloseSheet(false);
+    _egSheetReturn = document.activeElement;
+    const ex = ENDGAME_BY_ID[id];
+    const wrap = document.createElement('div');
+    wrap.id = 'eg-sheet';
+    wrap.className = 'eg-sheet-wrap';
+    wrap.innerHTML = `<div class="eg-sheet-bg" data-action="egCloseSheet"></div>
+        <div class="eg-sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml('Aperçu : ' + ex.title)}">
+            <span class="eg-sheet-grab" aria-hidden="true"></span>
+            <button type="button" class="eg-sheet-x" data-action="egCloseSheet" aria-label="Fermer l'aperçu">${ico('x')}</button>
+            ${_egPreviewHTML(ex, readEndgameProgress(), 'sheet')}
+        </div>`;
+    wrap.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.preventDefault(); _egCloseSheet(true); return; }
+        if (e.key !== 'Tab') return;
+        const f = [...wrap.querySelectorAll('button')], i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    });
+    document.body.appendChild(wrap);
+    const go = wrap.querySelector('.eg-go');
+    if (go) go.focus();
+}
+
+function _egCloseSheet(restore) {
+    const el = document.getElementById('eg-sheet');
+    if (el) el.remove();
+    if (restore && _egSheetReturn && _egSheetReturn.isConnected) _egSheetReturn.focus();
+    _egSheetReturn = null;
+}
+
+// Puce de catégorie : défile jusqu'à la section.
+function jumpEndgameCategory(id) {
+    const sec = document.getElementById('eg-sec-' + id);
+    if (!sec) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    document.querySelectorAll('#endgame-panel .eg-chips .ring-chip').forEach(c => c.setAttribute('aria-current', String(c.dataset.arg === id)));
 }
 
 
@@ -297,13 +394,13 @@ const _egRules = ex => _EG_RULES[ex.rules || 'philidor'];
 const endgameState = {
     ex: null, busy: false, over: false, failed: null, timers: [],
     moves: 0, errors: 0, hints: 0, hintLevel: 0, budget: 0, seen: {}, tried: false,
-    token: 0, source: null, exact: true, planStep: 0
+    token: 0, source: null, exact: true, planStep: 0,
+    verdict: null, theory: false                              // verdict dégradé [avant, après] (−1, 0, 1) ; théorie dépliée
 };
 
 // Exercice jugé par le juge commun (tables Syzygy, base KPK ou moteur) : pas de « kind » propre.
 const _egJudged = ex => !ex.kind;
 const _egFen = () => Chess.fen(Chess.snapshot());
-const EG_SOURCES = { kpk: 'Calcul exact', syzygy: 'Tables Syzygy · exact', engine: 'Moteur · verdict estimé' };
 const EG_OPPONENTS = [['max', 'Résistance maximale'], ['human', 'Humain']];
 
 function _egLater(fn, ms) { endgameState.timers.push(setTimeout(fn, ms)); }
@@ -324,6 +421,7 @@ const _egPromoCode = l => ({ Q: 5, R: 4, B: 3, N: 2 }[String(l).toUpperCase()] |
 function startEndgame(id) {
     const ex = ENDGAME_BY_ID[id];
     if (!ex) return;
+    _egCloseSheet(false);
     stopEndgame();
     endgameState.ex = ex;
     playerColor = ex.player;
@@ -342,9 +440,10 @@ function _egLoadPosition() {
     boardFlipped = appSettings.autoFlip && ex.player === 'b';
     resetNavCursor();
     clearErrorFx();
-    s.busy = false; s.over = false; s.failed = null;
+    s.busy = false; s.over = false; s.failed = null; s.verdict = null; s.theory = false;
     s.moves = 0; s.hintLevel = 0; s.seen = {}; s.planStep = 0;
     s.token++;
+    s.source = _egJudged(ex) ? null : 'local'; s.exact = true;   // mats, KPK, pions : juges locaux exacts
     if (_egJudged(ex)) {
         s.budget = ex.goal === 'win' ? ex.keep || ex.maxMoves : ex.hold;
         const token = s.token;
@@ -389,40 +488,80 @@ function setEndgameOpponent(policy) {
 }
 
 registerActions({ egFilter: f => { egFilter = f; initEndgame(); }, egRandom: () => startRandomEndgame(), egOpponent: p => setEndgameOpponent(p),
+    egPreview: id => previewEndgame(id), egCloseSheet: () => _egCloseSheet(true), egJump: id => jumpEndgameCategory(id),
+    egTheory: () => { endgameState.theory = !endgameState.theory; renderEndgameCard(); },
     startEndgame: id => startEndgame(id), nextEndgame: () => nextEndgame(), retryEndgame: () => retryEndgame(), undoEndgameMove: () => undoEndgameMove() });
 
 // ─── CARTE D'OBJECTIF (panneau de jeu) ────────────────────────────────────────
+const EG_OUTCOMES = { 1: 'Gain', 0: 'Nulle', '-1': 'Perte' };
+
+// Jauge : une graduation par coup à tenir (hold, keep ou maxMoves ; budget calculé pour KPK), le coup fautif en rouge.
+function _egMeterHTML(s, ex) {
+    const n = Math.max(1, s.budget || 1), bad = s.failed && s.moves ? Math.min(s.moves, n) - 1 : -1;
+    const ticks = Array.from({ length: n }, (_, i) =>
+        `<i${i === bad ? ' class="bad"' : i < s.moves ? ` class="${s.over ? 'ok' : 'on'}"` : ''}></i>`).join('');
+    const unit = ex.goal === 'draw' ? 'à tenir' : _egJudged(ex) && ex.keep ? 'pour conclure' : 'au plus';
+    return `<div class="eg-meter">
+        <div class="eg-ticks" style="--n:${n}" role="progressbar" aria-label="Coups joués" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${Math.min(s.moves, n)}">${ticks}</div>
+        <div class="eg-meter-lg"><span>Coup <b>${s.moves}</b> / ${n} ${unit}</span><span${s.errors ? ' class="is-err"' : ''}><b>${s.errors}</b> erreur${s.errors > 1 ? 's' : ''}</span><span><b>${s.hints}</b> indice${s.hints > 1 ? 's' : ''}</span></div>
+    </div>`;
+}
+
+// Verdict « avant → après » : le résultat attendu barré, puis le nouveau en rouge.
+function _egVerdictHTML(v) {
+    if (!v) return '';
+    const [from, to] = v.map(x => EG_OUTCOMES[x]);
+    return `<div class="eg-verdict" role="img" aria-label="${escapeHtml(`Verdict : ${from.toLowerCase()} devenue ${to.toLowerCase()}`)}">
+        <span class="eg-vpill is-from">${from}</span>${ico('chevron-right')}<span class="eg-vpill is-to">${to}</span></div>`;
+}
+
+// Théorie : repliée pendant la séance (bouton « Théorie »), ouverte d'office à la fin.
+function _egTheoryHTML(s, ex) {
+    if (!ex.theory) return '';
+    const open = s.over || s.theory;
+    return `<div class="eg-theory-box">
+        ${s.over ? `<span class="eg-theory-h">${ico('book')}Théorie</span>`
+                 : `<button type="button" class="eg-theory-btn" data-action="egTheory" aria-expanded="${open}" aria-controls="eg-theory">${ico('book')}Théorie${ico('chevron-down')}</button>`}
+        <p class="eg-theory" id="eg-theory"${open ? '' : ' hidden'}>${escapeHtml(ex.theory)}</p>
+    </div>`;
+}
+
 function renderEndgameCard() {
     const el = document.getElementById('endgame-card');
     const s = endgameState, ex = s.ex;
     if (!el || !ex) return;
     const cat = ENDGAME_CATEGORIES.find(c => c.id === ex.cat);
-    const unit = ex.goal === 'draw' ? 'à tenir' : _egJudged(ex) && ex.keep ? 'pour conclure' : 'max';
-    const meter = `<div class="eg-meter"><span>Coup <b>${s.moves}</b> / ${s.budget} ${unit}</span><span>${s.errors} erreur${s.errors > 1 ? 's' : ''}</span><span>${s.hints} indice${s.hints > 1 ? 's' : ''}</span></div>`;
-
-    let result = '';
+    const src = s.source ? _egSourceBadge(s.source, s.exact) : '';
+    const top = `<div class="eg-card-top"><span class="eg-cat">${escapeHtml(cat ? cat.label : '')}</span>${_egDotsHTML(ex.level)}</div>`;
+    let body;
     if (s.over) {
-        result = `<div class="eg-result ok">${ico('check')} <span>${escapeHtml(s.over)}</span></div>
-            <div class="eg-theory">${escapeHtml(ex.theory)}</div>
+        const i = ENDGAME_EXERCISES.indexOf(ex), nx = ENDGAME_EXERCISES[(i + 1) % ENDGAME_EXERCISES.length];
+        body = `<div class="eg-win"><span class="eg-medal">${ico('check')}</span><div><b>Exercice réussi</b><span>${escapeHtml(s.over)}</span></div></div>
+            <div class="eg-kpis"><div><b>${s.moves}</b><small>coup${s.moves > 1 ? 's' : ''}</small></div><div><b>${s.errors}</b><small>erreur${s.errors > 1 ? 's' : ''}</small></div><div><b>${s.hints}</b><small>indice${s.hints > 1 ? 's' : ''}</small></div></div>
+            ${_egTheoryHTML(s, ex)}
+            <div class="eg-nextup">${_egMini(nx, 'eg-pos')}<div><small>Suivant</small><b>${escapeHtml(nx.title)}</b></div></div>
             <div class="eg-actions"><button class="btn btn-primary" data-action="nextEndgame">${ico('skip-forward')} Suivant</button><button class="btn" data-action="retryEndgame">${ico('rotate-ccw')} Rejouer</button></div>`;
-    } else if (s.failed) {
-        result = `<div class="eg-result err">${ico('alert-triangle')} <span>${escapeHtml(s.failed.msg)}</span></div>
-            <div class="eg-actions">${s.failed.undoable ? `<button class="btn btn-primary" data-action="undoEndgameMove">${ico('pencil')} Annuler ce coup</button>` : ''}<button class="btn" data-action="retryEndgame">${ico('rotate-ccw')} Recommencer</button></div>`;
-    }
-    // Exercices jugés : choix de l'adversaire et origine du verdict (tables, calcul exact ou moteur).
-    let judged = '';
-    if (_egJudged(ex)) {
-        const pol = appSettings.egOpponent || 'max';
-        judged = `<div class="eg-opp"><span class="eg-opp-label" id="eg-opp-label">Adversaire</span>
-            <div class="seg eg-opp-seg" role="radiogroup" aria-labelledby="eg-opp-label">${EG_OPPONENTS.map(([id, label]) =>
-                `<button class="seg-btn${pol === id ? ' active' : ''}" role="radio" aria-checked="${pol === id}" data-action="egOpponent" data-arg="${id}">${label}</button>`).join('')}</div></div>
-            ${s.source ? `<div class="eg-source${s.exact ? '' : ' is-estimate'}">${escapeHtml(EG_SOURCES[s.source] || '')}</div>` : ''}`;
+    } else {
+        const goal = `<div class="eg-goalrow">${_egGoalTag(ex)}<span class="eg-side">${_egKing(ex.player)}avec les ${EG_SIDE[ex.player]}</span>${src}</div>`;
+        let failed = '';
+        if (s.failed) {
+            const undo = s.failed.undoable;
+            failed = `${_egVerdictHTML(s.verdict)}
+                <div class="eg-rule">${ico('alert-triangle')}<span>${escapeHtml(s.failed.msg)}</span></div>
+                <div class="eg-actions">${undo ? `<button class="btn btn-primary" data-action="undoEndgameMove">${ico('pencil')} Annuler ce coup</button>` : ''}<button class="btn${undo ? '' : ' btn-primary'}" data-action="retryEndgame">${ico('rotate-ccw')} Recommencer</button></div>`;
+        }
+        // Exercices jugés : choix de l'adversaire (tables, KPK ou moteur, cf. egOpponent.js).
+        let opp = '';
+        if (_egJudged(ex) && !s.failed) {
+            const pol = appSettings.egOpponent || 'max';
+            opp = `<div class="eg-opp"><span class="eg-opp-label" id="eg-opp-label">Adversaire</span>
+                <div class="seg eg-opp-seg" role="radiogroup" aria-labelledby="eg-opp-label">${EG_OPPONENTS.map(([id, label]) =>
+                    `<button class="seg-btn${pol === id ? ' active' : ''}" role="radio" aria-checked="${pol === id}" data-action="egOpponent" data-arg="${id}">${label}</button>`).join('')}</div></div>`;
+        }
+        body = `${goal}${failed}${_egMeterHTML(s, ex)}${opp}${_egTheoryHTML(s, ex)}`;
     }
     el.className = 'endgame-card' + (s.over ? ' is-ok' : s.failed ? ' is-err' : '');
-    el.innerHTML = `<div class="eg-card-top"><span class="eg-cat">${escapeHtml(cat ? cat.label : '')}</span><span class="eg-lvl">${_egDots(ex.level)}</span></div>
-        <div class="eg-title">${escapeHtml(ex.title)}${ex.beta ? ' <span class="eg-badge beta">Bêta</span>' : ''}</div>
-        <div class="eg-goal">${escapeHtml(_egGoalLine(ex))}</div>
-        ${meter}${judged}${result}`;
+    el.innerHTML = top + body;
 }
 
 // ─── COUP DU JOUEUR (appelé par executePlayerMove) ────────────────────────────
@@ -431,8 +570,8 @@ function _egJudge(ex, st, m) {
     if (ex.kind === 'mate') {
         const j = EG.judgeMate(st, m);
         if (j.mate)      return { state: 'success', msg: 'Échec et mat ! Bien joué.' };
-        if (j.stalemate) return { state: 'fail', undoable: true,  msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse (hors échec).' };
-        if (j.hanging)   return { state: 'fail', undoable: true,  msg: 'Votre pièce est abandonnée : le roi adverse la prend et le gain disparaît.' };
+        if (j.stalemate) return { state: 'fail', undoable: true, verdict: [1, 0], msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse (hors échec).' };
+        if (j.hanging)   return { state: 'fail', undoable: true, verdict: [1, 0], msg: 'Votre pièce est abandonnée : le roi adverse la prend et le gain disparaît.' };
         if (n > ex.maxMoves) return { state: 'fail', undoable: false, msg: `Trop lent : le mat doit tomber en ${ex.maxMoves} coups maximum.` };
         return { state: 'continue' };
     }
@@ -444,13 +583,13 @@ function _egJudge(ex, st, m) {
                           underpromo: 'Promotion en pièce mineure : roi + cavalier ou fou ne peut pas mater, c\'est nulle.',
                           hanging: 'La pièce promue est prise ou le roi adverse est pat : le gain disparaît.' }[info.why]
                       || 'Ce coup laisse échapper le gain : la position est maintenant nulle.';
-            return { state: 'fail', undoable: true, msg: why };
+            return { state: 'fail', undoable: true, verdict: [1, 0], msg: why };
         }
         if (info.promoted || info.mate) return { state: 'success', msg: 'Promotion réussie : la position est gagnée.' };
         if (n > s.budget) return { state: 'fail', undoable: false, msg: 'Le gain théorique est conservé, mais vous perdez trop de temps : cherchez la ligne la plus directe.' };
         return { state: 'continue' };
     }
-    if (info.win) return { state: 'fail', undoable: true, msg: 'Ce coup perd : le pion va se promouvoir. Il fallait garder la nulle.' };
+    if (info.win) return { state: 'fail', undoable: true, verdict: [0, -1], msg: 'Ce coup perd : le pion va se promouvoir. Il fallait garder la nulle.' };
     if (info.why === 'capture')   return { state: 'success', msg: 'Pion capturé : nulle !' };
     if (info.why === 'stalemate') return { state: 'success', msg: 'Pat : nulle !' };
     if (n >= s.budget) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${s.budget} coups sans céder.` };
@@ -468,14 +607,14 @@ function _egJudgePawns(ex, st, m, n) {
     const v = EG.pawnMoveValue(st, m, _egHorizon(ex)), promo = EG.mPromo(m);
     const after = EG.make(st, m), pc = EG.pawnCount(after.b);
     if (ex.goal === 'win') {
-        if (v !== 1) return { state: 'fail', undoable: true, msg: promo
+        if (v !== 1) return { state: 'fail', undoable: true, verdict: [1, v < 0 ? -1 : 0], msg: promo
             ? 'Cette promotion ne gagne pas : la Dame est prise, ou l\'adversaire promeut aussitôt.'
             : 'Ce coup ne gagne pas, ou trop lentement : cherchez la ligne la plus directe.' };
         if (promo) return { state: 'success', msg: 'Promotion réussie : la position est gagnée.' };
         if (n > endgameState.budget) return { state: 'fail', undoable: false, msg: 'Le gain est toujours là, mais trop lent : cherchez la ligne la plus directe.' };
         return { state: 'continue' };
     }
-    if (v === -1) return { state: 'fail', undoable: true, msg: 'Ce coup perd : l\'adversaire peut maintenant forcer la promotion de son pion.' };
+    if (v === -1) return { state: 'fail', undoable: true, verdict: [0, -1], msg: 'Ce coup perd : l\'adversaire peut maintenant forcer la promotion de son pion.' };
     if (promo) return { state: 'success', msg: 'Vous promouvez à votre tour : nulle (au moins) !' };
     if (pc.n === 0) return { state: 'success', msg: 'Plus aucun pion : nulle !' };
     if (pc.n === 1 && !pc.pieces && !EG.kpkProbe(after).win && pc.side !== st.stm) return { state: 'success', msg: 'Il ne reste qu\'un pion adverse, et la position est nulle : bien défendu !' };
@@ -534,7 +673,7 @@ function answerEndgameMove(from, to, promo) {
     s.moves++; s.hintLevel = 0;
 
     if (res.state === 'fail') {
-        s.errors++; s.failed = res; s.busy = true;
+        s.errors++; s.failed = res; s.verdict = res.verdict || null; s.busy = true;
         _commitMove(from, to, promo, null, `✗ ${san} — ${res.msg}`, 'err');
         playSound('error');
         renderEndgameCard();
@@ -575,12 +714,12 @@ function _egJudgedOutcome(ex, st, m, v, n) {
         const msg = rule && rule.msg ? rule.msg
                   : ex.goal === 'win' ? (res(v.after) < 0 ? 'Ce coup perd : la position se retourne.' : 'Ce coup laisse échapper le gain : la position est maintenant nulle.')
                   : 'Ce coup perd : l\'adversaire peut maintenant forcer le gain.';
-        return { state: 'fail', undoable: true, msg };
+        return { state: 'fail', undoable: true, verdict: [res(v.before), res(v.after)], msg };
     }
     if (!replies.length) {
         if (EG.inCheck(ns)) return { state: 'success', msg: 'Échec et mat ! Bien joué.' };
         if (ex.goal === 'draw') return { state: 'success', msg: 'Pat : nulle !' };
-        return { state: 'fail', undoable: true, msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse.' };
+        return { state: 'fail', undoable: true, verdict: [1, 0], msg: 'Pat ! La partie est nulle : laissez toujours une case libre au roi adverse.' };
     }
     const kept = !v || res(v.after) >= (ex.goal === 'win' ? 1 : 0);
     if (ex.goal === 'win') {
@@ -615,7 +754,7 @@ async function _egPlayJudged(from, to, promo) {
     const res = _egJudgedOutcome(ex, st, m, v, s.moves);
     const est = v && !v.exact ? ' (verdict estimé)' : '';
     if (res.state === 'fail') {
-        s.errors++; s.failed = res;
+        s.errors++; s.failed = res; s.verdict = res.verdict || null;
         setStatus(`✗ ${san} — ${res.msg}${est}`, 'err');
         playSound('error');
         renderEndgameCard();
@@ -702,7 +841,7 @@ function _egReplyMove(m) {
 function _egFinish(msg) {
     const s = endgameState, ex = s.ex;
     playSound('success');
-    s.over = msg; s.busy = true;
+    s.over = msg; s.busy = true; s.theory = true;
     const perfect = s.errors === 0 && s.hints === 0;
     _egBump(ex.id, p => {
         p.wins++;
@@ -719,7 +858,7 @@ function undoEndgameMove() {
     if (!s.failed || !s.failed.undoable || !moveHistory.length) return;
     performUndo();                                           // openingsLogic.js : restaure position, trait, surbrillance
     s.moves = Math.max(0, s.moves - 1);
-    s.failed = null; s.busy = false; s.hintLevel = 0;
+    s.failed = null; s.verdict = null; s.busy = false; s.hintLevel = 0;
     renderEndgameCard();
     setStatus('Coup annulé — cherchez un autre coup.', 'info');
 }

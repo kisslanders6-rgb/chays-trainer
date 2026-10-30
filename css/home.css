@@ -139,9 +139,10 @@
 .tab-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; font-size: 24px; }
 
 /* ─── Fond de l'accueil Nocturne : halo et échiquier fantôme aux teintes de l'échiquier ───
-   Sur toute la largeur de la fenêtre (.setup-screen n'a pas de largeur maximale) ; trame centrée. */
+   Fixé à la fenêtre (position: fixed) : le halo et le fondu de haut en bas restent en place quand la page
+   défile, quelle que soit sa longueur (Finales, Statistiques). Trame centrée. */
 [data-theme="dark"] .setup-screen::before {
-    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background:
         radial-gradient(90% 55% at 50% 0%, color-mix(in srgb, var(--board-accent) 12%, transparent), transparent 70%),
         repeating-conic-gradient(color-mix(in srgb, var(--board-light) 4%, transparent) 0 25%, transparent 0 50%) 50% 0 / 44px 44px;
@@ -196,24 +197,13 @@
 .hp-n { margin-left: auto; font-family: var(--font-note); font-size: 12px; color: var(--text-dim); }
 
 /* ─── Aujourd'hui ───
-   Téléphone : position du jour à 112 px à côté du titre, action pleine largeur dessous (.hp-day-txt en display: contents).
-   Grand écran : position à 264 px, texte à côté, programme de la séance dessous. */
+   De haut en bas : surtitre, chiffre dû et anneau, position la plus en retard, action, programme ou prévision.
+   Mise en page détaillée : section « ACCUEIL PUPITRE (LOT 7) » en fin de fichier. */
 .hp-day, .hp-start {
     position: relative; height: 100%; display: flex; flex-direction: column; gap: 18px; padding: 20px; border-radius: 22px;
     border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden;
     background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--board-dark) 26%, transparent), transparent 62%), var(--surface);
 }
-.hp-day-in { flex: 1; display: grid; grid-template-columns: 112px minmax(0, 1fr); column-gap: 16px; row-gap: 4px; align-items: start; }
-.hp-day-txt { display: contents; }
-.hp-day-txt > * { grid-column: 2; }
-.hp-day-txt > .hp-ctas { grid-column: 1 / -1; }
-.hp-day-board { grid-row: 1 / span 3; position: relative; display: flex; flex-direction: column; gap: 8px; }
-.hp-day-board .st-mini { width: 100%; border-radius: 8px; box-shadow: 0 0 0 2px var(--board-ring, var(--border-strong)), 0 14px 26px -16px rgba(0, 0, 0, .7); }
-.hp-cap { display: none; font-family: var(--font-note); font-size: 11.5px; color: var(--text-dim); text-align: center; }
-.hp-check { position: absolute; right: -8px; bottom: -8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
-            background: var(--ok); color: #0f2a1d; box-shadow: 0 0 0 4px var(--surface); }
-.hp-check .ico { width: 16px; height: 16px; stroke-width: 3; fill: none; }
-.hp-greet { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 22px; padding-right: 56px; font-size: 13px; color: var(--text-muted); }
 .hp-streak { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--lv-progress); background: color-mix(in srgb, var(--lv-progress) 15%, transparent); }
 .hp-title { margin: 4px 0 2px; font-family: var(--font-display); font-weight: 600; font-size: 27px; line-height: 1.04; letter-spacing: -.015em; color: var(--text); text-wrap: balance; }
 .hp-title em { font-style: normal; color: var(--accent); }
@@ -226,7 +216,6 @@
     box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent); transition: transform .25s var(--ease-out), box-shadow .25s;
 }
 .hp-cta .ico { width: 17px; height: 17px; fill: none; }
-.hp-cta.is-quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--border-strong); }
 @media (hover: hover) { .hp-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--accent) 95%, transparent); } }
 .hp-cta:active { transform: translateY(1px) scale(.99); }
 .hp-cta:focus-visible, .hp-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -234,16 +223,6 @@
            background: none; color: var(--text-muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 .hp-link .ico { width: 15px; height: 15px; fill: none; }
 @media (hover: hover) { .hp-link:hover { color: var(--text); } }
-
-/* Objectif du jour : anneau dans le coin du bloc */
-.hp-goal { position: absolute; top: 16px; right: 16px; width: 48px; height: 48px; }
-.hp-goal svg { width: 100%; height: 100%; }
-.hp-goal circle { fill: none; stroke: var(--border-strong); stroke-width: 5; }
-.hp-goal circle.v { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset .8s var(--ease-out); }
-.hp-goal.is-done circle.v { stroke: var(--ok); }
-.hp-goal span { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
-.hp-goal b { font-family: var(--font-note); font-size: 11px; font-weight: 600; color: var(--text); }
-.hp-goal small { display: none; margin-top: 2px; font-size: 6.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-dim); }
 
 /* Programme de la séance, par ouverture */
 .hp-plan { padding-top: 6px; border-top: 1px solid var(--border); }
@@ -266,14 +245,8 @@
 .hp-pick .st-mini { width: 100%; }
 .hp-pick b { display: block; font-size: 18px; }
 .hp-pick small { display: block; margin: 2px 0 10px; font-family: var(--font-note); font-size: 12px; color: var(--text-dim); }
-.hp-pick .hp-cta { min-height: 40px; padding: 0 14px; font-size: 13.5px; border-radius: 11px; }
 @media (hover: hover) { .hp-pick:hover { border-color: var(--accent); transform: translateY(-2px); } }
 .hp-pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.hp-alts { display: flex; flex-wrap: wrap; gap: 8px; }
-.hp-alt { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px;
-          background: var(--bg); color: var(--text-muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-.hp-alt .ico { width: 16px; height: 16px; fill: none; color: var(--board-accent); }
-@media (hover: hover) { .hp-alt:hover { color: var(--text); border-color: var(--border-strong); } }
 
 /* ─── Jouer : Blancs / Noirs, Reprendre ─── */
 .hp-play, .hp-inbox { padding: 14px 14px 10px; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); }
@@ -317,12 +290,6 @@
 .hp-row-txt b { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-note); font-weight: 500; font-size: 13px; }
 .hp-row-txt small { display: block; margin-top: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--text-dim); }
 .hp-row-end { display: flex; align-items: center; }
-.hp-go-label { display: none; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 700; color: var(--accent); white-space: nowrap; }
-.hp-go-label .ico { width: 14px; height: 14px; fill: none; }
-@media (hover: hover) {
-    .hp-row:not(.is-static):hover .hp-go-label { display: inline-flex; }
-    .hp-row:not(.is-static):hover .hp-kind { display: none; }
-}
 .hp-kind { flex: none; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
 .hp-kind.ok { --c: var(--ok); } .hp-kind.err { --c: var(--err); } .hp-kind.info { --c: var(--text-muted); }
 .hp-kind.warn { --c: var(--lv-progress); } .hp-kind.new { --c: var(--accent); }
@@ -331,19 +298,8 @@
 .hp-empty b { font-size: 14px; color: var(--text); }
 .hp-more { margin: 4px 6px 2px; font-size: 12px; color: var(--text-dim); }
 
-/* ─── Téléphone : blocs bord à bord, une seule marge (celle de .home-content) ─── */
-@media (max-width: 599px) {
-    .home-content:has(#home-tab-play:not(.hidden)) { padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
-    .hp-grid { gap: 0; }
-    .hp-day, .hp-start, .hp-play, .hp-inbox { margin: 0 -14px; border-radius: 0; border-width: 0 0 1px; box-shadow: none; padding-left: 14px; padding-right: 14px; }
-    .hp-day, .hp-start { padding-top: 18px; padding-bottom: 20px; }
-    .hp-play, .hp-inbox { padding-top: 14px; padding-bottom: 12px; }
-    #looks-tip:not(:empty) { margin: 12px 0; }
-}
-
 /* Sur une tablette, plus de place pour la position */
 @container home-play (min-width: 480px) {
-    .hp-day-in { grid-template-columns: 140px minmax(0, 1fr); }
     .hp-picks { grid-template-columns: 1fr 1fr; }
     .hp-plan-row { grid-template-columns: 12px minmax(0, 1fr) 96px 28px; }
     .hp-plan-bar { display: block; }
@@ -353,30 +309,15 @@
 /* ─── Grand écran ─── */
 @container home-play (min-width: 1000px) {
     .hp-day, .hp-start { padding: 26px; gap: 22px; }
-    .hp-day-in { grid-template-columns: 264px minmax(0, 1fr); column-gap: 32px; align-items: center; }
-    .hp-day-txt { display: block; }
-    .hp-day-board { grid-row: auto; }
-    .hp-cap { display: block; }
-    .hp-check { width: 44px; height: 44px; right: -10px; bottom: -10px; box-shadow: 0 0 0 5px var(--surface); }
-    .hp-check .ico { width: 22px; height: 22px; }
     .hp-title { font-size: 40px; margin: 10px 0 6px; }
     .hp-sub { font-size: 14.5px; }
     .hp-ctas { margin-top: 24px; }
-    .hp-goal { top: 22px; right: 22px; width: 64px; height: 64px; }
-    .hp-goal b { font-size: 13px; }
-    .hp-goal small { display: block; }
     .hp-plan-row { grid-template-columns: 12px minmax(0, 1fr) 140px 36px; padding: 8px 0; font-size: 14px; }
     .hp-start .hp-title { font-size: 36px; }
-    .hp-pick { grid-template-columns: 120px minmax(0, 1fr); padding: 16px; }
-    .hp-sides { grid-template-columns: 1fr; gap: 2px; margin: 4px -6px 6px; }
-    .hp-side { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 8px 6px; border-color: transparent; background: none; }
-    .hp-side-art .st-mini { border-radius: 5px; }
-    .hp-go { display: grid; }
-    @media (hover: hover) { .hp-side:hover { background: var(--surface-hover, var(--bg-inset)); border-color: transparent; } }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .hp-cta, .hp-pick, .hp-go, .hp-goal circle.v { transition: none; }
+    .hp-cta, .hp-pick, .hp-go { transition: none; }
     .hp-cta:hover, .hp-pick:hover { transform: none; }
 }
 
@@ -389,3 +330,154 @@
 .looks-tip-sw { flex: none; width: 36px; height: 36px; border-radius: 8px; background: repeating-conic-gradient(#70503a 0 25%, #dbc09a 0 50%) 0 0 / 18px 18px; box-shadow: 0 0 0 1px var(--border); }
 .looks-tip-acts { display: flex; align-items: center; gap: 14px; }
 .looks-tip .btn { min-height: 34px; padding: 6px 14px; }
+
+/* ─── ACCUEIL PUPITRE (LOT 7) ───────────────────────────────────────────────
+   Aujourd'hui se lit de haut en bas : surtitre (salutation · série), chiffre dû et anneau (Ring.html),
+   position la plus en retard, unique action pleine (.btn-primary), puis programme ou prévision sur 7 jours.
+   Jouer : cartes Velours (Blancs / Noirs), « Reprendre » en pointillé. À traiter : lignes de 64 px, badge
+   .vbadge et bouton « Répondre » (.btn-soft compact). Téléphone : blocs bord à bord (.edge-card), seule marge
+   de 16 px portée par les blocs. ≥ 600 px : bordure, rayon, ombre. ≥ 1 000 px : Aujourd'hui à gauche. */
+
+/* Barre de contexte : cibles de 44 px */
+.hp-scope .rp-chip { min-height: var(--tap); }
+.hp-scope .hp-tool { height: var(--tap); min-width: var(--tap); justify-content: center; border-radius: 12px; }
+.hp-scope .menu-btn { width: var(--tap); height: var(--tap); border-radius: 12px; }
+.hp-scope .hp-q { width: 36px; height: 36px; }
+.hp-scope .menu-btn:focus-visible, .hp-scope .rp-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Blocs */
+.hp-day, .hp-start { gap: 0; padding: 20px; }
+.hp-play, .hp-inbox { padding: 16px 16px 12px; box-shadow: var(--shadow-sm); }
+.hp-play .hp-h h2, .hp-inbox .hp-h h2 { font: 600 19px/1.1 var(--font-display); letter-spacing: 0; }
+
+/* Aujourd'hui : surtitre Plex Mono */
+.hp-over { margin: 0 0 12px; font: 500 11.5px/1.4 var(--font-note); letter-spacing: .04em; color: var(--text-muted); }
+.hp-over .hp-streak { padding: 0; background: none; color: var(--text); font: inherit; font-weight: 600; }
+.hp-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.hp-day .hp-title { margin: 0 0 6px; font-size: 28px; line-height: 1.08; letter-spacing: -.01em; }
+.hp-title em { font-variant-numeric: tabular-nums; }
+.hp-day.is-done .hp-title em { color: var(--ok); }
+.hp-goal .ring-txt b { font-family: var(--font-note); font-weight: 600; font-size: 13px; }
+.hp-goal .ring-txt small { font-size: 9.5px; }
+
+/* Position la plus en retard */
+.hp-focus { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; align-items: center; margin-top: 16px; }
+.hp-focus .st-mini { width: 100%; border-radius: 6px; box-shadow: 0 0 0 1px var(--board-ring, var(--border-strong)); }
+.hp-focus-txt { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.hp-focus-over { font: 500 10.5px/1.2 var(--font-note); letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+.hp-focus-txt b { font-size: 14px; font-weight: 700; color: var(--text); }
+.hp-focus-line { font: 500 12px/1.5 var(--font-note); color: var(--text-muted); overflow-wrap: anywhere; }
+.hp-focus-txt small { font-size: 12px; color: var(--text-dim); }
+
+/* L'unique action pleine, puis un lien centré sans cadre */
+.hp-ctas { display: grid; gap: 2px; margin-top: 18px; }
+.btn.btn-primary.hp-cta { width: 100%; min-height: 50px; padding: 0 22px; gap: 10px; border-radius: 14px; font-size: 15px; letter-spacing: 0;
+    box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent); }
+.hp-ctas .hp-link { justify-self: center; min-height: var(--tap); }
+.hp-plan { margin-top: 16px; padding-top: 10px; }
+.hp-plan .hp-h h3 { font: 500 10.5px/1 var(--font-note); letter-spacing: .13em; text-transform: uppercase; color: var(--text-dim); }
+
+/* Prévision des 7 prochains jours */
+.hp-fc { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.hp-fc li { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-height: 66px; }
+.hp-fc-n { font: 600 11.5px/1 var(--font-note); color: var(--text); font-variant-numeric: tabular-nums; }
+.hp-fc i { display: block; width: 100%; max-width: 22px; border-radius: 3px 3px 1px 1px; background: color-mix(in oklab, var(--accent) 45%, var(--border)); }
+.hp-fc li:first-child i { background: var(--accent); }
+.hp-fc span { font: 500 10.5px/1.2 var(--font-note); color: var(--text-dim); }
+
+/* Répertoire vide : deux cartes, une choisie, l'action sous les cartes */
+.hp-start .hp-picks { margin-top: 14px; grid-template-columns: 1fr 1fr; }
+.hp-pick { grid-template-columns: 1fr; gap: 10px; padding: 12px; border: 0; border-radius: 16px; transition: transform .25s var(--ease-out); }
+.hp-pick.is-w { background: var(--card-w-bg); color: var(--card-w-ink); }
+.hp-pick.is-b { background: var(--card-b-bg); color: var(--card-b-ink); box-shadow: inset 0 0 0 1px var(--card-b-line); }
+.hp-pick b { font: 600 17px/1.1 var(--font-display); }
+.hp-pick small { margin: 2px 0 0; color: inherit; opacity: .85; }
+.hp-pick[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hp-alts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; margin-top: 6px; }
+.hp-alts .hp-link { min-height: var(--tap); }
+
+/* Jouer : cartes Velours (on entre dans Jouer, qui ne compte rien) */
+.hp-side { position: relative; border: 0; border-radius: 16px; padding: 12px; gap: 10px; overflow: hidden;
+    transition: transform .25s var(--ease-out), box-shadow .25s; }
+.hp-side:nth-child(1) { background: var(--card-w-sheen), var(--card-w-bg); color: var(--card-w-ink); box-shadow: var(--shadow-sm); }
+.hp-side:nth-child(2) { background: var(--card-b-sheen), var(--card-b-bg); color: var(--card-b-ink); box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--card-b-line); }
+.hp-sides { grid-template-columns: 1fr; }
+.hp-side { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.hp-side .hp-go { display: grid; }
+.hp-side-txt b { font: 600 18px/1.1 var(--font-display); }
+.hp-side-txt small { font-family: var(--font-note); font-size: 11.5px; color: inherit; opacity: .85; }
+.hp-side-art .st-mini { box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); }
+.hp-side .hp-go { border: 0; background: rgba(0, 0, 0, .08); color: inherit; border-radius: 50%; }
+.hp-side:nth-child(2) .hp-go { background: rgba(255, 255, 255, .1); }
+@media (hover: hover) {
+    .hp-side:hover, .hp-pick:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .hp-side:hover .hp-go { background: var(--accent); color: var(--accent-text); transform: none; }
+}
+#home-tab-play .resume-card { margin-top: 2px; min-height: 56px; border: 1.5px dashed var(--border-strong); border-radius: 14px; }
+@media (hover: hover) { #home-tab-play .resume-card:hover { background: var(--accent-soft); border-color: var(--accent-line); } }
+#home-tab-play .resume-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* À traiter : onglets sur 40 px, lignes de 64 px, badge et « Répondre » */
+.hp-inbox .hp-h { flex-wrap: wrap; }
+.hp-tabs { padding: 3px; border-radius: 999px; }
+.hp-tabs button { min-height: 34px; padding: 0 14px; border-radius: 999px; font-size: 12.5px; color: var(--text-muted); }
+.hp-list { margin: 10px -8px 0; }
+.hp-row { grid-template-columns: 48px minmax(0, 1fr) auto; min-height: 64px; padding: 8px; cursor: default; }
+.hp-row + .hp-row { border-top: 1px solid var(--border); border-radius: 0; }
+@media (hover: hover) { .hp-row:hover, .hp-row:not(.is-static):hover { background: var(--accent-soft); } }
+.hp-thumb .st-mini { width: 48px; border-radius: 4px; box-shadow: 0 0 0 1px var(--board-ring, var(--border-strong)); }
+.hp-row-end { flex-direction: column; align-items: flex-end; gap: 4px; }
+.hp-row-end:has(.hp-answer) { flex-direction: row; align-items: center; gap: 8px; }
+.btn.btn-soft.hp-answer { min-height: 36px; height: 36px; padding: 0 12px; border-radius: 10px; font-size: 12.5px;
+    color: color-mix(in oklab, var(--accent) 80%, var(--text)); }   /* texte de 12,5 px : 4,5:1 au moins sur la surface, en clair comme en sombre */
+
+/* Téléphone : blocs bord à bord, la marge de 16 px vient des blocs */
+@media (max-width: 599px) {
+    .home-content:has(#home-tab-play:not(.hidden)) { padding-left: 0; padding-right: 0; }
+    .st-scope.hp-scope { margin: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    .hp-grid { gap: 0; }
+    /* .edge-card (style.css) perd face aux règles de bloc, plus loin dans la cascade : on la réaffirme ici. */
+    .edge-card.hp-day, .edge-card.hp-start, .edge-card.hp-play, .edge-card.hp-inbox { border-radius: 0; border-width: 0 0 1px; box-shadow: none; }
+    .hp-day, .hp-start, .hp-play, .hp-inbox { border-bottom: 1px solid var(--border);
+        padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    .hp-day, .hp-start { padding-top: 18px; padding-bottom: 20px; background: var(--surface); }
+    .hp-play, .hp-inbox { padding-top: 16px; padding-bottom: 12px; }
+    .hp-focus .st-mini, .hp-thumb .st-mini, .hp-side-art .st-mini { box-shadow: none; }
+    .hp-side, .hp-pick { box-shadow: none; }
+    .hp-side:nth-child(2), .hp-pick.is-b { box-shadow: inset 0 0 0 1px var(--card-b-line); }
+    .hp-list { margin-left: -8px; margin-right: -8px; }
+    /* Ligne étroite : le badge passe sous le texte, « Répondre » garde toute sa colonne */
+    .hp-row { grid-template-rows: auto auto; row-gap: 4px; }
+    .hp-thumb { grid-row: 1 / span 2; }
+    .hp-row-txt { grid-column: 2; grid-row: 1; }
+    .hp-row-end { display: contents; }
+    .hp-row-end .vbadge { grid-column: 2; grid-row: 2; justify-self: start; }
+    .hp-row-end .hp-answer { grid-column: 3; grid-row: 1 / span 2; }
+    #looks-tip:not(:empty) { margin: 12px 16px; }
+}
+
+/* Tablette : actions côte à côte */
+@container home-play (min-width: 480px) {
+    .hp-ctas { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+    .btn.btn-primary.hp-cta { width: auto; }
+}
+
+/* Grand écran : Aujourd'hui à gauche (mini-échiquier de 236 px), Jouer et À traiter à droite, suggestion au-dessus */
+@container home-play (min-width: 1000px) {
+    .hp-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    .hp-day, .hp-start { padding: 26px; }
+    .hp-day .hp-title { font-size: 38px; }
+    .hp-goal.ring { width: 76px; height: 76px; }
+    .hp-goal .ring-txt b { font-size: 15px; }
+    .hp-focus { grid-template-columns: 236px minmax(0, 1fr); gap: 22px; margin-top: 22px; }
+    .hp-focus-txt b { font-size: 16px; }
+    .hp-sides { grid-template-columns: 1fr 1fr; }
+    .hp-side { grid-template-columns: 56px minmax(0, 1fr); }
+    .hp-side .hp-go { display: none; }
+    .hp-picks { gap: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hp-side, .hp-pick, .btn.btn-primary.hp-cta { transition: none; }
+    .hp-side:hover, .hp-pick:hover { transform: none; }
+}

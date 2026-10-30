@@ -80,9 +80,44 @@ t('fonds sombres : textes secondaires lisibles sur les cartes et les fenêtres',
     for (const [id, v] of Object.entries(DARK_BGS)) {
         const s = hex(v.surface), e = hex(v['bg-elevated']);
         if (Math.min(contrast(hex(v['text-muted']), s), contrast(hex(v['text-muted']), e)) < 4.5) bad.push(`${id} texte atténué`);
-        if (contrast(hex(v['text-dim']), s) < 4.5) bad.push(`${id} texte discret`);
+        if (Math.min(contrast(hex(v['text-dim']), s), contrast(hex(v['text-dim']), e)) < 4.5) bad.push(`${id} texte discret`);
         if (contrast(hex(v.text), e) < 7) bad.push(`${id} texte`);
     }
+    assert.strictEqual(bad.join(' ; '), '');
+});
+
+t('texte discret (--text-dim) : valeurs relevées du lot 7, lisibles en clair comme en sombre', () => {
+    const want = { neutral: '#8e9195', night: '#8592a4', oled: '#8a8a8a', green: '#8b9682' };
+    for (const [id, v] of Object.entries(want)) assert.strictEqual(DARK_BGS[id]['text-dim'], v, id);
+    const light = varsOf(':root, [data-theme="light"]');
+    assert.strictEqual(light['text-dim'], '#62675a');
+    for (const bg of ['surface', 'bg-elevated', 'bg']) {
+        const c = contrast(hex(light['text-dim']), hex(light[bg]));
+        assert(c >= 4.5, `clair : texte discret sur --${bg} ${c.toFixed(2)}`);
+    }
+});
+
+t('jetons dérivés de l\'accent et bouton principal (lot 7)', () => {
+    assert(/--accent-soft:\s+color-mix\(in oklab, var\(--accent\) 14%, var\(--surface\)\)/.test(css));
+    assert(/--accent-line:\s+color-mix\(in oklab, var\(--accent\) 40%, var\(--border\)\)/.test(css));
+    assert(/\.btn-primary \{[^}]*font-weight: 700/.test(css), '.btn-primary en graisse 700');
+    assert(/--tap: 44px/.test(css));
+});
+
+t('badges de verdict (.vbadge) : texte tiré vers --text, 4,5:1 sur la teinte du badge, en clair et sur les quatre fonds', () => {
+    assert(/\.vbadge \{[^}]*color: color-mix\(in oklab, var\(--c\) 72%, var\(--text\)\)/.test(css), 'sombre : 72 %');
+    assert(/:where\(:root:not\(\[data-theme="dark"\]\)\) \.vbadge \{ color: color-mix\(in oklab, var\(--c\) 45%, var\(--text\)\); \}/.test(css), 'clair : 45 %');
+    const light = varsOf(':root, [data-theme="light"]'), bad = [];
+    const srgb = (x, y, p) => x.map((v, i) => v * p + y[i] * (1 - p));
+    const check = (id, v, p, tints) => {
+        for (const [k, c] of Object.entries(tints)) for (const s of ['surface', 'bg-elevated', 'bg']) {
+            const bg = srgb(hex(c), hex(v[s]), .14), fg = mixLab(hex(c), hex(v.text), p), x = contrast(fg, bg);
+            if (x < 4.5) bad.push(`${id} ${k} sur --${s} ${x.toFixed(2)}`);
+        }
+    };
+    check('clair', light, .45, { ok: light.ok, err: light.err, warn: light['lv-progress'], new: light.new, muted: light['text-muted'] });
+    for (const [id, v] of Object.entries(DARK_BGS))
+        check(id, v, .72, { ok: base.ok, err: base.err, warn: base['lv-progress'], new: base.new, muted: v['text-muted'] });
     assert.strictEqual(bad.join(' ; '), '');
 });
 

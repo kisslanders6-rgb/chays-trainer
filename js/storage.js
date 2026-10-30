@@ -269,6 +269,20 @@ function impliedInterval(e) {
 const dueOf = e => e.due || (e.lastReviewed ? e.lastReviewed + impliedInterval(e) * DAY_MS : 0);
 const isDue = (e, now = Date.now()) => dueOf(e) <= now;
 
+// Révisions prévues jour par jour, du jour courant à days − 1 (jours du calendrier : robuste aux changements d'heure).
+// La première case compte aussi les positions déjà en retard ; au-delà de l'horizon, rien n'est compté.
+function dueForecast(entries, days = 7, now = Date.now()) {
+    const d0 = new Date(now), start = i => new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).getTime();
+    const out = new Array(days).fill(0), end = start(days);
+    (entries || []).forEach(e => {
+        const d = dueOf(e);
+        if (d <= now) { out[0]++; return; }
+        if (d >= end) return;
+        for (let i = days - 1; i >= 0; i--) if (d >= start(i)) { out[i]++; return; }
+    });
+    return out;
+}
+
 function recordReview(entry, ok) {
     const now = Date.now();
     const wasDue = isDue(entry, now), prev = entry.interval || impliedInterval(entry);

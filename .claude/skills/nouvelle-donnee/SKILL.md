@@ -33,7 +33,7 @@ Dans `js/core/settings.js` :
 
 1. Synchronisée → `SYNCED_PREFS` (stockée datée `{ v, at }` dans `chessTrainer_prefs`, la plus récente gagne). Propre à l'appareil → `LOCAL_PREFS` (`chessTrainer_settings`).
 2. Donner `ok` (validation : `_bool`, `_oneOf([...])`, `_text(max)`) et `def` (défaut). Une valeur invalide reprend le défaut, ce qui protège contre des données d'un autre appareil plus ancien.
-3. Ajouter le contrôle dans `js/core/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/settings.test.js` échoue si une préférence n'a pas de réglage.
+3. Ajouter le contrôle dans `js/core/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/settings.test.js` échoue si une préférence n'a pas de réglage. Pas de phrase d'aide sous le réglage : l'explication va dans `tip` (infobulle du libellé) et les synonymes dans `search`. Une préférence de `LOCAL_PREFS` reçoit seule le repère « appareil » (`PanelKit.localMark`, `tests/settingsLocalMark.test.js`).
 4. Lire la valeur via `appSettings.<nom>` (ou `trainingSettings` pour les options d'entraînement).
 5. Si la préférence agit avant le premier rendu (thème, échiquier), garder cohérent le script en ligne en tête d'`index.html`.
 

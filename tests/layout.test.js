@@ -23,6 +23,20 @@ t('échiquier 920px+ : jamais plus petit que les 512 px d\'avant, plafonné, arr
     assert(/@supports \(width: round\(down, 100px, 8px\)\)/.test(block), 'round() derrière @supports, repli sans arrondi');
 });
 
+t('échiquier 920px+ : --board-chrome-h = marges, liseré et rangée unique des contrôles (48 px)', () => {
+    // 28 (marge du haut) + 4 (marge de l'échiquier) + 4 (liseré) + 16 (sous l'échiquier) + 48 (contrôles) + 16 (marge du bas)
+    const expected = 28 + 4 + 4 + 16 + 48 + 16;
+    assert(new RegExp(`--board-chrome-h: ${expected}px;`).test(block), `--board-chrome-h attendu : ${expected}px`);
+    assert(new RegExp(`html\\[data-coords="out"\\] \\.board-col \\{ --board-chrome-h: ${expected + 18}px;`).test(block), 'coordonnées extérieures : + 18 px');
+    assert(/\.game-screen-inner \{ padding-bottom: 16px; \}/.test(block));
+    const game = css.slice(css.indexOf('ÉCRAN DE JEU (LOT 7)'));
+    assert(/\.board-controls \{ flex-direction: row; align-items: stretch; gap: 8px; height: 48px; \}/.test(game), 'rangée unique de 48 px');
+    assert(/\.board-controls \.controls-main \.btn \{ min-height: 48px; height: 48px; \}/.test(game));
+    assert(/\.board-controls \.btn-tool \{[^}]*height: 48px;/.test(game));
+    assert(/^\.board-wrap \{ position: relative; margin-bottom: 16px; margin-top: 4px; \}/m.test(css), 'marges de .board-wrap changées : revoir --board-chrome-h');
+    assert(/\.game-screen-inner \{[^}]*padding: 28px 24px 40px;/.test(css), 'marge du haut changée : revoir --board-chrome-h');
+});
+
 t('échiquier 920px+ : le liseré (2 × 2 px) et les coordonnées extérieures (18 px) s\'ajoutent à --bw', () => {
     assert(/\.board-wrap \{ width: calc\(var\(--bw\) \+ 4px\); \}/.test(block));
     assert(/html\[data-coords="out"\] \.board-wrap \{ width: calc\(var\(--bw\) \+ 22px\); \}/.test(block));
@@ -91,8 +105,7 @@ t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule ac
     assert(!/home-card|home-stats|home-goal|hp-recent/.test(play), 'plus d\'anciens blocs (cartes, chiffres, objectif à part, Dernières parties à part)');
     const app = fs.readFileSync('js/app.js', 'utf8');
     assert(/homeReview: \(\) => startDailyReview\(\)/.test(app), '« Commencer la révision » → startDailyReview');
-    assert.strictEqual((app.match(/class="hp-cta"/g) || []).length, 2, 'une action pleine par état : dû, à jour');
-    assert(/class="hp-cta\$\{primary \? '' : ' is-quiet'\}"/.test(app), 'répertoire vide : Blancs en plein, Noirs en discret');
+    assert.strictEqual((app.match(/class="btn btn-primary hp-cta"/g) || []).length, 3, 'une action pleine par état : dû, à jour, vide (tests/homeSummary.test.js)');
     const tr = fs.readFileSync('js/modules/training/trainingUI.js', 'utf8');
     assert(/function startDailyReview\(\) \{\s*_trColor = 'mix';\s*_trOpening = null;[\s\S]{0,120}startTrainingExercise\('due'\);/.test(tr),
         'Révision du jour : les deux couleurs, sans filtre d\'ouverture');
