@@ -85,13 +85,14 @@ async function boot(storage = {}) {
         w.close();
     });
 
-    await t('écran de jeu, cinq modes : barre d\'onglets du bas cachée, outils propres au mode, pastille de l\'échiquier', async () => {
+    await t('écran de jeu, cinq modes : onglets en mode partie (onglet du mode marqué), outils propres au mode, pastille de l\'échiquier', async () => {
         const start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
         const { w, errors } = await boot({ chessTrainer_onboarded: '1',
             'openingDB_Général_w': JSON.stringify({ [start]: { move: 'e2e4', san: 'e4', attempts: 3, failures: 1, path: ['e2e4'], ply: 1, due: 1 } }) });
         const $ = s => w.document.querySelector(s);
         const shown = el => !!el && !el.closest('[style*="display: none"]') && !el.closest('[hidden]');
-        const tabsHidden = () => $('#topnav-tabs-setup').style.display === 'none';
+        const tabsHidden = () => $('#topnav-tabs-setup').classList.contains('in-game');      // css/home.css : compacts ≥ 920 px, cachés dessous
+        const activeTab = () => $('#topnav-tabs-setup .topnav-tab.active').id.replace('nav-tab-', '');
         const pill = $('#board-pill');
         assert(pill && pill.hidden, 'pastille absente ou visible par défaut');
         w.eval(`showBoardPill('Toucher pour passer')`);
@@ -101,20 +102,31 @@ async function boot(storage = {}) {
 
         w.eval(`startGame('w')`);
         assert(tabsHidden(), 'play');
+        assert.strictEqual(activeTab(), 'play');
         assert(shown($('#side-tab-moves')) && shown($('#opp-suites').parentElement));
         assert(!shown($('#preview-lichess')));
         w.eval(`startTraining('w')`);
         assert(tabsHidden(), 'training');
+        assert.strictEqual(activeTab(), 'training');
         assert(!shown($('#side-tab-moves')), 'training : onglets cachés');
         w.eval(`startEndgame(ENDGAME_EXERCISES[0].id)`);
         assert(tabsHidden(), 'endgame');
+        assert.strictEqual(activeTab(), 'endgame');
         w.eval(`openStatsPreview('w', '${start}', 'weak')`);
         assert(tabsHidden(), 'preview');
+        assert.strictEqual(activeTab(), 'stats');
         assert(shown($('#preview-lichess')), 'aperçu : bouton Lichess absent');
         w.eval(`startGame('w'); openAnalysis()`);
         assert(tabsHidden(), 'analysis');
         assert(!shown($('#side-tab-moves')), 'analyse : onglet Coups visible');
         assert(!shown($('#preview-lichess')));
+        assert(!w.document.querySelector('.controls-tools[data-modes="analysis"] [onclick="openLichessAnalysis()"]'), 'Analyse : plus de bouton Lichess');
+        w.eval(`goHome()`);
+        w.eval(`startGame('w')`);
+        w.eval(`switchHomeTab('training')`);                                      // depuis la partie : onglet Entraînement
+        assert(!tabsHidden(), 'retour à l\'accueil');
+        assert(!$('#home-tab-training').classList.contains('hidden'), 'Entraînement affiché');
+        assert($('#game-screen').classList.contains('hidden'));
         assert.deepStrictEqual(errors, []);
         w.close();
     });

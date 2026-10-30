@@ -339,6 +339,8 @@ registerActions({
 });
 
 // Ouverture : l'accueil de l'Aide (ou la rubrique demandée). Focus dans la recherche, sauf au doigt.
+PanelKit.jump({ id: 'help-overlay', label: 'Aide', icon: 'help', order: 3, open: () => showHelp() });
+
 function showHelp(section) {
     if (!section) HelpPanel.state.section = 'start';
     HelpPanel.open(section);

@@ -78,6 +78,16 @@
 @media (min-width: 1440px) { .topnav-tabs { --tab-px: 26px; } }
 @media (max-width: 1099px) { .topnav-tabs { --tab-px: 12px; } .topnav-inner { gap: 12px; } }
 
+/* Partie en cours : les onglets restent, en icônes (libellés à partir de 1280 px), pour rejoindre un autre onglet
+   sans passer par le logo (app.js, _gameTabs). Sous 920 px, ils sont repris par le menu « Plus » de l'écran de jeu. */
+#topnav-tabs-setup.in-game { --tab-px: 12px; flex: none; }
+#topnav-tabs-setup.in-game .topnav-tab .ico { display: block; }
+#topnav-tabs-setup.in-game .topnav-tab { min-height: 44px; }
+@media (max-width: 1279px) {
+    #topnav-tabs-setup.in-game .topnav-tab > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (max-width: 919px) { #topnav-tabs-setup.in-game { display: none; } }
+
 @media (max-width: 899px) {
     .topnav-inner { padding: 0 14px; }
     .topnav-brand { margin-right: auto; }

@@ -803,6 +803,7 @@ const AccountUI = (function () {
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+    PanelKit.jump({ id: 'account-overlay', label: 'Compte', icon: 'user', order: 2, open: () => open() });
 
     // Préférences reçues d'un autre appareil : avatar et fenêtre à jour.
     function refresh() { updateButton(); if (isOpen() && view === 'account') render(); }

@@ -16,6 +16,8 @@
  * quand la fenêtre change de largeur. Largeur minimale d'une tuile et colonnes au plus : data-min / data-max.
  * Repère local (localMark) : réglage propre à l'appareil ; une rubrique { local: true } le porte dans la liste.
  * Recherche : un élément data-pn="query" data-key="mot" relance la recherche sur ce mot (suggestions).
+ * Passerelles (PanelKit.jump) : chaque fenêtre se déclare ({ id, label, icon, order, open }) ; l'en-tête de chacune
+ * montre les autres (Paramètres · Compte · Aide) pour passer de l'une à l'autre sans revenir à l'écran principal.
  */
 
 'use strict';
@@ -23,6 +25,8 @@
 const PanelKit = (function () {
     const esc = s => escapeHtml(String(s == null ? '' : s));
     const panels = [];
+    const jumps = [];          // fenêtres déclarées par jump(), dans l'ordre de `order`
+    function jump(j) { if (!jumps.some(x => x.id === j.id)) jumps.push(j); jumps.sort((a, b) => (a.order || 0) - (b.order || 0)); }
 
     // ─── Briques de contenu ───────────────────────────────────────────────────
     const group = (title, rows) => `${title ? `<h3 class="pn-h">${title}</h3>` : ''}<div class="pn-group">${rows.join('')}</div>`;
@@ -51,6 +55,7 @@ const PanelKit = (function () {
                 <div class="pn-head">
                     <button type="button" class="panel-x pn-back" data-pn="back" aria-label="Retour">${ico('chevron-left')}</button>
                     <h2 class="pn-title" id="${cfg.id}-title"></h2>
+                    <div class="pn-jump" role="group" aria-label="Autres fenêtres"></div>
                     ${cfg.search ? `<label class="pn-search">${ico('search')}<input type="search" placeholder="${esc(cfg.search)}" aria-label="${esc(cfg.search)}" autocomplete="off" data-pn="search"></label>` : ''}
                     <button type="button" class="panel-x" data-pn="close" title="Fermer (Échap)" aria-label="Fermer">${ico('x')}</button>
                 </div>
@@ -75,6 +80,10 @@ const PanelKit = (function () {
             const cur = sections.find(s => s.id === st.section);
             const title = typeof cfg.title === 'function' ? cfg.title() : cfg.title;
             titleEl.textContent = st.drill && !q && cur && narrow() && !single ? cur.label : title;
+            const jumpEl = overlay.querySelector('.pn-jump');
+            jumpEl.hidden = jumps.length < 2 || !jumps.some(j => j.id === cfg.id);
+            jumpEl.innerHTML = jumps.map(j => { const on = j.id === cfg.id;
+                return `<button type="button" data-pn="jump" data-key="${j.id}" title="${esc(j.label)}"${on ? ' aria-current="page" class="is-on"' : ''}>${ico(j.icon)}<span>${esc(j.label)}</span></button>`; }).join('');
             nav.innerHTML = sections.map(s => `<button type="button" class="${s.id === st.section && !q ? 'is-on' : ''}" data-pn="section" data-key="${s.id}"${s.id === st.section && !q ? ' aria-current="true"' : ''}>
                 ${ico(s.icon)}<span>${s.label}<small>${s.desc || ''}</small></span>${s.badge ? `<i class="pn-badge">${s.badge}</i>` : s.local ? localMark() : ''}${ico('chevron-right', 'pn-chev')}</button>`).join('');
             const top = content.scrollTop;
@@ -104,6 +113,7 @@ const PanelKit = (function () {
             if (!el) return;
             const kind = el.dataset.pn, key = el.dataset.key;
             if (kind === 'close') return close();
+            if (kind === 'jump') { const j = jumps.find(x => x.id === key); if (j && key !== cfg.id) j.open(); return; }
             if (kind === 'back') { st.drill = false; st.q = ''; if (searchEl) searchEl.value = ''; return refresh(false); }
             if (kind === 'query') { st.q = key; if (searchEl) { searchEl.value = key; searchEl.focus({ preventScroll: true }); } return refresh(false); }
             if (kind === 'section') { st.section = key; st.drill = true; st.q = ''; if (searchEl) searchEl.value = ''; refresh(false); content.focus({ preventScroll: true }); return; }
@@ -168,5 +178,5 @@ const PanelKit = (function () {
     const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const matches = (q, ...texts) => texts.some(t => norm(t).includes(norm(q)));
 
-    return { create, group, row, text, toggle, seg, range, button, localMark, mark, matches, esc, balancedCols };
+    return { create, jump, group, row, text, toggle, seg, range, button, localMark, mark, matches, esc, balancedCols };
 })();

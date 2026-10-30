@@ -15,6 +15,20 @@
 .pn-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 14px 22px; border-bottom: 1px solid var(--border); flex: none; }
 .pn-title { flex: 1; min-width: 0; margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 21px; letter-spacing: -.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pn-back { display: none; }
+/* Passerelles entre fenêtres (PanelKit.jump) : Paramètres · Compte · Aide, la fenêtre ouverte marquée. */
+.pn-jump { display: inline-flex; flex: none; gap: 2px; padding: 2px; border-radius: 11px; border: 1px solid var(--border); background: var(--bg-inset); }
+.pn-jump[hidden] { display: none; }
+.pn-jump button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 9px; background: none;
+    color: var(--text-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background-color .12s, color .12s; }
+.pn-jump button .ico { width: 15px; height: 15px; flex: none; }
+.pn-jump button.is-on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow-sm); cursor: default; }
+@media (hover: hover) { .pn-jump button:not(.is-on):hover { background: var(--surface-hover); color: var(--text); } }
+.pn-jump button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (max-width: 640px) {
+    .pn-jump button { position: relative; width: 36px; padding: 0; justify-content: center; }
+    .pn-jump button span { display: none; }
+    .pn-jump button::after { content: ''; position: absolute; inset: -6px -1px; }        /* cible de 44 px */
+}
 .pn-search { display: flex; align-items: center; gap: 8px; width: 240px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-inset); color: var(--text-dim); }
 .pn-search .ico { width: 15px; height: 15px; flex: none; }
 .pn-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: 13.5px; }

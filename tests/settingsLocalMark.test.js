@@ -229,6 +229,21 @@ const search = (w, q) => {
         }
     });
 
+    await t('passerelles : Paramètres · Compte · Aide dans l\'en-tête de chaque fenêtre, la fenêtre ouverte marquée', () => {
+        const openOf = id => !$('#' + id).classList.contains('hidden');
+        w.showSettings();
+        const jump = () => $$('#settings-overlay .pn-jump button').map(b => b.dataset.key + (b.classList.contains('is-on') ? '*' : ''));
+        assert.deepStrictEqual(jump(), ['settings-overlay*', 'account-overlay', 'help-overlay']);
+        $('#settings-overlay .pn-jump [data-key="help-overlay"]').click();
+        assert(openOf('help-overlay') && !openOf('settings-overlay'), 'Paramètres → Aide');
+        assert($('#help-overlay .pn-jump [data-key="help-overlay"]').classList.contains('is-on'));
+        $('#help-overlay .pn-jump [data-key="account-overlay"]').click();
+        assert(openOf('account-overlay') && !openOf('help-overlay'), 'Aide → Compte');
+        $('#account-overlay .pn-jump [data-key="settings-overlay"]').click();
+        assert(openOf('settings-overlay') && !openOf('account-overlay'), 'Compte → Paramètres');
+        w.closeSettings();
+    });
+
     await t('aucune erreur de script', () => assert.deepStrictEqual(errors, []));
     console.log(`\n${n} tests réussis.`);
     process.exit(0);

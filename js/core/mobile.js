@@ -128,6 +128,18 @@ function toggleToolbarMore(btn) {
         item.addEventListener('click', () => { closeToolbarMore(); src.click(); });
         menu.appendChild(item);
     });
+    // Rejoindre un autre onglet de l'accueil (la barre du bas est cachée en partie) : switchHomeTab revient à l'accueil.
+    if (gameMode === 'play') {
+        const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep);
+        [['stats', 'bar-chart', 'Statistiques'], ['training', 'target', 'Entraînement'], ['endgame', 'pawn', 'Finales']].forEach(([tab, icon, label]) => {
+            const item = document.createElement('button');
+            item.className = 'menu-item';
+            item.setAttribute('role', 'menuitem');
+            item.innerHTML = ico(icon) + ' ' + label;
+            item.addEventListener('click', () => { closeToolbarMore(); switchHomeTab(tab); });
+            menu.appendChild(item);
+        });
+    }
     document.body.appendChild(menu);
     const r = btn.getBoundingClientRect();
     menu.style.right  = Math.max(8, window.innerWidth - r.right) + 'px';

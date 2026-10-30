@@ -104,6 +104,9 @@ function applySyncedPrefs() {
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
 function switchHomeTab(tab) {
+    // En partie (onglets compacts de la barre du haut, menu « Plus » sur téléphone) : retour à l'accueil sur cet onglet.
+    const gs = document.getElementById('game-screen');
+    if (gs && !gs.classList.contains('hidden')) { goHome(tab); return; }
     closeRepMenu();
     ['play', 'stats', 'training', 'endgame'].forEach(t => {
         const tabEl = document.getElementById('home-tab-' + t);
@@ -350,6 +353,7 @@ function applyModeUI() {
         el.style.display = el.dataset.modesNot.split(',').includes(gameMode) ? 'none' : '';
     });
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
+    if (document.getElementById('topnav-tabs-setup').classList.contains('in-game')) _gameTabs(true);     // onglet du mode
 }
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).
@@ -358,7 +362,7 @@ function showGameScreen(color) {
 
     document.getElementById('setup-screen').style.display = 'none';
     document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('topnav-tabs-setup').style.display = 'none';
+    _gameTabs(true);
     document.getElementById('topnav-tabs-game').style.display  = '';
 
     const gs = document.getElementById('game-screen');
@@ -482,6 +486,18 @@ function resumeLastPlay() {
 
 // ─── RETOUR À L'ACCUEIL ───────────────────────────────────────────────────────
 
+// Onglets de l'accueil pendant une partie : compacts dans la barre du haut (920 px et plus, css/home.css), cachés
+// en dessous (la barre du bas laisserait moins de place à l'échiquier ; le menu « Plus » les reprend). L'onglet
+// marqué est celui d'où vient le mode en cours ; un clic revient à l'accueil sur l'onglet choisi (switchHomeTab).
+const GAME_MODE_TAB = { training: 'training', endgame: 'endgame', preview: 'stats' };
+function _gameTabs(inGame) {
+    const bar = document.getElementById('topnav-tabs-setup');
+    bar.classList.toggle('in-game', inGame);
+    if (!inGame) return;
+    const cur = GAME_MODE_TAB[gameMode] || 'play';
+    ['play', 'stats', 'training', 'endgame'].forEach(t => { const el = document.getElementById('nav-tab-' + t); if (el) el.classList.toggle('active', t === cur); });
+}
+
 function goHome(tab) {
     closeRepMenu();
     if (typeof stopTraining === 'function') stopTraining();
@@ -499,7 +515,7 @@ function goHome(tab) {
     document.getElementById('confirm-overlay').classList.add('hidden');
     document.getElementById('setup-screen').style.display = '';
     document.getElementById('setup-screen').classList.remove('hidden');
-    document.getElementById('topnav-tabs-setup').style.display = '';
+    _gameTabs(false);
     document.getElementById('topnav-tabs-game').style.display  = 'none';
     switchHomeTab(typeof tab === 'string' ? tab : 'play');
     renderRepertoireList();

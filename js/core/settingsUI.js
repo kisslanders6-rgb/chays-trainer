@@ -436,3 +436,4 @@ function showSettings(section, pref) {
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
 }
 function closeSettings() { SettingsPanel.close(); }
+PanelKit.jump({ id: 'settings-overlay', label: 'Paramètres', icon: 'settings', order: 1, open: () => showSettings() });
