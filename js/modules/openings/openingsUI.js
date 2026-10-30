@@ -30,6 +30,11 @@ function _squareLabel(idx, p) {
     return `${squareToName(idx)}, ${_PIECE_NAMES[t]} ${isWhite(p) ? (fem ? 'blanche' : 'blanc') : (fem ? 'noire' : 'noir')}`;
 }
 
+// Badge de verdict posé sur une case (coup enregistré, bon coup) : { idx, key, type: 'ok' | 'err' }.
+// Lié à la position : il disparaît de lui-même au coup suivant, en navigation ou au changement de partie.
+let _sqBadge = null;
+function setSquareBadge(idx, type) { _sqBadge = idx >= 0 ? { idx, key: positionKey(), type } : null; }
+
 function renderBoard() {
     clearErrorFx();         // un réaffichage ne doit jamais rejouer la secousse d'une erreur passée
     const el        = document.getElementById('board');
@@ -67,6 +72,10 @@ function renderBoard() {
                 pc.innerHTML   = pieceHTML(p);
                 sq.appendChild(pc);
             }
+
+            // Verdict du dernier coup sur sa case d'arrivée (setSquareBadge), tant que la position n'a pas changé.
+            if (_sqBadge && _sqBadge.idx === idx && navCursor === -1 && _sqBadge.key === positionKey())
+                sq.insertAdjacentHTML('beforeend', `<span class="sq-badge is-${_sqBadge.type}" aria-hidden="true">${ico(_sqBadge.type === 'err' ? 'x' : 'check')}</span>`);
 
             // Coordonnées intégrées aux cases du bord : chiffre en haut à gauche, lettre en bas à droite.
             if (col === 0) sq.insertAdjacentHTML('beforeend', `<span class="coord coord-rank">${r + 1}</span>`);
@@ -166,17 +175,25 @@ function renderMoves() {
 
 // ─── BARRE DE STATUT ──────────────────────────────────────────────────────────
 
-// Barre d'état : un titre court, et éventuellement un détail grisé sur une seconde ligne.
+// Type d'état → icône de la tuile (sprite icons.js). La barre prend la teinte du type (data-type, style.css).
+const STATUS_ICONS = { ok: 'check', err: 'x', info: 'info', new: 'plus', hint: 'lightbulb', trash: 'trash', load: 'rotate-ccw' };
+
+// Barre d'état : tuile d'icône du type, un titre court, et éventuellement un détail sur deux lignes au plus.
+// type : ok | err | info | new | hint | trash | load (inconnu → info).
 // opts = { action, run, icon?, title? } : bouton facultatif à droite (« reçu » d'un coup enregistré, par exemple),
 // créé en DOM (textContent) ; tout nouvel appel à setStatus le retire. Sans opts, rendu inchangé.
 function setStatus(msg, type = 'info', detail = '', opts = null) {
+    if (!STATUS_ICONS[type]) type = 'info';
+    msg = String(msg).replace(/^[✓✗]\s*/, '');          // la tuile porte déjà le ✓ / ✗
     const dot  = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
-    dot.className  = 'status-dot ' + { ok: 'dot-ok', err: 'dot-err', info: 'dot-info', new: 'dot-new', hint: 'dot-hint' }[type];
+    dot.className  = 'status-dot dot-' + type;
+    if (dot.dataset.icon !== type) { dot.dataset.icon = type; dot.innerHTML = typeof ico === 'function' ? ico(STATUS_ICONS[type]) : ''; }
     text.replaceChildren(Object.assign(document.createElement('span'), { className: 'status-title', textContent: msg }));
     if (detail) text.append(Object.assign(document.createElement('span'), { className: 'status-detail', textContent: detail }));
     const bar = document.getElementById('status-bar');
     if (!bar) return;
+    bar.dataset.type = type;
     const old = bar.querySelector('.status-act');
     if (old) old.remove();
     bar.classList.toggle('has-act', !!(opts && opts.action));
@@ -400,13 +417,14 @@ function clearErrorFx() {
     const b = document.getElementById('board');
     if (b) b.classList.remove('shake');
     document.querySelectorAll('#board .hl-wrong').forEach(el => el.classList.remove('hl-wrong'));
+    document.querySelectorAll('#board .sq-badge.is-flash').forEach(el => el.remove());
 }
 
 function flashWrong(toIdx) {
     clearErrorFx();
     const b  = document.getElementById('board');
     const sq = document.querySelector(`#board .sq[data-idx="${toIdx}"]`);
-    if (sq) sq.classList.add('hl-wrong');
+    if (sq) { sq.classList.add('hl-wrong'); sq.insertAdjacentHTML('beforeend', `<span class="sq-badge is-err is-flash" aria-hidden="true">${ico('x')}</span>`); }
     void b.offsetWidth;                            // relance l'animation
     b.classList.add('shake');
     _wrongTimer = setTimeout(clearErrorFx, 750);   // > durée des animations (.45 s / .7 s)

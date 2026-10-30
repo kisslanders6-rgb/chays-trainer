@@ -1671,6 +1671,47 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .status-bar .status-act .ico { width: 15px; height: 15px; }
 .status-act[aria-busy="true"] { cursor: progress; opacity: .7; }
 
+/* ─── Barre d'état teintée : tuile d'icône et teinte par type (setStatus, data-type) ───
+   --st : couleur du type. Consigne (info), corbeille et chargement restent neutres ; les verdicts teintent la barre. */
+.status-bar { --st: var(--accent); transition: background-color .2s, border-color .2s; }
+.status-bar[data-type="ok"]    { --st: var(--ok); }
+.status-bar[data-type="err"]   { --st: var(--err); }
+.status-bar[data-type="new"]   { --st: var(--new); }
+.status-bar[data-type="hint"]  { --st: #e6b443; }
+.status-bar[data-type="trash"], .status-bar[data-type="load"] { --st: var(--text-muted); }
+.status-bar:is([data-type="ok"], [data-type="err"], [data-type="new"], [data-type="hint"]) {
+    background: color-mix(in oklab, var(--st) 9%, var(--surface)); border-color: color-mix(in oklab, var(--st) 34%, var(--border)); }
+.status-bar { padding-block: 8px; padding-left: 9px; }
+.status-bar .status-dot { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px;
+    background: color-mix(in oklab, var(--st) 18%, transparent); color: var(--st); }
+.status-bar .status-dot .ico { width: 17px; height: 17px; stroke-width: 2.4; }
+.status-bar .status-dot.dot-load .ico { animation: statusSpin 1s linear infinite; }
+.status-bar .status-detail { color: var(--text-muted); }
+.status-bar[data-type="err"] .status-dot { animation: statusNudge .35s var(--ease-out); }
+.status-bar:is([data-type="ok"], [data-type="err"], [data-type="new"], [data-type="hint"]) .status-act {
+    border-color: color-mix(in oklab, var(--st) 40%, var(--border)); background: color-mix(in oklab, var(--st) 14%, var(--surface)); color: var(--text); }
+@keyframes statusSpin { to { transform: rotate(-360deg); } }
+@keyframes statusNudge { 30% { transform: translateX(-3px); } 60% { transform: translateX(3px); } }
+@media (max-width: 919px) { .status-bar .status-dot { width: 30px; height: 30px; border-radius: 9px; } .status-bar .status-dot .ico { width: 15px; height: 15px; } }
+@media (prefers-reduced-motion: reduce) { .status-bar, .status-bar .status-dot, .status-bar .status-dot .ico { transition: none; animation: none !important; } }
+
+/* ─── Verdict sur la case jouée (setSquareBadge ; flashWrong pour l'erreur, éphémère) ─── */
+.sq-badge { position: absolute; top: 4%; right: 4%; z-index: 3; width: 30%; height: 30%; max-width: 22px; max-height: 22px; min-width: 14px; min-height: 14px;
+    display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--ok); pointer-events: none;
+    box-shadow: 0 0 0 2px color-mix(in oklab, #000 35%, transparent), 0 2px 6px rgba(0, 0, 0, .35); animation: sqBadgeIn .28s var(--ease-out) .16s both; }
+.sq-badge.is-err { background: var(--err); animation-delay: 0s; }
+.sq-badge .ico { width: 62%; height: 62%; stroke-width: 3.2; }
+@keyframes sqBadgeIn { from { opacity: 0; transform: scale(.4); } }
+@media (prefers-reduced-motion: reduce) { .sq-badge { animation: none; } }
+
+/* ─── Indice : mis en avant après un coup refusé ; libellé « Indice indisponible » quand il l'est ─── */
+.btn.tb-hint.is-suggest { background: color-mix(in oklab, #e6b443 22%, var(--surface)); border-color: color-mix(in oklab, #e6b443 55%, var(--border)); color: var(--text); }
+
+/* ─── Arbre vide : une ligne en pointillés, l'icône de l'arbre ─── */
+.tree-empty.is-blank { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px; min-height: 52px; border: 1px dashed var(--border-strong);
+    border-radius: 14px; color: var(--text-muted); font-size: 13px; }
+.tree-empty.is-blank .ico { width: 16px; height: 16px; }
+
 /* ─── Indice indisponible (position inconnue, trait adverse) : la raison est dans l'infobulle ─── */
 .btn.tb-hint:disabled { opacity: .45; }
 

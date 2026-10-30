@@ -416,6 +416,45 @@
 }
 @media (prefers-reduced-motion: reduce) { .trr-row, .trr-detail > summary .ico { transition: none; } }
 
+/* ─── ENTRAÎNEMENT « PLATEAU » ───
+   920 px et plus : un grand échiquier d'aperçu (.trr-stage) à gauche, sur toute la hauteur, et le menu à droite
+   (bilan, Révision du jour, exercices, maîtrise). L'échiquier montre la position par laquelle commence
+   l'exercice survolé (trainingUI.js, _trShowPreview) et prend la place que le menu laissait vide.
+   Sa taille suit la hauteur de l'écran comme l'échiquier de jeu. En dessous de 920 px, il est caché. */
+.trr-stage { display: none; }
+.trr-row.is-preview, .trr-day.is-preview { position: relative; }
+@media (min-width: 920px) {
+    .home-content:has(#home-tab-training:not(.hidden)) { max-width: 1320px; }
+    .trr, .trr.has-bilan { grid-template-columns: minmax(0, 1.2fr) minmax(380px, 1fr); grid-template-rows: auto auto auto 1fr;
+        grid-template-areas: "stage day" "stage ex" "stage mast" "stage ."; gap: 18px 36px; align-items: start; }
+    .trr.has-bilan { grid-template-rows: auto auto auto auto 1fr; grid-template-areas: "stage bilan" "stage day" "stage ex" "stage mast" "stage ."; }
+    .trr.is-empty { grid-template-rows: auto 1fr; grid-template-areas: "stage empty" "stage ."; }
+    .trr.is-empty.has-bilan { grid-template-rows: auto auto 1fr; grid-template-areas: "stage bilan" "stage empty" "stage ."; }
+    .trr-empty { grid-area: empty; }
+    .trr-stage { grid-area: stage; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 76px; align-self: start; }
+    .trr-stage-b { position: relative; width: min(100%, max(380px, calc(100dvh - 250px))); }
+    .trr-stage .st-mini { width: 100%; border-radius: 10px; box-shadow: 0 0 0 4px color-mix(in oklab, var(--board-dark) 55%, #000), var(--shadow); }
+    .trr-stage.is-empty .st-mini { filter: saturate(.55) brightness(.82); }
+    .trr-stage-pill { position: absolute; left: 14px; top: 14px; max-width: calc(100% - 28px); display: inline-flex; align-items: center; gap: 8px;
+        height: 32px; padding: 0 14px; border-radius: 99px; background: color-mix(in srgb, var(--bg) 82%, transparent);
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: var(--text); font-size: 13px; font-weight: 500; pointer-events: none;
+        animation: trr-pill-in .25s var(--ease-out); }
+    .trr-stage-pill > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .trr-stage-pill i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .trr-stage-pill i.is-err { background: var(--err); } .trr-stage-pill i.is-warn { background: var(--lv-progress); } .trr-stage-pill i.is-muted { background: var(--text-dim); }
+    .trr-stage-cap { width: min(100%, max(380px, calc(100dvh - 250px))); display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--text-muted); }
+    .trr-stage-line { min-width: 0; font-family: var(--font-note); font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .trr-stage-cap > span:last-child { flex: none; }
+    /* L'exercice affiché sur le Plateau : liseré d'accent à gauche de sa ligne. */
+    .trr-row.is-preview { background: var(--accent-soft); }
+    .trr-row.is-preview::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+    .trr-day .trr-fc { height: 56px; }
+}
+@keyframes trr-pill-in { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .trr-stage-pill { animation: none; } }
+/* Répertoire vide : deux actions côte à côte (une pleine, une tonale). */
+.trr-empty-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+
 /* ─── Finales : accueil (endgame.js, initEndgame) ───
    Barre de contexte (.st-scope) : Toutes / À faire / Réussies, et « Au hasard ». Contenu : section suivante. */
 .home-content:has(#home-tab-endgame:not(.hidden)) { max-width: 1120px; justify-content: flex-start; text-align: left; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }

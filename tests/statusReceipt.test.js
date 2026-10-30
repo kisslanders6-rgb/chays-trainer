@@ -81,7 +81,7 @@ const confirmOpen = $ => !$('#confirm-overlay').classList.contains('hidden');
         assert(!w.eval(`openingDB['${START}']`), 'entrée toujours au répertoire');
         assert.strictEqual(w.eval('moveHistory.length'), 0, 'coup non défait');
         assert.strictEqual(w.eval('loadTrash().length'), trashBefore + 1, 'entrée absente de la corbeille');
-        assert(!$('#status-bar .status-act'));
+        assert(/Rétablir/.test($('#status-bar .status-act').textContent), 'après Annuler : seul « Rétablir » reste proposé');
     });
 
     await t('reçu : retiré dès que la position affichée change ; Annuler se rabat alors sur « Corriger » (confirmation)', () => {
@@ -131,6 +131,53 @@ const confirmOpen = $ => !$('#confirm-overlay').classList.contains('hidden');
         assert.strictEqual(w.eval('moveHistory.length'), 2, 'coup adverse non joué');
         assert.strictEqual(w.eval(`JSON.stringify(openingDB)`), before, 'Jouer ne compte rien');
         assert($('#opp-suites').hidden, 'à mon trait : suites masquées');
+    });
+
+    await t('états : tuile d\'icône et teinte par type (data-type), type inconnu ramené à info', () => {
+        w.eval(`setStatus('Pas le bon coup', 'err', 'Réessayez')`);
+        assert.strictEqual($('#status-bar').dataset.type, 'err');
+        assert($('#status-dot.dot-err use[href="#i-x"]'), 'icône x');
+        w.eval(`setStatus('Coup', 'trash')`);
+        assert($('#status-dot use[href="#i-trash"]'));
+        w.eval(`setStatus('Autre', 'bizarre')`);
+        assert.strictEqual($('#status-bar').dataset.type, 'info');
+    });
+
+    await t('reçu : badge ✓ sur la case jouée, Annuler → état corbeille, « Rétablir » remet le coup et son reçu', () => {
+        w.eval(`openingDB = {}; saveDB(); startGame('w')`);
+        play(w, 'e2', 'e4');
+        assert.strictEqual($('#status-bar').dataset.type, 'ok', 'reçu en vert');
+        assert($('#board .sq[data-idx="' + w.eval(`squareToIdx('e4')`) + '"] .sq-badge.is-ok'), 'badge sur e4');
+        $('#status-bar .status-act').click();
+        assert.strictEqual($('#status-bar').dataset.type, 'trash');
+        assert(/^1\. e4 mis à la corbeille$/.test($('#status-text .status-title').textContent));
+        assert(!$('#board .sq-badge'), 'plus de badge après Annuler');
+        const btn = $('#status-bar .status-act');
+        assert(btn && /Rétablir/.test(btn.textContent));
+        const trash = w.eval('loadTrash().length');
+        btn.click();
+        assert(w.eval(`!!openingDB['${START}']`), 'entrée rétablie');
+        assert.strictEqual(w.eval('moveHistory.length'), 1, 'coup rejoué');
+        assert.strictEqual(w.eval('loadTrash().length'), trash - 1, 'sortie de la corbeille');
+        assert(/Réponse enregistrée : 1\. e4/.test($('#status-text').textContent), 'nouveau reçu');
+        assert($('#status-bar .status-act') && /Annuler/.test($('#status-bar .status-act').textContent));
+    });
+
+    await t('Indice : libellé « Indice indisponible » ; mis en avant après un coup refusé, jusqu\'au coup suivant', () => {
+        w.eval(`openingDB = {}; saveDB(); startGame('w')`);
+        assert.strictEqual($('.tb-hint .btn-label').textContent, 'Indice indisponible');
+        play(w, 'e2', 'e4');
+        opp(w, 'e7', 'e5');
+        play(w, 'g1', 'f3');                                    // enregistré
+        w.eval(`startGame('w')`);
+        play(w, 'e2', 'e4');                                    // bon coup
+        opp(w, 'e7', 'e5');
+        assert.strictEqual($('.tb-hint .btn-label').textContent, 'Indice');
+        play(w, 'b1', 'c3');                                    // refusé
+        assert.strictEqual($('#status-bar').dataset.type, 'err');
+        assert($('.tb-hint').classList.contains('is-suggest'), 'Indice mis en avant');
+        play(w, 'g1', 'f3');
+        assert(!$('.tb-hint').classList.contains('is-suggest'), 'retiré au coup suivant');
     });
 
     assert.deepStrictEqual(errors, []);

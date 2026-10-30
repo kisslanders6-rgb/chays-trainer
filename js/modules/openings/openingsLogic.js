@@ -223,11 +223,14 @@ function _syncEngineToNavCursor() {
 
 // ─── APPLICATION CENTRALISÉE D'UN COUP (état + rendu) ────────────────────────
 
-function _commitMove(from, to, promo, newDbKey, statusMsg, statusType, statusDetail) {
+// badge : verdict « ok » sur la case d'arrivée (aussi posé par un statut 'ok').
+function _commitMove(from, to, promo, newDbKey, statusMsg, statusType, statusDetail, badge) {
     _resetHint();
+    _suggestHintKey = null;
     playMoveSound(from, to, promo);         // avant applyMove : détecte la capture
     animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
+    setSquareBadge((badge || statusType === 'ok') ? to : -1, 'ok');
     if (typeof refreshTree === 'function') refreshTree();
     selected = null; legalMoves = []; hintPiece = null;
     resetNavCursor();
@@ -274,6 +277,8 @@ function _rejectMove(toIdx, msg, detail) {
     flashWrong(toIdx);
     playSound('error');
     setStatus(msg, 'err', detail);
+    _suggestHintKey = positionKey();        // l'Indice est mis en avant jusqu'au prochain coup
+    _syncHintBtn();
 }
 
 function executePlayerMove(from, to, promo) {
@@ -305,7 +310,7 @@ function executePlayerMove(from, to, promo) {
         saveDB();
         noteChange(1);
         const mover = turn, ply = pathNow.length;
-        _commitMove(from, to, promo, key);
+        _commitMove(from, to, promo, key, null, null, null, true);
         _showReceipt(key, san, mover, ply);
 
     } else if (_solutionKey === key) {
@@ -342,6 +347,7 @@ function noteMistake(key) {
 
 const PIECE_HINT = { P: 'un Pion', N: 'un Cavalier', B: 'un Fou', R: 'une Tour', Q: 'une Dame', K: 'le Roi' };
 
+let _suggestHintKey = null;   // position où un coup vient d'être refusé : l'Indice y est mis en avant
 let _hintKey      = null;     // position pour laquelle l'indice a été donné (le bouton affiche alors « Solution »)
 let _solutionKey  = null;     // position dont la solution a été dévoilée en mode Jouer
 let _solutionMove = null;     // { key, from, to } : coup surligné par le halo
@@ -393,13 +399,17 @@ function _syncHintBtn() {
     if (el) el.classList.toggle('show-solution', fx);
     const sol = (gameMode === 'play' || gameMode === 'training') && _hintKey === key && turn === playerColor && navCursor === -1;
     const off = _hintBlocked();
+    const suggest = !off && !sol && _suggestHintKey === key && navCursor === -1;
     document.querySelectorAll('.tb-hint').forEach(b => {
         b.disabled = !!off;
+        b.classList.toggle('is-suggest', suggest);
         b.title = off || (sol ? `Voir la solution (Espace)${gameMode === 'training' ? ' — compte une erreur' : ''}`
                               : `Indice (Espace)${gameMode === 'play' ? ' — Jouer ne compte rien' : gameMode === 'training' ? ' — ne compte pas comme une erreur' : ''}`);
-        if (b.dataset.sol === String(sol)) return;
-        b.dataset.sol = String(sol);
-        b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>` : `${ico('lightbulb')}<span class="btn-label">Indice</span>`;
+        const state = sol ? 'sol' : off ? 'off' : 'hint';           // indisponible : le libellé le dit, la raison est en infobulle
+        if (b.dataset.sol === state) return;
+        b.dataset.sol = state;
+        b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>`
+                      : `${ico('lightbulb')}<span class="btn-label">${off ? 'Indice indisponible' : 'Indice'}</span>`;
     });
 }
 
@@ -637,7 +647,7 @@ let _receiptKey = null;        // clé de la position AVANT le coup enregistré
 
 function _showReceipt(key, san, mover, ply) {
     const num = Math.floor(ply / 2) + 1, prefix = mover === 'w' ? `${num}.` : `${num}…`;
-    setStatus(`Réponse enregistrée : ${prefix} ${formatSanText(san, mover)}`, 'new',
+    setStatus(`Réponse enregistrée : ${prefix} ${formatSanText(san, mover)}`, 'ok',
         `${currentRepertoire} · ${mover === 'w' ? 'Blancs' : 'Noirs'}`,
         { action: 'Annuler', icon: 'rotate-ccw', run: undoRecordedMove, title: 'Retirer ce coup du répertoire (il va dans la corbeille, 30 jours)' });
     _receiptKey = key;
@@ -655,12 +665,40 @@ function _receiptValid() {
 // puis le coup est défait. Si le reçu n'est plus valable, c'est « Corriger » (undoMove, avec confirmation).
 function undoRecordedMove() {
     if (!_receiptValid()) { _receiptKey = null; undoMove(); return; }
-    const key = _receiptKey;
+    const key = _receiptKey, last = moveHistory[moveHistory.length - 1], label = _plyLabelOf(last);
     _receiptKey = null;
     if (!_deleteEntries([key])) { setStatus('Impossible d\'annuler', 'err', 'La corbeille n\'a pas pu garder ce coup.'); return; }
     performUndo();
     if (typeof refreshTree === 'function') refreshTree();
-    setStatus('Coup retiré du répertoire', 'info', 'Il reste 30 jours dans la corbeille. Jouez un autre coup.');
+    setStatus(`${label} mis à la corbeille`, 'trash', 'Jouez un autre coup, ou rétablissez-le.',
+        { action: 'Rétablir', icon: 'rotate-ccw', run: () => _restoreRecordedMove(key, last), title: 'Remettre ce coup au répertoire et le rejouer' });
+}
+
+// Libellé « 4. Cxd4 » / « 4… Cxd4 » d'un coup de l'historique (avant qu'il soit défait).
+function _plyLabelOf(m) {
+    const ply = moveHistory.indexOf(m), mover = m.turnBefore, num = Math.floor(ply / 2) + 1;
+    const san = _withEngineSnapshot(() => {
+        board = m.boardBefore.slice(); turn = m.turnBefore;
+        castlingRights = { ...m.castlingBefore }; enPassant = m.epBefore;
+        return toAlgebraic(m.from, m.to, m.promo);
+    });
+    return `${num}${mover === 'w' ? '.' : '…'} ${formatSanText(san, mover)}`;
+}
+
+// « Rétablir » (après Annuler) : l'entrée revient de la corbeille et le coup est rejoué, avec un nouveau reçu.
+// Seulement depuis la position où le coup avait été joué ; sinon, la corbeille reste le recours.
+function _restoreRecordedMove(key, m) {
+    if (gameMode !== 'play' || navCursor !== -1 || positionKey() !== key || openingDB[key]) {
+        setStatus('Rétablissement impossible ici', 'info', 'Le coup reste dans la corbeille (30 jours).');
+        return;
+    }
+    const item = loadTrash().find(it => it.rep === currentRepertoire && it.color === playerColor && it.data && it.data.entries && it.data.entries[key]);
+    const res = item ? restoreTrashItem(item.id) : { ok: false };
+    if (!res.ok) { setStatus('Rétablissement impossible', 'err', 'Le coup n\'est plus dans la corbeille.'); return; }
+    loadDB();
+    const entry = openingDB[key], ply = moveHistory.length, mover = turn;
+    _commitMove(m.from, m.to, m.promo, key, null, null, null, true);
+    _showReceipt(key, entry ? entry.san : toAlgebraic(m.from, m.to, m.promo), mover, ply);
 }
 
 function performUndo() {

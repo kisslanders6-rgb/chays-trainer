@@ -194,6 +194,27 @@ async function boot() {
         w.eval('quitTraining()');
     });
 
+    await t('Plateau : l\'aperçu montre l\'exercice de l\'action principale, puis celui qu\'on survole', () => {
+        w.eval(`switchHomeTab('training')`);
+        seed({ dueIn: -1 });
+        w.eval(`trainingState.lastSummary = null`);
+        render();
+        const stage = $('#trr-stage');
+        assert(stage && stage.querySelector('.st-mini'), 'échiquier d\'aperçu');
+        assert(/^La plus en retard/.test(stage.querySelector('.trr-stage-pill span').textContent), 'positions dues : la plus en retard');
+        assert($('.trr-day').classList.contains('is-preview'));
+        const row = $('.trr-row[data-focus="timed"]');
+        row.dispatchEvent(new w.Event('pointerover', { bubbles: true }));
+        assert(/^Contre-la-montre/.test($('#trr-stage .trr-stage-pill span').textContent), 'survol : l\'aperçu suit');
+        assert(row.classList.contains('is-preview') && !$('.trr-day').classList.contains('is-preview'));
+        assert.strictEqual(w.eval('gameMode') === 'training', false, 'survoler ne lance rien');
+
+        seed({ empty: true });
+        render();
+        assert($('.trr.is-empty #trr-stage.is-empty .st-mini'), 'répertoire vide : position de départ en retrait');
+        assert($('.trr-empty [data-action="homeImportPgn"].btn-soft'), 'Importer un PGN en action tonale');
+    });
+
     assert.deepStrictEqual(errors, []);
     console.log(`\n${n} tests réussis.`);
     process.exit(0);

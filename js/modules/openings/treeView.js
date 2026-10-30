@@ -257,7 +257,7 @@ function renderTree(rebuild) {
     _treeRows = t.rows;
 
     if (!t.total) {
-        el.innerHTML = '<div class="tree-empty">Répertoire vide — jouez des coups pour construire l\'arbre.</div>';
+        el.innerHTML = `<div class="tree-empty is-blank">${ico('git-branch')}<span>Le premier coup ouvre l’arbre</span></div>`;
         return;
     }
     if (!t.rows.length) {

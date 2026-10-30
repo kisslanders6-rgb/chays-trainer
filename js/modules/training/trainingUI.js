@@ -12,6 +12,8 @@
  *     sinon l'exercice mis en avant (_trFocus), sinon Points faibles. Les autres actions sont tonales.
  *   - Filtre d'ouverture : les exercices ne portent que sur les positions de cette ouverture, jusqu'à ce
  *     qu'il soit retiré.
+ *   - « Plateau » (920 px et plus) : un grand échiquier d'aperçu à gauche montre la position par laquelle
+ *     commence l'exercice survolé ou focalisé (par défaut celui de l'action principale). Caché en dessous.
  */
 
 'use strict';
@@ -23,6 +25,8 @@ let _trLineOpen = false;                    // liste des ouvertures (Ligne compl
 let _trFreeOpen = false;                    // réglages du mode libre dépliés
 let _trOpening = null;                      // { key, name } : ouverture choisie depuis les Statistiques
 let _trFocus = null;                        // exercice mis en avant à l'arrivée depuis les Statistiques
+let _trPreviews = {};                       // aperçus du Plateau par exercice : { r, after, title, line, side, dot }
+let _trPreviewKind = null;                  // exercice affiché sur le Plateau
 
 const _trSides = () => _trColor === 'mix' ? ['w', 'b'] : [_trColor];
 
@@ -135,7 +139,7 @@ function _trSummaryHTML(s, primary) {
             <span class="trr-move-lv">${r.lvAfter !== r.lvBefore ? `<i class="lv-mark lv-${r.lvBefore}" title="${STATS_LEVELS[r.lvBefore].one}"></i><span class="trr-arr" aria-label="devient">→</span>` : ''}${chip(r.lvAfter)}</span></li>`).join('');
     const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 600px)').matches;
     return `
-        <section class="trr-bilan edge-card" aria-label="Bilan de la dernière séance">
+        <section class="trr-bilan edge-card" data-focus="retry" aria-label="Bilan de la dernière séance">
             <div class="trr-bilan-head">${ring}
                 <div class="trr-bilan-t"><span class="st-eyebrow">${escapeHtml(s.label)}${s.line ? ' · ' + escapeHtml(s.line.name) : ''} · ${s.minutes} min</span>
                     <b>${title}</b><small>${timed ? `Record : ${s.record}` : 'du premier coup'}</small></div>
@@ -145,6 +149,45 @@ function _trSummaryHTML(s, primary) {
             <div class="trr-acts">${acts}</div>
             ${list ? `<details class="trr-detail"${wide ? ' open' : ''}><summary>${ico('chevron-down')}<span>Avant → après</span></summary><ul class="trr-moves">${list}</ul></details>` : ''}
         </section>`;
+}
+
+// ─── PLATEAU (APERÇU) ──────────────────────────────────────────────────────────
+// La position par laquelle commence chaque exercice, dessinée en grand à gauche du menu (920 px et plus).
+// Survoler ou focaliser un exercice change l'aperçu ; rien n'est lancé.
+
+const TRAIN_PREVIEW_DOT = { due: 'accent', retry: 'err', weak: 'err', unsure: 'muted', line: 'accent', timed: 'warn', free: 'accent', empty: 'muted' };
+
+// Aperçu d'une position du répertoire (avant mon coup) : { r, after, title, line, side }.
+function _trPreviewOf(row, over) {
+    if (!row) return null;
+    const path = row.e.path && row.e.path.length ? row.e.path : null, op = path ? openingNameOf(path) : null;
+    return { r: { side: row.color, path, k: row.key }, after: false, title: over + ' · ' + (op ? op.name : 'Position de départ'),
+             line: path && path.length > 1 ? _movesLabel(path.slice(0, -1), true) : '', side: row.color === 'w' ? 'Blancs au trait' : 'Noirs au trait' };
+}
+
+function _trStageHTML(kind) {
+    const p = _trPreviews[kind];
+    if (!p) return '';
+    const board = _miniBoardHTML(p.r, p.after, { label: 'Aperçu : ' + p.title });
+    return `<div class="trr-stage-b">${board}<span class="trr-stage-pill"><i class="is-${TRAIN_PREVIEW_DOT[kind] || 'accent'}"></i><span>${escapeHtml(p.title)}</span></span></div>
+        <div class="trr-stage-cap"><span class="trr-stage-line">${p.line || ''}</span><span>${escapeHtml(p.side || '')}</span></div>`;
+}
+
+function _trShowPreview(kind) {
+    const stage = document.getElementById('trr-stage');
+    if (!stage || !_trPreviews[kind] || kind === _trPreviewKind) return;
+    _trPreviewKind = kind;
+    stage.innerHTML = _trStageHTML(kind);
+    document.querySelectorAll('#training-panel [data-focus]').forEach(el => el.classList.toggle('is-preview', el.dataset.focus === kind));
+}
+
+// Survol et focus dans le menu : écouteurs posés une seule fois sur le panneau (pas d'empilement à chaque rendu).
+function _trBindPreview(panel) {
+    if (panel.dataset.preview) return;
+    panel.dataset.preview = '1';
+    const pick = e => { const el = e.target.closest && e.target.closest('[data-focus]'); if (el && panel.contains(el)) _trShowPreview(el.dataset.focus); };
+    panel.addEventListener('pointerover', pick);
+    panel.addEventListener('focusin', pick);
 }
 
 // ─── ONGLET ───────────────────────────────────────────────────────────────────
@@ -187,11 +230,16 @@ function initTraining() {
     const s = trainingState.lastSummary;
     const retry = s && s.kind !== 'timed' ? s.rows.filter(r => !r.ok).length : 0;
     if (!rows.length) {
-        panel.innerHTML = `<div class="trr">${_trSummaryHTML(s, false).replace(/btn-primary/g, 'btn-soft')}
+        _trPreviews = { empty: { r: { side: _trColor === 'b' ? 'b' : 'w', path: null, k: INIT_FEN }, after: true,
+            title: _trOpening ? 'Aucune position de cette ouverture' : 'Répertoire vide', line: '', side: '' } };
+        _trPreviewKind = 'empty';
+        panel.innerHTML = `<div class="trr is-empty${s ? ' has-bilan' : ''}">
+            <section class="trr-stage is-empty" id="trr-stage" aria-label="Aperçu de la position">${_trStageHTML('empty')}</section>
+            ${_trSummaryHTML(s, false).replace(/btn-primary/g, 'btn-soft')}
             <div class="trr-empty edge-card">
-                <b>Rien à réviser</b>
+                <b>Rien à réviser pour l’instant</b>
                 <span>${_trOpening ? 'Aucune position de cette ouverture' : 'Aucune position'}${_trColor === 'mix' ? '' : ` avec les ${_trColor === 'w' ? 'Blancs' : 'Noirs'}`} dans ce répertoire.</span>
-                ${_trBtn(true, 'trainingAddLine', null, 'Ajouter une ligne', 'plus')}
+                <div class="trr-empty-acts">${_trBtn(true, 'trainingAddLine', null, 'Ajouter une ligne', 'plus')}${_trBtn(false, 'homeImportPgn', null, 'Importer un PGN', 'upload')}</div>
             </div></div>`;
         return;
     }
@@ -288,7 +336,28 @@ function initTraining() {
             <div class="trr-mast-in edge-card">${mastery}${unsure ? `<div class="trr-m"><span></span><span class="lv-chip lv-unsure">${unsure} à confirmer</span></div>` : ''}</div>
         </section>`;
 
-    panel.innerHTML = `<div class="trr${s ? ' has-bilan' : ''}">${_trSummaryHTML(s, primary === 'retry')}${hero}${exercises}${mast}</div>`;
+    // ── Plateau : la position de départ de chaque exercice ──
+    const sorted = (list, cmp = _trOrder) => list.slice().sort(cmp);
+    const start = (title, line) => ({ r: { side: _trColor === 'b' ? 'b' : 'w', path: null, k: INIT_FEN }, after: true, title, line: escapeHtml(line), side: '' });
+    const firstLine = openings[0];
+    const missed = s && s.kind !== 'timed' ? s.rows.find(r => !r.ok) : null;
+    _trPreviews = {
+        due:    _trPreviewOf(sorted(due, (a, b) => dueOf(a.e) - dueOf(b.e))[0], 'La plus en retard'),
+        retry:  missed ? _trPreviewOf(missed, 'Ratée') : null,
+        weak:   _trPreviewOf(sorted(rows.filter(r => r.lv === 'weak' || r.lv === 'fragile'))[0], 'Point faible'),
+        unsure: _trPreviewOf(sorted(rows.filter(r => r.lv === 'unsure'), (a, b) => a.e.attempts - b.e.attempts)[0], 'À confirmer'),
+        line:   firstLine ? { r: { side: firstLine.color, path: firstLine.path, k: null }, after: true, title: 'Ligne complète · ' + firstLine.name,
+                              line: _movesLabel(firstLine.path, true), side: firstLine.color === 'w' ? 'Blancs' : 'Noirs' } : null,
+        timed:  start('Contre-la-montre · positions au hasard', 'Tout le répertoire · 3 min'),
+        free:   start('Mode libre', freeOpts)
+    };
+    const shown = [primary, 'due', 'weak', 'line'].find(k => k && _trPreviews[k]) || 'timed';
+    _trPreviewKind = shown;
+    const stage = `<section class="trr-stage" id="trr-stage" aria-label="Aperçu de la position">${_trStageHTML(shown)}</section>`;
+
+    panel.innerHTML = `<div class="trr${s ? ' has-bilan' : ''}">${stage}${_trSummaryHTML(s, primary === 'retry')}${hero}${exercises}${mast}</div>`;
+    panel.querySelectorAll('[data-focus]').forEach(el => el.classList.toggle('is-preview', el.dataset.focus === shown));
+    _trBindPreview(panel);
 }
 
 // ─── LANCEMENT DES EXERCICES ──────────────────────────────────────────────────
