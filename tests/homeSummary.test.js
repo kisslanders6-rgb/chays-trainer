@@ -1,5 +1,5 @@
 // Lancer : node tests/homeSummary.test.js   — accueil Jouer « Pupitre » (lot 7) : les trois états d'« Aujourd'hui »
-// (dues, à jour, vide) ont chacun une seule action pleine, la prévision sur 7 jours reprend dueForecast, les lignes
+// (dues, à jour, vide) ont chacun une seule action pleine, la prévision sur 7 jours reprend reviewPlan, les lignes
 // d'« À traiter » portent un badge .vbadge et un bouton « Répondre » qui ouvre Jouer sur la position, l'anneau de
 // l'objectif passe par Ring.html. Charge index.html entier dans jsdom, comme boot.test.js.
 const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
@@ -98,7 +98,7 @@ const seed = (w, dueW, dueB) => w.eval(`(() => {
         w.eval("switchHomeTab('play')");
     });
 
-    await t('à jour : une seule action « Ajouter une ligne » dans la couleur la moins fournie, prévision = dueForecast', () => {
+    await t('à jour : une seule action « Ajouter une ligne » dans la couleur la moins fournie, prévision = programme des révisions (reviewPlan)', () => {
         seed(w, 1, 3);
         // Une deuxième position aux Blancs : les Noirs deviennent la couleur la moins fournie.
         w.eval(`(() => { const db = readDBFor(currentRepertoire, 'w'), e = newEntry('g1f3', 'Nf3', ['e2e4', 'e7e5', 'g1f3']);
@@ -111,7 +111,7 @@ const seed = (w, dueW, dueB) => w.eval(`(() => {
         assert(/Ajouter une ligne aux Noirs/.test(cta.textContent));
         assert($('#hp-today .hp-day').classList.contains('is-done'));
         const shown = $$('#hp-today .hp-fc .hp-fc-n').map(b => Number(b.textContent));
-        const expected = JSON.parse(w.eval(`JSON.stringify(dueForecast(['w', 'b'].flatMap(c => Object.values(readDBFor(currentRepertoire, c))), 7))`));
+        const expected = JSON.parse(w.eval(`JSON.stringify(reviewPlan(currentRepertoire).forecast(null, 7))`));
         assert.strictEqual(shown.length, 7);
         assert.deepStrictEqual(shown, expected);
         assert.strictEqual(expected.reduce((a, b) => a + b, 0), 3, 'les trois positions tombent dans les 7 jours');

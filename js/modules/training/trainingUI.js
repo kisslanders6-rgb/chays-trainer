@@ -8,7 +8,7 @@
  *     « Révision du jour » (carte Velours : nombre dû, durée estimée, 7 prochains jours), puis la liste des
  *     exercices (Points faibles, Ligne complète, À confirmer, Contre-la-montre, Mode libre et ses réglages)
  *     et la maîtrise par couleur.
- *   - Un seul bouton plein, choisi par _trPrimary : positions dues, sinon erreurs de la dernière séance,
+ *   - Un seul bouton plein, choisi par _trPrimary : positions à réviser aujourd'hui (reviewPlan), sinon erreurs de la dernière séance,
  *     sinon l'exercice mis en avant (_trFocus), sinon Points faibles. Les autres actions sont tonales.
  *   - Filtre d'ouverture : les exercices ne portent que sur les positions de cette ouverture, jusqu'à ce
  *     qu'il soit retiré.
@@ -79,14 +79,16 @@ function _trOpenings() {
     return [...groups.values()].sort((a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1) || a.path.join(' ').localeCompare(b.path.join(' ')));
 }
 
-// Révisions prévues sur 7 jours (jours du calendrier : robuste aux changements d'heure).
-function _trForecast(rows, now) {
-    return dueForecast(rows.map(r => r.e), 7, now).map((n, i) => ({ t: _dayStart(now, i), n }));
+// Révisions prévues sur 7 jours pour la portée affichée (programme du répertoire, reviewPlan : les nouvelles
+// positions y sont étalées au rythme de l'objectif quotidien).
+const _trInScope = rows => { const ids = new Set(rows.map(r => r.color + '|' + r.key)); return (c, k) => ids.has(c + '|' + k); };
+function _trForecast(rows, now, plan = reviewPlan(currentRepertoire, now)) {
+    return plan.forecast(_trInScope(rows), 7).map((n, i) => ({ t: _dayStart(now, i), n }));
 }
 
 // ─── ACTION PRINCIPALE ────────────────────────────────────────────────────────
 // Un seul bouton plein dans le menu. state : { due, retry, focus, avail: { weak, unsure, timed, free } }
-// (nombres de positions dues, d'erreurs de la dernière séance, exercice mis en avant, exercices disponibles).
+// (nombres de positions à réviser aujourd'hui, d'erreurs de la dernière séance, exercice mis en avant, exercices disponibles).
 // Renvoie 'due', 'retry', l'exercice mis en avant, 'weak', un autre exercice disponible, ou null.
 const TRAIN_PRIMARY_KINDS = ['weak', 'unsure', 'timed', 'free'];
 function _trPrimary(state) {
@@ -244,7 +246,8 @@ function initTraining() {
         return;
     }
 
-    const due = rows.filter(r => isDue(r.e, now));
+    const plan = reviewPlan(currentRepertoire, now);
+    const due = rows.filter(r => plan.today(r.color, r.key));
     const weak = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').length;
     const unsure = rows.filter(r => r.lv === 'unsure').length;
     const primary = _trPrimary({ due: due.length, retry, focus: _trFocus, avail: { weak: weak > 0, unsure: unsure > 0, timed: true, free: true } });
@@ -252,17 +255,19 @@ function initTraining() {
 
     // ── Révision du jour ──
     const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
-    const next = due.length ? 0 : Math.min(...rows.map(r => dueOf(r.e)));
+    const next = due.length ? 0 : plan.next(_trInScope(rows));
+    const fresh = due.filter(r => !r.e.attempts).length, again = due.length - fresh;
     const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
     const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor] + (_trOpening ? ' · ' + escapeHtml(_trOpening.name) : '');
-    const days = _trForecast(rows, now), max = Math.max(1, ...days.map(d => d.n));
+    const days = _trForecast(rows, now, plan), max = Math.max(1, ...days.map(d => d.n));
     const dayName = (t, i) => i === 0 ? 'auj.' : i === 1 ? 'dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' });
     const forecast = `<div class="trr-fc" role="img" aria-label="Révisions prévues sur 7 jours : ${days.map(d => d.n).join(', ')}">${days.map((d, i) =>
         `<div title="${d.n} révision${d.n > 1 ? 's' : ''}"><b>${d.n || ''}</b><i style="height:${Math.max(3, Math.round(36 * d.n / max))}px"></i><span>${dayName(d.t, i)}</span></div>`).join('')}</div>`;
     const hero = `
         <section class="vel-card vel-dark trr-day edge-card${_trFocus === 'due' ? ' is-focus' : ''}" data-focus="due" aria-label="Révision du jour">
             <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
-            ${due.length ? `<div class="trr-big"><b>${due.length}</b><span>${due.length > 1 ? 'positions dues' : 'position due'} · ≈ ${minutes} min</span></div>`
+            ${due.length ? `<div class="trr-big"><b>${due.length}</b><span>à réviser aujourd’hui · ≈ ${minutes} min</span></div>
+                <div class="trr-split">${[fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : '', again ? `${again} à revoir` : ''].filter(Boolean).join(' · ')}</div>`
                          : `<div class="trr-big is-text"><b>À jour</b><span>Prochaine révision ${Number.isFinite(next) && next ? _inLabel(next) : 'bientôt'}</span></div>`}
             ${forecast}
             ${due.length ? _trBtn(primary === 'due', 'trainingEx', 'due', 'Commencer', 'play') : ''}
@@ -369,7 +374,7 @@ function startTrainingExercise(kind) {
     if (kind === 'free') { startTraining(_trColor); return; }
     if (kind === 'timed') { startSession({ kind: 'timed', label: 'Contre-la-montre', colors: _trSides() }); return; }
     const pick = {
-        due:    () => rows.filter(r => isDue(r.e, now)),
+        due:    () => { const plan = reviewPlan(currentRepertoire, now); return rows.filter(r => plan.today(r.color, r.key)); },
         weak:   () => rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort(_trOrder).slice(0, TRAIN_WEAK_MAX),
         unsure: () => rows.filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
     }[kind];

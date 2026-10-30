@@ -172,9 +172,9 @@ function _homeGoalHTML(done, goal) {
         ariaLabel: `Objectif du jour : ${n} sur ${goal} positions`, cls: 'hp-goal' });
 }
 
-// Prévision des 7 prochains jours (dueForecast, storage.js) : une barre fine par jour avec son total.
-function _homeForecastHTML(entries, now) {
-    const fc = dueForecast(entries, 7, now), max = Math.max(1, ...fc), d0 = new Date(now);
+// Prévision des 7 prochains jours (programme du répertoire, reviewPlan) : une barre fine par jour avec son total.
+function _homeForecastHTML(fc, now) {
+    const max = Math.max(1, ...fc), d0 = new Date(now);
     const day = i => i === 0 ? 'auj.' : new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).toLocaleDateString('fr-FR', { weekday: 'short' });
     return `<div class="hp-plan hp-fc-wrap"><div class="hp-h"><h3>7 prochains jours</h3><span class="hp-n">${fc.reduce((a, b) => a + b, 0)}</span></div>
         <ol class="hp-fc" aria-label="Révisions prévues sur les 7 prochains jours">${fc.map((v, i) =>
@@ -191,16 +191,17 @@ function renderHomeSummary() {
     const now = Date.now(), pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
     const rows = [];
     ['w', 'b'].forEach(color => { const db = readDBFor(currentRepertoire, color); Object.keys(db).forEach(key => rows.push({ color, key, e: db[key] })); });
-    const side = c => rows.filter(r => r.color === c), due = rows.filter(r => isDue(r.e, now));
+    const rp = reviewPlan(currentRepertoire, now);              // programme des révisions (storage.js)
+    const side = c => rows.filter(r => r.color === c), due = rows.filter(r => rp.today(r.color, r.key));
     document.getElementById('hp-grid').classList.toggle('is-empty', !rows.length);
     ['hp-play', 'hp-news'].forEach(id => document.getElementById(id).classList.add('edge-card'));   // bord à bord sur téléphone
 
     // Jouer : position, chiffres et maîtrise par couleur.
     document.getElementById('hp-play-n').textContent = pl(rows.length, 'position', 'positions');
     ['w', 'b'].forEach(c => {
-        const list = side(c), d = list.filter(r => isDue(r.e, now)).length, counts = {};
+        const list = side(c), d = list.filter(r => rp.today(r.color, r.key)).length, counts = {};
         document.getElementById('home-meta-' + c).textContent = !list.length ? 'Aucune position'
-            : pl(list.length, 'position', 'positions') + ' · ' + (d ? pl(d, 'due', 'dues') : 'à jour');
+            : pl(list.length, 'position', 'positions') + ' · ' + (d ? `${d} à réviser` : 'à jour');
         document.getElementById('home-art-' + c).innerHTML = _homeArtHTML(list.map(r => r.e), c);
         STATS_LEVEL_ORDER.forEach(l => { counts[l] = 0; });
         list.filter(r => r.e.attempts > 0).forEach(r => { counts[_level(r.e)]++; });
@@ -236,7 +237,9 @@ function renderHomeSummary() {
         const d0 = dueOf(next.e), late = d0 ? Math.floor((now - d0) / DAY_MS) : 0, colors = new Set(due.map(r => r.color));
         const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
         title = `<em>${due.length}</em> ${due.length > 1 ? 'positions' : 'position'}<br>à réviser`;
+        const fresh = due.filter(r => !r.e.attempts).length;
         sub = `Environ <b>${minutes} min</b> · ${colors.size > 1 ? 'Blancs et Noirs' : colors.has('w') ? 'Blancs' : 'Noirs'}`
+            + (fresh ? ` · dont ${pl(fresh, 'nouvelle', 'nouvelles')}` : '')
             + (today < goal ? ` · encore ${goal - today} pour l'objectif` : '');
         focus = `<div class="hp-focus">${_miniBoardHTML({ side: next.color, path, k: next.key }, false, { cls: 'hp-focus-board', label: 'Position la plus en retard, avant votre coup' })}
             <span class="hp-focus-txt"><span class="hp-focus-over">La plus en retard${late >= 1 ? ` · ${late} j` : ''}</span>
@@ -246,12 +249,12 @@ function renderHomeSummary() {
         plan = _homePlanHTML('Au programme', due);
     } else {
         // À jour : la prochaine révision, une ligne à ajouter dans la couleur la moins fournie, la prévision.
-        const first = rows.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
+        const nextAt = rp.next();
         const c = side('w').length <= side('b').length ? 'w' : 'b';
         title = `Tout est <em>à jour</em>.`;
-        sub = `Prochaine révision <b>${_inLabel(dueOf(first.e))}</b>` + (today >= goal ? ' · objectif atteint' : '');
+        sub = (Number.isFinite(nextAt) ? `Prochaine révision <b>${_inLabel(nextAt)}</b>` : 'Aucune révision prévue') + (today >= goal ? ' · objectif atteint' : '');
         cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>${link}`;
-        plan = _homeForecastHTML(rows.map(r => r.e), now);
+        plan = _homeForecastHTML(rp.forecast(null, 7), now);
     }
     host.innerHTML = `<div class="hp-day edge-card${due.length ? '' : ' is-done'}">${head}
         <div class="hp-head"><div><h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p></div>${_homeGoalHTML(today, goal)}</div>

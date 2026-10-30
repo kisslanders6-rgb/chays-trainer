@@ -322,16 +322,16 @@ function initStats() {
     if (statsFilter !== 'all' && !counts[statsFilter]) statsFilter = 'all';     // le filtre actif s'est vidé
 
     // ── Aujourd'hui ──
-    // Même décompte que l'Entraînement › Révision du jour : les positions jamais révisées sont dues aussi.
-    const due = rows.filter(r => isDue(r.e, now));
+    // Même programme que l'Entraînement › Révision du jour (reviewPlan) : révisions dues et nouvelles du jour.
+    const rp = reviewPlan(currentRepertoire, now), inScope = c => statsColor === 'all' || c === statsColor;
+    const due = rows.filter(r => rp.today(r.side, r.k));
     const dueWeak = due.filter(r => r.lv === 'weak').length;
-    const all = (statsColor === 'all' ? ['w', 'b'] : [statsColor]).flatMap(side => Object.values(readDBFor(currentRepertoire, side)));
-    const fresh = all.filter(e => !e.attempts && isDue(e, now)).length;
-    const dueAll = due.length + fresh;
-    const next = dueAll ? 0 : Math.min(...rows.map(r => dueOf(r.e)));
+    const dueAll = rp.forecast(inScope, 1)[0];
+    const fresh = dueAll - due.length;
+    const next = dueAll ? 0 : rp.next(inScope);
     const minutes = Math.max(1, Math.round(dueAll * STATS_SECONDS_PER_POSITION / 60));
     // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
-    const fc = dueForecast(all, STATS_FORECAST_DAYS, now), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
+    const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
     const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString('fr-FR', { weekday: 'long' }) : 'aujourd\'hui';
     const forecast = `<div class="st-fc-h"><span>${STATS_FORECAST_DAYS} prochains jours</span><b>${_plural(fcSum, 'position')}</b></div>
             <div class="st-fc" role="img" aria-label="Révisions prévues : ${fc.map((n, i) => `${fcDay(i)} ${n}`).join(', ')}">${fc.map((n, i) =>
@@ -346,7 +346,7 @@ function initStats() {
             ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="due">Révision du jour ${ico('chevron-right')}</button>` : `
             <div class="st-big st-big-text"><b>À jour</b></div>
-            <div class="st-today-sub">Prochaine révision ${_dueIn(next)}.</div>
+            <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${_dueIn(next)}.` : 'Aucune révision prévue.'}</div>
             ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('target')}Points faibles ${ico('chevron-right')}</button>`}
         </div>`;
@@ -402,7 +402,7 @@ function initStats() {
     if (scope !== statsScope) { statsScope = scope; statsOpen = null; statsAll = new Set(); }
     const groups = {};
     rows.forEach(r => { (groups[r.gKey] = groups[r.gKey] || { key: r.gKey, side: r.side, name: r.gName, html: r.gHtml, path: r.gPath, all: [], items: [] }).all.push(r); });
-    Object.values(groups).forEach(g => { g.items = g.all.filter(r => statsFilter === 'all' || r.lv === statsFilter); g.counts = _countLevels(g.all); g.due = g.all.filter(r => isDue(r.e, now)).length; });
+    Object.values(groups).forEach(g => { g.items = g.all.filter(r => statsFilter === 'all' || r.lv === statsFilter); g.counts = _countLevels(g.all); g.due = g.all.filter(r => rp.today(r.side, r.k)).length; });
     const share = (g, l) => g.counts[l] / g.all.length;
     const sorters = {
         weak:  (a, b) => share(b, 'weak') - share(a, 'weak') || share(b, 'fragile') - share(a, 'fragile') || share(b, 'progress') - share(a, 'progress') || b.all.length - a.all.length,
@@ -417,7 +417,7 @@ function initStats() {
         `${id === STATS_STATE ? '<span class="stats-chip-sep" aria-hidden="true"></span>' : ''}<button type="button" class="stats-chip ${statsFilter === id ? 'active' : ''} ${id === 'all' ? 'all' : 'lv-' + id}${id === STATS_STATE ? ' is-state' : ''}" aria-pressed="${statsFilter === id}" data-action="statsFilter" data-arg="${id}" ${n ? '' : 'disabled'}>
             ${id === 'all' ? '' : _lvMark(id)}${label} <b>${n}</b></button>`).join('');
     const sortSel = dropdownHTML({ label: 'Trier', aria: 'Trier les ouvertures', value: statsSort, action: 'statsSort', cls: 'dd-sm dd-end st-sort',
-        options: [['weak', 'Plus fragiles'], ['due', 'Plus de révisions dues'], ['order', 'Ordre des coups'], ['size', 'Plus de positions']] });
+        options: [['weak', 'Plus fragiles'], ['due', 'Plus à réviser'], ['order', 'Ordre des coups'], ['size', 'Plus de positions']] });
 
     const lines = list.map(g => {
         const open = statsOpen.has(g.key), items = g.items.slice().sort(_byWorst);
@@ -428,7 +428,7 @@ function initStats() {
                 <span class="st-move">${_moveLabel(r.e, false, true)}</span>
                 <span class="st-lvl">${_lvMark(r.lv)}${STATS_LEVELS[r.lv].one}</span>
                 <span class="st-errs lv-${r.lv}" title="${pct} % d'erreurs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, pct)}%"></i></span><span class="st-n">${r.e.failures} err. / ${r.e.attempts}</span></span>
-                <span class="st-when ${d ? 'on' : ''}">${d ? 'Due' : _dueIn(dueOf(r.e))}</span>
+                <span class="st-when ${d ? 'on' : ''}">${d ? 'Aujourd’hui' : _dueIn(dueOf(r.e))}</span>
                 <span class="st-acts">
                     <button type="button" class="st-ibtn pri" data-action="statsTrain" data-arg="${arg(r)}" title="S'entraîner sur cette position (compte comme un essai)" aria-label="S'entraîner sur ${escapeHtml(_moveLabel(r.e))}">${ico('play')}</button>
                     <button type="button" class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" data-origin="${escapeHtml(g.name)}" title="Voir la position" aria-label="Voir ${escapeHtml(_moveLabel(r.e))}">${ico('eye')}</button>
@@ -440,7 +440,7 @@ function initStats() {
         // Fiche de l'ouverture dépliée : sa position, puis « Réviser cette ouverture » quand des positions sont dues.
         const top = g.path.length || g.due ? `<div class="st-op-top">${g.path.length ? `<div class="st-line-pos">${_miniBoardHTML({ side: g.side, path: g.path }, true)}</div>` : ''}
                 <div class="st-op-acts">${g.due ? `<button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="${escapeHtml('due:' + g.key)}">Réviser cette ouverture ${ico('chevron-right')}</button>` : ''}
-                <span class="st-sub">${g.due ? `${g.due} ${g.due > 1 ? 'dues' : 'due'} sur ${g.all.length}` : 'À jour'}</span></div></div>` : '';
+                <span class="st-sub">${g.due ? `${g.due} à réviser sur ${g.all.length}` : 'À jour'}</span></div></div>` : '';
         return `<section class="st-line ${open ? 'open' : ''}">
             <button type="button" class="st-line-head" aria-expanded="${open}" data-action="statsLine" data-arg="${escapeHtml(g.key)}">
                 <span class="st-line-name"><b>${statsColor === 'all' ? `<span class="st-line-side">${g.side === 'w' ? 'Blancs' : 'Noirs'}</span>` : ''}${g.html}</b>
@@ -557,7 +557,7 @@ function _renderPreviewFacts(e) {
     const lv = _level(e), d = isDue(e, Date.now());
     box.innerHTML = `<div class="lv-${lv}"><span>Niveau</span><b>${_lvMark(lv)}${STATS_LEVELS[lv].one}</b></div>
         <div><span>Erreurs</span><b class="st-n">${e.failures} / ${e.attempts}</b></div>
-        <div><span>Révision</span><b${d ? ' class="on"' : ''}>${d ? 'Due' : _dueIn(dueOf(e))}</b></div>`;
+        <div><span>Révision</span><b${d ? ' class="on"' : ''}>${d ? 'Aujourd’hui' : _dueIn(dueOf(e))}</b></div>`;
 }
 
 // Barre du haut pendant l'aperçu : « ‹ Statistiques », puis la catégorie de la position en puce (marque + niveau)

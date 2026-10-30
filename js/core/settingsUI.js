@@ -73,7 +73,7 @@ function _settingRows() {
               opts: [[0, 'Jamais'], [1, '1 erreur'], [2, '2'], [3, '3']] },
             { group: 'Pendant la partie', kind: 'seg', key: 'egOpponent', label: 'Adversaire des finales', tip: 'Résistance maximale : la défense la plus longue, le gain le plus rapide. Humain : un coup au hasard parmi ceux qui gardent le même résultat.',
               opts: [['max', 'Résistance max.'], ['human', 'Humain']] },
-            { group: 'Révisions', kind: 'range', key: 'dailyGoal', label: 'Objectif quotidien', search: 'révision jour', tip: 'Positions à réviser chaque jour ; la progression s’affiche sur l’accueil.',
+            { group: 'Révisions', kind: 'range', key: 'dailyGoal', label: 'Objectif quotidien', search: 'révision jour', tip: 'Positions à réviser chaque jour, et nombre de nouvelles positions ajoutées chaque jour à la révision (les autres attendent les jours suivants) ; la progression s’affiche sur l’accueil.',
               min: 5, max: 50, step: 5, out: v => `${v} positions` },
             { group: 'Révisions', kind: 'seg', key: 'rhythm', label: 'Rythme', search: 'révision espacée', tip: 'Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent.',
               opts: [['soft', 'Doux'], ['std', 'Standard'], ['intense', 'Intensif']] },

@@ -17,9 +17,8 @@ const RepPicker = (function () {
     let pop = null, opener = null, action = null;
 
     function stats(name) {
-        const all = Object.values(readDBFor(name, 'w')).concat(Object.values(readDBFor(name, 'b')));
-        const now = Date.now();
-        return { n: all.length, due: all.filter(e => isDue(e, now)).length };
+        const n = Object.keys(readDBFor(name, 'w')).length + Object.keys(readDBFor(name, 'b')).length;
+        return { n, due: n ? reviewPlan(name).forecast(null, 1)[0] : 0 };      // même programme que l'Entraînement
     }
     const initial = name => escapeHtml((name.trim()[0] || '?').toUpperCase());
     const meta = s => `${s.n} position${s.n > 1 ? 's' : ''}${s.due ? ` · ${s.due} à réviser` : ''}`;

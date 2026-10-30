@@ -283,6 +283,55 @@ function dueForecast(entries, days = 7, now = Date.now()) {
     return out;
 }
 
+// ─── PROGRAMME DES RÉVISIONS ──────────────────────────────────────────────────
+// Un seul programme par répertoire (les deux couleurs), lu par l'Entraînement, l'accueil, les Statistiques et
+// la puce de répertoire, pour que tous les chiffres concordent :
+//   - révisions : positions déjà travaillées (attempts > 0), le jour de leur échéance ; un retard compte aujourd'hui ;
+//   - nouvelles : positions jamais révisées, au plus newPerDay() par jour (= objectif quotidien), les réponses
+//     « Traitée depuis » (prio) d'abord, puis dans l'ordre d'enregistrement et de la ligne. Les suivantes attendent
+//     les jours d'après : 30 coups ajoutés d'un coup ne font plus un pic de 30 aujourd'hui et rien ensuite.
+function newPerDay() {
+    return Math.max(1, (typeof appSettings !== 'undefined' && appSettings.dailyGoal) || 10);
+}
+
+// plan.dayOf(couleur, clé) : jour prévu (0 = aujourd'hui) ; plan.today(…) ; plan.forecast(filtre, jours) ;
+// plan.next(filtre) : instant de la prochaine révision après aujourd'hui (Infinity s'il n'y en a pas).
+// filtre(couleur, clé) facultatif : la portée affichée (une couleur, une ouverture).
+function reviewPlan(rep = currentRepertoire, now = Date.now()) {
+    const d0 = new Date(now), start = i => new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).getTime();
+    const items = [];
+    ['w', 'b'].forEach(color => { const db = readDBFor(rep, color); Object.keys(db).forEach(key => items.push({ color, key, e: db[key] })); });
+    // Nouvelle = jamais révisée et déjà échue (une échéance future explicite est respectée comme une révision).
+    items.forEach(x => { x.fresh = !x.e.attempts && dueOf(x.e) <= now; });
+    const fresh = items.filter(x => x.fresh)
+        .sort((a, b) => (b.e.prio ? 1 : 0) - (a.e.prio ? 1 : 0) || (a.e.created || 0) - (b.e.created || 0) || (a.e.ply || 0) - (b.e.ply || 0));
+    const k = newPerDay();
+    fresh.forEach((x, i) => { x.day = Math.floor(i / k); x.at = start(x.day); });
+    items.forEach(x => {
+        if (x.fresh) return;
+        const d = dueOf(x.e);
+        x.at = d;
+        if (d <= now) { x.day = 0; return; }
+        let i = Math.max(0, Math.floor((d - start(0)) / DAY_MS));
+        while (i > 0 && d < start(i)) i--;
+        while (d >= start(i + 1)) i++;
+        x.day = i;
+    });
+    const byId = new Map(items.map(x => [x.color + '|' + x.key, x]));
+    const scope = filter => filter ? items.filter(x => filter(x.color, x.key)) : items;
+    const dayOf = (color, key) => { const x = byId.get(color + '|' + key); return x ? x.day : Infinity; };
+    return {
+        dayOf,
+        today: (color, key) => dayOf(color, key) === 0,
+        forecast(filter, days = 7) {
+            const out = new Array(days).fill(0);
+            scope(filter).forEach(x => { if (x.day < days) out[x.day]++; });
+            return out;
+        },
+        next: filter => scope(filter).filter(x => x.day > 0).reduce((m, x) => Math.min(m, x.at), Infinity)
+    };
+}
+
 function recordReview(entry, ok) {
     const now = Date.now();
     const wasDue = isDue(entry, now), prev = entry.interval || impliedInterval(entry);

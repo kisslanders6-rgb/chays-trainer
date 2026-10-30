@@ -194,6 +194,28 @@ async function boot() {
         w.eval('quitTraining()');
     });
 
+    await t('Révision du jour : nouvelles positions plafonnées à l\'objectif quotidien, le reste étalé ; libellé « à réviser aujourd’hui »', () => {
+        w.eval(`(() => {
+            const db = {}, now = Date.now();
+            Chess.replay([]);
+            const moves = ['e2e4', 'd2d4', 'c2c4', 'g1f3', 'b1c3', 'f2f4', 'g2g3', 'b2b3', 'e2e3', 'd2d3', 'c2c3', 'h2h3', 'a2a3', 'g1h3', 'b1a3'];
+            moves.forEach((m, i) => { const e = newEntry(m, m, [m]); e.created = now - 1000 + i; db['k' + i] = e; });
+            dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db));
+            dataStore.set(dbKeyFor(currentRepertoire, 'b'), '{}');
+            appSettings.dailyGoal = 10; trainingState.lastSummary = null; _trOpening = null; _trColor = 'mix';
+        })()`);
+        render();
+        assert.strictEqual($('.trr-big b').textContent, '10', '10 aujourd\'hui, pas 15');
+        assert(/à réviser aujourd’hui/.test($('.trr-big span').textContent));
+        assert.strictEqual($('.trr-split').textContent.trim(), '10 nouvelles');
+        assert(!/positions dues/.test($('#training-panel').textContent), 'plus de « positions dues »');
+        const fc = $$('.trr-fc > div b').map(b => Number(b.textContent || 0));
+        assert.deepStrictEqual(fc.slice(0, 3), [10, 5, 0], 'le reste demain');
+        w.eval(`startTrainingExercise('due')`);
+        assert.strictEqual(w.eval('trainingState.session && trainingState.session.items.length'), 10, 'la séance reprend le programme');
+        w.eval('quitTraining()');
+    });
+
     await t('Plateau : l\'aperçu montre l\'exercice de l\'action principale, puis celui qu\'on survole', () => {
         w.eval(`switchHomeTab('training')`);
         seed({ dueIn: -1 });
