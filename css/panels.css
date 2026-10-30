@@ -91,6 +91,9 @@
    PanelKit (balancedCols) selon la largeur et le nombre de tuiles ; une dernière ligne incomplète est centrée. */
 .pn .theme-options { --cols: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .pn .theme-opt { min-width: 0; flex: 0 0 calc((100% - (var(--cols) - 1) * 8px) / var(--cols)); }
+/* Jamais de transition sur la largeur : chaque réglage redessine la fenêtre et la grille passe un instant par
+   --cols par défaut avant fitGrids ; « transition: all » de .theme-opt (style.css) animait ce redimensionnement. */
+.pn .theme-opt { transition-property: border-color, background-color, color, box-shadow, transform; }
 
 /* Aperçu de l'échiquier (Apparence) */
 .pn-preview { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 16px; }

@@ -111,4 +111,11 @@ t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule ac
         'Révision du jour : les deux couleurs, sans filtre d\'ouverture');
 });
 
+t('grilles : aucune transition sur la largeur des tuiles dans les fenêtres (pas de redimensionnement animé à chaque réglage)', () => {
+    const panels = fs.readFileSync('css/panels.css', 'utf8');
+    const m = panels.match(/\.pn \.theme-opt \{ transition-property: ([^;]+);/);
+    assert(m, '.pn .theme-opt doit fixer transition-property (style.css a « transition: all »)');
+    assert(!/\b(all|width|flex|flex-basis|max-width|min-width)\b/.test(m[1]), m[1]);
+});
+
 console.log(`\n${n} tests réussis.`);
