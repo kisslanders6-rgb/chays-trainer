@@ -92,6 +92,7 @@ const PanelKit = (function () {
             if (cfg.onOpen) cfg.onOpen();
             refresh(false);
             overlay.classList.remove('hidden');
+            fitGrids(content);      // rendu pendant que la fenêtre était cachée (largeur 0) : colonnes posées avant la première image
             (narrow() ? box : (searchEl || box.querySelector('[data-pn="close"]'))).focus({ preventScroll: true });
         }
         function close() { overlay.classList.add('hidden'); if (cfg.onClose) cfg.onClose(); }

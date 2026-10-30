@@ -209,6 +209,26 @@ const search = (w, q) => {
         w.closeSettings();
     });
 
+    await t('grilles : colonnes posées dès l\'ouverture (rendu pendant que la fenêtre est cachée), sans attendre un premier clic', () => {
+        // jsdom n'a pas de mise en page : largeur 0 dans une fenêtre cachée, 343 px (téléphone) une fois montrée.
+        const desc = Object.getOwnPropertyDescriptor(w.HTMLElement.prototype, 'clientWidth');
+        Object.defineProperty(w.HTMLElement.prototype, 'clientWidth', { configurable: true,
+            get() { return this.classList.contains('theme-options') ? (this.closest('.hidden') ? 0 : 343) : 0; } });
+        try {
+            w.closeSettings();
+            w.showSettings('apparence');
+            const grids = $$('.pn .theme-options');
+            assert(grids.length >= 3, 'grilles de l\'Apparence');
+            const P = w.eval('PanelKit');
+            grids.forEach(g => assert.strictEqual(g.style.getPropertyValue('--cols'),
+                String(P.balancedCols(g.children.length, 343, Number(g.dataset.min), Number(g.dataset.max))), g.dataset.grid));
+            assert.strictEqual($('.pn .theme-options[data-grid="darkBg"]').style.getPropertyValue('--cols'), '4', 'fond sombre : 4 tuiles sur une ligne, pas 3 + 1');
+        } finally {
+            if (desc) Object.defineProperty(w.HTMLElement.prototype, 'clientWidth', desc); else delete w.HTMLElement.prototype.clientWidth;
+            w.closeSettings();
+        }
+    });
+
     await t('aucune erreur de script', () => assert.deepStrictEqual(errors, []));
     console.log(`\n${n} tests réussis.`);
     process.exit(0);
