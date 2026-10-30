@@ -122,6 +122,7 @@ function handleClick(idx) {
     if (gameMode === 'preview') return;                                   // aperçu : lecture seule
     if (gameMode === 'endgame' && endgameState.busy) return;
     if (gameMode === 'training' && trainingState.busy) return;            // cinématique en cours
+    if (gameMode === 'training' && trainingBackToLive()) return;          // séance : toucher ramène au présent
 
     // Si on visualise une position passée (navigation Précédent/Suivant),
     // jouer ici doit relancer la partie réelle à partir de cette position :
@@ -355,7 +356,8 @@ let _solutionMove = null;     // { key, from, to } : coup surligné par le halo
 function showHint() {
     if (gameMode === 'endgame') { endgameHint(); return; }
     if (gameMode === 'preview' || (gameMode === 'training' && trainingState.busy)) return;
-    if (navCursor !== -1) _syncEngineToNavCursor();
+    if (gameMode === 'training') trainingBackToLive();                    // séance : l'indice porte sur la position en cours
+    else if (navCursor !== -1) _syncEngineToNavCursor();
     if (turn !== playerColor) {
         setStatus("L'indice n'est disponible que pour vos propres coups.", 'info');
         return;

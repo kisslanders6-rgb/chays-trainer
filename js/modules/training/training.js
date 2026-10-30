@@ -447,6 +447,7 @@ function nextDrill() {
 // opts.noContext : position posée directement (contre-la-montre).
 function _startDrill(key, seqLen, opts) {
     const entry = openingDB[key];
+    resetNavCursor();                                   // une navigation dans la position précédente ne déborde pas
     trainingState.current     = key;
     trainingState.reason      = _drillReason(entry);
     trainingState.lastKey     = key;
@@ -552,6 +553,23 @@ function _drillReady() {
     setStatus(`À vous de jouer${_seqLabel()}`, 'info', _readyDetail());
 }
 
+// ─── NAVIGATION EN SÉANCE ─────────────────────────────────────────────────────
+// ◀ ▶ et les flèches revoient les coups déjà joués (jamais pendant la mise en situation ni un coup adverse :
+// trainingState.busy). Toucher l'échiquier, l'Indice ou la Solution ramène d'abord à la position en cours :
+// on ne rejoue jamais depuis le passé (en Jouer, cela ouvrirait une nouvelle variante), la séance reste intacte.
+// La position cherchée n'est jamais dans l'historique : naviguer ne dévoile pas la réponse.
+function trainingBackToLive() {
+    if (gameMode !== 'training' || navCursor === -1) return false;
+    navGo(moveHistory.length - 1);
+    return true;
+}
+// Retour à la position en cours : la consigne de la séance revient (navGo).
+function trainingLiveStatus() {
+    if (gameMode !== 'training' || trainingState.busy || turn !== playerColor) return false;
+    setStatus(`À vous de jouer${_seqLabel()}`, 'info', _readyDetail());
+    return true;
+}
+
 // Sous-texte de « À vous de jouer ». En séance, la barre de progression dit déjà où l'on en est :
 // seulement l'ouverture (ou le deuxième passage). En mode libre : la raison du tirage et les réussites.
 function _readyDetail() {
@@ -575,6 +593,7 @@ function _startFullLine() {
     trainingState.seq         = { len: TRAIN_SEQ_END, done: 0, assisted: false };
     trainingState.solutionFor = null;
     trainingState.busy        = true;
+    resetNavCursor();
     loadPositionFromPath([]);
     trainingState.current = trainingState.lastKey = positionKey();
     if (playerColor === 'w') {
@@ -660,7 +679,7 @@ function _continueSequence() {
 
 function showTrainingSolution() {
     if (gameMode !== 'training' || trainingState.busy || turn !== playerColor) return;
-    if (navCursor !== -1) _syncEngineToNavCursor();
+    trainingBackToLive();
 
     const key   = positionKey();
     const entry = openingDB[key];

@@ -181,6 +181,31 @@ async function boot() {
         assert(pill.hidden);
     });
 
+    await t('séance : ◀ ▶ revoient les coups joués ; toucher l\'échiquier ou l\'Indice ramène au présent sans rien rejouer', async () => {
+        seed({ dueIn: -1, lastOnly: true });                           // 3. Fc4 : mise en situation 1. e4 e5 2. Cf3 Cc6
+        w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining(); startTrainingExercise('due')`);
+        $('#board-pill').click();                                       // passer la mise en situation
+        assert.strictEqual(w.eval('trainingState.busy'), false);
+        const len = w.eval('moveHistory.length');
+        assert(len >= 4, 'coups de contexte dans l\'historique');
+        assert(!$('#btn-prev').closest('[style*="display: none"]'), '◀ visible en séance');
+        w.eval('navPrev()');
+        assert.notStrictEqual(w.eval('navCursor'), -1, 'navigation en arrière');
+        assert(/^Navigation/.test($('#status-text .status-title').textContent));
+        w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        assert.strictEqual(w.eval('navCursor'), len - 3, 'flèche gauche active en séance');
+        w.eval(`handleClick(squareToIdx('a2'))`);                       // toucher l'échiquier
+        assert.strictEqual(w.eval('navCursor'), -1, 'retour au présent');
+        assert.strictEqual(w.eval('moveHistory.length'), len, 'historique intact (pas de nouvelle variante)');
+        assert.strictEqual(w.eval('selected'), null, 'le toucher ne sélectionne rien');
+        assert(/^À vous de jouer/.test($('#status-text .status-title').textContent), 'consigne revenue');
+        w.eval('navPrev(); showHint()');
+        assert.strictEqual(w.eval('navCursor'), -1, 'l\'Indice ramène au présent');
+        assert.strictEqual(w.eval('moveHistory.length'), len);
+        assert(/^Indice/.test($('#status-text .status-title').textContent), 'indice de la position en cours');
+        w.eval('quitTraining()');
+    });
+
     await t('lancement : bouton occupé (aria-busy) le temps de préparer la séance', async () => {
         w.eval(`switchHomeTab('training')`);
         seed({ dueIn: -1 });
