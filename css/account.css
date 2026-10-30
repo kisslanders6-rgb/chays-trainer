@@ -192,8 +192,12 @@
 /* Carte d'identité « Velours » (teintes dérivées de l'échiquier, --theme-dark-deep / --theme-light-refined) */
 .acct-id { position: relative; overflow: hidden; display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 16px;
            color: var(--theme-light-refined); background: var(--theme-dark-deep);
-           background: linear-gradient(150deg, oklch(from var(--theme-dark-deep) calc(l + .06) c h) 0%, var(--theme-dark-deep) 55%, oklch(from var(--theme-dark-deep) calc(l - .06) c h) 100%);
+           background: linear-gradient(150deg, color-mix(in oklab, var(--theme-dark-deep) 88%, #fff) 0%, var(--theme-dark-deep) 55%, color-mix(in oklab, var(--theme-dark-deep) 88%, #000) 100%);
            box-shadow: var(--shadow-sm); }
+/* oklch relatif seulement là où il ne fait pas planter Safari 16 (voir style.css, « HARMONISATION »). */
+@supports (color: light-dark(red, red)) {
+    .acct-id { background: linear-gradient(150deg, oklch(from var(--theme-dark-deep) calc(l + .06) c h) 0%, var(--theme-dark-deep) 55%, oklch(from var(--theme-dark-deep) calc(l - .06) c h) 100%); }
+}
 .acct-id::before { content: ''; position: absolute; inset: 0; opacity: .16; mix-blend-mode: overlay; pointer-events: none;
                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
 .acct-id::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .07) 50%, transparent 60%); }

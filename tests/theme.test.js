@@ -137,4 +137,35 @@ for (const [mode, M] of CASES) {
     });
 }
 
+// Safari 16 (iPhone 8, iOS 16.7) plante en calculant oklch(from …) alors que CSS.supports le dit reconnu :
+// ces formules ne vivent que dans @supports (color: light-dark(red, red)), avec un repli color-mix() avant.
+const LD = '@supports (color: light-dark(red, red))';
+const outsideLightDark = text => {
+    let out = '', i = 0;
+    for (let j = text.indexOf(LD); j >= 0; j = text.indexOf(LD, i)) {
+        out += text.slice(i, j);
+        let k = text.indexOf('{', j), depth = 1;
+        while (depth && ++k < text.length) depth += text[k] === '{' ? 1 : text[k] === '}' ? -1 : 0;
+        i = k + 1;
+    }
+    return out + text.slice(i);
+};
+t('Safari 16 : aucun oklch(from …) hors du bloc @supports light-dark(), dans toutes les feuilles', () => {
+    const files = ['style.css', ...fs.readdirSync('css').filter(f => f.endsWith('.css')).map(f => 'css/' + f)];
+    const bad = files.filter(f => /\b(oklch|oklab|lab|lch|rgb|hsl|color)\(\s*from\b/.test(outsideLightDark(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''))));
+    assert.deepStrictEqual(bad, []);
+    assert(css.includes(LD), 'bloc des formules exactes présent');
+});
+
+t('Safari 16 : accents de repli (color-mix) lisibles sur les 13 échiquiers, en clair et en sombre', () => {
+    assert(/--ui-accent:\s+color-mix\(in oklab, var\(--board-dark\) 52%, #1a1208\)/.test(css) && /--ui-accent:\s+color-mix\(in oklab, var\(--board-dark\) 48%, #efe6d8\)/.test(css), 'replis recopiés dans ce test');
+    const bad = [];
+    for (const [b, d] of Object.entries(boards)) {
+        const light = mixLab(hex(d), hex('#1a1208'), .52), dark = mixLab(hex(d), hex('#efe6d8'), .48);
+        if (contrast(light, MODES.light.surface) < 4.5) bad.push(`${b} clair : ${contrast(light, MODES.light.surface).toFixed(2)}`);
+        if (contrast(dark, MODES.dark.onAccent) < 4.5) bad.push(`${b} sombre : ${contrast(dark, MODES.dark.onAccent).toFixed(2)}`);
+    }
+    assert.strictEqual(bad.join(' ; '), '');
+});
+
 console.log(`\n${n} tests réussis.`);

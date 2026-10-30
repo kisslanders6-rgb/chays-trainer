@@ -994,27 +994,27 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
          --board-light / --board-dark  cases claires / sombres, exactes
          --board-accent  case sombre ramenée à une clarté lisible sur le fond (repères de l'interface)
          --board-on-dark / --board-on-light  encre lisible posée sur une case sombre / claire */
-    --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
-    --board-on-dark:  oklch(from var(--board-dark) clamp(.24, (.68 - l) * 1000, .97) calc(c * .35) h);
+    --board-accent:   color-mix(in oklab, var(--board-dark) 82%, #000);
+    --board-on-dark:  color-mix(in oklab, var(--board-light) 30%, #fbf8f1);
     --board-on-light: color-mix(in srgb, var(--board-dark) 22%, #120d04);
 
     /* Palette « Velours » des cartes de l'accueil : jamais pastel, quel que soit l'échiquier.
          --theme-dark-deep      teinte de la case sombre, ramenée à une clarté fixe et un peu désaturée
          --theme-light-refined  case claire fondue dans un ivoire chaud */
-    --theme-dark-deep:     oklch(from var(--board-dark) .3 calc(min(c, .1) * .75) h);
+    --theme-dark-deep:     color-mix(in oklab, var(--board-dark) 55%, #120c08);
     --theme-light-refined: color-mix(in oklab, var(--board-light) 55%, #f3ecdc);
 
     /* Couleur dominante du logo : la teinte de la case sombre, toujours profonde. Clarté fixe ; la saturation
        est relevée pour les cases peu colorées (Glace → bleu sombre), les gris restent gris (Pierre, Hachuré).
        Calibrée pour que l'échiquier Classique redonne le vert sapin d'origine (#2f4a26). */
-    --logo-deep: oklch(from var(--board-dark) .37 min(calc(c * 1.75), .07) h);
+    --logo-deep: color-mix(in oklab, var(--board-dark) 62%, #120c08);
 
     /* 2. Accent de l'interface (boutons, liens, barre système), dérivé de la case sombre : aucun accent écrit
           à la main par échiquier. La teinte vient de --board-dark, fondue en oklab vers un brun profond ; la clarté
           est bornée pour que le texte des boutons et l'accent employé comme texte restent lisibles (4,5:1,
           tests/theme.test.js ; contrôle visuel : tests/theme-matrix.html).
             --board-ring  cerclage de l'échiquier en thème sombre */
-    --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.34, l, .45) min(c, .13) h);
+    --ui-accent:     color-mix(in oklab, var(--board-dark) 52%, #1a1208);
     --accent:        var(--ui-accent);
     --accent-bright: color-mix(in oklab, var(--ui-accent) 82%, #fff);
     --accent-dim:    color-mix(in oklab, var(--ui-accent) 55%, var(--surface));
@@ -1025,11 +1025,28 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
     --accent-line:   color-mix(in oklab, var(--accent) 40%, var(--border));
 }
 [data-theme="dark"] {
-    --board-accent:  oklch(from var(--board-dark) max(l, .74) c h);
+    --board-accent:  color-mix(in oklab, var(--board-dark) 45%, #f3ecdc);
     /* En sombre, l'accent est clair et porte un texte foncé : lisible comme texte sur les cartes ET comme fond de bouton. */
-    --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.7, l, .76) min(c, .12) h);
+    --ui-accent:     color-mix(in oklab, var(--board-dark) 48%, #efe6d8);
     --accent-text:   #12170f;
     --accent-dim:    color-mix(in oklab, var(--ui-accent) 45%, var(--surface));
+}
+/* Formules exactes (oklch relatif). Safari 16 annonce les reconnaître (CSS.supports) mais plante en les
+   calculant (« Un problème récurrent est survenu », iPhone 8 / iOS 16.7) : elles ne sont lues que par les navigateurs
+   qui connaissent aussi light-dark() (Safari 17.5, Chrome 123, Firefox 120). Les autres gardent les approximations
+   color-mix() ci-dessus. Ne jamais écrire oklch(from …) hors d'un tel bloc (tests/theme.test.js). */
+@supports (color: light-dark(red, red)) {
+    :root {
+        --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
+        --board-on-dark:  oklch(from var(--board-dark) clamp(.24, (.68 - l) * 1000, .97) calc(c * .35) h);
+        --theme-dark-deep:     oklch(from var(--board-dark) .3 calc(min(c, .1) * .75) h);
+        --logo-deep: oklch(from var(--board-dark) .37 min(calc(c * 1.75), .07) h);
+        --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.34, l, .45) min(c, .13) h);
+    }
+    [data-theme="dark"] {
+        --board-accent:  oklch(from var(--board-dark) max(l, .74) c h);
+        --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.7, l, .76) min(c, .12) h);
+    }
 }
 [data-theme="dark"] #board { border-color: var(--board-ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--board-dark) 22%, var(--bg)), var(--shadow); }
 
