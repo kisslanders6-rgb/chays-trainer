@@ -2,7 +2,9 @@
  * core/sound.js
  * ──────────────────────────────────────────────────────────────────────────
  * Effets sonores synthétisés avec la Web Audio API (aucun fichier externe) :
- *   'move'    clic feutré       'capture' impact plus marqué       'error'  buzz grave discret
+ *   'move'    toc de bois feutré   'capture' toc plus plein (pas plus fort)   'success' deux notes rondes
+ *   'error'   deux notes sourdes descendantes (plus de buzz en dent de scie)
+ * Douceur : attaque de 8 ms (plus de clic), aigus coupés au-dessus de 3,2 kHz, limiteur en sortie (jamais d'écrêtage).
  * Respecte appSettings.sound / appSettings.volume (cf. settings.js).
  * Annonce des coups (spokenMove, announceMove, Voice) : lecteurs d'écran ou synthèse vocale, réglage announce.
  */
@@ -31,55 +33,66 @@ function _noise(ctx) {
     return _noiseBuf;
 }
 
-// Enveloppe : attaque quasi instantanée puis décroissance exponentielle.
-function _env(ctx, out, t0, peak, dur) {
+// Enveloppe : attaque courte mais adoucie (8 ms par défaut : pas de clic) puis décroissance exponentielle.
+function _env(ctx, out, t0, peak, dur, attack = 0.008) {
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.004);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     g.connect(out);
     return g;
 }
 
-function _burst(ctx, out, t0, { freq, q, peak, dur, type = 'bandpass' }) {
+function _burst(ctx, out, t0, { freq, q, peak, dur, type = 'bandpass', attack = 0.006 }) {
     const src = ctx.createBufferSource();
     src.buffer = _noise(ctx);
     const f = ctx.createBiquadFilter();
     f.type = type; f.frequency.value = freq; f.Q.value = q;
-    src.connect(f); f.connect(_env(ctx, out, t0, peak, dur));
+    src.connect(f); f.connect(_env(ctx, out, t0, peak, dur, attack));
     src.start(t0, Math.random() * 0.05); src.stop(t0 + dur + 0.02);
 }
 
-function _tone(ctx, out, t0, { wave = 'sine', from, to, peak, dur, lowpass }) {
+function _tone(ctx, out, t0, { wave = 'sine', from, to, peak, dur, lowpass, attack }) {
     const o = ctx.createOscillator();
     o.type = wave;
     o.frequency.setValueAtTime(from, t0);
     o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
     let node = o;
     if (lowpass) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lowpass; o.connect(f); node = f; }
-    node.connect(_env(ctx, out, t0, peak, dur));
+    node.connect(_env(ctx, out, t0, peak, dur, attack));
     o.start(t0); o.stop(t0 + dur + 0.02);
 }
 
+// Niveaux choisis pour qu'aucun son ne dépasse ~0,5 en crête avant le limiteur (tests/sound.test.js).
 const _SOUNDS = {
-    move(ctx, out, t) {
-        _burst(ctx, out, t, { freq: 1300, q: 0.9, peak: 0.30, dur: 0.045 });
-        _tone(ctx, out, t,  { from: 190, to: 110, peak: 0.45, dur: 0.075 });
+    move(ctx, out, t) {                          // toc de bois feutré
+        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.14, dur: 0.04 });
+        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.26, dur: 0.09 });
     },
-    capture(ctx, out, t) {
-        _burst(ctx, out, t,         { freq: 1700, q: 0.7, peak: 0.55, dur: 0.09 });
-        _burst(ctx, out, t + 0.022, { freq: 900,  q: 0.8, peak: 0.35, dur: 0.07 });
-        _tone(ctx, out, t,          { from: 150, to: 75, peak: 0.80, dur: 0.12 });
+    capture(ctx, out, t) {                       // même bois, plus plein et plus grave, pas plus fort
+        _burst(ctx, out, t,         { freq: 800, q: 1.1, peak: 0.18, dur: 0.06 });
+        _burst(ctx, out, t + 0.018, { freq: 520, q: 1.2, peak: 0.10, dur: 0.06 });
+        _tone(ctx, out, t,          { from: 165, to: 110, peak: 0.30, dur: 0.13 });
     },
-    success(ctx, out, t) {                       // deux notes claires, montantes
-        _tone(ctx, out, t,        { from: 660, to: 660, peak: 0.16, dur: 0.11 });
-        _tone(ctx, out, t + 0.09, { from: 990, to: 990, peak: 0.14, dur: 0.18 });
+    success(ctx, out, t) {                       // deux notes rondes, montantes (ré, la)
+        _tone(ctx, out, t,        { from: 587, to: 587, peak: 0.10, dur: 0.20, attack: 0.012 });
+        _tone(ctx, out, t + 0.10, { from: 880, to: 880, peak: 0.08, dur: 0.28, attack: 0.012 });
     },
-    error(ctx, out, t) {
-        _tone(ctx, out, t,        { wave: 'sawtooth', from: 125, to: 95, peak: 0.22, dur: 0.075, lowpass: 420 });
-        _tone(ctx, out, t + 0.1,  { wave: 'sawtooth', from: 110, to: 80, peak: 0.22, dur: 0.11,  lowpass: 380 });
+    error(ctx, out, t) {                         // deux notes sourdes, descendantes
+        _tone(ctx, out, t,        { wave: 'triangle', from: 210, to: 180, peak: 0.09, dur: 0.12, lowpass: 700 });
+        _tone(ctx, out, t + 0.13, { wave: 'triangle', from: 175, to: 150, peak: 0.085, dur: 0.16, lowpass: 600 });
     }
 };
+
+// Sortie commune : volume (courbe douce), aigus coupés, limiteur. Renvoie le nœud où brancher un son.
+function _soundOut(ctx, volume) {
+    const master = ctx.createGain(), soft = ctx.createBiquadFilter(), lim = ctx.createDynamicsCompressor();
+    master.gain.value = Math.pow(volume, 1.6) * 1.7;
+    soft.type = 'lowpass'; soft.frequency.value = 3200; soft.Q.value = 0.5;
+    lim.threshold.value = -12; lim.knee.value = 10; lim.ratio.value = 8; lim.attack.value = 0.002; lim.release.value = 0.12;
+    master.connect(soft); soft.connect(lim); lim.connect(ctx.destination);
+    return master;
+}
 
 // Chaque son peut être coupé séparément (Paramètres › Sons et vibrations).
 const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess' };
@@ -97,10 +110,7 @@ function playSound(kind) {
     try {
         const ctx = _ctx();
         if (!ctx) return;
-        const master = ctx.createGain();
-        master.gain.value = Math.pow(appSettings.volume, 1.6) * 0.9;   // courbe douce : les faibles volumes restent discrets
-        master.connect(ctx.destination);
-        _SOUNDS[kind](ctx, master, ctx.currentTime + 0.005);
+        _SOUNDS[kind](ctx, _soundOut(ctx, appSettings.volume), ctx.currentTime + 0.005);
     } catch (e) { /* audio indisponible : on ignore */ }
 }
 
