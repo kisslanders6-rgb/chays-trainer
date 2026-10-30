@@ -118,4 +118,12 @@ t('grilles : aucune transition sur la largeur des tuiles dans les fenêtres (pas
     assert(!/\b(all|width|flex|flex-basis|max-width|min-width)\b/.test(m[1]), m[1]);
 });
 
+t('écran de jeu : « Recommencer » (resetGame) ne se confond plus avec « Corriger » (undoMove) ; plus de « Rejouer »', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const btn = fn => { const m = html.match(new RegExp('onclick="' + fn + '\\(\\)"[^>]*>[\\s\\S]*?<span class="btn-label">([^<]+)</span>')); return m && m[1]; };
+    assert.strictEqual(btn('resetGame'), 'Recommencer');
+    assert.strictEqual(btn('undoMove'), 'Corriger');
+    assert(!/btn-label">Rejouer</.test(html), '« Rejouer » se lit « rejouer le coup »');
+});
+
 console.log(`\n${n} tests réussis.`);

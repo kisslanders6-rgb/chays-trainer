@@ -391,11 +391,11 @@
 
                         <!-- Actions secondaires : icône + libellé court, discrètes -->
                         <div class="controls controls-tools" data-modes="play">
-                            <button class="btn btn-tool" onclick="undoMove()" title="Annule le dernier coup ; s'il s'agit de votre coup enregistré, permet de le remplacer">
+                            <button class="btn btn-tool" onclick="undoMove()" title="Corriger le dernier coup : il est retiré de l'échiquier pour en jouer un autre (votre coup enregistré peut ainsi être remplacé)">
                                 <svg class="ico"><use href="#i-pencil"/></svg><span class="btn-label">Corriger</span>
                             </button>
-                            <button class="btn btn-tool tb-more" onclick="resetGame()" title="Recommencer depuis la position de départ">
-                                <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Rejouer</span>
+                            <button class="btn btn-tool tb-more" onclick="resetGame()" title="Recommencer la partie depuis la position de départ (rien n'est retiré du répertoire)">
+                                <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
                             </button>
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
