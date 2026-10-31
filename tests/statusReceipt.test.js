@@ -180,6 +180,28 @@ const confirmOpen = $ => !$('#confirm-overlay').classList.contains('hidden');
         assert(!$('.tb-hint').classList.contains('is-suggest'), 'retiré au coup suivant');
     });
 
+    await t('exporter la partie : bouton discret au bout de la barre de coups, PGN copié (en-têtes, numéros, FEN si besoin)', async () => {
+        w.eval(`openingDB = {}; saveDB(); startGame('w')`);
+        assert(!$('#moves-bar .moves-export'), 'pas de bouton sans coup');
+        play(w, 'e2', 'e4'); opp(w, 'c7', 'c5'); play(w, 'g1', 'f3');
+        const pgn = w.eval('currentGamePgn()');
+        assert(/\[Event "Chays Trainer · Jouer"\]/.test(pgn) && /\[Result "\*"\]/.test(pgn));
+        assert(/\n1\. e4 c5 2\. Nf3 \*\n$/.test(pgn), 'coups en notation anglaise, numérotés : ' + JSON.stringify(pgn.slice(-40)));
+        assert(!/\[FEN/.test(pgn), 'partie depuis la position initiale : pas de FEN');
+        let copied = null;
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: txt => { copied = txt; return Promise.resolve(); } } });
+        const btn = $('#moves-bar .moves-export');
+        assert(btn && btn.getAttribute('aria-label') === 'Copier la partie en PGN');
+        btn.click();
+        await new Promise(r => setTimeout(r, 20));
+        assert.strictEqual(copied, pgn, 'presse-papiers');
+        assert($('#moves-bar .moves-export').classList.contains('is-done'), 'retour visuel');
+        w.eval(`parseFEN('8/8/8/4k3/8/8/4P3/4K3 w - - 0 1'); moveHistory = []; applyMove(squareToIdx('e2'), squareToIdx('e4'), null, null)`);
+        const fenPgn = w.eval('currentGamePgn()');
+        assert(/\[SetUp "1"\]\n\[FEN "8\/8\/8\/4k3\/8\/8\/4P3\/4K3 w/.test(fenPgn), 'position de départ particulière : FEN');
+        delete w.navigator.clipboard;
+    });
+
     assert.deepStrictEqual(errors, []);
     w.close();
     console.log(`\n${n} tests réussis.`);

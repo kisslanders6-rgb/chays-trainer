@@ -46,6 +46,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 - **Thème** : `chessTrainer_mode` vaut `'dark'` (défaut), `'light'` ou `'system'` ; `data-theme` sur `<html>` vaut `'dark'` ou `'light'`, dans le CSS comme en JS. L'ancienne clé `chessTrainer_theme` avait des valeurs inversées (`'light'` = sombre) : `settings.js` la convertit, le script en tête d'`index.html` la lit encore en repli. Passer par `themeMode()` / `setThemeMode()`.
 - Pour calculer sur une autre position que celle affichée : API `Chess` (`Chess.replay`, `Chess.play`, `Chess.san`, `Chess.key`, `Chess.snapshot`), jamais l'état global `board` / `turn`. Les lectures PGN passent par `_withEngineSnapshot`.
 - `Chess.fen(pos)` donne la FEN d'une position (`displayedFen()` pour celle affichée).
+- Export de la partie affichée : icône `.moves-export` au bout de la barre de coups (tous les modes), `copyGamePgn` (`pgn.js`) copie `currentGamePgn()` dans le presse-papiers (sinon téléchargement `.pgn`) ; en-têtes SetUp / FEN si la partie ne part pas de la position initiale.
 - PGN (`pgn.js`) : les numéros de coup sont lus. Un numéro qui revient en arrière (`12. Cf3 Cd7 12... Cf6`) ouvre une **variante implicite** (`implicit: true`), comme des parenthèses.
 - Icônes : le sprite `_ICONS` (`icons.js`) ; ne renommez pas une icône sans ses usages (`tests/icons.test.js` vérifie chaque `#i-…` et `ico(…)`).
 - Un seul nom global par script (de préférence un objet, comme `Chess`, `EG`, `SyncModel`) : `npm test` refuse un nom déclaré deux fois.

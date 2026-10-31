@@ -595,6 +595,14 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 @media (hover: hover) { #moves-bar .move-token:hover { background: var(--accent-soft); } }
 @media (hover: hover) { #moves-bar .move-token.active:hover { background: var(--accent); } }
 #moves-bar.locked .move-token { cursor: default; }
+/* Exporter la partie (copyGamePgn) : icône discrète au bout de la barre de coups, cible de 44 px. */
+.moves-export { position: relative; margin-left: auto; flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0;
+    border: 0; border-radius: 8px; background: none; color: var(--text-dim); cursor: pointer; transition: background-color .15s, color .15s; }
+.moves-export::after { content: ''; position: absolute; inset: -8px; }
+.moves-export .ico { width: 15px; height: 15px; }
+.moves-export.is-done { color: var(--ok); }
+@media (hover: hover) { .moves-export:hover { background: var(--surface-hover); color: var(--text); } }
+.moves-export:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 @media (hover: hover) { #moves-bar.locked .move-token:hover { background: none; } }
 @media (hover: hover) { #moves-bar.locked .move-token.active:hover { background: var(--accent); } }
 
@@ -1663,6 +1671,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     .side-panel:not(.open) .eg-theory-box { display: none !important; }
     .side-panel:not(.open) .moves-bar.hidden { display: flex !important; }
     .side-panel:not(.open) .moves-bar { position: relative; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .side-panel:not(.open) .moves-export { position: sticky; right: -12px; background: var(--surface); box-shadow: -10px 0 10px var(--surface); }
     .side-panel:not(.open) .moves-bar::-webkit-scrollbar { display: none; }
 
     /* Ouvert : feuille qui monte du bas de l'écran */

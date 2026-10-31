@@ -162,6 +162,8 @@ function _paintMovesBar(active) {
         if (i % 2 === 0) html += `<span class="move-num">${Math.floor(i / 2) + 1}.</span> `;
         html += `<span class="move-token${i === active ? ' active' : ''}" data-i="${i}">${formatSan(m.san, i % 2 ? 'b' : 'w')}</span> `;
     });
+    // Exporter la partie affichée (pgn.js, copyGamePgn) : discret, au bout de la ligne.
+    html += `<button type="button" class="moves-export" data-action="copyGamePgn" title="Copier la partie en PGN" aria-label="Copier la partie en PGN">${ico('download')}</button>`;
     bar.innerHTML = html;
     const cur = bar.querySelector('.move-token.active');
     if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2;   // ligne défilante (mobile)

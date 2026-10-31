@@ -374,3 +374,51 @@ function exportPgn() {
     URL.revokeObjectURL(url);
     if (skipped) setTimeout(() => alert(`${skipped} coup(s) sans ligne connue depuis la position de départ n'ont pas pu être exportés.`), 50);
 }
+
+// ─── EXPORT DE LA PARTIE AFFICHÉE ─────────────────────────────────────────────
+// Bouton discret au bout de la barre de coups (Jouer, Entraînement, Analyse, Finales) : la ligne jouée en PGN,
+// copiée dans le presse-papiers ; sans presse-papiers, téléchargée en .pgn. Partie ne partant pas de la position
+// initiale (contre-la-montre, finales) : en-têtes SetUp / FEN.
+const GAME_PGN_EVENTS = { play: 'Jouer', training: 'Entraînement', analysis: 'Analyse', endgame: 'Finales', preview: 'Statistiques' };
+
+function currentGamePgn() {
+    if (!moveHistory.length) return '';
+    const first = moveHistory[0];
+    const fen = Chess.fen({ board: first.boardBefore, turn: first.turnBefore, castling: first.castlingBefore, ep: first.epBefore });
+    const fromStart = fen.split(' ').slice(0, 4).join(' ') === INIT_FEN.split(' ').slice(0, 4).join(' ');
+    const d = new Date(), date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    const tag = v => String(v).replace(/["\\]/g, '');
+    const me = gameMode === 'endgame' ? 'Moi' : tag(currentRepertoire);
+    let moves = '';
+    moveHistory.forEach((m, i) => {
+        const white = m.turnBefore === 'w', num = Math.floor(i / 2) + 1;
+        if (white) moves += `${num}. `;
+        else if (i === 0) moves += '1... ';
+        moves += m.san + ' ';
+    });
+    return `[Event "Chays Trainer · ${GAME_PGN_EVENTS[gameMode] || 'Partie'}"]\n[Site "Chays Trainer"]\n[Date "${date}"]\n` +
+        `[White "${playerColor === 'w' ? me : '?'}"]\n[Black "${playerColor === 'b' ? me : '?'}"]\n[Result "*"]\n` +
+        (fromStart ? '' : `[SetUp "1"]\n[FEN "${fen}"]\n`) + '\n' + _pgnWrap(moves + '*') + '\n';
+}
+
+function copyGamePgn(btn) {
+    const pgn = currentGamePgn();
+    if (!pgn) return;
+    const done = ok => {
+        if (btn && btn.isConnected) {
+            btn.classList.add('is-done');
+            btn.innerHTML = ico(ok ? 'check' : 'download');
+            setTimeout(() => { if (btn.isConnected) { btn.classList.remove('is-done'); btn.innerHTML = ico('download'); } }, 1600);
+        }
+        if (typeof AccountUI !== 'undefined' && AccountUI.notify) AccountUI.notify(ok ? 'Partie copiée en PGN' : 'Partie téléchargée en PGN');
+    };
+    const download = () => {
+        const url = URL.createObjectURL(new Blob([pgn], { type: 'application/x-chess-pgn' })), a = document.createElement('a');
+        a.href = url; a.download = `Partie_${new Date().toISOString().slice(0, 10)}.pgn`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        done(false);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pgn).then(() => done(true), download);
+    else download();
+}
+registerActions({ copyGamePgn: (arg, el) => copyGamePgn(el) });
