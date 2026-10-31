@@ -61,12 +61,13 @@ async function boot() {
         trainingState.lastSummary = { kind: 'due', label: 'Révision du jour', minutes: 4, total: rows.length, ok: rows.filter(r => r.ok).length, rows, returnTab: 'training' };
     })()`);
     const render = () => { w.eval(`_trFocus = null; initTraining()`); return $('#training-panel'); };
-    const primaries = () => $$('#training-panel .btn-primary');
+    const primaries = () => $$('#training-panel .btn-primary, #training-panel .trr-next-row.is-primary');   // « Ensuite » : la première suite pleine
 
-    await t('_trPrimary : dues, sinon erreurs de la dernière séance, sinon l\'exercice mis en avant, sinon Points faibles', () => {
+    await t('_trPrimary : erreurs de la dernière séance, sinon dues, sinon l\'exercice mis en avant, sinon Points faibles', () => {
         const P = s => w.eval(`_trPrimary(${JSON.stringify(s)})`);
         const all = { weak: true, unsure: true, timed: true, free: true };
-        assert.strictEqual(P({ due: 4, retry: 2, focus: 'unsure', avail: all }), 'due');
+        assert.strictEqual(P({ due: 4, retry: 2, focus: 'unsure', avail: all }), 'retry', 'erreurs fraîches d\'abord, comme la capsule Suite');
+        assert.strictEqual(P({ due: 4, retry: 0, focus: 'unsure', avail: all }), 'due');
         assert.strictEqual(P({ due: 0, retry: 2, focus: 'unsure', avail: all }), 'retry');
         assert.strictEqual(P({ due: 0, retry: 0, focus: 'unsure', avail: all }), 'unsure');
         assert.strictEqual(P({ due: 0, retry: 0, focus: null, avail: all }), 'weak');
@@ -89,8 +90,10 @@ async function boot() {
         summary(2);
         render();
         assert.strictEqual(primaries().length, 1, 'dues + erreurs : un seul bouton plein');
-        assert.strictEqual(primaries()[0].dataset.arg, 'due');
-        assert($('[data-action="trainingRetry"]').classList.contains('btn-soft'), '« Revoir les erreurs » tonal quand il n\'est pas l\'action principale');
+        assert.strictEqual(primaries()[0].dataset.action, 'trainingRetry', 'erreurs fraîches d\'abord : première suite de « Ensuite »');
+        assert($('#training-panel .trr-day [data-arg="due"]').classList.contains('btn-soft'), '« Commencer » de la Révision du jour tonal');
+        const next = $$('.trr-next .trr-next-row').map(b => b.dataset.arg || b.dataset.action);
+        assert.deepStrictEqual(next, ['trainingRetry', 'due'], 'Ensuite : revoir les erreurs, puis la révision du jour');
 
         seed({ dueIn: 3 });
         summary(2);
@@ -113,13 +116,12 @@ async function boot() {
         assert.strictEqual($$('#training-panel .trx-txt').length, 0);
     });
 
-    await t('« Revoir les erreurs » désactivé avec une raison quand rien n\'est à revoir', () => {
+    await t('« Ensuite » sans erreur ni position due : aucune suite inutile ; capsule Suite cachée ou objectif', () => {
         seed({ dueIn: 3 });
         summary(0);
         render();
-        const b = $('[data-action="trainingRetry"]');
-        assert(b.disabled && b.title, 'désactivé, avec title');
-        assert(!b.classList.contains('btn-primary'));
+        assert(!$('[data-action="trainingRetry"]'), 'rien à revoir : pas de bouton « Revoir »');
+        assert.strictEqual($$('.trr-next').length, 0);
     });
 
     await t('bilan : l\'anneau reflète réussites du premier coup / total, puces d\'erreurs et de niveaux', () => {
@@ -260,6 +262,44 @@ async function boot() {
         render();
         assert($('.trr.is-empty #trr-stage.is-empty .st-mini'), 'répertoire vide : position de départ en retrait');
         assert($('.trr-empty [data-action="homeImportPgn"].btn-soft'), 'Importer un PGN en action tonale');
+    });
+
+    await t('capsule Suite : erreurs du bilan, sinon révisions, sinon nouveautés ou objectif ; cachée sans rien à proposer', () => {
+        const chip = () => $('#suite-slot .suite-chip'), slot = $('#suite-slot');
+        w.eval(`goHome('training')`);
+        seed({ dueIn: -1 });
+        summary(2);
+        w.eval('Suite.refresh()');
+        assert(!slot.hidden && chip().classList.contains('is-retry'), 'bilan avec erreurs');
+        assert.strictEqual(chip().dataset.action, 'suiteRetry');
+        assert(/Revoir 2 erreurs/.test(chip().textContent));
+        w.eval(`trainingState.lastSummary = null; Suite.refresh()`);
+        assert(chip().classList.contains('is-due') && /3 à réviser/.test(chip().textContent), 'positions dues : ' + chip().textContent);
+        assert.strictEqual(chip().dataset.action, 'suiteDue');
+        seed({ dueIn: 3 });
+        w.eval(`dataStore.setJSON(ACTIVITY_KEY, {}); Suite.refresh()`);
+        assert(slot.hidden && !chip(), 'rien à proposer : cachée');
+        w.eval(`dataStore.setJSON(ACTIVITY_KEY, { [dayStamp(Date.now())]: { a: appSettings.dailyGoal, f: 0 } }); Suite.refresh()`);
+        assert(chip().classList.contains('is-done'), 'objectif atteint');
+        w.eval(`dataStore.setJSON(ACTIVITY_KEY, {})`);
+    });
+
+    await t('capsule Suite en séance : position et série sans faute ; objectif du jour annoncé une seule fois', () => {
+        seed({ dueIn: -1 });
+        w.eval(`startDailyReview()`);
+        const chip = () => $('#suite-slot .suite-chip');
+        assert(chip().classList.contains('is-live') && /1 \/ 3/.test(chip().textContent), 'séance : ' + chip().textContent);
+        assert.strictEqual(chip().tagName, 'SPAN', 'en séance, rien à cliquer');
+        w.eval(`trainingState.combo = 4; _renderSessionBar()`);
+        assert(/×4/.test(chip().textContent), 'série dans la capsule');
+        assert(/×4 sans faute/.test($('#tr-progress').textContent), 'série dans la barre de séance');
+        w.eval(`window.__toasts = []; AccountUI.notify = m => window.__toasts.push(m);
+                dataStore.setJSON(ACTIVITY_KEY, { [dayStamp(Date.now())]: { a: appSettings.dailyGoal, f: 0 } });
+                Suite.afterAnswer(); Suite.afterAnswer();`);
+        const toasts = w.eval('window.__toasts');
+        assert.strictEqual(toasts.length, 1, 'une seule annonce');
+        assert(/Objectif du jour atteint/.test(toasts[0]));
+        w.eval(`stopTraining(); trainingState.session = null; dataStore.setJSON(ACTIVITY_KEY, {}); goHome('training')`);
     });
 
     assert.deepStrictEqual(errors, []);

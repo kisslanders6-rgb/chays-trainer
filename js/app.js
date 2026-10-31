@@ -190,6 +190,7 @@ function _homeForecastHTML(fc, now) {
 const _homeLineBefore = path => _lineTail(path.slice(0, -1));
 
 function renderHomeSummary() {
+    if (typeof Suite !== 'undefined') Suite.refresh();
     const host = document.getElementById('hp-today');
     if (!host) return;
     const now = Date.now(), pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
@@ -372,6 +373,7 @@ function applyModeUI() {
     });
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
     if (document.getElementById('topnav-tabs-setup').classList.contains('in-game')) _gameTabs(true);     // onglet du mode
+    if (typeof Suite !== 'undefined') Suite.refresh();
 }
 
 // Affiche l'écran de jeu (commun aux modes jouer / aperçu / entraînement).

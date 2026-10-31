@@ -496,3 +496,42 @@
     .hp-side, .hp-pick, .btn.btn-primary.hp-cta { transition: none; }
     .hp-side:hover, .hp-pick:hover { transform: none; }
 }
+
+/* ─── CAPSULE « SUITE » (suite.js) ─────────────────────────────────────────────
+   La prochaine chose à faire, au même endroit sur tous les écrans ; en séance, la progression et la série.
+   Libellé complet à partir de 1100 px, court en dessous, anneau seul sur téléphone ; cachée en partie sur téléphone
+   (la barre de séance et la barre du haut de l'écran de jeu suffisent). */
+.suite-slot { display: flex; min-width: 0; }
+.suite-slot[hidden] { display: none; }
+.suite-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; max-width: 320px; padding: 0 10px 0 6px; border-radius: 999px;
+    border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--text); font: 600 13px/1 var(--font-sans); white-space: nowrap;
+    cursor: pointer; transition: background-color .16s, border-color .16s, transform .16s; }
+.suite-chip .ring { flex: none; }
+.suite-chip .ring-txt { display: none; }
+.suite-chip > .ico { width: 15px; height: 15px; flex: none; color: var(--text-muted); }
+.suite-k { color: var(--text-muted); font-weight: 600; }
+.suite-k::after { content: ' ·'; }
+.suite-l, .suite-s { overflow: hidden; text-overflow: ellipsis; }
+.suite-s { display: none; }
+.suite-combo { padding: 3px 7px; border-radius: 999px; background: color-mix(in oklab, var(--accent) 22%, transparent); color: var(--accent); font-size: 12px; }
+.suite-chip.is-live { cursor: default; }
+.suite-chip.is-retry { border-color: color-mix(in oklab, var(--err) 45%, var(--border)); background: color-mix(in oklab, var(--err) 10%, var(--surface)); }
+.suite-chip.is-done { border-color: color-mix(in oklab, var(--ok) 45%, var(--border)); background: color-mix(in oklab, var(--ok) 10%, var(--surface)); }
+@media (hover: hover) { button.suite-chip:hover { border-color: var(--accent); } }
+button.suite-chip:active { transform: scale(.97); }
+.suite-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.suite-chip.is-cheer { animation: suiteCheer .7s var(--ease-out, ease-out); }
+@keyframes suiteCheer { 0% { transform: scale(1); } 35% { transform: scale(1.08); box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 25%, transparent); } 100% { transform: scale(1); } }
+@media (max-width: 1099px) { .suite-k, .suite-l { display: none; } .suite-s { display: inline; } }
+@media (max-width: 599px) {
+    .suite-chip { height: 38px; gap: 6px; padding: 0 10px 0 6px; font-size: 12.5px; }
+    .suite-chip > .ico { display: none; }
+    .suite-slot.in-game { display: none; }
+}
+@media (max-width: 399px) {
+    .suite-s { display: none; }
+    .suite-chip { padding: 0 4px; }
+    .suite-chip .ring { --ring-size: 30px; }
+    .suite-chip .ring-txt { display: grid; }
+    .suite-chip .ring-txt b { font-size: 12px; }
+}

@@ -233,6 +233,8 @@
             <!-- Actions de la barre du haut : une seule pilule segmentée (css/home.css). Le bouton Compte
                  y est inséré en premier par accountUI.js. -->
             <div class="topnav-right">
+                <!-- Capsule « Suite » : la prochaine chose à faire, ou la séance en cours (suite.js) -->
+                <div class="suite-slot" id="suite-slot" hidden></div>
                 <div class="topnav-pill" role="toolbar" aria-label="Compte et réglages">
                 <button class="theme-toggle" data-backup-dot onclick="showSettings()" title="Paramètres" aria-label="Paramètres">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -684,6 +686,7 @@
 <script src="js/modules/stats/stats.js"></script>
 <script src="js/modules/training/training.js"></script>
 <script src="js/modules/training/trainingUI.js"></script>
+<script src="js/modules/training/suite.js"></script>
 <script src="js/modules/endgame/egCore.js"></script>
 <script src="js/modules/endgame/egExercises.js"></script>
 <script src="js/modules/endgame/egJudge.js"></script>

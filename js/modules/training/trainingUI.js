@@ -8,7 +8,8 @@
  *     « Révision du jour » (carte Velours : nombre dû, durée estimée, 7 prochains jours), puis la liste des
  *     exercices (Points faibles, Ligne complète, À confirmer, Contre-la-montre, Mode libre et ses réglages)
  *     et la maîtrise par couleur.
- *   - Un seul bouton plein, choisi par _trPrimary : positions à réviser aujourd'hui (reviewPlan), sinon erreurs de la dernière séance,
+ *   - Un seul bouton plein, choisi par _trPrimary : erreurs de la séance qui vient de finir (« Ensuite » du bilan), sinon positions
+ *     à réviser aujourd'hui (reviewPlan),
  *     sinon l'exercice mis en avant (_trFocus), sinon Points faibles. Les autres actions sont tonales.
  *   - Filtre d'ouverture : les exercices ne portent que sur les positions de cette ouverture, jusqu'à ce
  *     qu'il soit retiré.
@@ -82,6 +83,9 @@ function _trOpenings() {
 // Révisions prévues sur 7 jours pour la portée affichée (programme du répertoire, reviewPlan : les nouvelles
 // positions y sont étalées au rythme de l'objectif quotidien).
 const _trInScope = rows => { const ids = new Set(rows.map(r => r.color + '|' + r.key)); return (c, k) => ids.has(c + '|' + k); };
+// Nouveautés à traiter (journal des parties) : proposées après un bilan.
+const _trNews = () => (typeof HomePanels !== 'undefined' ? HomePanels.novelties().length : 0);
+
 function _trForecast(rows, now, plan = reviewPlan(currentRepertoire, now)) {
     return plan.forecast(_trInScope(rows), 7).map((n, i) => ({ t: _dayStart(now, i), n }));
 }
@@ -89,12 +93,12 @@ function _trForecast(rows, now, plan = reviewPlan(currentRepertoire, now)) {
 // ─── ACTION PRINCIPALE ────────────────────────────────────────────────────────
 // Un seul bouton plein dans le menu. state : { due, retry, focus, avail: { weak, unsure, timed, free } }
 // (nombres de positions à réviser aujourd'hui, d'erreurs de la dernière séance, exercice mis en avant, exercices disponibles).
-// Renvoie 'due', 'retry', l'exercice mis en avant, 'weak', un autre exercice disponible, ou null.
+// Comme la capsule « Suite » : erreurs du bilan d'abord, puis révisions. Renvoie 'retry', 'due', l'exercice mis en avant, 'weak', un autre exercice disponible, ou null.
 const TRAIN_PRIMARY_KINDS = ['weak', 'unsure', 'timed', 'free'];
 function _trPrimary(state) {
     const { due = 0, retry = 0, focus = null, avail = {} } = state || {};
+    if (retry > 0) return 'retry';                      // erreurs de la séance qui vient de finir : pendant que c'est frais
     if (due > 0) return 'due';
-    if (retry > 0) return 'retry';
     if (focus && TRAIN_PRIMARY_KINDS.includes(focus) && avail[focus]) return focus;
     return TRAIN_PRIMARY_KINDS.find(k => avail[k]) || null;
 }
@@ -107,7 +111,24 @@ const _trBtn = (primary, action, arg, label, icon, extra = '') =>
 // Anneau du premier coup, puces (erreurs, niveaux montés, descendus), actions, puis la liste « avant → après »
 // (repliée sur téléphone, dépliée sur bureau).
 
-function _trSummaryHTML(s, primary) {
+// « Ensuite » : jusqu'à trois suites, la première pleine quand le bilan porte l'action principale.
+// next : { due, minutes, news } (positions à réviser aujourd'hui, nouveautés à traiter).
+function _trNextItems(nMiss, next = {}) {
+    const out = [];
+    if (nMiss) out.push({ action: 'trainingRetry', icon: 'rotate-ccw', label: nMiss > 1 ? `Revoir les ${nMiss} erreurs` : 'Revoir l’erreur', meta: 'Tout de suite, pendant que c’est frais', tone: 'err' });
+    if (next.due) out.push({ action: 'trainingEx', arg: 'due', icon: 'play', label: 'Révision du jour', meta: `${next.due} à réviser · ≈ ${next.minutes} min`, tone: 'accent' });
+    if (next.news) out.push({ action: 'suiteNews', icon: 'folder-open', label: next.news > 1 ? `Répondre à ${next.news} nouveautés` : 'Répondre à une nouveauté', meta: 'Coups adverses vus dans vos parties', tone: 'new' });
+    return out.slice(0, 3);
+}
+function _trNextHTML(items, primary) {
+    if (!items.length) return '';
+    return `<div class="trr-next" role="group" aria-label="Ensuite"><span class="st-eyebrow">Ensuite</span>${items.map((it, i) => `
+        <button type="button" class="trr-next-row${primary && i === 0 ? ' is-primary' : ''}" data-action="${it.action}"${it.arg ? ` data-arg="${it.arg}"` : ''} style="--c:var(--${it.tone === 'accent' ? 'accent' : it.tone})">
+            <span class="trr-ic">${ico(it.icon)}</span><span class="trr-t"><b>${it.label}</b><small>${it.meta}</small></span>${ico('chevron-right')}
+        </button>`).join('')}</div>`;
+}
+
+function _trSummaryHTML(s, primary, next) {
     if (!s) return '';
     const side = r => r.color === 'w' ? 'Blancs' : 'Noirs';
     const where = r => { const op = r.e.path ? openingNameOf(r.e.path) : null; return side(r) + (op ? ' · ' + escapeHtml(op.name) : ''); };
@@ -123,16 +144,17 @@ function _trSummaryHTML(s, primary) {
     const ring = timed
         ? Ring.html({ value: s.score, max: Math.max(1, s.record, s.score), size: 64, stroke: 6, label: String(s.score), ariaLabel: `${s.score} bons coups, record ${s.record}` })
         : Ring.html({ value: s.ok, max: s.total, size: 64, stroke: 6, label: `${s.ok}/${s.total}`, ariaLabel: `${s.ok} sur ${s.total} du premier coup` });
+    const act = readActivity(), goalHit = (act[dayStamp(Date.now())] || { a: 0 }).a >= appSettings.dailyGoal;
     const badges = [
+        goalHit ? `<span class="vbadge is-accent">${ico('check')}Objectif du jour atteint</span>` : '',
         missed.length ? `<span class="vbadge is-err">${missed.length} à revoir</span>` : '',
         up ? `<span class="vbadge is-ok">${ico('chevron-up')}${up} niveau${up > 1 ? 'x' : ''} monté${up > 1 ? 's' : ''}</span>` : '',
         down ? `<span class="vbadge is-warn">${ico('chevron-down')}${down} descendu${down > 1 ? 's' : ''}</span>` : ''
     ].join('');
     const nMiss = missed.length;
     const acts = timed ? _trBtn(false, 'trainingEx', 'timed', 'Rejouer', 'rotate-ccw')
-        : _trBtn(primary, 'trainingRetry', null, nMiss > 1 ? `Revoir les ${nMiss} erreurs` : 'Revoir l\'erreur', 'rotate-ccw',
-                 nMiss ? '' : ' disabled title="Aucune erreur au premier essai : rien à revoir"')
-          + (s.kind === 'line' ? _trBtn(false, 'trainingReplayLine', null, 'Rejouer la ligne', 'play') : '');
+        : s.kind === 'line' ? _trBtn(false, 'trainingReplayLine', null, 'Rejouer la ligne', 'play') : '';
+    const ensuite = timed ? '' : _trNextHTML(_trNextItems(nMiss, next), primary);
     // Ratées d'abord, puis les niveaux qui ont bougé.
     const rows = s.rows.slice().sort((a, b) => (a.ok - b.ok) || (Math.abs(rank(b.lvAfter) - rank(b.lvBefore)) - Math.abs(rank(a.lvAfter) - rank(a.lvBefore))));
     const list = rows.filter(r => !r.ok || r.lvAfter !== r.lvBefore).slice(0, 12).map(r => `
@@ -148,7 +170,8 @@ function _trSummaryHTML(s, primary) {
                 <button type="button" class="icon-btn trr-close" data-action="trainingCloseSummary" aria-label="Fermer le bilan" title="Fermer le bilan">${ico('x')}</button>
             </div>
             ${badges ? `<div class="trr-badges">${badges}</div>` : ''}
-            <div class="trr-acts">${acts}</div>
+            ${acts ? `<div class="trr-acts">${acts}</div>` : ''}
+            ${ensuite}
             ${list ? `<details class="trr-detail"${wide ? ' open' : ''}><summary>${ico('chevron-down')}<span>Avant → après</span></summary><ul class="trr-moves">${list}</ul></details>` : ''}
         </section>`;
 }
@@ -214,6 +237,7 @@ function _trStep(name, dir) {
 }
 
 function initTraining() {
+    if (typeof Suite !== 'undefined') Suite.refresh();
     const panel = document.getElementById('training-panel');
     if (!panel) return;
 
@@ -237,7 +261,7 @@ function initTraining() {
         _trPreviewKind = 'empty';
         panel.innerHTML = `<div class="trr is-empty${s ? ' has-bilan' : ''}">
             <section class="trr-stage is-empty" id="trr-stage" aria-label="Aperçu de la position">${_trStageHTML('empty')}</section>
-            ${_trSummaryHTML(s, false).replace(/btn-primary/g, 'btn-soft')}
+            ${_trSummaryHTML(s, false, { news: _trNews() })}
             <div class="trr-empty edge-card">
                 <b>Rien à réviser pour l’instant</b>
                 <span>${_trOpening ? 'Aucune position de cette ouverture' : 'Aucune position'}${_trColor === 'mix' ? '' : ` avec les ${_trColor === 'w' ? 'Blancs' : 'Noirs'}`} dans ce répertoire.</span>
@@ -360,7 +384,7 @@ function initTraining() {
     _trPreviewKind = shown;
     const stage = `<section class="trr-stage" id="trr-stage" aria-label="Aperçu de la position">${_trStageHTML(shown)}</section>`;
 
-    panel.innerHTML = `<div class="trr${s ? ' has-bilan' : ''}">${stage}${_trSummaryHTML(s, primary === 'retry')}${hero}${exercises}${mast}</div>`;
+    panel.innerHTML = `<div class="trr${s ? ' has-bilan' : ''}">${stage}${_trSummaryHTML(s, primary === 'retry', { due: due.length, minutes, news: _trNews() })}${hero}${exercises}${mast}</div>`;
     panel.querySelectorAll('[data-focus]').forEach(el => el.classList.toggle('is-preview', el.dataset.focus === shown));
     _trBindPreview(panel);
 }

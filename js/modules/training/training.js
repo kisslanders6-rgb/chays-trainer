@@ -46,6 +46,7 @@ const trainingState = {
     lastSummary: null,      // bilan de la dernière séance, affiché par l'onglet Entraînement
     keyErred: false,        // erreur (ou solution) sur la position posée
     keyLv: null,            // niveau de la position posée avant le coup (bilan : avant → après)
+    combo: 0,               // série en cours de positions réussies du premier coup (séance guidée)
     ctxSkip: null,          // passe la mise en situation en cours
     tick: null              // minuteur du contre-la-montre
 };
@@ -157,6 +158,7 @@ function startSession(opts) {
     trainingState.mixed   = false;
     trainingState.ok      = 0;
     trainingState.lastKey = null;
+    trainingState.combo   = 0;
     gameMode = 'training';
     playerColor = S.kind === 'line' ? S.line.color : S.kind === 'timed' ? (_pickTrainingColor(S.colors) || 'w') : S.items[0].color;
     loadDB();
@@ -222,6 +224,7 @@ function _sessionRecord(key, ok) {
     if (!S.results.has(key)) {
         const e = openingDB[key];
         S.results.set(key, { key, color: playerColor, ok, lvBefore: trainingState.keyLv || (e ? _level(e) : 'unsure') });
+        trainingState.combo = ok ? trainingState.combo + 1 : 0;
         if (ok && S.kind === 'timed') S.score++;
     }
     const it = S.items[S.cur];
@@ -275,6 +278,7 @@ function _endSession(early, stay) {
     _renderSessionBar();
     const back = summary.returnTab;
     if (back === 'training' && (rows.length || !stay)) trainingState.lastSummary = summary;
+    if (typeof Suite !== 'undefined') Suite.refresh();
     if (stay) return;
     if (early || !rows.length) { goHome(back); return; }
     const msg = summary.kind === 'timed' ? `Temps écoulé · ${summary.score} bon${summary.score > 1 ? 's' : ''} coup${summary.score > 1 ? 's' : ''}`
@@ -304,6 +308,7 @@ function quitTraining() {
 // Barre au-dessus de l'échiquier : progression de la séance, ou chrono. Barre fine, compteur « 7 / 18 »
 // en Plex Mono ; sur ordinateur, elle tient dans la marge du haut (aucune hauteur ajoutée à l'échiquier).
 function _renderSessionBar() {
+    if (typeof Suite !== 'undefined') Suite.refresh();
     const el = document.getElementById('tr-progress');
     if (!el) return;
     const S = trainingState.session;
@@ -321,10 +326,10 @@ function _renderSessionBar() {
         return;
     }
     const n = S.items.length, pos = Math.min(n, (S.cur >= 0 ? S.cur : S.i) + 1);
-    const again = S.items.filter(x => x.second && !x.res).length;
+    const again = S.items.filter(x => x.second && !x.res).length, combo = trainingState.combo;
     el.innerHTML = `<div class="tr-prog-bar${n > 40 ? ' dense' : ''}" role="progressbar" aria-label="${escapeHtml(S.label)}" aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="${pos}" aria-valuetext="Position ${pos} sur ${n}">${S.items.map((x, i) =>
         `<i class="${i === S.cur ? 'cur' : x.res === 'ok' ? 'ok' : x.res === 'ko' ? 'ko' : x.res === 'skip' ? 'skip' : x.second ? 'again' : ''}"></i>`).join('')}</div>
-        <div class="tr-prog-l"><span><b class="tr-prog-n">${pos} / ${n}</b> ${escapeHtml(S.label.toLowerCase())}</span><span>${okFirst} du premier coup${again ? ` · ${again} à revoir à la fin` : ''}</span></div>`;
+        <div class="tr-prog-l"><span><b class="tr-prog-n">${pos} / ${n}</b> ${escapeHtml(S.label.toLowerCase())}</span><span>${combo >= 3 ? `<b class="tr-combo">×${combo} sans faute</b> · ` : ''}${okFirst} du premier coup${again ? ` · ${again} à revoir à la fin` : ''}</span></div>`;
 }
 
 // ─── POIDS DE TIRAGE (répétition espacée, sélection probabiliste continue) ──
@@ -715,6 +720,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
             entry.attempts++;
             recordReview(entry, true);
             saveDB();
+            if (typeof Suite !== 'undefined') Suite.afterAnswer();
             const after = Math.round(100 * entry.failures / entry.attempts);
             msg    = '✓ Bien joué !';
             detail = entry.failures === 0 ? 'Toujours à 100 % de réussite.' : `Taux d'erreur : ${before} % → ${after} %`;
@@ -730,6 +736,8 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         entry.failures++;
         recordReview(entry, false);
         saveDB();
+        if (!trainingState.keyErred) trainingState.combo = 0;
+        if (typeof Suite !== 'undefined') Suite.afterAnswer();
         if (!trainingState.keyErred) _sessionMistake(key);
         trainingState.keyErred = true;
         const pct = Math.round(100 * entry.failures / entry.attempts);
