@@ -34,10 +34,11 @@
                 // Aucun choix : Noyer pour une nouvelle installation (une installation antérieure garde ses défauts, cf. settings.js)
                 if (!b && (localStorage.getItem('chessTrainer_looksDefaults') || !(localStorage.getItem('chessTrainer_repertoires') || localStorage.getItem('chessTrainer_settings')))) b = 'walnut';
                 if (typeof b === 'string' && /^[a-z]+$/.test(b)) d.setAttribute('data-board', b);
-                var g = p.darkBg && p.darkBg.v;       // fond du mode sombre (gris neutre si aucun choix)
-                d.setAttribute('data-dark', typeof g === 'string' && /^[a-z]+$/.test(g) ? g : 'neutral');
+                var g = p.darkBg && p.darkBg.v;       // ambiance (teinte de l'échiquier si aucun choix)
+                d.setAttribute('data-dark', typeof g === 'string' && /^[a-z]+$/.test(g) ? g : 'board');
                 // Barre système dès le lancement en sombre : le fond choisi (mêmes valeurs que --bg dans style.css,
-                // vérifié par tests/theme.test.js). En clair, themeColor.js la calcule à partir de l'accent.
+                // vérifié par tests/theme.test.js ; « Échiquier », calculé, prend le gris neutre jusqu'à themeColor.js).
+                // En clair, themeColor.js la calcule à partir de l'accent.
                 var bars = { neutral: '#121314', night: '#0e141c', oled: '#000000', green: '#0f1711' };
                 var tm = document.querySelector('meta[name="theme-color"]');
                 if (tm && d.getAttribute('data-theme') === 'dark') tm.content = bars[d.getAttribute('data-dark')] || bars.neutral;

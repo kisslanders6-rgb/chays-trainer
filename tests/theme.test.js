@@ -60,12 +60,58 @@ const base = varsOf('[data-theme="dark"]');
 const DARK_BGS = { neutral: base };
 for (const id of ['night', 'oled', 'green']) DARK_BGS[id] = Object.assign({}, base, varsOf(`html[data-theme="dark"][data-dark="${id}"]`));
 
-t('fonds sombres : les quatre palettes lues, gris neutre par défaut (plus de vert hors « Nocturne »)', () => {
+// Jours des ambiances : le clair « Papier » (:root) et ses variantes data-dark (style.css, « AMBIANCES »).
+const lightBase = varsOf(':root, [data-theme="light"]');
+const LIGHTS = { green: lightBase };
+for (const id of ['neutral', 'night', 'oled']) LIGHTS[id] = Object.assign({}, lightBase, varsOf(`html:not([data-theme="dark"])[data-dark="${id}"]`));
+
+t('ambiances : jour et nuit lus pour les quatre palettes fixes, « Échiquier » par défaut', () => {
     assert.strictEqual(base.bg, '#121314');
     assert.strictEqual(DARK_BGS.green.bg, '#0f1711');
+    assert.strictEqual(LIGHTS.green.bg, '#f4f2eb');
+    assert.strictEqual(LIGHTS.neutral.bg, '#f3f3f1');
     const settings = fs.readFileSync('js/core/settings.js', 'utf8');
-    assert(/const DARK_BGS\s*=\s*\['neutral', 'night', 'oled', 'green'\]/.test(settings), 'liste des fonds dans settings.js');
-    assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'neutral' \}/.test(settings));
+    assert(/const DARK_BGS\s*=\s*\['board', 'neutral', 'green', 'night', 'oled'\]/.test(settings), 'liste des ambiances dans settings.js');
+    assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'board' \}/.test(settings));
+    assert(/data-dark', typeof g === 'string' && \/\^\[a-z\]\+\$\/\.test\(g\) \? g : 'board'\)/.test(fs.readFileSync('index.html', 'utf8')), 'script de tête : Échiquier par défaut');
+});
+
+t('ambiances : textes lisibles sur les jours (cartes, fenêtres, fond)', () => {
+    const bad = [];
+    for (const [id, v] of Object.entries(LIGHTS)) for (const k of ['surface', 'bg-elevated', 'bg']) {
+        for (const tk of ['text-muted', 'text-dim']) { const c = contrast(hex(v[tk]), hex(v[k])); if (c < 4.5) bad.push(`${id} ${tk}/${k} ${c.toFixed(2)}`); }
+        if (contrast(hex(v.text), hex(v[k])) < 7) bad.push(`${id} texte/${k}`);
+    }
+    assert.strictEqual(bad.join(' ; '), '');
+});
+
+// « Échiquier » : oklch(from var(--board-dark) L min(calc(c * k), max) h), recopié de style.css.
+const TINT = {
+    light: { bg: [.955, .2, .016], 'bg-elevated': [.99, .08, .006], surface: [.99, .08, .006], text: [.24, .3, .02], 'text-muted': [.45, .3, .025], 'text-dim': [.5, .3, .025] },
+    dark:  { bg: [.185, .28, .016], 'bg-elevated': [.255, .28, .018], surface: [.215, .28, .017], text: [.93, .12, .01], 'text-muted': [.77, .2, .015], 'text-dim': [.67, .2, .015] }
+};
+const tintOf = (d, [L, k, max]) => { const [, C, h] = toLch(d); return fromLch([L, Math.min(C * k, max), h]); };
+t('ambiance « Échiquier » : formules recopiées de style.css', () => {
+    for (const [mode, sel] of [['light', 'html:not([data-theme="dark"])[data-dark="board"]'], ['dark', 'html[data-theme="dark"][data-dark="board"]']]) {
+        const i = css.lastIndexOf(sel + ' {'), body = css.slice(i, css.indexOf('}', i));
+        for (const [k, nums] of Object.entries(TINT[mode])) {
+            const [L, c, max] = nums.map(x => String(x).replace(/^0\./, '.'));
+            assert(body.includes(`--${k}:`) && new RegExp(`--${k}:\\s+oklch\\(from var\\(--board-dark\\) ${L} min\\(calc\\(c \\* ${c}\\), ${max}\\) h\\)`).test(body), `${mode} --${k}`);
+        }
+    }
+});
+t('ambiance « Échiquier » : textes et accent lisibles sur les 13 échiquiers, en clair et en sombre', () => {
+    const bad = [];
+    for (const [b, d0] of Object.entries(boards)) for (const mode of ['light', 'dark']) {
+        const d = hex(d0), v = {}; for (const [k, f] of Object.entries(TINT[mode])) v[k] = tintOf(d, f);
+        for (const k of ['surface', 'bg-elevated', 'bg']) {
+            for (const tk of ['text-muted', 'text-dim']) { const c = contrast(v[tk], v[k]); if (c < 4.5) bad.push(`${b} ${mode} ${tk}/${k} ${c.toFixed(2)}`); }
+            if (contrast(v.text, v[k]) < 7) bad.push(`${b} ${mode} texte/${k}`);
+        }
+        const acc = MODES[mode].ui(d), c = contrast(acc, v.surface);
+        if (c < 4.5) bad.push(`${b} ${mode} accent/carte ${c.toFixed(2)}`);
+    }
+    assert.strictEqual(bad.join(' ; '), '');
 });
 
 t('barre système au lancement (index.html) : mêmes fonds sombres que style.css', () => {
@@ -115,13 +161,14 @@ t('badges de verdict (.vbadge) : texte tiré vers --text, 4,5:1 sur la teinte du
             if (x < 4.5) bad.push(`${id} ${k} sur --${s} ${x.toFixed(2)}`);
         }
     };
-    check('clair', light, .45, { ok: light.ok, err: light.err, warn: light['lv-progress'], new: light.new, muted: light['text-muted'] });
+    for (const [id, v] of Object.entries(LIGHTS))
+        check(`clair ${id}`, v, .45, { ok: light.ok, err: light.err, warn: light['lv-progress'], new: light.new, muted: v['text-muted'] });
     for (const [id, v] of Object.entries(DARK_BGS))
         check(id, v, .72, { ok: base.ok, err: base.err, warn: base['lv-progress'], new: base.new, muted: v['text-muted'] });
     assert.strictEqual(bad.join(' ; '), '');
 });
 
-const CASES = [['light', MODES.light]].concat(Object.entries(DARK_BGS).map(([id, v]) =>
+const CASES = Object.entries(LIGHTS).map(([id, v]) => [`clair ${id}`, Object.assign({}, MODES.light, { surface: hex(v.surface), bg: hex(v.bg) })]).concat(Object.entries(DARK_BGS).map(([id, v]) =>
     [`sombre ${id}`, Object.assign({}, MODES.dark, { surface: hex(v.surface), bg: hex(v.bg) })]));
 for (const [mode, M] of CASES) {
     t(`${mode} : texte des boutons sur l'accent, accent comme texte sur les cartes et repères ≥ 4,5:1`, () => {

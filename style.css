@@ -53,9 +53,9 @@
 /* ─── THÈME SOMBRE ────────────────────────────────────────────────────────────
    Élévation : fond (--bg) < cartes (--surface) < fenêtres et menus (--bg-elevated), chaque niveau
    un cran plus clair ; bordures à faible contraste ; reflet clair d'un pixel en haut des surfaces.
-   Fond au choix (préférence darkBg → data-dark sur <html>) : gris neutre (ci-dessous, par défaut),
-   bleu nuit, noir OLED ou vert « Nocturne ». Les accents restent dérivés de l'échiquier (HARMONISATION) ;
-   contrastes vérifiés pour chaque fond × échiquier par tests/theme.test.js. */
+   Ambiance (préférence darkBg → data-dark sur <html>, voir « AMBIANCES » plus bas) : chaque choix a son jour
+   et sa nuit. Ce bloc est la nuit « Neutre » ; les autres le surchargent. Les accents restent dérivés de
+   l'échiquier (HARMONISATION) ; contrastes vérifiés pour chaque ambiance × échiquier par tests/theme.test.js. */
 [data-theme="dark"] {
     --bg: #121314;
     --bg-elevated: #1f2123;
@@ -112,6 +112,74 @@ html[data-theme="dark"][data-dark="green"] {
     --text: #ece6d6; --text-muted: #a9b2a0; --text-dim: #8b9682; --lv-unsure: #6f7a68;
 }
 [data-theme="dark"] .overlay { background: var(--overlay); }
+
+/* ─── AMBIANCES (préférence darkBg, data-dark) ──────────────────────────────
+   Chaque ambiance apparie un jour et une nuit, pour que le clair et le sombre se répondent :
+     board    Échiquier : papier et ardoise teintés par la case sombre (par défaut)
+     neutral  Neutre    : blanc cassé / gris neutre
+     green    Papier    : papier crème (le clair d'origine, :root ci-dessus) / vert « Nocturne »
+     night    Brume     : brume bleutée / bleu nuit
+     oled     Encre     : blanc / noir OLED
+   Le clair « Papier » est le bloc :root : une valeur inconnue y retombe. */
+html:not([data-theme="dark"])[data-dark="neutral"] {
+    --bg: #f3f3f1; --bg-elevated: #ffffff; --bg-inset: #e8e8e5; --surface: #ffffff; --surface-hover: #f7f7f5;
+    --border: #e1e1de; --border-strong: #c9c9c4;
+    --text: #1c1d1f; --text-muted: #5b5e63; --text-dim: #62656a; --lv-unsure: #a2a4a8;
+}
+html:not([data-theme="dark"])[data-dark="night"] {
+    --bg: #edf0f4; --bg-elevated: #fbfcfe; --bg-inset: #e1e6ed; --surface: #fbfcfe; --surface-hover: #f3f6f9;
+    --border: #d9dee6; --border-strong: #bec6d2;
+    --text: #1a2230; --text-muted: #556073; --text-dim: #5c6779; --lv-unsure: #9ea7b5;
+}
+html:not([data-theme="dark"])[data-dark="oled"] {
+    --bg: #f6f6f6; --bg-elevated: #ffffff; --bg-inset: #ebebeb; --surface: #ffffff; --surface-hover: #f6f6f6;
+    --border: #e2e2e2; --border-strong: #c4c4c4;
+    --text: #111111; --text-muted: #555555; --text-dim: #5e5e5e; --lv-unsure: #a3a3a3;
+}
+/* Échiquier : clarté fixe, chroma tirée de la case sombre et plafonnée (un échiquier gris reste neutre).
+   Repli Safari 16 (pas d'oklch(from …)) : la palette Neutre, fond et cartes à peine teintés. */
+html:not([data-theme="dark"])[data-dark="board"] {
+    --bg: color-mix(in oklab, var(--board-dark) 7%, #f3f3f1); --bg-elevated: color-mix(in oklab, var(--board-dark) 3%, #ffffff);
+    --bg-inset: color-mix(in oklab, var(--board-dark) 9%, #e8e8e5);
+    --surface: color-mix(in oklab, var(--board-dark) 3%, #ffffff); --surface-hover: color-mix(in oklab, var(--board-dark) 5%, #f7f7f5);
+    --border: color-mix(in oklab, var(--board-dark) 10%, #e1e1de); --border-strong: color-mix(in oklab, var(--board-dark) 12%, #c9c9c4);
+    --text: #1c1d1f; --text-muted: #5b5e63; --text-dim: #62656a; --lv-unsure: #a2a4a8;
+}
+html[data-theme="dark"][data-dark="board"] {
+    --bg: color-mix(in oklab, var(--board-dark) 6%, #121314); --bg-elevated: color-mix(in oklab, var(--board-dark) 6%, #1f2123);
+    --bg-inset: color-mix(in oklab, var(--board-dark) 4%, #0c0d0e);
+    --surface: color-mix(in oklab, var(--board-dark) 6%, #18191b); --surface-hover: color-mix(in oklab, var(--board-dark) 6%, #202225);
+    --border: color-mix(in oklab, var(--board-dark) 8%, #2a2c2f); --border-strong: color-mix(in oklab, var(--board-dark) 8%, #3c3f43);
+}
+@supports (color: light-dark(red, red)) {
+    html:not([data-theme="dark"])[data-dark="board"] {
+        --bg:            oklch(from var(--board-dark) .955 min(calc(c * .2), .016) h);
+        --bg-elevated:   oklch(from var(--board-dark) .99 min(calc(c * .08), .006) h);
+        --bg-inset:      oklch(from var(--board-dark) .925 min(calc(c * .22), .018) h);
+        --surface:       oklch(from var(--board-dark) .99 min(calc(c * .08), .006) h);
+        --surface-hover: oklch(from var(--board-dark) .972 min(calc(c * .15), .012) h);
+        --border:        oklch(from var(--board-dark) .885 min(calc(c * .25), .02) h);
+        --border-strong: oklch(from var(--board-dark) .8 min(calc(c * .3), .025) h);
+        --text:          oklch(from var(--board-dark) .24 min(calc(c * .3), .02) h);
+        --text-muted:    oklch(from var(--board-dark) .45 min(calc(c * .3), .025) h);
+        --text-dim:      oklch(from var(--board-dark) .5 min(calc(c * .3), .025) h);
+        --lv-unsure:     oklch(from var(--board-dark) .72 min(calc(c * .15), .015) h);
+    }
+    html[data-theme="dark"][data-dark="board"] {
+        --bg:            oklch(from var(--board-dark) .185 min(calc(c * .28), .016) h);
+        --bg-elevated:   oklch(from var(--board-dark) .255 min(calc(c * .28), .018) h);
+        --bg-inset:      oklch(from var(--board-dark) .15 min(calc(c * .28), .014) h);
+        --surface:       oklch(from var(--board-dark) .215 min(calc(c * .28), .017) h);
+        --surface-hover: oklch(from var(--board-dark) .245 min(calc(c * .28), .018) h);
+        --border:        oklch(from var(--board-dark) .3 min(calc(c * .3), .02) h);
+        --border-strong: oklch(from var(--board-dark) .37 min(calc(c * .3), .022) h);
+        --overlay:       oklch(from var(--board-dark) .1 min(calc(c * .3), .01) h / .7);
+        --text:          oklch(from var(--board-dark) .93 min(calc(c * .12), .01) h);
+        --text-muted:    oklch(from var(--board-dark) .77 min(calc(c * .2), .015) h);
+        --text-dim:      oklch(from var(--board-dark) .67 min(calc(c * .2), .015) h);
+        --lv-unsure:     oklch(from var(--board-dark) .55 min(calc(c * .15), .012) h);
+    }
+}
 [data-theme="dark"] .panel, [data-theme="dark"] .menu { border-color: var(--border-strong); }
 [data-theme="dark"] #board { box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
 [data-theme="dark"] .btn-primary { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }

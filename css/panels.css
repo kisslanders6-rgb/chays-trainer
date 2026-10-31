@@ -307,15 +307,20 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 #settings-overlay .piece-preview { width: min(84px, 100%); height: auto; }
 #settings-overlay .piece-preview > span { flex: 1; width: auto; height: auto; aspect-ratio: 1; }
 #settings-overlay .arrow-preview { width: min(84px, 100%); height: auto; aspect-ratio: 3 / 2; }
-.pn-bg-sw { display: flex; align-items: flex-end; gap: 4px; width: min(64px, 100%); aspect-ratio: 4 / 3; padding: 6px; border-radius: 8px; border: 1px solid var(--border-strong); background: #121314; }
-.pn-bg-sw i { display: block; flex: 1; height: 55%; border-radius: 4px; background: #18191b; border: 1px solid #2a2c2f; }
-.pn-bg-sw i + i { flex: .5; background: var(--board-dark); border-color: transparent; }
-.pn-bg-opt[data-bg="night"] .pn-bg-sw { background: #0e141c; }
-.pn-bg-opt[data-bg="night"] .pn-bg-sw i:first-child { background: #131b25; border-color: #233041; }
-.pn-bg-opt[data-bg="oled"] .pn-bg-sw { background: #000; }
-.pn-bg-opt[data-bg="oled"] .pn-bg-sw i:first-child { background: #0b0b0b; border-color: #262626; }
-.pn-bg-opt[data-bg="green"] .pn-bg-sw { background: #0f1711; }
-.pn-bg-opt[data-bg="green"] .pn-bg-sw i:first-child { background: #141e16; border-color: #243126; }
+/* Ambiance : moitié jour (--sw-d*) et moitié nuit (--sw-n*), chacune avec une carte et un trait de l'échiquier. */
+.pn-bg-sw { display: flex; width: min(64px, 100%); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-strong);
+    --sw-d: #f3f3f1; --sw-dc: #ffffff; --sw-dl: #e1e1de; --sw-n: #121314; --sw-nc: #18191b; --sw-nl: #2a2c2f; }
+.pn-bg-sw i { position: relative; display: block; flex: 1; background: var(--sw-d); }
+.pn-bg-sw i + i { background: var(--sw-n); }
+.pn-bg-sw i::after { content: ''; position: absolute; inset: 30% 18% 22%; border-radius: 3px; border: 1px solid var(--sw-dl);
+    background: linear-gradient(var(--board-dark) 0 0) 3px calc(100% - 3px) / 45% 3px no-repeat, var(--sw-dc); }
+.pn-bg-sw i + i::after { border-color: var(--sw-nl); background-color: var(--sw-nc); }
+.pn-bg-opt[data-bg="board"] .pn-bg-sw {
+    --sw-d: color-mix(in oklab, var(--board-dark) 12%, #f3f3f1); --sw-dc: color-mix(in oklab, var(--board-dark) 4%, #ffffff); --sw-dl: color-mix(in oklab, var(--board-dark) 20%, #e1e1de);
+    --sw-n: color-mix(in oklab, var(--board-dark) 10%, #121314); --sw-nc: color-mix(in oklab, var(--board-dark) 10%, #18191b); --sw-nl: color-mix(in oklab, var(--board-dark) 14%, #2a2c2f); }
+.pn-bg-opt[data-bg="green"] .pn-bg-sw { --sw-d: #f4f2eb; --sw-dc: #fffdf8; --sw-dl: #e2ddcf; --sw-n: #0f1711; --sw-nc: #141e16; --sw-nl: #243126; }
+.pn-bg-opt[data-bg="night"] .pn-bg-sw { --sw-d: #edf0f4; --sw-dc: #fbfcfe; --sw-dl: #d9dee6; --sw-n: #0e141c; --sw-nc: #131b25; --sw-nl: #233041; }
+.pn-bg-opt[data-bg="oled"] .pn-bg-sw { --sw-d: #f6f6f6; --sw-dc: #ffffff; --sw-dl: #e2e2e2; --sw-n: #000000; --sw-nc: #0b0b0b; --sw-nl: #262626; }
 
 /* Aperçu en direct. Téléphone et fenêtre étroite : en tête, à plat, collant ; large : colonne de droite. */
 .pn-etabli { display: flex; flex-direction: column; gap: 10px; }

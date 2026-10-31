@@ -31,7 +31,9 @@ const SETTINGS_SECTIONS = [
 const _NOTATION_SAMPLE = 'e4 e5 Nf3 Nc6 Bb5';
 const _PREVIEW_ROWS = ['r.bqkbnr', 'pppp.ppp', '..n.....', '.B..p...', '....P...', '.....N..', 'PPPP.PPP', 'RNBQK..R'];
 const _sq = name => ('abcdefgh'.indexOf(name[0])) + 8 * (Number(name[1]) - 1);      // case 0..63 de drawArrows (a1 = 0)
-const DARK_BG_LABELS = { neutral: 'Gris neutre', night: 'Bleu nuit', oled: 'Noir OLED', green: 'Nocturne' };
+const DARK_BG_LABELS = { board: 'Échiquier', neutral: 'Neutre', green: 'Papier', night: 'Brume', oled: 'Encre' };
+// Synonymes pour la recherche : le jour et la nuit de chaque ambiance.
+const DARK_BG_SEARCH = 'ambiance fond teinte gris neutre blanc cassé crème Nocturne vert bleu nuit noir OLED blanc';
 
 // Réglage propre à l'appareil : sa clé est dans LOCAL_PREFS (settings.js), jamais une liste écrite ici.
 const _isLocalPref = key => !!key && Object.prototype.hasOwnProperty.call(LOCAL_PREFS, key);
@@ -47,8 +49,8 @@ function _settingRows() {
             { group: null, kind: 'custom', html: _previewHTML, search: 'aperçu échiquier', preview: true },
             { group: 'Interface', kind: 'seg', key: 'theme', label: 'Mode', tip: '« Système » suit le réglage clair / sombre de l’appareil.',
               opts: [['light', 'Clair'], ['dark', 'Sombre'], ['system', 'Système']], value: themeMode() },
-            { group: 'Interface', kind: 'custom', pref: 'darkBg', label: 'Fond du mode sombre', tip: 'Les accents suivent toujours l’échiquier. Noir OLED : écran éteint derrière l’interface.',
-              html: _darkBgHTML, col: true, search: Object.values(DARK_BG_LABELS).join(' ') },
+            { group: 'Interface', kind: 'custom', pref: 'darkBg', label: 'Ambiance', tip: 'Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.',
+              html: _darkBgHTML, col: true, search: Object.values(DARK_BG_LABELS).join(' ') + ' ' + DARK_BG_SEARCH },
             { group: 'Échiquier', kind: 'custom', pref: 'boardTheme', label: 'Échiquier', tip: 'Les couleurs de l’interface en dérivent.', html: _boardsHTML, col: true,
               search: 'thème ' + BOARD_THEMES.map(id => BOARD_LABELS[id]).join(' ') },
             { group: 'Échiquier', kind: 'toggle', key: 'coords', label: 'Coordonnées', tip: 'Lettres et chiffres des cases.' },
@@ -183,7 +185,7 @@ const BOARD_LABELS = { classic: 'Sauge', leather: 'Cuir vert', wood: 'Bois chaud
                        maple: 'Érable', marble: 'Marbre', tournament: 'Tournoi', cherry: 'Cerisier' };
 // Grilles : data-min (largeur minimale d'une tuile) et data-max (colonnes au plus) règlent PanelKit.balancedCols.
 // 13 échiquiers : 5 + 5 + 3 au téléphone, 7 + 6 sur ordinateur ; 12 pièces : 4 × 3 ou 6 × 2 ; 6 flèches : 3 × 2 ou 6 ; 4 fonds : 4.
-const SETTINGS_GRIDS = { boardTheme: { min: 60, max: 7 }, pieceSet: { min: 76, max: 6 }, arrowStyle: { min: 70, max: 6 }, darkBg: { min: 70, max: 4 } };
+const SETTINGS_GRIDS = { boardTheme: { min: 60, max: 7 }, pieceSet: { min: 76, max: 6 }, arrowStyle: { min: 70, max: 6 }, darkBg: { min: 70, max: 5 } };
 const _grid = (pref, tiles) => `<div class="theme-options" data-grid="${pref}" data-min="${SETTINGS_GRIDS[pref].min}" data-max="${SETTINGS_GRIDS[pref].max}">${tiles}</div>`;
 const _boardsHTML = () => _grid('boardTheme', BOARD_THEMES.map(id =>
     `<button type="button" class="theme-opt${appSettings.boardTheme === id ? ' active' : ''}" data-board="${id}" data-pn="seg" data-key="boardTheme" data-v="${id}" aria-pressed="${appSettings.boardTheme === id}"><span class="theme-swatch"></span>${BOARD_LABELS[id]}</button>`).join(''));

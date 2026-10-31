@@ -19,7 +19,7 @@ const PREFS_KEY       = 'chessTrainer_prefs';
 const BOARD_THEMES    = ['classic', 'leather', 'wood', 'ice', 'night', 'violet', 'walnut', 'stone', 'hache', 'maple', 'marble', 'tournament', 'cherry'];
 const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', 'minimal-warmth', 'fantasy', 'kiwen-suwi', 'cburnett', 'california', 'cardinal', 'celtic', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
 const DEFAULT_PIECE_SET = 'maestro';
-const DARK_BGS        = ['neutral', 'night', 'oled', 'green'];                                         // fonds du mode sombre (style.css)
+const DARK_BGS        = ['board', 'neutral', 'green', 'night', 'oled'];                                // ambiances, jour et nuit appariés (style.css, « AMBIANCES »)
 const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille', 'lichess', 'pinceau', 'fine'];          // cf. annotations.js
 const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé', lichess: 'Lichess', pinceau: 'Pinceau', fine: 'Fine' };
 // 18 avatars : 2 monogrammes, les 6 pièces du jeu actif, 10 pictogrammes au trait (icons.js, « av-… »).
@@ -34,7 +34,7 @@ const _text  = max => v => typeof v === 'string' && v.length <= max;
 // Préférences synchronisées : valeurs admises et valeur par défaut.
 const SYNCED_PREFS = {
     boardTheme: { ok: _oneOf(BOARD_THEMES),    def: 'walnut' },
-    darkBg:     { ok: _oneOf(DARK_BGS),        def: 'neutral' },                        // fond du mode sombre (data-dark)
+    darkBg:     { ok: _oneOf(DARK_BGS),        def: 'board' },                          // ambiance du clair et du sombre (data-dark)
     pieceSet:   { ok: _oneOf(PIECE_SET_IDS),   def: DEFAULT_PIECE_SET },
     arrowStyle: { ok: _oneOf(ARROW_STYLE_IDS), def: ARROW_STYLE_IDS[0] },
     knightArrows: { ok: _bool, def: true },                                             // saut de cavalier en « L »
