@@ -12,6 +12,16 @@ t('portée : clés synchronisées vs locales', () => {
      'chessTrainer.trainingSettings'].forEach(k => assert(!S.isSynced(k), k));
 });
 
+t('descriptions des répertoires : synchronisées, la plus récente l\'emporte, symétrique', () => {
+    const K = 'chessTrainer_repNotes';
+    assert.strictEqual(S.kindOf(K), 'notes');
+    const b = { A: { v: 'avant', at: 1 }, B: { v: 'b', at: 1 } };
+    const l = { A: { v: 'local', at: 5 }, B: { v: 'b', at: 1 } };
+    const r = { A: { v: 'distant', at: 9 } };                          // B effacée de l'autre côté
+    const x = S.merge(K, b, l, r), y = S.merge(K, b, r, l);
+    assert.deepStrictEqual(x, y);
+    assert.deepStrictEqual(x, { A: { v: 'distant', at: 9 } });
+});
 t('compteurs : base + delta local + delta distant', () => {
     const r = S.merge(DB, { p: E('e2e4', 3, 1) }, { p: E('e2e4', 5, 1) }, { p: E('e2e4', 4, 2) });
     assert.strictEqual(r.p.attempts, 6); assert.strictEqual(r.p.failures, 2);

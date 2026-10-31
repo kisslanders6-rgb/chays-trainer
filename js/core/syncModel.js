@@ -6,6 +6,7 @@
  *
  * Unité de synchronisation = une clé de stockage (un « document » JSON).
  *   chessTrainer_repertoires     'list'      noms des répertoires
+ *   chessTrainer_repNotes        'notes'     répertoire → { v: description, at: date } : la plus récente l'emporte
  *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due?, created?, prio? }
  *   openingOpp_{rép}_{couleur}   'opp'       position → [coups UCI adverses connus]
  *   chessTrainer_trash           'trash'     [{ id, type, deletedAt, … }]
@@ -36,6 +37,7 @@ const SyncModel = (function () {
     // ─── Portée ───────────────────────────────────────────────────────────────
     function kindOf(key) {
         if (key === 'chessTrainer_repertoires') return 'list';
+        if (key === 'chessTrainer_repNotes')    return 'notes';
         if (key === 'chessTrainer_trash')       return 'trash';
         if (key === 'chessTrainer_endgames')    return 'endgames';
         if (key === 'chessTrainer_activity')    return 'activity';
@@ -214,7 +216,7 @@ const SyncModel = (function () {
     const mergeRecord = (b, l, r) => Math.max(num(Number(l)), num(Number(r)));
 
     // ─── Point d'entrée ───────────────────────────────────────────────────────
-    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs, games: mergeGames, record: mergeRecord };
+    const MERGERS = { db: mergeDB, opp: mergeOpp, list: mergeList, trash: mergeTrash, endgames: mergeEndgames, activity: mergeActivity, prefs: mergePrefs, notes: mergePrefs, games: mergeGames, record: mergeRecord };
 
     // Valeurs déjà décodées (null = absent). Renvoie la valeur fusionnée (null = supprimée).
     function merge(key, base, local, remote) {

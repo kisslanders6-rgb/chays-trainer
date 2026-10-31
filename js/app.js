@@ -38,6 +38,7 @@ function askText(opts, onOk) {
     document.getElementById('text-ok-btn').textContent = opts.ok || 'OK';
     input.value = opts.value || '';
     input.placeholder = opts.placeholder || '';
+    input.maxLength = opts.max || 60;
     err.textContent = '';
     overlay.classList.remove('hidden');
     input.focus();
@@ -51,7 +52,7 @@ function askText(opts, onOk) {
     form.onsubmit = e => {
         e.preventDefault();
         const v = input.value.trim();
-        const msg = !v ? 'Le nom ne peut pas être vide.' : (opts.validate ? opts.validate(v) : '');
+        const msg = !v && !opts.allowEmpty ? 'Le nom ne peut pas être vide.' : (opts.validate ? opts.validate(v) : '');
         if (msg) { err.textContent = msg; input.focus(); return; }
         close();
         onOk(v);
@@ -201,6 +202,9 @@ function renderHomeSummary() {
 
     // Jouer : position, chiffres et maîtrise par couleur.
     document.getElementById('hp-play-n').textContent = pl(rows.length, 'position', 'positions');
+    const note = repertoireNote(currentRepertoire), desc = document.getElementById('hp-play-desc');
+    desc.hidden = !note;
+    desc.textContent = note;
     ['w', 'b'].forEach(c => {
         const list = side(c), d = list.filter(r => rp.today(r.color, r.key)).length, counts = {};
         document.getElementById('home-meta-' + c).textContent = !list.length ? 'Aucune position'
@@ -290,6 +294,17 @@ function deleteRepertoirePrompt(name) {
     });
 }
 
+// Description du répertoire actif (menu ⋮, ou toucher la description sous « Jouer ») ; vide = effacée.
+function editRepertoireNote() {
+    const name = currentRepertoire;
+    askText({ title: `Description de « ${name} »`, value: repertoireNote(name), placeholder: 'ex : Najdorf avec les Noirs, Italienne avec les Blancs',
+              ok: 'Enregistrer', allowEmpty: true, max: REP_NOTE_MAX }, v => {
+        setRepertoireNote(name, v);
+        renderRepertoireList();
+    });
+}
+registerActions({ editRepNote: editRepertoireNote });
+
 // ─── MENU « ⋮ » DES RÉPERTOIRES (accueil, onglet Jouer) ──────────────────────
 // Regroupe : nouveau répertoire, suppression du répertoire actif, accès à la Corbeille.
 
@@ -301,6 +316,8 @@ function renderRepMenu() {
     document.getElementById('rep-menu-rename-label').textContent =
         isDefault ? 'Renommer (« Général » est protégé)' : `Renommer « ${currentRepertoire} »`;
     document.getElementById('rep-menu-rename').disabled = isDefault;
+    document.getElementById('rep-menu-note-label').textContent =
+        repertoireNote(currentRepertoire) ? 'Modifier la description' : 'Ajouter une description';
     updateTrashBadges();                                  // compteur de la Corbeille
 }
 
@@ -322,6 +339,7 @@ function repMenuAction(action) {
     closeRepMenu();
     if (action === 'new')         createRepertoirePrompt();
     else if (action === 'rename') renameRepertoirePrompt(currentRepertoire);
+    else if (action === 'note')   editRepertoireNote();
     else if (action === 'delete') deleteRepertoirePrompt(currentRepertoire);   // confirmation + protection de « Général »
     else if (action === 'trash')  showTrash();
     else if (action === 'data')   showData();

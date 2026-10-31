@@ -284,6 +284,7 @@
                             <div class="menu hidden" id="rep-menu" role="menu">
                                 <button class="menu-item" role="menuitem" onclick="repMenuAction('new')"><svg class="ico"><use href="#i-plus"/></svg> Nouveau répertoire</button>
                                 <button class="menu-item" id="rep-menu-rename" role="menuitem" onclick="repMenuAction('rename')"><svg class="ico"><use href="#i-pencil"/></svg> <span id="rep-menu-rename-label">Renommer le répertoire</span></button>
+                                <button class="menu-item" id="rep-menu-note" role="menuitem" onclick="repMenuAction('note')"><svg class="ico"><use href="#i-info"/></svg> <span id="rep-menu-note-label">Ajouter une description</span></button>
                                 <button class="menu-item menu-item-danger" id="rep-menu-del" role="menuitem" onclick="repMenuAction('delete')"><svg class="ico"><use href="#i-x"/></svg> <span id="rep-menu-del-label">Supprimer le répertoire</span></button>
                                 <div class="menu-sep"></div>
                                 <button class="menu-item" role="menuitem" onclick="repMenuAction('data')"><svg class="ico"><use href="#i-database"/></svg> Données (import / export)</button>
@@ -295,6 +296,7 @@
                     <section class="hp-today" id="hp-today" aria-label="Aujourd'hui" data-stagger></section>
                     <section class="hp-play" id="hp-play" aria-label="Jouer" data-stagger>
                         <div class="hp-h"><h2>Jouer</h2><span class="hp-n" id="hp-play-n"></span></div>
+                        <button type="button" class="hp-desc" id="hp-play-desc" data-action="editRepNote" title="Modifier la description du répertoire" hidden></button>
                         <div class="hp-sides">
                             <button class="hp-side" type="button" onclick="startGame('w')">
                                 <span class="hp-side-art" id="home-art-w"></span>

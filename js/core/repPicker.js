@@ -21,6 +21,9 @@ const RepPicker = (function () {
         return { n, due: n ? reviewPlan(name).forecast(null, 1)[0] : 0 };      // même programme que l'Entraînement
     }
     const initial = name => escapeHtml((name.trim()[0] || '?').toUpperCase());
+    // Description (storage.js) ; absente quand le module est chargé seul (tests).
+    const noteOf = n => (typeof repertoireNote === 'function' ? repertoireNote(n) : '');
+    const note = n => { const d = noteOf(n); return d ? `<i class="rp-desc">${escapeHtml(d)}</i>` : ''; };
     const meta = s => `${s.n} position${s.n > 1 ? 's' : ''}${s.due ? ` · ${s.due} à réviser` : ''}`;
 
     function html(act, { size, locked = false } = {}) {
@@ -31,8 +34,8 @@ const RepPicker = (function () {
                 <span class="rp-ini" aria-hidden="true">${initial(currentRepertoire)}</span><span class="rp-txt"><b>${name}</b></span>${locked ? '' : ico('chevron-down')}
             </button>`;
         }
-        const s = stats(currentRepertoire);
-        return `<button type="button" class="rp-chip" data-rp-action="${act}" aria-haspopup="dialog" aria-expanded="false" title="Changer de répertoire">
+        const s = stats(currentRepertoire), d = noteOf(currentRepertoire);
+        return `<button type="button" class="rp-chip" data-rp-action="${act}" aria-haspopup="dialog" aria-expanded="false" title="${d ? escapeHtml(d) + ' · ' : ''}Changer de répertoire">
             <span class="rp-ini" aria-hidden="true">${initial(currentRepertoire)}</span>
             <span class="rp-txt"><b>${name}</b><small>${meta(s)}</small></span>${ico('chevron-down')}
         </button>`;
@@ -48,7 +51,7 @@ const RepPicker = (function () {
             const s = stats(n), cur = n === currentRepertoire;
             return `<button type="button" class="rp-row" role="option" aria-selected="${cur}" data-rp-name="${escapeHtml(n)}">
                 <span class="rp-ini" aria-hidden="true">${initial(n)}</span>
-                <span class="rp-txt"><b>${escapeHtml(n)}</b><small>${meta(s)}</small></span>${cur ? ico('check') : ''}
+                <span class="rp-txt"><b>${escapeHtml(n)}</b><small>${meta(s)}</small>${note(n)}</span>${cur ? ico('check') : ''}
             </button>`;
         }).join('');
     }

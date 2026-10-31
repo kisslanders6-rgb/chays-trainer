@@ -80,7 +80,7 @@ const SyncEngine = (function () {
         if (!keys.length) return;
         const hidden = id => { const el = document.getElementById(id); return !el || el.classList.contains('hidden'); };
         const attempt = fn => { try { fn(); } catch (e) { reportError('synchro : rafraîchissement de l\'affichage', e); } };
-        if (keys.includes('chessTrainer_repertoires') && typeof loadRepertoireList === 'function') attempt(() => {
+        if ((keys.includes('chessTrainer_repertoires') || keys.includes('chessTrainer_repNotes')) && typeof loadRepertoireList === 'function') attempt(() => {
             if (!loadRepertoireList().includes(currentRepertoire)) currentRepertoire = DEFAULT_REPERTOIRE;
             if (typeof renderRepertoireList === 'function') renderRepertoireList();
         });

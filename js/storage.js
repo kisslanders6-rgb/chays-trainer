@@ -13,6 +13,8 @@
 const THEME_STORAGE_KEY     = 'chessTrainer_mode';         // 'dark' | 'light' | 'system' (cf. settings.js)
 const REPERTOIRE_LIST_KEY   = 'chessTrainer_repertoires';
 const DEFAULT_REPERTOIRE    = 'Général';
+const REP_NOTES_KEY       = 'chessTrainer_repNotes';    // descriptions : { [répertoire]: { v, at } }, synchronisées
+const REP_NOTE_MAX        = 160;
 
 // ─── ÉTAT GLOBAL RÉPERTOIRES ──────────────────────────────────────────────────
 
@@ -47,6 +49,20 @@ function addRepertoire(name) {
     return clean;
 }
 
+// Description d'un répertoire (texte libre, une ligne) : '' s'il n'en a pas.
+function repertoireNote(name) {
+    const all = dataStore.getJSON(REP_NOTES_KEY, {}), n = all && all[name];
+    return n && typeof n.v === 'string' ? n.v : '';
+}
+
+// Écrit (ou efface, texte vide) la description, datée : entre deux appareils, la plus récente l'emporte.
+function setRepertoireNote(name, text) {
+    const all = dataStore.getJSON(REP_NOTES_KEY, {}) || {}, v = String(text || '').replace(/\s+/g, ' ').trim().slice(0, REP_NOTE_MAX);
+    if (v === repertoireNote(name)) return;
+    if (v) all[name] = { v, at: Date.now() }; else delete all[name];
+    dataStore.setJSON(REP_NOTES_KEY, all);
+}
+
 function createRepertoirePrompt() {
     askText({ title: 'Nouveau répertoire', placeholder: 'ex : Défense Sicilienne', ok: 'Créer',
               validate: n => loadRepertoireList().includes(n) ? 'Ce répertoire existe déjà.' : '' }, name => {
@@ -72,6 +88,8 @@ function renameRepertoire(oldName, newName) {
     for (const c of ['w', 'b']) { dataStore.remove(dbKeyFor(oldName, c)); dataStore.remove(oppKeyFor(oldName, c)); }
     list[list.indexOf(oldName)] = clean;
     saveRepertoireList(list);
+    const note = repertoireNote(oldName);
+    if (note) { setRepertoireNote(clean, note); setRepertoireNote(oldName, ''); }
     const trash = loadTrash();
     if (trash.some(it => it.rep === oldName && it.type !== 'repertoire')) {
         trash.forEach(it => { if (it.rep === oldName && it.type !== 'repertoire') it.rep = clean; });
