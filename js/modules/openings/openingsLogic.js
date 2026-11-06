@@ -73,6 +73,7 @@ function loadPositionFromPath(moves, opts) {
     if (opts && opts.animateLast && moves.length) { const m = _parseUci(moves[moves.length - 1]); animateNextMove(m.from, m.to); }
     renderMoves();
     renderBoard();
+    if (typeof updateNavButtons === 'function') updateNavButtons();
 }
 
 // Migration : retrouve le chemin des anciennes entrées (sans `path`) en parcourant
@@ -411,7 +412,7 @@ function _syncHintBtn() {
         if (b.dataset.sol === state) return;
         b.dataset.sol = state;
         b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>`
-                      : `${ico('lightbulb')}<span class="btn-label">${off ? 'Indice indisponible' : 'Indice'}</span>`;
+                      : `${ico('lightbulb')}<span class="btn-label">Indice${off ? '<span class="hint-off"> indisponible</span>' : ''}</span>`;
     });
 }
 

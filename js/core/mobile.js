@@ -8,6 +8,7 @@
  *   - raccourcis de l'icône d'appli : /?tab=stats, /?tab=training…
  *   - petite vibration sur un coup refusé (Android ; suit le réglage « Effets sonores »)
  *   - tiroir du panneau de jeu sous l'échiquier (écrans < 600 px) : toucher la poignée ou glisser
+ *   - barre de coups (écrans < 600 px, tiroir fermé) : glisser le doigt pour reculer ou avancer d'un coup à la fois
  *   - menu « Plus » de la barre d'icônes : actions secondaires (.tb-more), pour des boutons assez larges
  */
 
@@ -102,6 +103,38 @@ document.addEventListener('keydown', e => {
     const panel = document.getElementById('side-panel');
     if (e.key === 'Escape' && panel && panel.classList.contains('open')) setSheetOpen(false);
 });
+
+// ─── BARRE DE COUPS : GLISSER POUR PARCOURIR LES COUPS ─────────────────────────
+// Le doigt vers la gauche avance (la ligne défile avec lui), vers la droite recule : un coup tous les 26 px.
+// navPrev / navNext gardent leurs conditions (séance occupée, début et fin de la ligne). Un simple toucher reste un clic.
+(function initMovesSwipe() {
+    const bar = document.getElementById('moves-bar'), panel = document.getElementById('side-panel');
+    if (!bar) return;
+    const STEP = 26, START = 10;
+    let id = null, x0 = 0, moved = false;
+    const active = () => matchMedia('(max-width: 599px)').matches && !(panel && panel.classList.contains('open')) && gameMode !== 'endgame';
+    bar.addEventListener('pointerdown', e => {
+        moved = false;
+        if (e.pointerType === 'mouse' || !active() || e.target.closest('.moves-export')) return;
+        id = e.pointerId; x0 = e.clientX;
+    });
+    bar.addEventListener('pointermove', e => {
+        if (id === null || e.pointerId !== id) return;
+        if (!moved) {
+            if (Math.abs(e.clientX - x0) < START) return;
+            moved = true;
+            try { bar.setPointerCapture(id); } catch (err) { /* doigt déjà levé */ }
+        }
+        while (e.clientX - x0 <= -STEP) { x0 -= STEP; navNext(); }
+        while (e.clientX - x0 >= STEP)  { x0 += STEP; navPrev(); }
+    });
+    const end = () => { id = null; };
+    bar.addEventListener('pointerup', end);
+    bar.addEventListener('pointercancel', end);
+    bar.addEventListener('click', e => {                  // le clic qui suit un glissement ne choisit pas de coup
+        if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+    }, true);
+})();
 
 // ─── BARRE D'ICÔNES : MENU « PLUS » (mobile) ──────────────────────────────────
 // Les actions secondaires (.tb-more) du groupe affiché sont proposées dans un petit menu au-dessus

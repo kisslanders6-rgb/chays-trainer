@@ -2305,3 +2305,42 @@ html[data-last="corners"] #board .sq.hl-from, html[data-last="corners"] #board .
                 linear-gradient(var(--c) 0 0) 100% 100% / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 100% 100% / 7% 28% no-repeat !important;
 }
 .mark-preview { display: block; width: min(84px, 100%); height: auto; aspect-ratio: 3 / 2; border-radius: 6px; overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TÉLÉPHONE SOUS LE POUCE (point D) : barre d'actions tout en bas, action principale de l'accueil au-dessus des onglets
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hp-dock { display: none; }
+@media (max-width: 599px) {
+    :root { --thumb-h: 69px; }                        /* 6 + 56 + 6 + filet : la barre fixée, sans la zone du geste */
+
+    .board-controls {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 300; gap: 6px;
+        padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+        background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(0, 0, 0, .12);
+    }
+    .board-controls .btn { min-height: 56px; }
+    .board-controls .btn .ico { width: 24px; height: 24px; }
+    /* Retourner · ‹ action › · le reste : les outils en icônes seules, l'action et les flèches se partagent la place */
+    .board-controls .btn-tool { order: 1; flex: 0 0 46px; }
+    .board-controls .tb-flip { order: -1; }
+    .board-controls .btn-tool .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .board-controls .tb-prev, .board-controls .tb-next { order: 0; flex: 1 0 60px; }
+    .board-controls .btn-nav .btn-label { display: none; }
+    .board-controls .btn-grow { order: 0; flex: 20 1 0; font-size: 12px; }
+    .hint-off { display: none; }                      /* « Indice » grisé suffit ici, la raison reste en infobulle */
+
+    .side-panel { padding-bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+    .side-panel.open { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    body:has(#game-screen:not(.hidden)) .toast { bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+
+    /* Barre de coups, tiroir fermé : le glissement horizontal parcourt les coups (initMovesSwipe), la page défile encore */
+    .side-panel:not(.open) .moves-bar { touch-action: pan-y; }
+
+    /* Accueil : l'action principale, juste au-dessus des onglets ; le contenu ne passe pas dessous */
+    .setup-screen:has(#home-tab-play:not(.hidden)) .hp-dock:not([hidden]) {
+        display: block; position: fixed; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 190; padding: 8px 12px;
+        background: var(--bg); border-top: 1px solid var(--border);
+    }
+    .setup-screen:has(#home-tab-play:not(.hidden)):has(.hp-dock:not([hidden])) { padding-bottom: calc(62px + 66px + 24px + env(safe-area-inset-bottom, 0px)); }
+    .hp-ctas:empty { display: none; }
+}

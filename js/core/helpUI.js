@@ -93,6 +93,7 @@ const HELP_TASKS = [
 ];
 
 const HELP_FAQ = [
+    ['Sur téléphone, comment revoir les coups joués ?', 'Glissez le doigt sur la barre de coups, un coup à la fois : vers la gauche pour avancer, vers la droite pour reculer. Les boutons ‹ et › en bas de l’écran font la même chose.'],
     ['Mes données sont-elles envoyées en ligne ?', 'Seulement si vous créez un compte. Sans compte, tout reste dans ce navigateur : téléchargez une sauvegarde (.json) de temps en temps, depuis Paramètres › Données et sauvegarde.'],
     ['Que se passe-t-il si je joue un autre coup que celui de mon répertoire ?', 'Le coup est refusé. En Entraînement, il compte comme une erreur et la position reviendra plus vite en révision ; dans Jouer, rien n’est compté. Pour changer de réponse, utilisez ⋯ sur ce coup dans l’Arbre.'],
     ['Comment comparer mes parties Lichess ou Chess.com à mon répertoire ?', 'Renseignez vos pseudos dans Compte › Profil, puis ouvrez « Analyser mes parties » dans la barre de l’accueil Jouer : chaque déviation est listée et ouvre la position concernée.'],

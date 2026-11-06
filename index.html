@@ -266,6 +266,8 @@
 
     <!-- ─── ÉCRAN D'ACCUEIL ──────────────────────────────────────────────── -->
     <div id="setup-screen" class="setup-screen">
+        <!-- Téléphone : l'action principale de « Aujourd'hui », au-dessus des onglets (_dockHomeCta, app.js) -->
+        <div class="hp-dock" id="hp-dock" hidden></div>
         <div class="home-content">
 
             <!-- Onglet Jouer -->
@@ -376,8 +378,8 @@
                           Ordinateur (920 px+) : une seule rangée de 48 px, ‹ [ action ] › puis les outils en icônes,
                                        après un filet (hauteur comptée dans --board-chrome-h).
                           Tablette   : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
-                          Mobile     : une seule barre d'icônes uniformes, dans l'ordre
-                                       précédent · suivant · retourner · indice · autres actions (classes tb-*).
+                          Mobile     : barre fixée en bas de l'écran, sous le pouce : retourner · ‹ [ action ] › · le reste
+                                       (classes tb-*, « TÉLÉPHONE SOUS LE POUCE » de style.css).
                     -->
                     <div class="board-controls">
                         <div class="controls controls-main">
@@ -403,7 +405,7 @@
 
                         <!-- Actions secondaires : icône + libellé court, discrètes -->
                         <div class="controls controls-tools" data-modes="play">
-                            <button class="btn btn-tool" onclick="undoMove()" title="Corriger le dernier coup : il est retiré de l'échiquier pour en jouer un autre (votre coup enregistré peut ainsi être remplacé)">
+                            <button class="btn btn-tool tb-more" onclick="undoMove()" title="Corriger le dernier coup : il est retiré de l'échiquier pour en jouer un autre (votre coup enregistré peut ainsi être remplacé)">
                                 <svg class="ico"><use href="#i-pencil"/></svg><span class="btn-label">Corriger</span>
                             </button>
                             <button class="btn btn-tool tb-more" onclick="resetGame()" title="Recommencer la partie depuis la position de départ (rien n'est retiré du répertoire)">
