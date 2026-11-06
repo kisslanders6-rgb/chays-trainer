@@ -11,7 +11,7 @@
 
 // Raccourcis clavier (aussi affichés dans l'Aide, helpUI.js).
 const KEYBOARD_SHORTCUTS = [
-    ['Partout', [['Onglets Jouer, Statistiques, Entraînement, Finales', ['1 · 2 · 3 · 4']], ['Mode clair ou sombre', ['D']], ['Couper ou remettre les sons', ['M']]]],
+    ['Partout', [['Rechercher partout', ['⌘F · Ctrl F']], ['Onglets Jouer, Statistiques, Entraînement, Finales', ['1 · 2 · 3 · 4']], ['Mode clair ou sombre', ['D']], ['Couper ou remettre les sons', ['M']]]],
     ['Échiquier', [['Retourner l’échiquier', ['F']], ['Indice, puis solution', ['Espace']], ['Coup précédent / suivant', ['←', '→']], ['Début de la ligne / position actuelle', ['↑', '↓']],
                    ['Copier la partie en PGN', ['C']], ['Effacer les annotations', ['X']], ['Déplacer le curseur sur l’échiquier', ['Tab', 'puis ← ↑ → ↓']], ['Jouer la case sous le curseur', ['Entrée']]]],
     ['Jouer', [['Flèches du répertoire', ['R']], ['Annuler le coup enregistré, sinon Corriger', ['Z']], ['Rétablir', ['Maj', 'Z']], ['Recommencer', ['N']], ['Changer de camp', ['V']]]],
@@ -349,6 +349,18 @@ function _searchHTML(all, q) {
     const bare = hits.filter(([, r]) => r.bare), rows = hits.filter(([, r]) => !r.bare);
     return (rows.length ? PanelKit.group(`${hits.length} résultat${hits.length > 1 ? 's' : ''}`, rows.map(([sec, r]) => PanelKit.mark(_rowHTML(r, sec.label), q))) : '')
          + bare.map(([, r]) => PanelKit.mark(r.html(), q)).join('');
+}
+
+// Réglages pour la palette de recherche (palette.js) : le même texte que la recherche de la fenêtre.
+function settingsSearchIndex() {
+    const all = _settingRows(), out = [];
+    SETTINGS_SECTIONS.forEach(sec => all[sec.id].forEach(r => {
+        if (r.preview || !r.label) return;
+        const pref = _rowPref(r);
+        out.push({ id: `set:${sec.id}|${r.label}`, group: 'Réglages', icon: sec.icon, title: _plain(r.label), small: sec.label,
+                   words: _plain([r.search, (r.opts || []).map(o => o[1]).join(' ')].filter(Boolean).join(' ')), run: () => showSettings(sec.id, pref) });
+    }));
+    return out;
 }
 
 function _renderSettings(section, q) {

@@ -237,6 +237,9 @@
                 <!-- Capsule « Suite » : la prochaine chose à faire, ou la séance en cours (suite.js) -->
                 <div class="suite-slot" id="suite-slot" hidden></div>
                 <div class="topnav-pill" role="toolbar" aria-label="Compte et réglages">
+                <button class="theme-toggle" id="palette-btn" data-action="paletteOpen" title="Rechercher" aria-label="Rechercher">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
                 <button class="theme-toggle" data-backup-dot onclick="showSettings()" title="Paramètres" aria-label="Paramètres">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
@@ -702,6 +705,7 @@
 <script src="js/core/shortcuts.js"></script>
 <script src="js/core/settingsUI.js"></script>
 <script src="js/core/helpUI.js"></script>
+<script src="js/core/palette.js"></script>
 <script src="js/core/onboarding.js"></script>
 <script src="js/core/avatarPhoto.js"></script>
 <script src="js/core/accountUI.js"></script>
