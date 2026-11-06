@@ -619,7 +619,7 @@ document.getElementById('moves-bar').addEventListener('click', e => {
 });
 
 // ─── RACCOURCIS CLAVIER ───────────────────────────────────────────────────────
-//   ←  navPrev   →  navNext   Espace  indice   F  retourner l'échiquier
+//   ←  navPrev   →  navNext   Espace  indice   F  retourner l'échiquier   (les autres touches : core/shortcuts.js)
 
 function _keyboardAllowed(e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return false;

@@ -380,10 +380,10 @@
                             <button class="btn btn-primary btn-grow tb-hint" data-modes="play,training,endgame" onclick="showHint()" title="Indice (Espace)">
                                 <svg class="ico"><use href="#i-lightbulb"/></svg><span class="btn-label">Indice</span>
                             </button>
-                            <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante">
+                            <button class="btn btn-grow" data-modes="training" onclick="nextDrill()" title="Passer à la position suivante (P)">
                                 <svg class="ico"><use href="#i-skip-forward"/></svg><span class="btn-label">Passer</span>
                             </button>
-                            <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice">
+                            <button class="btn btn-grow" data-modes="endgame" onclick="retryEndgame()" title="Recommencer l'exercice (N)">
                                 <svg class="ico"><use href="#i-rotate-ccw"/></svg><span class="btn-label">Recommencer</span>
                             </button>
                             <button class="btn btn-primary btn-grow" data-modes="preview" onclick="trainStatsPreview()" title="Jouer le coup de cette position (compte comme un essai)">
@@ -423,7 +423,7 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool is-exit" onclick="quitTraining()" title="Quitter l'entraînement">
+                            <button class="btn btn-tool is-exit" onclick="quitTraining()" title="Quitter l'entraînement (Q)">
                                 <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
                             </button>
                         </div>
@@ -431,7 +431,7 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice">
+                            <button class="btn btn-tool is-exit" onclick="goHome('endgame')" title="Quitter l'exercice (Q)">
                                 <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
                             </button>
                         </div>
@@ -450,7 +450,7 @@
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
-                            <button class="btn btn-tool is-exit" onclick="quitAnalysis()" title="Revenir à Jouer ; le brouillon est gardé pour la session">
+                            <button class="btn btn-tool is-exit" onclick="quitAnalysis()" title="Revenir à Jouer ; le brouillon est gardé pour la session (Q)">
                                 <svg class="ico"><use href="#i-x"/></svg><span class="btn-label">Quitter</span>
                             </button>
                         </div>
@@ -694,6 +694,7 @@
 <script src="js/modules/endgame/endgame.js"></script>
 <script src="js/modules/analysis/analysis.js"></script>
 <script src="js/app.js"></script>
+<script src="js/core/shortcuts.js"></script>
 <script src="js/core/settingsUI.js"></script>
 <script src="js/core/helpUI.js"></script>
 <script src="js/core/onboarding.js"></script>
