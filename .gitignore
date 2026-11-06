@@ -11,3 +11,13 @@ node_modules/
 # Added by dev-llm — worker worktrees and scratch files
 .opencode-worktrees/
 .dev-worker/
+
+# Réglages locaux de Claude Code (chemins propres à cette machine) ; .claude/skills reste suivi
+.claude/launch.json
+.claude/settings.local.json
+
+# Déploiement, secrets et journaux locaux
+.vercel/
+.env
+.env.*
+*.log
