@@ -129,11 +129,16 @@
 .pn-board.is-out i b.f { right: auto; left: 50%; bottom: -15px; transform: translateX(-50%); }
 .pn-board.is-out i b.r { left: -13px; top: 50%; transform: translateY(-50%); }
 html[data-board="hache"] .pn-board i.d { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .pn-board i { background: transparent; }
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"], [data-board="rosemarble"], [data-board="blackleather"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .pn-board i { background: transparent; }
 html[data-board="stone"]   .pn-board { background: url("../assets/boards/stone.webp")   center / 100% 100%; }
 html[data-board="leather"] .pn-board { background: url("../assets/boards/leather.webp") center / 100% 100%; }
 html[data-board="walnut"]  .pn-board { background: url("../assets/boards/walnut.webp")  center / 100% 100%; }
-html[data-board="maple"] .pn-board { background: url("../assets/boards/maple.webp") center / 100% 100%; }
+html[data-board="ebony"] .pn-board { background: url("../assets/boards/ebony.webp") center / 100% 100%; }
+html[data-board="olive"] .pn-board { background: url("../assets/boards/olive.webp") center / 100% 100%; }
+html[data-board="burnt"] .pn-board { background: url("../assets/boards/burnt.webp") center / 100% 100%; }
+html[data-board="birch"] .pn-board { background: url("../assets/boards/birch.webp") center / 100% 100%; }
+html[data-board="rosemarble"] .pn-board { background: url("../assets/boards/rosemarble.webp") center / 100% 100%; }
+html[data-board="blackleather"] .pn-board { background: url("../assets/boards/blackleather.webp") center / 100% 100%; }
 html[data-board="marble"] .pn-board { background: url("../assets/boards/marble.webp") center / 100% 100%; }
 html[data-board="tournament"] .pn-board { background: url("../assets/boards/tournament.webp") center / 100% 100%; }
 html[data-board="cherry"] .pn-board { background: url("../assets/boards/cherry.webp") center / 100% 100%; }

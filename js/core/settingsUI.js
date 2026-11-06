@@ -61,8 +61,10 @@ function _settingRows() {
             { group: 'Échiquier', kind: 'toggle', key: 'coords', label: 'Coordonnées', tip: 'Lettres et chiffres des cases.' },
             { group: 'Échiquier', kind: 'seg', key: 'coordPos', label: 'Emplacement des coordonnées', opts: [['in', 'Dans les cases'], ['out', 'Autour']], off: !s.coords },
             { group: 'Échiquier', kind: 'toggle', key: 'lastMove', label: 'Dernier coup', search: 'surligner' },
+            { group: 'Échiquier', kind: 'custom', pref: 'lastStyle', label: 'Repère du dernier coup', html: _lastHTML, col: true, search: Object.values(LAST_LABELS).join(' ') },
             { group: 'Échiquier', kind: 'toggle', key: 'captures', label: 'Pièces prises', tip: 'Une ligne de chaque côté de l’échiquier : ce que chaque camp a pris, et son avance.', search: 'matériel avantage capture' },
             { group: 'Échiquier', kind: 'toggle', key: 'legalDots', label: 'Coups possibles', tip: 'Points sur les cases accessibles à la pièce choisie.' },
+            { group: 'Échiquier', kind: 'custom', pref: 'legalStyle', label: 'Repère des coups possibles', html: _legalHTML, col: true, search: Object.values(LEGAL_LABELS).join(' ') },
             { group: 'Échiquier', kind: 'seg', key: 'anim', label: 'Animation des pièces', opts: [['off', 'Aucune'], ['fast', 'Rapide'], ['normal', 'Normale']] },
             { group: 'Pièces et flèches', kind: 'custom', pref: 'pieceSet', label: 'Pièces', tip: () => _pieceCredit(), html: _piecesHTML, col: true,
               search: 'style ' + PIECE_SET_IDS.filter(id => id !== 'blindfold').map(id => (PIECE_SETS[id] || {}).label).join(' ') },
@@ -187,11 +189,13 @@ function _previewHTML() {
             <span class="pn-sample">${_sampleLine()}</span>${credit}</div></div>`;
 }
 
-const BOARD_LABELS = { classic: 'Sauge', leather: 'Cuir vert', wood: 'Bois chaud', ice: 'Bleu glace', night: 'Bleu nuit', violet: 'Violet', walnut: 'Noyer', stone: 'Pierre', hache: 'Hachuré',
-                       maple: 'Érable', marble: 'Marbre', tournament: 'Tournoi', cherry: 'Cerisier' };
+const BOARD_LABELS = { walnut: 'Noyer', wood: 'Bois chaud', cherry: 'Cerisier', birch: 'Bouleau', olive: 'Olivier', ebony: 'Ébène', burnt: 'Bois brûlé',
+                       marble: 'Marbre', rosemarble: 'Marbre rose', stone: 'Pierre', leather: 'Cuir vert', blackleather: 'Cuir noir',
+                       tournament: 'Tournoi', clubgreen: 'Vert club', clubblue: 'Bleu club', navy: 'Bleu marine', violet: 'Violet',
+                       hache: 'Hachuré', highcontrast: 'Contraste élevé', colorblind: 'Daltonien' };
 // Grilles : data-min (largeur minimale d'une tuile) et data-max (colonnes au plus) règlent PanelKit.balancedCols.
-// 13 échiquiers : 5 + 5 + 3 au téléphone, 7 + 6 sur ordinateur ; 12 pièces : 4 × 3 ou 6 × 2 ; 6 flèches : 3 × 2 ou 6 ; 4 fonds : 4.
-const SETTINGS_GRIDS = { boardTheme: { min: 60, max: 7 }, pieceSet: { min: 76, max: 6 }, arrowStyle: { min: 70, max: 6 }, darkBg: { min: 70, max: 5 } };
+// 20 échiquiers : 5 × 4 ; 10 pièces : 5 × 2 ; 6 flèches : 3 × 2 ou 6 ; 5 ambiances, 4 repères.
+const SETTINGS_GRIDS = { boardTheme: { min: 60, max: 7 }, pieceSet: { min: 76, max: 6 }, arrowStyle: { min: 70, max: 6 }, darkBg: { min: 70, max: 5 }, legalStyle: { min: 70, max: 4 }, lastStyle: { min: 70, max: 4 } };
 const _grid = (pref, tiles) => `<div class="theme-options" data-grid="${pref}" data-min="${SETTINGS_GRIDS[pref].min}" data-max="${SETTINGS_GRIDS[pref].max}">${tiles}</div>`;
 const _boardsHTML = () => _grid('boardTheme', BOARD_THEMES.map(id =>
     `<button type="button" class="theme-opt${appSettings.boardTheme === id ? ' active' : ''}" data-board="${id}" data-pn="seg" data-key="boardTheme" data-v="${id}" aria-pressed="${appSettings.boardTheme === id}"><span class="theme-swatch"></span>${BOARD_LABELS[id]}</button>`).join(''));
@@ -200,6 +204,31 @@ const _piecesHTML = () => _grid('pieceSet', PIECE_SET_IDS.filter(id => id !== 'b
     return `<button type="button" class="theme-opt piece-opt${appSettings.pieceSet === id ? ' active' : ''}" data-piece="${id}" data-pn="seg" data-key="pieceSet" data-v="${id}" aria-pressed="${appSettings.pieceSet === id}"><span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`; }).join(''));
 const _arrowsHTML = () => typeof arrowStylePreview !== 'function' ? '' : _grid('arrowStyle', ARROW_STYLE_IDS.map(id =>
     `<button type="button" class="theme-opt arrow-opt${appSettings.arrowStyle === id ? ' active' : ''}" data-arrow="${id}" data-pn="seg" data-key="arrowStyle" data-v="${id}" aria-pressed="${appSettings.arrowStyle === id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join(''));
+// Repères de cases : vignette de 3 × 2 cases, cases d'arrivée marquées comme sur l'échiquier.
+const LEGAL_LABELS = { dot: 'Point', small: 'Petit point', hollow: 'Point creux', frame: 'Cadre' };
+const LAST_LABELS  = { board: 'Selon l’échiquier', soft: 'Très discret', yellow: 'Jaune', corners: 'Coins' };
+const _LEGAL_MARKS = {
+    dot:    '<circle cx=".5" cy=".5" r=".17" fill="rgba(0,0,0,.4)"/>',
+    small:  '<circle cx=".5" cy=".5" r=".09" fill="rgba(0,0,0,.5)"/>',
+    hollow: '<circle cx=".5" cy=".5" r=".15" fill="none" stroke="rgba(0,0,0,.5)" stroke-width=".06"/>',
+    frame:  '<rect x=".08" y=".08" width=".84" height=".84" rx=".04" fill="none" stroke="rgba(0,0,0,.42)" stroke-width=".07"/>'
+};
+const _LAST_MARKS = {
+    board:   '<rect width="1" height="1" fill="rgba(226,190,60,.55)"/>',
+    soft:    '<rect width="1" height="1" fill="rgba(255,255,255,.22)"/>',
+    yellow:  '<rect width="1" height="1" fill="rgba(242,225,76,.55)"/>',
+    corners: '<path d="M.05 .3V.05H.3M.7 .05H.95V.3M.95 .7V.95H.7M.3 .95H.05V.7" fill="none" stroke="rgba(242,225,76,.95)" stroke-width=".08"/>'
+};
+function _markSvg(mark, at) {
+    let out = '';
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++)
+        out += `<g transform="translate(${x} ${y})"><rect width="1" height="1" fill="var(${(x + y) % 2 ? '--board-dark' : '--board-light'})"/>${at(x, y) ? mark : ''}</g>`;
+    return `<svg class="mark-preview" viewBox="0 0 3 2" aria-hidden="true">${out}</svg>`;
+}
+const _markGrid = (pref, ids, labels, marks, at) => _grid(pref, ids.map(id =>
+    `<button type="button" class="theme-opt${appSettings[pref] === id ? ' active' : ''}" data-pn="seg" data-key="${pref}" data-v="${id}" aria-pressed="${appSettings[pref] === id}">${_markSvg(marks[id], at)}${labels[id]}</button>`).join(''));
+const _legalHTML = () => _markGrid('legalStyle', LEGAL_STYLES, LEGAL_LABELS, _LEGAL_MARKS, (x, y) => (x === 1 && y === 0) || (x === 2 && y === 1));
+const _lastHTML  = () => _markGrid('lastStyle', LAST_STYLES, LAST_LABELS, _LAST_MARKS, (x, y) => (x === 0 && y === 1) || (x === 1 && y === 0));
 // Fond du mode sombre : vignette fond + carte aux couleurs du fond (bloc du fond dans style.css).
 const _darkBgHTML = () => _grid('darkBg', DARK_BGS.map(id =>
     `<button type="button" class="theme-opt pn-bg-opt${appSettings.darkBg === id ? ' active' : ''}" data-bg="${id}" data-pn="seg" data-key="darkBg" data-v="${id}" aria-pressed="${appSettings.darkBg === id}"><span class="pn-bg-sw"><i></i><i></i></span>${DARK_BG_LABELS[id]}</button>`).join(''));
@@ -356,7 +385,7 @@ function setPref(key, value) {
             if (typeof initEndgame === 'function') initEndgame();
             break;
         case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
-        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg':
+        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg': case 'legalStyle': case 'lastStyle':
             applyDisplayPrefs(); break;
         case 'captures': applyDisplayPrefs(); _redrawBoardViews(); break;
         case 'lastMove': _redrawBoardViews(); break;

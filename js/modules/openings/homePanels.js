@@ -108,7 +108,7 @@ const HomePanels = (function () {
         if (tipUndo) return `<div class="looks-tip" role="status"><span><b>Noyer + Maestro appliqués.</b> Tout se règle dans Paramètres › Apparence.</span>
             <span class="looks-tip-acts"><button type="button" class="st-link" data-action="looksTip" data-arg="undo">Revenir à l'ancien</button><button type="button" class="st-link" data-action="looksTip" data-arg="close">OK</button></span></div>`;
         if (dataStore.get(TIP_KEY) !== null || dataStore.get('chessTrainer_looksDefaults') === null
-            || appSettings.boardTheme !== 'classic' || appSettings.pieceSet !== 'merida') return '';
+            || appSettings.boardTheme !== 'tournament' || appSettings.pieceSet !== 'merida') return '';
         return `<div class="looks-tip" role="note"><span class="looks-tip-sw" aria-hidden="true"></span>
             <span><b>Nouvelle apparence</b> L'échiquier Noyer et les pièces Maestro sont les nouveaux défauts. Les essayer ?</span>
             <span class="looks-tip-acts"><button type="button" class="btn btn-soft" data-action="looksTip" data-arg="try">Essayer</button><button type="button" class="st-link" data-action="looksTip" data-arg="no">Non merci</button></span></div>`;

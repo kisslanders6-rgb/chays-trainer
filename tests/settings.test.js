@@ -25,12 +25,21 @@ t('appareil neuf : Noyer + Maestro par défaut, rien n\'est écrit', () => {
     assert.strictEqual(c.prefs(), null);
 });
 
+t('options retirées : un choix enregistré devient l\'option la plus proche, sur les trois catalogues', () => {
+    const c = boot({ chessTrainer_looksDefaults: '2026-10', chessTrainer_prefs: JSON.stringify({ boardTheme: { v: 'maple', at: 5 }, pieceSet: { v: 'celtic', at: 5 }, arrowStyle: { v: 'lichess', at: 5 } }) });
+    assert.strictEqual(c.run('appSettings.boardTheme'), 'wood');
+    assert.strictEqual(c.run('appSettings.pieceSet'), 'spatial');
+    assert.strictEqual(c.run('appSettings.arrowStyle'), 'contour');
+    const o = c.run('[BOARD_THEMES[0], PIECE_SET_IDS[0], ARROW_STYLE_IDS[0]]');
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(o)), ['walnut', 'maestro', 'plume'], 'les défauts en tête de chaque grille');
+});
+
 t('installation existante sans choix d\'apparence : anciens défauts gardés, datés de 0, une seule fois', () => {
     const c = boot({ chessTrainer_repertoires: '["Général"]' });
-    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'classic', at: 0 }, pieceSet: { v: 'merida', at: 0 } });
-    assert.strictEqual(c.run('appSettings.boardTheme'), 'classic');
+    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'tournament', at: 0 }, pieceSet: { v: 'merida', at: 0 } });
+    assert.strictEqual(c.run('appSettings.boardTheme'), 'tournament');
     const d = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_prefs: JSON.stringify({ pieceSet: { v: 'chrome', at: 4 } }) });
-    assert.deepStrictEqual(d.prefs(), { pieceSet: { v: 'chrome', at: 4 }, boardTheme: { v: 'classic', at: 0 } });   // choix existant respecté
+    assert.deepStrictEqual(d.prefs(), { pieceSet: { v: 'chrome', at: 4 }, boardTheme: { v: 'tournament', at: 0 } });   // choix existant respecté
     const e = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_looksDefaults: '2026-10' });
     assert.strictEqual(e.prefs(), null);                                   // déjà passé : nouvelle installation après coup
     assert.strictEqual(e.run('appSettings.boardTheme'), 'walnut');

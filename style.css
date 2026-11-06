@@ -346,7 +346,7 @@ body { font-family: var(--font-sans); background: var(--bg); color: var(--text);
 .coord-file { bottom: 3px; right: 4px; }
 .sq.light .coord { color: var(--board-dark); }
 .sq.dark  .coord { color: var(--board-light); }
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"]) .coord { color: #fff; text-shadow: 0 1px 1px rgba(0, 0, 0, .6); }
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="burnt"], [data-board="blackleather"]) .coord { color: #fff; text-shadow: 0 1px 1px rgba(0, 0, 0, .6); }
 html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 
 #board { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); border-radius: 12px; overflow: hidden; border: 2px solid var(--board-border); box-shadow: var(--shadow); cursor: pointer; }
@@ -846,11 +846,8 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 
 /* ─── THÈMES D'ÉCHIQUIER (classique = valeurs par défaut du thème clair/sombre) ─ */
 html[data-board="wood"]  { --board-light: #f0d9b5; --board-dark: #b58863; --board-border: #8a6a4a; }
-html[data-board="night"] { --board-light: #9fb3d1; --board-dark: #425d8a; --board-border: #2b3a57; }
 html[data-board="wood"]  .sq.hl-from, html[data-board="wood"]  .sq.hl-to { background: rgba(205, 165, 60, .55) !important; }
 html[data-board="wood"]  .sq.hl-selected { background: rgba(205, 140, 40, .65) !important; }
-html[data-board="night"] .sq.hl-from, html[data-board="night"] .sq.hl-to { background: rgba(120, 170, 255, .45) !important; }
-html[data-board="night"] .sq.hl-selected { background: rgba(90, 150, 255, .60) !important; }
 
 /* ─── PIÈCES VECTORIELLES ────────────────────────────────────────────────── */
 .piece-w, .piece-b { color: inherit; filter: none; }
@@ -882,9 +879,7 @@ html[data-board="night"] .sq.hl-selected { background: rgba(90, 150, 255, .60) !
 @media (hover: hover) { .theme-opt:hover { border-color: var(--accent); transform: translateY(-2px); } }
 .theme-opt.active { border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
 .theme-swatch { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: conic-gradient(var(--sw-d) 25%, var(--sw-l) 0 50%, var(--sw-d) 0 75%, var(--sw-l) 0); }
-.theme-opt[data-board="classic"] { --sw-l: #ecdab8; --sw-d: #7a9e5a; }
 .theme-opt[data-board="wood"]    { --sw-l: #f0d9b5; --sw-d: #b58863; }
-.theme-opt[data-board="night"]   { --sw-l: #9fb3d1; --sw-d: #425d8a; }
 
 /* ─── PANNEAU LATÉRAL : ONGLETS COUPS / ARBRE ────────────────────────────── */
 .side-lower { display: flex; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }
@@ -1426,8 +1421,6 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
 html[data-board="stone"]   { --board-light: #cdcdc8; --board-dark: #484848; --board-border: #242422; }
 html[data-board="leather"] { --board-light: #ecebe7; --board-dark: #3f7058; --board-border: #232321; }
 html[data-board="walnut"]  { --board-light: #dbc09a; --board-dark: #70503a; --board-border: #4a3426; }
-html[data-board="ice"]     { --board-light: #f0f0ef; --board-dark: #c9d6e5; --board-border: #9fb2c7; }
-html[data-board="maple"]      { --board-light: #f0dcb4; --board-dark: #c79a62; --board-border: #8f6a3e; }
 html[data-board="marble"]     { --board-light: #ece9e2; --board-dark: #76807d; --board-border: #4c5452; }
 html[data-board="tournament"] { --board-light: #eeecd0; --board-dark: #6b8f5a; --board-border: #4a6640; }
 html[data-board="cherry"]     { --board-light: #ecc9a2; --board-dark: #91493a; --board-border: #5e2e24; }
@@ -1435,19 +1428,18 @@ html[data-board="cherry"]     { --board-light: #ecc9a2; --board-dark: #91493a; -
 html[data-board="stone"]   #board { background: url("assets/boards/stone.webp")   center / 100% 100% no-repeat; }
 html[data-board="leather"] #board { background: url("assets/boards/leather.webp") center / 100% 100% no-repeat; }
 html[data-board="walnut"]  #board { background: url("assets/boards/walnut.webp")  center / 100% 100% no-repeat; }
-html[data-board="maple"] #board { background: url("assets/boards/maple.webp") center / 100% 100% no-repeat; }
 html[data-board="marble"] #board { background: url("assets/boards/marble.webp") center / 100% 100% no-repeat; }
 html[data-board="tournament"] #board { background: url("assets/boards/tournament.webp") center / 100% 100% no-repeat; }
 html[data-board="cherry"] #board { background: url("assets/boards/cherry.webp") center / 100% 100% no-repeat; }
 
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.light,
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.dark { background: transparent; }
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"], [data-board="rosemarble"], [data-board="blackleather"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.light,
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"], [data-board="rosemarble"], [data-board="blackleather"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.dark { background: transparent; }
 
 /* Repères de coups légaux lisibles sur fond clair comme sombre */
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal::after {
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"], [data-board="rosemarble"], [data-board="blackleather"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal::after {
     background: rgba(20, 20, 20, .34); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .38);
 }
-html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="maple"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal.has-piece::after {
+html:is([data-board="stone"], [data-board="leather"], [data-board="walnut"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"], [data-board="rosemarble"], [data-board="blackleather"], [data-board="marble"], [data-board="tournament"], [data-board="cherry"]) .sq.hl-legal.has-piece::after {
     background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .35), inset 0 0 0 5px rgba(255, 255, 255, .38);
 }
 
@@ -1458,22 +1450,18 @@ html[data-board="leather"] .sq.hl-from, html[data-board="leather"] .sq.hl-to { b
 html[data-board="leather"] .sq.hl-selected                                   { background: rgba(220, 190, 60, .62) !important; }
 html[data-board="walnut"]  .sq.hl-from, html[data-board="walnut"]  .sq.hl-to { background: rgba(220, 175, 50, .50) !important; }
 html[data-board="walnut"]  .sq.hl-selected                                   { background: rgba(230, 150, 40, .62) !important; }
-html[data-board="ice"]     .sq.hl-from, html[data-board="ice"]     .sq.hl-to { background: rgba(90, 150, 225, .42) !important; }
-html[data-board="ice"]     .sq.hl-selected                                   { background: rgba(60, 130, 230, .55) !important; }
-html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-from, html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-to { background: rgba(220, 175, 50, .48) !important; }
-html:is([data-board="maple"], [data-board="cherry"]) .sq.hl-selected { background: rgba(230, 150, 40, .6) !important; }
-html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-from, html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-to { background: rgba(215, 205, 70, .48) !important; }
-html:is([data-board="marble"], [data-board="tournament"]) .sq.hl-selected { background: rgba(190, 205, 60, .6) !important; }
+html:is([data-board="cherry"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"]) .sq.hl-from, html:is([data-board="cherry"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"]) .sq.hl-to { background: rgba(220, 175, 50, .48) !important; }
+html:is([data-board="cherry"], [data-board="ebony"], [data-board="olive"], [data-board="burnt"], [data-board="birch"]) .sq.hl-selected { background: rgba(230, 150, 40, .6) !important; }
+html:is([data-board="marble"], [data-board="tournament"], [data-board="rosemarble"], [data-board="blackleather"]) .sq.hl-from, html:is([data-board="marble"], [data-board="tournament"], [data-board="rosemarble"], [data-board="blackleather"]) .sq.hl-to { background: rgba(215, 205, 70, .48) !important; }
+html:is([data-board="marble"], [data-board="tournament"], [data-board="rosemarble"], [data-board="blackleather"]) .sq.hl-selected { background: rgba(190, 205, 60, .6) !important; }
 
 /* ─── PASTILLES D'APERÇU (Paramètres) : 2×2 cases de la texture ───────────── */
 .theme-opt[data-board="stone"]   .theme-swatch { background: url("assets/boards/stone.webp")   0 0 / 400% 400%; }
 .theme-opt[data-board="leather"] .theme-swatch { background: url("assets/boards/leather.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="walnut"]  .theme-swatch { background: url("assets/boards/walnut.webp")  0 0 / 400% 400%; }
-.theme-opt[data-board="maple"] .theme-swatch { background: url("assets/boards/maple.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="marble"] .theme-swatch { background: url("assets/boards/marble.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="tournament"] .theme-swatch { background: url("assets/boards/tournament.webp") 0 0 / 400% 400%; }
 .theme-opt[data-board="cherry"] .theme-swatch { background: url("assets/boards/cherry.webp") 0 0 / 400% 400%; }
-.theme-opt[data-board="ice"] { --sw-l: #f0f0ef; --sw-d: #c9d6e5; }
 
 /* Pas de zoom automatique du texte à la rotation (iOS) */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -2237,8 +2225,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 
 /* ─── PIÈCES PRISES (captures.js) ───────────────────────────────────────────────
    Une ligne de chaque côté de l'échiquier, gardée même vide. Ordinateur : celle du haut tient dans la marge du haut
-   (0 px net), celle du bas ajoute 12 px, comptés dans --board-chrome-h. En séance, la barre de progression occupe
-   la marge du haut : les prises du haut s'y posent, au centre, entre ses deux libellés. */
+   (0 px net), celle du bas ajoute 12 px, comptés dans --board-chrome-h. En séance, la ligne du haut ajoute 22 px. */
 .cap-row { display: flex; align-items: center; gap: 5px; width: 100%; height: 24px; padding: 0 10px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .cap-who { flex: none; margin-right: 3px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .cap-grp { display: flex; flex: none; }
@@ -2253,6 +2240,68 @@ html[data-piece="blindfold"] .cap-row { visibility: hidden; }          /* pièce
     .cap-row { height: 22px; padding: 0 2px; }
     .cap-top { margin: -22px 0 0; }
     .cap-bot { margin: -12px 0 2px; }
-    .board-col:has(> .tr-progress:not([hidden])) > .cap-top { justify-content: center; pointer-events: none; }
-    .board-col:has(> .tr-progress:not([hidden])) > .cap-top .cap-who { display: none; }
+    /* En séance, la barre de progression occupe la marge du haut : la ligne du haut passe dessous, en vraie place. */
+    .board-col:has(> .tr-progress:not([hidden])) { --board-chrome-h: 150px; }
+    html[data-coords="out"] .board-col:has(> .tr-progress:not([hidden])) { --board-chrome-h: 168px; }
+    html[data-captures="off"] .board-col:has(> .tr-progress:not([hidden])) { --board-chrome-h: 116px; }
+    html[data-captures="off"][data-coords="out"] .board-col:has(> .tr-progress:not([hidden])) { --board-chrome-h: 134px; }
+    .board-col:has(> .tr-progress:not([hidden])) > .cap-top { margin: 0; }
 }
+
+/* ─── CATALOGUE : NOUVEAUX ÉCHIQUIERS ────────────────────────────────────────────
+   Bois, marbre et cuir : textures de scripts/gen-boards.mjs. Aplats : cases dessinées, couleurs ci-dessous. */
+html[data-board="ebony"] { --board-light: #d8c6ac; --board-dark: #2c211b; --board-border: #1a120e; }
+html[data-board="olive"] { --board-light: #ece0c0; --board-dark: #7b6f3a; --board-border: #574e27; }
+html[data-board="burnt"] { --board-light: #c9a97f; --board-dark: #332620; --board-border: #1f1612; }
+html[data-board="birch"] { --board-light: #f4ead6; --board-dark: #c9ae84; --board-border: #a58c63; }
+html[data-board="rosemarble"] { --board-light: #f6e7e2; --board-dark: #b98c8a; --board-border: #8f6664; }
+html[data-board="blackleather"] { --board-light: #d6cfc1; --board-dark: #2f2a27; --board-border: #191614; }
+html[data-board="clubgreen"] { --board-light: #eeeed2; --board-dark: #769656; --board-border: #55703d; }
+html[data-board="clubblue"] { --board-light: #dee3e6; --board-dark: #8ca2ad; --board-border: #6a7f8a; }
+html[data-board="navy"] { --board-light: #d9dfe8; --board-dark: #2d4667; --board-border: #1d3048; }
+html[data-board="colorblind"] { --board-light: #f8e3c5; --board-dark: #2f6fa8; --board-border: #1f4f7d; }
+html[data-board="highcontrast"] { --board-light: #ffffff; --board-dark: #3a3a3a; --board-border: #1e1e1e; }
+html[data-board="ebony"] #board { background: url("assets/boards/ebony.webp") center / 100% 100% no-repeat; }
+html[data-board="olive"] #board { background: url("assets/boards/olive.webp") center / 100% 100% no-repeat; }
+html[data-board="burnt"] #board { background: url("assets/boards/burnt.webp") center / 100% 100% no-repeat; }
+html[data-board="birch"] #board { background: url("assets/boards/birch.webp") center / 100% 100% no-repeat; }
+html[data-board="rosemarble"] #board { background: url("assets/boards/rosemarble.webp") center / 100% 100% no-repeat; }
+html[data-board="blackleather"] #board { background: url("assets/boards/blackleather.webp") center / 100% 100% no-repeat; }
+.theme-opt[data-board="ebony"] .theme-swatch { background: url("assets/boards/ebony.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="olive"] .theme-swatch { background: url("assets/boards/olive.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="burnt"] .theme-swatch { background: url("assets/boards/burnt.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="birch"] .theme-swatch { background: url("assets/boards/birch.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="rosemarble"] .theme-swatch { background: url("assets/boards/rosemarble.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="blackleather"] .theme-swatch { background: url("assets/boards/blackleather.webp") 0 0 / 400% 400%; }
+.theme-opt[data-board="clubgreen"] { --sw-l: #eeeed2; --sw-d: #769656; }
+.theme-opt[data-board="clubblue"] { --sw-l: #dee3e6; --sw-d: #8ca2ad; }
+.theme-opt[data-board="navy"] { --sw-l: #d9dfe8; --sw-d: #2d4667; }
+.theme-opt[data-board="colorblind"] { --sw-l: #f8e3c5; --sw-d: #2f6fa8; }
+.theme-opt[data-board="highcontrast"] { --sw-l: #ffffff; --sw-d: #3a3a3a; }
+html:is([data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) .sq.hl-from, html:is([data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) .sq.hl-to { background: rgba(226, 200, 70, .55) !important; }
+html:is([data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) .sq.hl-selected { background: rgba(226, 180, 40, .65) !important; }
+
+/* Aplats : le damier est dessiné sous les cases, comme une texture. Les surlignages translucides se posent ainsi sur la vraie
+   couleur de la case, et non sur le fond sombre de l'échiquier. */
+html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) #board {
+    background: repeating-conic-gradient(var(--board-dark) 0 25%, var(--board-light) 0 50%) 0 0 / 25% 25%;
+}
+html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) .sq.light,
+html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [data-board="clubblue"], [data-board="navy"], [data-board="colorblind"], [data-board="highcontrast"]) .sq.dark { background: transparent; }
+
+/* ─── REPÈRES DE CASES (préférences legalStyle, lastStyle) ──────────────────────
+   Coups possibles : Point (défaut), Petit point, Point creux, Cadre. Une case occupée garde son cerne.
+   Dernier coup : Selon l'échiquier (défaut), Très discret, Jaune, Coins. #board : passe devant les teintes par échiquier. */
+html[data-legal-style="small"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { width: 15%; height: 15%; }
+html[data-legal-style="hollow"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { background: none; box-sizing: border-box; border: 2.5px solid rgba(0, 0, 0, .42); box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
+html[data-legal-style="frame"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { inset: 4px; width: auto; height: auto; border-radius: 3px; background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .34), inset 0 0 0 4px rgba(255, 255, 255, .3); }
+html[data-last="soft"] #board .sq.hl-from, html[data-last="soft"] #board .sq.hl-to { background: rgba(255, 255, 255, .2) !important; }
+html[data-last="yellow"] #board .sq.hl-from, html[data-last="yellow"] #board .sq.hl-to { background: rgba(242, 225, 76, .55) !important; }
+html[data-last="corners"] #board .sq.hl-from, html[data-last="corners"] #board .sq.hl-to {
+    --c: rgba(242, 225, 76, .95);
+    background: linear-gradient(var(--c) 0 0) 0 0 / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 0 0 / 7% 28% no-repeat,
+                linear-gradient(var(--c) 0 0) 100% 0 / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 100% 0 / 7% 28% no-repeat,
+                linear-gradient(var(--c) 0 0) 0 100% / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 0 100% / 7% 28% no-repeat,
+                linear-gradient(var(--c) 0 0) 100% 100% / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 100% 100% / 7% 28% no-repeat !important;
+}
+.mark-preview { display: block; width: min(84px, 100%); height: auto; aspect-ratio: 3 / 2; border-radius: 6px; overflow: hidden; }

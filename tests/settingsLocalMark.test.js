@@ -166,7 +166,7 @@ const search = (w, q) => {
     await t('grilles d\'Apparence : aucune tuile seule en dernière ligne à 390 et 1280 px (simulés)', () => {
         w.showSettings('apparence');
         const grids = $$('#settings-overlay .theme-options').map(g => ({ id: g.dataset.grid, n: g.children.length, min: Number(g.dataset.min), max: Number(g.dataset.max) }));
-        assert.deepStrictEqual(grids.map(g => g.id).sort(), ['arrowStyle', 'boardTheme', 'darkBg', 'pieceSet']);
+        assert.deepStrictEqual(grids.map(g => g.id).sort(), ['arrowStyle', 'boardTheme', 'darkBg', 'lastStyle', 'legalStyle', 'pieceSet']);
         // Largeur d'une grille (css/panels.css, « PARAMÈTRES ÉTABLI ») : téléphone, rangées bord à bord de 16 px de marge ;
         // ordinateur, fenêtre de 1080 px − 220 (rubriques) − 52 (marges) − 272 − 24 (aperçu) − 2 (bordure) − 32 (rangée).
         const widths = { 390: 390 - 32, 1280: 1080 - 220 - 52 - 272 - 24 - 2 - 32 };
@@ -180,9 +180,9 @@ const search = (w, q) => {
         // Répartitions de la maquette.
         const by = id => grids.find(g => g.id === id);
         assert.strictEqual(cols(by('boardTheme'), widths[390]), 5);
-        assert.strictEqual(cols(by('boardTheme'), widths[1280]), 7);
-        assert.strictEqual(cols(by('pieceSet'), widths[390]), 4);
-        assert.strictEqual(cols(by('pieceSet'), widths[1280]), 6);
+        assert.strictEqual(cols(by('boardTheme'), widths[1280]), 5);
+        assert.strictEqual(cols(by('pieceSet'), widths[390]), 5);
+        assert.strictEqual(cols(by('pieceSet'), widths[1280]), 5);
         assert.strictEqual(cols(by('arrowStyle'), widths[390]), 3);
         assert.strictEqual(cols(by('darkBg'), widths[390]), 5);
         w.closeSettings();

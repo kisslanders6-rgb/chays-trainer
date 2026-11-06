@@ -41,5 +41,5 @@ grep -rn "celtic" js css sw.js tests assets/pieces/CREDITS.md
 ## Dans tous les cas
 
 - Une image **remplacée** (même nom de fichier) impose d'incrémenter `VERSION` dans `sw.js`.
-- Ne pas changer les défauts (Noyer + Maestro, ou Sauge + Merida pour les anciennes installations) sans que l'utilisateur le demande.
+- Ne pas changer les défauts (Noyer + Maestro, ou Tournoi + Merida pour les anciennes installations) sans que l'utilisateur le demande.
 - Terminer par une capture de l'échiquier dans l'aperçu.

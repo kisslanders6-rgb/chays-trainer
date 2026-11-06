@@ -16,10 +16,10 @@
  * Six styles (Paramètres → Style des flèches, appSettings.arrowStyle) :
  *   plume     trait effilé qui s'épaissit vers une pointe à encoche, dégradé de transparence (défaut)
  *   contour   silhouette pleine translucide cernée d'un liseré, point d'origine marqué
- *   pointille chapelet de points et pointe ouverte en chevron, anneau à l'origine
- *   lichess   trait épais régulier, pointe triangulaire, translucide, comme sur Lichess
+ *   ombre     trait plein régulier, ombre portée décalée
  *   pinceau   coup de pinceau : bords irréguliers, épais au départ, qui s'affine vers la pointe
- *   fine      trait fin et net, petite pointe pleine
+ *   courbe    trait arrondi, en arc (un saut de cavalier arrondit son coude), pointe pleine
+ *   laser     fil fin dans un halo, bille à l'arrivée
  * appSettings.knightArrows : saut de cavalier dessiné en « L » (sinon en ligne droite), pour tous les styles.
  *
  * drawArrows({ arrows, circles, style, flipped, knight }) est PURE (aucun état global) : elle sert à
@@ -125,28 +125,34 @@ function _brushOutline(pts) {
 function _arrowShape(pts, colorKey, style, preview) {
     const col = ANNOT_COLORS[colorKey] || ANNOT_COLORS.accent;
     const op = preview ? .55 : 1;
-    if (style === 'lichess') {
-        const poly = _pts(_arrowOutline(pts, .15, .15, .4, .3, 0));
-        return `<g class="annot" style="color:${col}" opacity="${preview ? .45 : .8}"><polygon points="${poly}" fill="currentColor" stroke="currentColor" stroke-width=".01" stroke-linejoin="round"/></g>`;
+    if (style === 'ombre') {
+        const poly = _pts(_arrowOutline(pts, .17, .17, .42, .3, .06));
+        return `<g class="annot" style="color:${col}" opacity="${op}"><polygon points="${poly}" fill="#000" opacity=".35" transform="translate(.04 .05)"/><polygon points="${poly}" fill="currentColor"/></g>`;
     }
     if (style === 'pinceau') {
         const poly = _pts(_brushOutline(pts));
         return `<g class="annot" style="color:${col}" opacity="${preview ? .5 : .78}"><polygon points="${poly}" fill="currentColor" stroke="currentColor" stroke-width=".035" stroke-linejoin="round" class="annot-halo"/></g>`;
     }
-    if (style === 'fine') {
-        const poly = _pts(_arrowOutline(pts, .06, .06, .26, .15, .04));
-        return `<g class="annot" style="color:${col}" opacity="${preview ? .55 : .95}"><polygon points="${poly}" fill="currentColor" stroke-linejoin="round" class="annot-halo"/></g>`;
-    }
-    if (style === 'pointille') {
-        const tip = pts[pts.length - 1], prev = pts[pts.length - 2];
-        const L = Math.hypot(tip[0] - prev[0], tip[1] - prev[1]), ux = (tip[0] - prev[0]) / L, uy = (tip[1] - prev[1]) / L;
-        const end = [tip[0] - ux * .12, tip[1] - uy * .12];
-        const chev = [[end[0] - ux * .34 - uy * .28, end[1] - uy * .34 + ux * .28], end, [end[0] - ux * .34 + uy * .28, end[1] - uy * .34 - ux * .28]];
-        const path = pts.slice(0, -1).concat([[end[0] - ux * .2, end[1] - uy * .2]]);
+    if (style === 'laser') {
+        const tip = pts[pts.length - 1];
         return `<g class="annot" style="color:${col}" opacity="${op}">
-            <circle cx="${_f(pts[0][0])}" cy="${_f(pts[0][1])}" r=".16" fill="none" stroke="currentColor" stroke-width=".06"/>
-            <polyline points="${_pts(path)}" fill="none" stroke="currentColor" stroke-width=".13" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=".001 .24" class="annot-halo-stroke"/>
-            <polyline points="${_pts(chev)}" fill="none" stroke="currentColor" stroke-width=".13" stroke-linecap="round" stroke-linejoin="round" class="annot-halo-stroke"/></g>`;
+            <polyline points="${_pts(pts)}" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width=".17" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="${_pts(pts)}" fill="none" stroke="currentColor" stroke-width=".04" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="${_f(tip[0])}" cy="${_f(tip[1])}" r=".12" fill="currentColor"/></g>`;
+    }
+    if (style === 'courbe') {
+        const s = pts[0], tip = pts[pts.length - 1];
+        let ctrl = pts[1];
+        if (pts.length < 3) {                                     // ligne droite : un arc léger, toujours du même côté
+            const L = Math.hypot(tip[0] - s[0], tip[1] - s[1]);
+            ctrl = [(s[0] + tip[0]) / 2 + (tip[1] - s[1]) / L * L * .16, (s[1] + tip[1]) / 2 - (tip[0] - s[0]) / L * L * .16];
+        }
+        const L = Math.hypot(tip[0] - ctrl[0], tip[1] - ctrl[1]), ux = (tip[0] - ctrl[0]) / L, uy = (tip[1] - ctrl[1]) / L;
+        const end = [tip[0] - ux * .34, tip[1] - uy * .34];
+        const head = [[end[0] - uy * .28, end[1] + ux * .28], tip, [end[0] + uy * .28, end[1] - ux * .28]];
+        return `<g class="annot" style="color:${col}" opacity="${op}">
+            <path d="M${_f(s[0])} ${_f(s[1])} Q${_f(ctrl[0])} ${_f(ctrl[1])} ${_f(end[0])} ${_f(end[1])}" fill="none" stroke="currentColor" stroke-width=".13" stroke-linecap="round" class="annot-halo-stroke"/>
+            <polygon points="${_pts(head)}" fill="currentColor" class="annot-halo"/></g>`;
     }
     if (style === 'contour') {
         const poly = _pts(_arrowOutline(pts, .2, .2, .42, .3, .08));
@@ -166,14 +172,10 @@ function _arrowShape(pts, colorKey, style, preview) {
 
 function _circleShape(x, y, colorKey, style) {
     const col = ANNOT_COLORS[colorKey] || ANNOT_COLORS.accent;
-    if (style === 'lichess')
-        return `<circle cx="${x}" cy="${y}" r=".44" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".07" stroke-opacity=".8"/>`;
     if (style === 'pinceau')
         return `<circle cx="${x}" cy="${y}" r=".4" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".12" stroke-opacity=".75" stroke-dasharray="1.6 .08 .5 .05" class="annot-halo-stroke"/>`;
-    if (style === 'fine')
+    if (style === 'laser')
         return `<circle cx="${x}" cy="${y}" r=".42" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".04" class="annot-halo-stroke"/>`;
-    if (style === 'pointille')
-        return `<circle cx="${x}" cy="${y}" r=".4" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".1" stroke-linecap="round" stroke-dasharray=".001 .2" class="annot-halo-stroke"/>`;
     if (style === 'contour')
         return `<circle cx="${x}" cy="${y}" r=".42" style="color:${col}" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width=".055" class="annot-halo-stroke"/>`;
     return `<circle cx="${x}" cy="${y}" r=".41" fill="none" style="color:${col}" stroke="currentColor" stroke-width=".09" stroke-opacity=".85" class="annot-halo-stroke"/>`;

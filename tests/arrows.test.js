@@ -3,7 +3,7 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const ctx = { console, ARROW_STYLE_IDS: ['plume', 'contour', 'pointille', 'lichess', 'pinceau', 'fine'],
+const ctx = { console, ARROW_STYLE_IDS: ['plume', 'contour', 'ombre', 'pinceau', 'courbe', 'laser'],
               dataStore: { get: () => null, set() {} }, document: { getElementById: () => null } };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('js/modules/openings/annotations.js', 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx);
@@ -19,17 +19,17 @@ t('chaque style dessine une flèche et un cercle', () => {
 });
 
 t('saut de cavalier : coudé en « L » avec knight, droit sinon (même nombre de sommets que Td1-d4)', () => {
-    const knight = { style: 'lichess', arrows: [{ from: 6, to: 21, color: 'accent' }] };       // Cg1-f3
-    const rook = { style: 'lichess', arrows: [{ from: 3, to: 27, color: 'accent' }] };         // Td1-d4
+    const knight = { style: 'contour', arrows: [{ from: 6, to: 21, color: 'accent' }] };       // Cg1-f3
+    const rook = { style: 'contour', arrows: [{ from: 3, to: 27, color: 'accent' }] };         // Td1-d4
     assert(corners(drawArrows(Object.assign({ knight: true }, knight))) > corners(drawArrows(rook)));
     assert.strictEqual(corners(drawArrows(Object.assign({ knight: false }, knight))), corners(drawArrows(rook)));
 });
 
 t('échiquier retourné : la flèche part de l\'autre coin ; aperçu translucide', () => {
-    const a = drawArrows({ style: 'fine', arrows: [{ from: 0, to: 9, color: 'accent' }] });
-    const b = drawArrows({ style: 'fine', flipped: true, arrows: [{ from: 0, to: 9, color: 'accent' }] });
+    const a = drawArrows({ style: 'laser', arrows: [{ from: 0, to: 9, color: 'accent' }] });
+    const b = drawArrows({ style: 'laser', flipped: true, arrows: [{ from: 0, to: 9, color: 'accent' }] });
     assert.notStrictEqual(a, b);
-    assert(/opacity="0?\.55"/.test(drawArrows({ style: 'fine', arrows: [{ from: 0, to: 9, color: 'accent', preview: true }] })));
+    assert(/opacity="0?\.55"/.test(drawArrows({ style: 'laser', arrows: [{ from: 0, to: 9, color: 'accent', preview: true }] })));
 });
 
 console.log(`\n${n} tests réussis.`);

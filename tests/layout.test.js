@@ -30,6 +30,7 @@ t('échiquier 920px+ : --board-chrome-h = marges, liseré et rangée unique des 
     assert(new RegExp(`html\\[data-coords="out"\\] \\.board-col \\{ --board-chrome-h: ${expected + 18}px;`).test(block), 'coordonnées extérieures : + 18 px');
     assert(new RegExp(`html\\[data-captures="off"\\] \\.board-col \\{ --board-chrome-h: ${expected - 12}px;`).test(block), 'sans les pièces prises : 12 px de moins');
     assert(/\.cap-top \{ margin: -22px 0 0; \}/.test(css) && /\.cap-bot \{ margin: -12px 0 2px; \}/.test(css), 'lignes des pièces prises changées : revoir --board-chrome-h');
+    assert(/\.board-col:has\(> \.tr-progress:not\(\[hidden\]\)\) \{ --board-chrome-h: 150px; \}/.test(css) && /> \.cap-top \{ margin: 0; \}/.test(css), 'en séance, la ligne du haut a sa place (22 px)');
     assert(/\.game-screen-inner \{ padding-bottom: 16px; \}/.test(block));
     const game = css.slice(css.indexOf('ÉCRAN DE JEU (LOT 7)'));
     assert(/\.board-controls \{ flex-direction: row; align-items: stretch; gap: 8px; height: 48px; \}/.test(game), 'rangée unique de 48 px');

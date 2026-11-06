@@ -30,20 +30,18 @@ function _def(id, label, author, license) {
     return { label, author, license, svg: _imgSet(id) };
 }
 
-// Ordre = ordre d'affichage dans les Paramètres. Merida est le jeu par défaut.
+// Ordre = ordre d'affichage dans les Paramètres : Maestro (le défaut) d'abord, puis les classiques, les modernes, les fantaisies, les épurés.
 const PIECE_SETS = {
-    'merida':         _def('merida',         'Merida',         'Armando Hernandez Marroquin', 'GPLv2+'),
     'maestro':        _def('maestro',        'Maestro',        'sadsnake1',                   'CC BY-NC-SA 4.0'),
+    'merida':         _def('merida',         'Merida',         'Armando Hernandez Marroquin', 'GPLv2+'),
     'staunty':        _def('staunty',        'Staunty',        'sadsnake1',                   'CC BY-NC-SA 4.0'),
     'chrome':         _def('chrome',         'Chrome',         'Chrome — dérivé des silhouettes de Colin M.L. Burnett', 'GPLv2+'),
-    'chessnut':       _def('chessnut',       'Chessnut',       'Alexis Luengas',              'Apache 2.0'),
-    'minimal-warmth': _def('minimal-warmth', 'Minimal Warmth', 'blunder_reign',               'CC BY-NC-SA 4.0'),
-    'fantasy':        _def('fantasy',        'Fantasy',        'Maurizio Monge',              'MIT'),
-    'kiwen-suwi':     _def('kiwen-suwi',     'Kiwen Suwi',     'neverRare',                   'CC BY 4.0'),
-    'cburnett':       _def('cburnett',       'Cburnett',       'Colin M.L. Burnett',          'GPLv2+'),
     'california':     _def('california',     'California',     'Jerry S.',                    'CC BY-NC-SA 4.0'),
-    'cardinal':       _def('cardinal',       'Cardinal',       'sadsnake1',                   'CC BY-NC-SA 4.0'),
-    'celtic':         _def('celtic',         'Celtic',         'Maurizio Monge',              'MIT'),
+    'chessnut':       _def('chessnut',       'Chessnut',       'Alexis Luengas',              'Apache 2.0'),
+    'spatial':        _def('spatial',        'Spatial',        'Maurizio Monge',              'MIT'),
+    'fantasy':        _def('fantasy',        'Fantasy',        'Maurizio Monge',              'MIT'),
+    'minimal-warmth': _def('minimal-warmth', 'Minimal Warmth', 'blunder_reign',               'CC BY-NC-SA 4.0'),
+    'kiwen-suwi':     _def('kiwen-suwi',     'Kiwen Suwi',     'neverRare',                   'CC BY 4.0'),
     'blindfold':      { label: 'Invisibles', author: 'Entraînement à l\'aveugle (pièces masquées)', license: '—', src: 'merida', svg: _imgSet('merida') }
 };
 

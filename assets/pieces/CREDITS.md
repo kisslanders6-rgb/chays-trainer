@@ -13,10 +13,8 @@ auteurs et licences dans son fichier `COPYING.md`.
 | fantasy | Maurizio Monge (https://github.com/maurimo/chess-art) | MIT |
 | chessnut | Alexis Luengas (https://github.com/LexLuengas/chessnut-pieces) | Apache 2.0 |
 | kiwen-suwi | neverRare (https://github.com/neverRare) | CC BY 4.0 |
-| cburnett | Colin M.L. Burnett (https://en.wikipedia.org/wiki/User:Cburnett) | GPLv2+ |
 | california | Jerry S. (https://sites.google.com/view/jerrychess/home) | CC BY-NC-SA 4.0 |
-| cardinal | sadsnake1 | CC BY-NC-SA 4.0 |
-| celtic | Maurizio Monge (https://github.com/maurimo/chess-art) | MIT |
+| spatial | Maurizio Monge (https://github.com/maurimo/chess-art) | MIT |
 
 CC BY-NC-SA 4.0 : https://creativecommons.org/licenses/by-nc-sa/4.0/ (usage non commercial,
 attribution, partage dans les mêmes conditions).

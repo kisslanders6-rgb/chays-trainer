@@ -38,7 +38,7 @@ const MODES = {
              ui: d => { const [L, C, h] = toLch(mixLab(d, hex('#1a1208'), .88)); return fromLch([clamp(.7, L, .76), Math.min(C, .12), h]); },
              mark: d => { const [L, C, h] = toLch(d); return fromLch([Math.max(L, .74), C, h]); } }
 };
-const boards = { classic: '#7a9e5a' };
+const boards = {};
 for (const m of css.matchAll(/html\[data-board="([a-z]+)"\]\s*\{[^}]*--board-dark:\s*(#[0-9a-f]{6})/gi)) boards[m[1]] = m[2];
 
 t('style.css : aucun accent écrit à la main par échiquier', () => {
@@ -47,7 +47,7 @@ t('style.css : aucun accent écrit à la main par échiquier', () => {
     assert(css.includes('clamp(.34, l, .45) min(c, .13) h)') && css.includes('clamp(.7, l, .76) min(c, .12) h)') && css.includes('--accent-text:   #12170f'), 'formules recopiées dans ce test');
 });
 
-t('tous les échiquiers lus (13)', () => assert.strictEqual(Object.keys(boards).length, 13, Object.keys(boards).join()));
+t('tous les échiquiers lus (20)', () => assert.strictEqual(Object.keys(boards).length, 20, Object.keys(boards).join()));
 
 // Fonds du mode sombre (préférence darkBg) : le bloc [data-theme="dark"] (gris neutre) et ses variantes data-dark.
 const varsOf = sel => {

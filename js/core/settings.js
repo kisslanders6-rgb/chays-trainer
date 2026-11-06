@@ -16,12 +16,23 @@
 
 const SETTINGS_KEY    = 'chessTrainer_settings';
 const PREFS_KEY       = 'chessTrainer_prefs';
-const BOARD_THEMES    = ['classic', 'leather', 'wood', 'ice', 'night', 'violet', 'walnut', 'stone', 'hache', 'maple', 'marble', 'tournament', 'cherry'];
-const PIECE_SET_IDS   = ['merida', 'maestro', 'staunty', 'chrome', 'chessnut', 'minimal-warmth', 'fantasy', 'kiwen-suwi', 'cburnett', 'california', 'cardinal', 'celtic', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
+// Ordre = ordre d'affichage : Noyer (le défaut) d'abord, puis par famille : bois, pierres, matières, aplats, accessibilité.
+const BOARD_THEMES    = ['walnut', 'wood', 'cherry', 'birch', 'olive', 'ebony', 'burnt', 'marble', 'rosemarble', 'stone', 'leather', 'blackleather',
+                         'tournament', 'clubgreen', 'clubblue', 'navy', 'violet', 'hache', 'highcontrast', 'colorblind'];
+const PIECE_SET_IDS   = ['maestro', 'merida', 'staunty', 'chrome', 'california', 'chessnut', 'spatial', 'fantasy', 'minimal-warmth', 'kiwen-suwi', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
 const DEFAULT_PIECE_SET = 'maestro';
 const DARK_BGS        = ['board', 'neutral', 'green', 'night', 'oled'];                                // ambiances, jour et nuit appariés (style.css, « AMBIANCES »)
-const ARROW_STYLE_IDS = ['plume', 'contour', 'pointille', 'lichess', 'pinceau', 'fine'];          // cf. annotations.js
-const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', pointille: 'Pointillé', lichess: 'Lichess', pinceau: 'Pinceau', fine: 'Fine' };
+const ARROW_STYLE_IDS = ['plume', 'contour', 'ombre', 'pinceau', 'courbe', 'laser'];          // cf. annotations.js
+const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', ombre: 'Ombrée', pinceau: 'Pinceau', courbe: 'Courbe', laser: 'Laser' };
+const LEGAL_STYLES = ['dot', 'small', 'hollow', 'frame'];                                     // repère des coups possibles (data-legal-style)
+const LAST_STYLES  = ['board', 'soft', 'yellow', 'corners'];                                  // repère du dernier coup (data-last)
+// Options retirées du catalogue : un choix enregistré (ici ou sur un appareil pas encore à jour) devient l'option la plus proche.
+const RETIRED_LOOKS = {
+    boardTheme: { classic: 'tournament', ice: 'marble', night: 'navy', maple: 'wood' },
+    pieceSet:   { cburnett: 'merida', cardinal: 'maestro', celtic: 'spatial' },
+    arrowStyle: { pointille: 'plume', lichess: 'contour', fine: 'laser' }
+};
+const _unretire = (name, v) => (RETIRED_LOOKS[name] && RETIRED_LOOKS[name][v]) || v;
 // 18 avatars : 2 monogrammes, les 6 pièces du jeu actif, 10 pictogrammes au trait (icons.js, « av-… »).
 const AVATAR_GLYPHS   = ['initial', 'initials', 'k', 'q', 'r', 'b', 'n', 'p',
                          'av-crown', 'av-star', 'av-flame', 'av-leaf', 'av-moon', 'av-bolt', 'av-compass', 'av-mountain', 'av-owl', 'av-fox'];
@@ -42,6 +53,8 @@ const SYNCED_PREFS = {
     coords:     { ok: _bool, def: true },
     coordPos:   { ok: _oneOf(['in', 'out']), def: 'in' },
     lastMove:   { ok: _bool, def: true },
+    lastStyle:  { ok: _oneOf(LAST_STYLES), def: 'board' },
+    legalStyle: { ok: _oneOf(LEGAL_STYLES), def: 'dot' },
     captures:   { ok: _bool, def: true },                                               // pièces prises et avantage (captures.js)
     legalDots:  { ok: _bool, def: true },
     anim:       { ok: _oneOf(['off', 'fast', 'normal']), def: 'normal' },
@@ -113,8 +126,8 @@ function _readPrefs() {
 function _syncedValues(legacy) {
     const p = _readPrefs(), out = {};
     Object.entries(SYNCED_PREFS).forEach(([name, d]) => {
-        const v = p[name] && p[name].v;
-        out[name] = d.ok(v) ? v : d.ok(legacy[name]) ? legacy[name] : d.def;
+        const v = _unretire(name, p[name] && p[name].v), old = _unretire(name, legacy[name]);
+        out[name] = d.ok(v) ? v : d.ok(old) ? old : d.def;
     });
     return out;
 }
@@ -129,7 +142,7 @@ function loadSettings() {
 }
 
 // Défauts Noyer + Maestro (octobre 2026) réservés aux nouvelles installations : une installation qui a déjà
-// des données et n'a jamais choisi d'échiquier ou de pièces garde les anciens défauts (Sauge, id classic, + Merida),
+// des données et n'a jamais choisi d'échiquier ou de pièces garde les anciens défauts (Tournoi, à la place de Sauge retiré, + Merida),
 // écrits explicitement et datés de 0 pour qu'un choix déjà présent sur le compte l'emporte. Une seule fois.
 const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults';
 (function keepOldLookDefaults() {
@@ -138,10 +151,10 @@ const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults';
     const existing = ['chessTrainer_repertoires', SETTINGS_KEY, PREFS_KEY].some(k => dataStore.get(k) !== null);
     if (!existing) return;
     const s = dataStore.getJSON(SETTINGS_KEY, null) || {}, p = _readPrefs();
-    const old = { boardTheme: 'classic', pieceSet: 'merida' };
+    const old = { boardTheme: 'tournament', pieceSet: 'merida' };
     let changed = false;
     Object.keys(old).forEach(name => {
-        if (SYNCED_PREFS[name].ok(p[name] && p[name].v) || SYNCED_PREFS[name].ok(s[name])) return;   // déjà choisi
+        if (SYNCED_PREFS[name].ok(_unretire(name, p[name] && p[name].v)) || SYNCED_PREFS[name].ok(_unretire(name, s[name]))) return;   // déjà choisi
         p[name] = { v: old[name], at: 0 };
         changed = true;
     });
@@ -282,6 +295,8 @@ function applyDisplayPrefs() {
     d.setAttribute('data-contrast', s.contrast ? 'on' : 'off');
     d.setAttribute('data-dark', s.darkBg);
     d.setAttribute('data-captures', s.captures ? 'on' : 'off');
+    d.setAttribute('data-legal-style', s.legalStyle);
+    d.setAttribute('data-last', s.lastStyle);
     d.setAttribute('data-motion', s.motion);
 }
 

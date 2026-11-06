@@ -1,4 +1,4 @@
-// Textures procédurales des échiquiers Érable, Marbre, Tournoi et Cerisier (assets/boards/<id>.webp, 800 × 800).
+// Textures procédurales des échiquiers Marbre, Tournoi, Cerisier, Ébène, Olivier, Bois brûlé, Bouleau, Marbre rose et Cuir noir (assets/boards/<id>.webp, 800 × 800).
 // Usage, depuis la racine du projet (sharp n'est pas une dépendance du projet) :
 //   npm i --no-save sharp && node scripts/gen-boards.mjs [id…]
 // Chaque case a son propre tirage (grain du bois orienté case par case, veines du marbre continues) ;
@@ -70,8 +70,24 @@ function tournament(light, dark) {
     };
 }
 
+// Cuir : grain serré, nuances larges, pores plus sombres.
+function leather(light, dark) {
+    const L = hex(light), D = hex(dark);
+    return (x, y, sx, sy) => {
+        const base = (sx + sy) % 2 === 0 ? L : D, seed = sx * 8 + sy + 3;
+        const t = (fbm(x / 3.2, y / 3.2, seed, 3) - .5) * .16 + (fbm(x / 70, y / 70, seed + 40, 3) - .5) * .10;
+        const pore = Math.pow(noise(x / 2.1, y / 2.1, seed + 80), 6) * .18;
+        return base.map(v => v * (1 + t - pore));
+    };
+}
+
 const BOARDS = {
-    maple:      wood('#f0dcb4', '#c79a62', { ring: 14, ringAmp: .07, fiberAmp: .10, vary: .05 }),
+    ebony:      wood('#d8c6ac', '#2c211b', { ring: 11, ringAmp: .10, fiberAmp: .14, vary: .07 }),
+    olive:      wood('#ece0c0', '#7b6f3a', { ring: 9,  ringAmp: .16, fiberAmp: .14, vary: .08 }),
+    burnt:      wood('#c9a97f', '#332620', { ring: 16, ringAmp: .12, fiberAmp: .15, vary: .09 }),
+    birch:      wood('#f4ead6', '#c9ae84', { ring: 22, ringAmp: .05, fiberAmp: .08, vary: .04 }),
+    rosemarble: marble('#f6e7e2', '#b98c8a', '#c9a6a2'),
+    blackleather: leather('#d6cfc1', '#2f2a27'),
     cherry:     wood('#ecc9a2', '#91493a', { ring: 18, ringAmp: .09, fiberAmp: .12, vary: .06 }),
     marble:     marble('#ece9e2', '#76807d', '#9a9d98'),
     tournament: tournament('#eeecd0', '#6b8f5a')
