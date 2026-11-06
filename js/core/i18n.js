@@ -8,6 +8,7 @@
  *
  * Dictionnaire d'une langue : { "texte français": "traduction" }. Une clé peut porter des trous : {0}, {1} (recopiés
  * en re-traduisant leur contenu), et {n} (un nombre). « 5 à réviser » se lit donc « {n} à réviser ».
+ * « a|b » dans une traduction : singulier | pluriel, pour les langues dont le pluriel n'est pas un « s » final.
  * translate="no" protège un élément (noms donnés par l'utilisateur, coups).
  *
  * Langues : EMBEDDED, mises en cache hors ligne dès l'installation (sw.js) ; les autres sont des paquets
@@ -27,7 +28,7 @@ const I18n = (function () {
         de:        { label: 'Deutsch',           locale: 'de-DE', letters: 'SLTDK' },
         'pt-PT':   { label: 'Português (Portugal)', locale: 'pt-PT', letters: 'CBTDR' },
         'pt-BR':   { label: 'Português (Brasil)', locale: 'pt-BR', letters: 'CBTDR' },
-        ru:        { label: 'Русский',           locale: 'ru-RU', letters: 'КСЛФР' },
+        ru:        { label: 'Русский',           locale: 'ru-RU', letters: ['К', 'С', 'Л', 'Ф', 'Кр'] },
         ja:        { label: '日本語',             locale: 'ja-JP', letters: 'NBRQK' },
         hi:        { label: 'हिन्दी',               locale: 'hi-IN', letters: 'NBRQK' },
         ar:        { label: 'العربية',            locale: 'ar',    letters: 'NBRQK', rtl: true }
@@ -87,7 +88,10 @@ const I18n = (function () {
             if (!m) continue;
             const vals = {};
             p.order.forEach((id, i) => { vals[id] = translate(m[i + 1]); });
-            return p.out.replace(/\{(\d)\}/g, (_, id) => vals[id]);
+            // « Zug|Züge » : le français marque son pluriel par un trou (« coup{1} » vaut « s ») ; ces langues ont leur propre forme.
+            const forms = p.out.split('|');
+            const out = forms.length > 1 ? forms[Object.values(vals).some(v => v === 's' || v === 'x') ? 1 : 0] : p.out;
+            return out.replace(/\{(\d)\}/g, (_, id) => vals[id]);
         }
         return null;
     }

@@ -281,11 +281,11 @@ function _langHTML() {
     const pick = id => `<button type="button" class="pn-lang${id === now ? ' is-on' : ''}" data-pn="act" data-key="langUse" data-v="${id}" aria-pressed="${id === now}">${name(id)}${id === now ? ico('check') : ''}</button>`;
     // Une langue n'est proposée qu'une fois son paquet publié (lang/manifest.json).
     const rows = Object.keys(I18n.LANGS).filter(id => !I18n.EMBEDDED.includes(id) && (_langDl.sizes[id] || _langDl.have[id])).map(id => {
-        const size = _langDl.sizes[id] ? ` (${_ko(_langDl.sizes[id])})` : '';
+        const size = _langDl.sizes[id] ? `<span class="pn-lang-size">${_ko(_langDl.sizes[id])}</span>` : '';
         if (_langDl.busy === id) return `<div class="pn-lang-row">${name(id)}<progress id="lang-dl-bar" max="100" value="${_langDl.pct}"></progress></div>`;
         if (_langDl.have[id]) return `<div class="pn-lang-row">${id === now ? `${name(id)}${ico('check')}` : `<button type="button" class="pn-lang" data-pn="act" data-key="langUse" data-v="${id}">${name(id)}</button>
             <button type="button" class="pn-lang-del" data-pn="act" data-key="langRemove" data-v="${id}" title="Supprimer cette langue" aria-label="Supprimer cette langue">${ico('trash')}</button>`}</div>`;
-        return `<div class="pn-lang-row">${name(id)}<button type="button" class="btn btn-soft pn-lang-get" data-pn="act" data-key="langGet" data-v="${id}"${_langDl.busy ? ' disabled' : ''}>${ico('download')}<span>Télécharger${size}</span></button></div>`;
+        return `<div class="pn-lang-row">${name(id)}<button type="button" class="btn btn-soft pn-lang-get" data-pn="act" data-key="langGet" data-v="${id}"${_langDl.busy ? ' disabled' : ''}>${ico('download')}<span>Télécharger</span>${size}</button></div>`;
     }).join('');
     return `<div class="pn-langs">${I18n.EMBEDDED.map(pick).join('')}</div>
         ${rows ? `<h4 class="pn-lang-h">À télécharger</h4><div class="pn-lang-list">${rows}</div>` : ''}

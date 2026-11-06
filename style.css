@@ -2347,3 +2347,4 @@ html[data-last="corners"] #board .sq.hl-from, html[data-last="corners"] #board .
 
 /* Arabe : l'interface se lit de droite à gauche, jamais l'échiquier ni les coups. */
 [dir="rtl"] #board, [dir="rtl"] .board-wrap, [dir="rtl"] .moves-bar, [dir="rtl"] .mini-board { direction: ltr; }
+[dir="rtl"] .tb-prev .ico, [dir="rtl"] .tb-next .ico { transform: scaleX(-1); }      /* « précédent » pointe vers le début de la lecture */

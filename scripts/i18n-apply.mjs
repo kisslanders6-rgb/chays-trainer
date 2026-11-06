@@ -24,7 +24,7 @@ for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
     const key = lead ? fr.slice(lead[0].length) : fr;
     langs.forEach((l, i) => {
         let v = cols[i].trim();
-        if (lead) v = v.replace(lead[0], '');
+        if (lead) v = v.split(lead[0]).join('');
         packs[l][key] = v;
         // Variantes que la page montre : icône devant (« {0} Réessayer »), « <b>texte</b> » seul, « · » final.
         const iconed = /^\{\d\} (?=[A-ZÀ-Ý])/.exec(key);

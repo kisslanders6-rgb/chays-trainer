@@ -123,6 +123,23 @@ async function boot(lang) {
             assert.strictEqual(d['Jouer'], { en: 'Play', es: 'Jugar', 'zh-Hans': '对弈' }[l]);
         }
     });
+    await t('les onze langues : chaque paquet est publié, l’arabe se lit de droite à gauche', () => {
+        const manifest = JSON.parse(read('lang/manifest.json')), langs = w.eval('Object.keys(I18n.LANGS)');
+        langs.filter(l => l !== 'fr').forEach(l => {
+            assert(manifest[l] > 100000, l);
+            const d = JSON.parse(read(`lang/${l}.json`));
+            assert(Object.keys(d).length > 2200, l);
+            assert(d['Télécharger'], `${l} : Télécharger`);
+            Object.entries(d).forEach(([k, v]) => (v.match(/\{\d\}/g) || []).forEach(h => assert(k.includes(h), `${l} : ${h} inventé dans « ${k.slice(0, 60)} »`)));
+        });
+        assert.strictEqual(w.eval('I18n.LANGS.ar.rtl'), true);
+        assert.strictEqual(w.eval('I18n.LANGS.ru.letters[4]'), 'Кр');
+    });
+    await t('pluriel « a|b » : le trou « s » choisit la forme', () => {
+        w.eval(`I18n.install('de', Object.assign(JSON.parse(localStorage.getItem('chays_langPack')).dict, { 'essai test {0} coup{1}': 'versuch {0} Zug|versuch {0} Züge' }))`);
+        assert.strictEqual(w.eval(`I18n.t('essai test 1 coup')`), 'versuch 1 Zug');
+        assert.strictEqual(w.eval(`I18n.t('essai test 2 coups')`), 'versuch 2 Züge');
+    });
     await t('service worker : langues d’office en cache, les autres jamais', () => {
         const sw = read('sw.js');
         assert(/'lang\/en\.json', 'lang\/es\.json', 'lang\/zh-Hans\.json'/.test(sw));

@@ -579,3 +579,4 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 .pn-lang-get .ico, .pn-lang-del .ico { width: 15px; height: 15px; fill: none; }
 .pn-lang-del { display: grid; place-items: center; width: var(--tap); height: var(--tap); border: 0; background: none; color: var(--text-muted); cursor: pointer; }
 .pn-dl-err { margin: 8px 0 0; color: var(--err); font-size: 13px; }
+.pn-lang-size { opacity: .7; font-weight: 500; }
