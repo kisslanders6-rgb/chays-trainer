@@ -176,7 +176,7 @@ function closeTrash() {
 function renderTrash() {
     const list = loadTrash();
     const box  = document.getElementById('trash-list');
-    const fmt  = ts => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const fmt  = ts => new Date(ts).toLocaleString(I18n.locale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     document.getElementById('trash-empty-btn').style.display = list.length ? '' : 'none';
 
     if (!list.length) {

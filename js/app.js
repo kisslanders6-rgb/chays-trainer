@@ -179,7 +179,7 @@ function _homeGoalHTML(done, goal) {
 // Prévision des 7 prochains jours (programme du répertoire, reviewPlan) : une barre fine par jour avec son total.
 function _homeForecastHTML(fc, now) {
     const max = Math.max(1, ...fc), d0 = new Date(now);
-    const day = i => i === 0 ? 'auj.' : new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).toLocaleDateString('fr-FR', { weekday: 'short' });
+    const day = i => i === 0 ? 'auj.' : new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).toLocaleDateString(I18n.locale(), { weekday: 'short' });
     return `<div class="hp-plan hp-fc-wrap"><div class="hp-h"><h3>7 prochains jours</h3><span class="hp-n">${fc.reduce((a, b) => a + b, 0)}</span></div>
         <ol class="hp-fc" aria-label="Révisions prévues sur les 7 prochains jours">${fc.map((v, i) =>
             `<li aria-label="${escapeHtml(day(i))} : ${v} ${v > 1 ? 'positions' : 'position'}"><b class="hp-fc-n">${v}</b>`

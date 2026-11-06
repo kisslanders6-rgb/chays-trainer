@@ -176,7 +176,7 @@ function _onlineFacts(row) {
     const dev = row.kind !== 'theory' && row.res.ply >= 0;
     return { opp, res, at, opening: onlineOpening(h), dev,
              date: at ? _shortDate(at) : '',
-             longDate: at ? new Date(at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+             longDate: at ? new Date(at).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '',
              move: dev ? _plyLabel(row.res.ply, row.r.moves[row.res.ply].san, true) : '' };
 }
 

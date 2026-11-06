@@ -560,3 +560,22 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 }
 @media (pointer: coarse) { .pal-foot, .pal-keys { display: none; } }
 @media (prefers-reduced-motion: reduce) { .pal-box { animation: none; } }
+
+/* ═══ LANGUE (settingsUI.js) ═══ */
+.pn-langs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; width: 100%; }
+.pn-lang { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--tap); padding: 0 12px; border: 1px solid var(--border); border-radius: 10px;
+           background: var(--surface); color: var(--text); font: inherit; font-size: 14px; text-align: start; cursor: pointer; }
+.pn-lang b { font-weight: 500; }
+.pn-lang .ico { width: 16px; height: 16px; color: var(--accent); fill: none; }
+.pn-lang.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.pn-lang-h { margin: 14px 0 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.pn-lang-list { display: flex; flex-direction: column; width: 100%; }
+.pn-lang-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: var(--tap); padding: 4px 0; border-top: 1px solid var(--border); }
+.pn-lang-row b { font-weight: 500; font-size: 14px; }
+.pn-lang-row .pn-lang { flex: 1; border: 0; background: none; padding: 0; }
+.pn-lang-row > .ico { width: 16px; height: 16px; color: var(--accent); fill: none; }
+.pn-lang-row progress { flex: 0 1 160px; }
+.pn-lang-get { min-height: 36px; gap: 6px; font-size: 13px; }
+.pn-lang-get .ico, .pn-lang-del .ico { width: 15px; height: 15px; fill: none; }
+.pn-lang-del { display: grid; place-items: center; width: var(--tap); height: var(--tap); border: 0; background: none; color: var(--text-muted); cursor: pointer; }
+.pn-dl-err { margin: 8px 0 0; color: var(--err); font-size: 13px; }

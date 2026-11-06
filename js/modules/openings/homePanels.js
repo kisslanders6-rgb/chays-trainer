@@ -18,7 +18,7 @@ const HomePanels = (function () {
     const LIST_MAX = 5;
     const KINDS = { theory: ['Théorique', 'ok'], mistake: ['Erreur', 'err'], out: ['Hors répertoire', 'info'],
                     novelty: ['Nouveauté', 'warn'], treated: ['Traitée depuis', 'new'], missing: ['Sans réponse', 'err'] };
-    const date = t => (t ? new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
+    const date = t => (t ? new Date(t).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' }) : '');
     const srcName = id => ({ lichess: 'Partie Lichess', chesscom: 'Partie Chess.com' }[_gameSrc(id)] || 'PGN collé');
     let shown = [], shownGames = [];                  // lignes à traiter affichées (clic : index)
 

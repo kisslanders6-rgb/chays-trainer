@@ -1,0 +1,2372 @@
+Le nom ne peut pas être vide.
+Cet appareil a été déconnecté depuis un autre appareil. Vos données restent ici.
+Répertoire {2}
+Nouveau répertoire
+Blancs
+Noirs
+et {0} dans {1} autre{2} ouverture{3}
+auj.
+Objectif du jour : {0} sur {1} positions
+Révisions prévues sur les 7 prochains jours
+7 prochains jours
+Aucune position
+{0} à réviser
+à jour
+Bonsoir
+Bonjour
+{0} d'affilée
+contre 1. e4, 1. d4…
+Par quelle couleur commencer ?
+Commencer avec les Blancs
+{4}Importer un PGN
+{5}Partir de mes parties
+Autres exercices {0}
+à réviser
+Blancs et Noirs
+Environ <b>{0} min</b> · {1}
+· dont {0}
+· encore {0} pour l'objectif
+Position la plus en retard, avant votre coup
+Position de départ
+La plus en retard{1}
+{0}Commencer la révision
+Au programme
+Tout est <em>à jour</em>.
+Prochaine révision <b>{0}</b>
+Aucune révision prévue
+· objectif atteint
+{1}Ajouter une ligne aux {2}
+(max-width: 599px)
+Commencer avec les
+Le répertoire par défaut ne peut pas être supprimé.
+Supprimer le répertoire « {0} » ({1} coup(s) Blancs, {2} coup(s) Noirs) ? Il sera placé dans la corbeille et restera restaurable pendant 30 jours.
+Description de « {0} »
+ex : Najdorf avec les Noirs, Italienne avec les Blancs
+Enregistrer
+Supprimer (« Général » est protégé)
+Supprimer « {0} »
+Renommer (« Général » est protégé)
+Renommer « {0} »
+Modifier la description
+Ajouter une description
+Couleur fixée par la séance guidée
+Couleur fixée par l'exercice
+Couleur fixe dans ce mode
+Couleur jouée
+<b>Reprendre</b>
+Partie reprise
+Vous êtes revenu à la position où vous vous étiez arrêté.
+Connecté
+Hors ligne : connexion au compte impossible pour l'instant. Vos données restent utilisables sur cet appareil.
+Fermer
+Mot de passe : 8 caractères minimum.
+Longueur du mot de passe
+class="on"
+Échiquier
+Sapin
+Noyer
+Nuit
+Ardoise
+Prune
+Ivoire
+Initiale
+Deux initiales
+Roi
+Dame
+Tour
+Fou
+Cavalier
+Pion
+Couronne
+Étoile
+Flamme
+Feuille
+Lune
+Éclair
+Boussole
+Montagne
+Hibou
+Renard
+Compte — {0}
+Compte (non connecté)
+Mot de passe
+Oublié ?
+aria-describedby="acct-pwm"
+Afficher le mot de passe
+Afficher
+Continuer avec Google
+vous@exemple.fr
+Adresse e-mail
+Se connecter avec cette adresse
+Créer un compte avec cette adresse
+Recevoir un lien de connexion
+Se connecter
+Pas de mot de passe à retenir : le lien vous connecte (et crée le compte si besoin).
+Utiliser un mot de passe
+{0}Recevoir un lien par e-mail
+Retrouvez vos répertoires sur tous vos appareils. Sans compte, vos données restent uniquement sur cet appareil.
+Pas encore de compte ?
+Créer un compte
+Choisissez un mot de passe
+Vos répertoires, statistiques et finales sont sauvegardés en ligne et synchronisés entre vos appareils.
+Créer mon compte
+Déjà un compte ?
+Bienvenue !
+Votre compte est créé. Choisissez le nom affiché sur l'accueil (« Bonjour, … ») ; vous pourrez le changer dans Compte › Profil.
+Pseudo
+Commencer
+Plus tard
+Saisissez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.
+Envoyer le lien
+Retour
+Nouveau mot de passe
+Annuler
+Choisissez votre nouveau mot de passe.
+Fusionner
+Réunit les deux : pour une position commune, les essais et erreurs sont additionnés. Rien n'est perdu.
+{0} + {1} · rien n'est perdu
+Envoyer cet appareil
+Le contenu en ligne est remplacé par celui de cet appareil.
+le compte reprend {0}
+Récupérer mon compte
+Cet appareil est remplacé par le contenu en ligne. Une sauvegarde locale (.json) vous sera proposée avant.
+cet appareil reprend {0}
+{0} Cet appareil contenait des données d'un autre compte.
+<em>recommandé</em>
+Première synchronisation
+Cet appareil et le compte <strong>{0}</strong> contiennent tous deux des données. Rien n'est envoyé avant votre choix.
+{3}Cet appareil
+{6}Compte
+Continuer
+Profil
+Pseudo, avatar
+Synchronisation
+Appareils, exporter
+Sécurité
+Mot de passe, déconnexion
+Pièce
+<b>{5}</b>positions
+<b>{6} j</b>d'affilée
+<b>{7}</b>aujourd'hui
+Motif
+background:linear-gradient(135deg, var(--theme-dark-deep) 50%, var(--theme-light-refined) 50%)
+Couleur {1}
+Votre photo est affichée : le motif la remplace si vous la retirez.
+Couleur
+Couleur ·
+Elle n’a pas pu être téléchargée depuis votre compte (stockage « avatars » absent ou photo supprimée). Le motif la remplace.
+Votre photo remplace le motif, partout où l’avatar s’affiche.
+Recadrée en carré ; enregistrée avec votre compte (sinon, sur cet appareil seulement).
+Photo indisponible
+Votre photo
+Aucune photo
+Nouvelle photo
+Choisir une photo
+Retirer
+Photo
+Avatar
+Identité
+Affiché sur l’accueil (« Bonsoir, … ») et dans la barre du haut.
+Votre pseudo
+Classement et objectif
+Classement Elo
+Facultatif, visible de vous seul.
+ex. 1650
+Objectif quotidien
+Aussi réglable dans Paramètres › Jeu et entraînement.
+{0} positions
+Comptes d’échecs en ligne
+Pour comparer vos parties à votre répertoire (Analyser mes parties).
+pseudo Lichess
+Pseudo Lichess
+Enregistré avec le compte : retrouvé sur tous vos appareils.
+pseudo Chess.com
+Pseudo Chess.com
+à l’instant
+il y a {0} min
+il y a {0} h
+il y a {0} jour{1}
+À jour
+Synchronisation en cours
+Hors ligne
+Synchronisation en échec
+Réessayer
+Synchroniser maintenant
+Dernière synchronisation : {5}
+Hors ligne : vos modifications seront synchronisées au retour de la connexion.
+Vos appareils
+Appareil
+<em>cet appareil</em>
+Déconnexion demandée
+Actif maintenant
+Dernière synchronisation
+{1}Déconnecter
+Aucun appareil enregistré pour l’instant
+La liste se remplit à la prochaine synchronisation.
+Ce qui est synchronisé
+Répertoires, statistiques, révisions, finales
+Toujours synchronisés.
+Échiquier, pièces, jeu, notation, profil
+Toujours synchronisés : même réglage sur tous vos appareils.
+Mode clair / sombre et sons
+Désactivé, chaque appareil garde les siens.
+Synchroniser le mode et les sons
+Sauvegarde
+Exporter mes données
+Fichier .json : répertoires, statistiques, planning de révision, finales.
+{0}Exporter
+Connexion
+Nouvelle adresse e-mail
+Envoyer le lien de confirmation
+Connexion par {0}
+Adresse e-mail du compte
+Modifier
+Choisissez-en un nouveau, ou recevez un lien par e-mail pour le réinitialiser.
+Changer
+Recevoir un lien
+Session
+Se déconnecter
+Vos données restent sur cet appareil et en ligne.
+{0}Se déconnecter
+Se déconnecter et effacer cet appareil
+Rien n’est supprimé en ligne.
+Effacer cet appareil
+{0}Zone sensible
+Supprimer mon compte
+Supprime définitivement le compte et les données en ligne. Les données de cet appareil sont conservées.
+Supprimer…
+SUPPRIMER
+Tapez SUPPRIMER pour confirmer
+{0}Supprimer définitivement
+Bienvenue
+Mot de passe oublié
+input[name=pseudo]
+sauvegarde avant synchronisation
+La sauvegarde locale a échoué : la synchronisation n'a pas été lancée. Réessayez, ou exportez depuis Données.
+Vos {0} vont être sauvegardées dans votre compte.
+Vos {0} en ligne vont être récupérées.
+Se déconnecter et effacer toutes les données de cet appareil ?
+modification non synchronisée sera
+modifications non synchronisées seront
+{0} définitivement perdue{1}.
+Vos données en ligne ne sont pas touchées.
+Tapez SUPPRIMER pour confirmer la suppression.
+Votre compte a été supprimé. Vos données restent sur cet appareil.
+Adresse e-mail invalide.
+Saisissez un mot de passe.
+Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.
+Lien envoyé à {0} : ouvrez-le sur cet appareil pour vous connecter.
+Un lien de confirmation vient d'être envoyé à {0}. L'adresse changera une fois le lien ouvert.
+Mot de passe modifié.
+Compte créé. Un e-mail de confirmation vient d'être envoyé à {0} : cliquez sur le lien qu'il contient, puis connectez-vous.
+L’appareil sera déconnecté à sa prochaine synchronisation.
+Masquer
+Masquer le mot de passe
+Fusion programmée : vos données vont être réunies.
+Vos données vont remplacer celles du compte.
+Les données du compte vont remplacer celles de cet appareil.
+Remplacer les données de cet appareil par celles du compte ? Vous pouvez d'abord télécharger une sauvegarde locale (.json) de ce qui va être remplacé.
+Télécharger une sauvegarde, puis remplacer
+Remplacer sans sauvegarde
+Remplacer les données en ligne par celles de cet appareil ? Ce qui n'existe pas ici sera supprimé du compte.
+Compte
+Adresse confirmée : vous êtes connecté.
+Vous êtes connecté.
+Ce lien connecte cet appareil au compte {0}, à la place de {1}. Continuer ?
+Ce lien connecte cet appareil au compte {0}. Continuez seulement s'il s'agit de votre adresse et que vous venez de demander ce lien.
+Votre session a expiré : reconnectez-vous pour reprendre la synchronisation.
+auth : écouteur
+Connexion impossible : vérifiez votre réseau.
+Le service de compte n'est pas configuré.
+E-mail ou mot de passe incorrect.
+Adresse e-mail pas encore confirmée : ouvrez le message de confirmation reçu.
+Un compte existe déjà avec cette adresse : connectez-vous.
+Choisissez un mot de passe différent de l'ancien.
+Mot de passe trop faible : 8 caractères minimum.
+Trop de tentatives : réessayez dans quelques minutes.
+Erreur du service de compte ({0}).
+Session expirée : reconnectez-vous.
+Session expirée : recommencez depuis le lien reçu par e-mail.
+openid email profile
+La connexion avec Google n'est possible que depuis l'adresse en ligne de l'application.
+Vous n'êtes pas connecté.
+La suppression a échoué ({0}). Réessayez plus tard.
+Ce lien a expiré ou a déjà été utilisé : recommencez la démarche.
+Connexion Google annulée.
+Lien invalide.
+Connexion Google interrompue ou expirée : recommencez.
+Lien invalide ou expiré : recommencez la démarche.
+photo de profil
+Image illisible : choisissez un fichier JPEG, PNG ou WebP.
+Recadrer la photo
+Aperçu : glissez pour déplacer
+Zoom
+Recadrer la photo</b>
+{0}/avatar-{1}.webp
+envoi refusé (
+La photo n’a pas pu être envoyée : vérifiez la connexion (et que le seau « avatars » existe, cf. supabase/schema.sql).
+aujourd'hui
+il y a {0} jours
+il y a {0} semaines
+il y a {0} mois
+Dernière sauvegarde locale : {0}
+Aucune sauvegarde locale
+Synchronisé avec votre compte
+Vos données sont enregistrées en ligne et sur cet appareil. Une sauvegarde locale (fichier .json) reste possible si vous le souhaitez. {0}.
+Pensez à télécharger une sauvegarde, ou à créer un compte, dès que votre répertoire grandit.
+Rien à sauvegarder pour le moment.
+Aucune sauvegarde
+Vos {0} n'existent que dans ce navigateur, sur cet appareil. Téléchargez une sauvegarde ou connectez-vous pour les synchroniser.
+Sauvegarde locale à jour ({0})
+Aucune modification depuis.
+{0} depuis, non sauvegardée{1} hors de ce navigateur.
+Paramètres — sauvegarde recommandée
+Paramètres
+Cet appareil garde une copie pour fonctionner hors ligne ; les modifications sont envoyées dès que la connexion revient.
+Sans compte, les données ne vivent que dans ce navigateur : vider le cache ou les données du site les efface, même si le stockage est protégé.
+class="backup-full"
+Fichier .json : répertoires, statistiques, planning de révision, finales
+Fusionne un fichier .json avec vos données
+{5} {6} position{7} · {8} Ko · {9} % du stockage
+{1} Télécharger une sauvegarde
+{2} Restaurer une sauvegarde
+{3} Pour échanger des lignes avec d'autres logiciels, utilisez l'export PGN du panneau Données.
+{0} Stockage protégé par le navigateur
+{0} Stockage non protégé ·
+Protéger
+stockage presque plein
+Le stockage du navigateur est rempli à {0} % : bientôt, plus rien ne pourra s'enregistrer. Exportez une sauvegarde, puis videz la corbeille ou supprimez les répertoires inutiles.
+synchro : écouteur
+key,version
+key,data,version,updated_at
+Les deux
+aria-label="{0}"
+le moteur ne répond pas
+remplacé
+le moteur s'est arrêté
+aucun moteur complet dans cette version
+annulé
+serveur injoignable (unpkg)
+serveur indisponible (unpkg, code {0})
+téléchargement interrompu
+fichier reçu altéré (empreinte différente) : rien n’a été gardé
+(none)
+depth {0}
+movetime {0}
+le moteur ne répond plus
+Jouer
+Entraînement
+Statistiques
+Finales
+Analyser mes parties
+Analyse
+Importer
+Corbeille
+la présentation
+Construire ses lignes en jouant
+Ne compte rien
+Choisissez un <strong>répertoire</strong> (puce en haut) et une couleur, puis jouez <strong>vos coups et ceux de l’adversaire</strong> : chaque coup adverse ouvre une branche.
+Position inconnue : votre coup devient l’<strong>unique réponse</strong> enregistrée. « Annuler », dans la barre d’état, la retire aussitôt.
+Position connue : retrouvez votre réponse. <kbd>Espace</kbd> montre la pièce, puis le coup.
+Onglets <strong>Coups</strong>, <strong>Arbre</strong> (remplacer ou supprimer une réponse) et <strong>Adversaire</strong>. Ici, rien n’est compté : statistiques et révisions n’évoluent qu’à l’Entraînement.
+Réviser au bon moment
+Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur.
+<strong>Révision du jour</strong> (aussi « Commencer la révision » sur l’accueil), Points faibles, Ligne complète, À confirmer, Contre-la-montre et Mode libre.
+Chaque séance finit par un <strong>bilan</strong> ; une position ratée revient une fois en fin de séance.
+C’est le seul endroit qui fait évoluer <strong>statistiques et révisions</strong>.
+Voir ce qui tient et ce qui flanche
+Observe
+Cinq niveaux de maîtrise par position ; « À confirmer » (moins de 3 essais) est montré à part. Toucher la barre ou la légende filtre la liste.
+Positions regroupées par <strong>ouverture nommée</strong> ; la régularité (série, calendrier) couvre tous les répertoires.
+Les boutons ouvrent l’exercice d’<strong>Entraînement</strong> déjà filtré, sans lancer de séance : les Statistiques observent, l’Entraînement agit.
+Aperçu d’une position : « S’entraîner » lance sa révision, « ‹ Statistiques » ramène au même endroit.
+Gagner, annuler, mater
+Finales réussies seulement
+Mats, pions, tours, Dame, pièces mineures : toucher un exercice ouvre son <strong>aperçu</strong>, et seul « Commencer » lance la séance.
+L’adversaire répond tout seul ; <strong>chaque coup est jugé</strong> par les tables de finales, sinon par le moteur (verdict « estimé »).
+Un coup qui laisse échapper le gain ou la nulle est signalé (« Nulle → Perte ») : « Annuler ce coup » le reprend. La théorie se déplie pendant la séance.
+Adversaire « Résistance maximale » ou « Humain » : Paramètres › Jeu et entraînement.
+Comparer ses parties au répertoire
+Erreur comptée une fois par partie
+Lichess, Chess.com ou PGN collé ; l’analyse s’arrête au <strong>premier coup hors répertoire</strong>.
+Erreur
+votre coup diffère : comptée une fois par partie, répertoire et couleur.
+Nouveauté
+coup adverse non couvert : rien n’est compté, il attend votre réponse dans « À traiter ».
+Traitée depuis
+réponse ajoutée après la partie : rien n’est compté, elle passe en tête des révisions.
+Explorer avec Stockfish
+Outil <strong>Analyse</strong> de l’écran de jeu : Stockfish évalue la position affichée, avec ses meilleures lignes et des flèches.
+Jouez librement les deux camps : vos essais forment un <strong>brouillon</strong> en arbre, gardé pendant la session.
+« Arrêter » suspend le calcul sur la position affichée ; la suivante est recalculée.
+Rien n’est écrit avant <strong>« Ajouter au répertoire »</strong> : chaque coup du brouillon porte sa marque (nouveau, connu, conflit), et un conflit n’est remplacé que si vous activez « Remplacer » dans l’aperçu.
+Compte et synchronisation
+Les mêmes répertoires partout
+Facultatif
+Sans compte, tout reste dans ce navigateur : téléchargez une sauvegarde (.json) depuis Paramètres › Données et sauvegarde.
+Avec un compte (Google ou e-mail), répertoires, statistiques, révisions, finales et préférences sont <strong>synchronisés entre vos appareils</strong>.
+Les modifications faites hors ligne partent au retour de la connexion.
+Les réglages propres à un appareil (sons, accessibilité, moteur…) portent le repère « appareil » dans les Paramètres ; l’état de la synchronisation est dans Compte › Synchronisation.
+Construire un répertoire
+Jouer · Choisir une couleur · Jouer les deux camps
+Réviser aujourd’hui
+Entraînement · Révision du jour · Bilan
+Importer un PGN
+Jouer › Importer · Coller ou choisir le fichier · Vérifier l’aperçu, puis ajouter
+Comparer mes parties
+Jouer › Analyser mes parties · Lichess, Chess.com ou PGN collé
+Synchroniser mes appareils
+Compte · Se connecter · Les données suivent
+Retrouver un répertoire supprimé
+Corbeille · 30 jours pour restaurer
+Sur téléphone, comment revoir les coups joués ?
+Glissez le doigt sur la barre de coups, un coup à la fois : vers la gauche pour avancer, vers la droite pour reculer. Les boutons ‹ et › en bas de l’écran font la même chose.
+Mes données sont-elles envoyées en ligne ?
+Seulement si vous créez un compte. Sans compte, tout reste dans ce navigateur : téléchargez une sauvegarde (.json) de temps en temps, depuis Paramètres › Données et sauvegarde.
+Que se passe-t-il si je joue un autre coup que celui de mon répertoire ?
+Le coup est refusé. En Entraînement, il compte comme une erreur et la position reviendra plus vite en révision ; dans Jouer, rien n’est compté. Pour changer de réponse, utilisez ⋯ sur ce coup dans l’Arbre.
+Comment comparer mes parties Lichess ou Chess.com à mon répertoire ?
+Renseignez vos pseudos dans Compte › Profil, puis ouvrez « Analyser mes parties » dans la barre de l’accueil Jouer : chaque déviation est listée et ouvre la position concernée.
+Comment importer un PGN ?
+Jouer › Importer. Variantes et numéros de coup qui reculent deviennent des branches ; un conflit avec votre réponse est montré avant d’écrire.
+L’application fonctionne-t-elle sans connexion ?
+Oui, une fois installée (Paramètres › Données et sauvegarde › Installer). Avec un compte, les modifications faites hors ligne sont synchronisées au retour de la connexion.
+J’ai supprimé un répertoire par erreur.
+Il reste 30 jours dans la corbeille, d’où il peut être restauré (menu ⋮ des répertoires, ou Paramètres › Données et sauvegarde).
+Comment s’entraîner sans voir les pièces ?
+Activez « Pièces invisibles » dans Paramètres › Apparence : l’échiquier reste jouable, les pièces sont masquées.
+révision
+flèche
+Premiers pas
+Trois étapes, tâches fréquentes
+Raccourcis
+Clavier et souris
+Questions fréquentes
+Données, erreurs, import
+À propos et crédits
+Version, licences
+<b>Choisir un répertoire</b>
+Puce en haut de Jouer
+<b>Jouer les deux camps</b>
+Vos coups deviennent les réponses
+<b>Réviser chaque jour</b>
+Entraînement, quelques minutes
+Commencer à jouer
+Votre répertoire en trois étapes
+{2}Revoir la présentation
+Je veux…
+Guides
+Ouvrir
+Guide suivant : {1}{2}
+Guide
+Chays Trainer
+Entraîneur d’ouvertures et de finales, en révision espacée. Fonctionne hors ligne une fois installé.
+Jeux de pièces
+Jeux issus du dépôt open source de lichess (dossier public/piece). Les textures d’échiquier (pierre, cuir, noyer) sont créées pour ce projet.
+Moteur d’analyse
+Stockfish{2}
+Stockfish developers · GPL v3
+stockfish.js (WebAssembly)
+Nathan Rugg, Chess.com · GPL v3
+Logiciel libre : sources sur github.com/official-stockfish/Stockfish et github.com/nmrugg/stockfish.js ; licence jointe dans engine/.
+Polices
+Fraunces
+SIL OFL 1.1
+IBM Plex Mono
+Inter
+Tâches
+Questions
+<b>Rien sur « {1} »</b>
+<b>{0} résultat{1}</b> pour « {2} »
+Y aller{0}
+aria-current="true"
+<kbd>↑</kbd><kbd>↓</kbd> parcourir · <kbd>Entrée</kbd> ouvrir · <kbd>Échap</kbd> effacer
+Plus
+Aide
+Rechercher dans l’aide
+(pointer: coarse)
+cubic-bezier(.72, 0, .18, 1)
+cubic-bezier(.4, 0, .2, 1)
+cubic-bezier(.16, 1, .3, 1)
+translateY(-12px) scale(.92)
+translate(0px, 0px) scale(1)
+translate({0}px, {1}px) scale({2})
+translateY(14px)
+(display-mode: standalone)
+sw.js
+Ouvre Chays Trainer comme une vraie application, même sans connexion.
+Sur iPhone / iPad : touche le bouton Partager de Safari, puis « Sur l'écran d'accueil ».
+Réduire le panneau
+Agrandir le panneau
+Hors ligne · vos données restent sur cet appareil. Parties en ligne et compte indisponibles.
+De retour en ligne.
+réseau : écouteur
+Cette action a besoin d'une connexion Internet.
+Une seule réponse par position
+Votre répertoire retient <strong>un coup par position</strong> où c’est à vous de jouer : le vôtre. Le but est de le retrouver à chaque fois, quel que soit l’ordre de coups qui y mène.
+Construire dans Jouer
+Jouez <strong>vos coups et ceux de l’adversaire</strong>. Dans une position nouvelle, votre coup est enregistré. Rien n’est compté ici : explorez librement, ou importez vos lignes depuis un fichier PGN.
+Réviser dans Entraînement
+L’application vous repose chaque position <strong>au bon moment</strong> : une réussite éloigne la prochaine révision, une erreur la ramène vite. Quelques minutes par jour suffisent.
+Suivre ses progrès
+Les <strong>Statistiques</strong> montrent ce qui est maîtrisé et ce qui reste fragile. <strong>Mes parties en ligne</strong> compare vos parties Lichess et Chess.com à votre répertoire.
+aria-current="step"
+Étape {2}
+{0} Précédent
+Passer
+{0} Importer un PGN
+Suivant {0}
+Étape {3} sur {4}
+Récents
+Suggestions
+Actions
+Ouvertures
+Positions
+Répertoires
+Réglages
+Autres ouvertures
+Ctrl F
+Onglet
+accueil répertoire
+maîtrise régularité progrès
+exercices séance
+Révision du jour
+{0} à réviser aujourd’hui
+Rien à réviser aujourd’hui
+réviser répétition espacée séance
+Points faibles
+Exercice d’Entraînement
+erreurs fragiles
+Jouer les Blancs
+Ajouter ou revoir une ligne
+nouvelle ligne
+Jouer les Noirs
+Moteur et brouillon
+stockfish moteur évaluation
+Lichess, Chess.com, PGN collé
+importer lichess chesscom chess.com
+Ajouter des lignes au répertoire
+Créer un répertoire
+créer ajouter
+Restaurer ce qui a été supprimé
+supprimé restaurer
+Fenêtre
+réglages options préférences
+Profil et synchronisation
+connexion profil synchronisation avatar
+comment ça marche guide
+Mode clair ou sombre
+Changer de thème
+thème nuit jour
+Couper ou remettre les sons
+Sons
+son muet silence volume
+Retourner l’échiquier
+Partie en cours
+Copier la partie en PGN
+exporter copier
+{0} · {1} position{2}
+Continuez la ligne depuis cette position.
+Position initiale
+{0} · réponse {1}
+Ouvrir dans l’Analyse
+Question fréquente
+Changer de répertoire
+Finale
+Rien sur « {0} »
+palette de recherche
+Rechercher
+Rechercher une action, une ouverture, un réglage
+Une action, une ouverture, un réglage…
+Résultats
+<kbd>↑</kbd><kbd>↓</kbd> parcourir
+<kbd>Entrée</kbd> ouvrir
+<kbd>Échap</kbd> fermer
+<kbd>{1}</kbd> recherche du navigateur
+Rechercher ({0})
+Propre à cet appareil
+overlay hidden
+Autres fenêtres
+Fermer (Échap)
+Rubriques
+(max-width: 640px)
+aria-current="page" class="is-on"
+assets/pieces
+KQRBNP
+Maestro
+CC BY-NC-SA 4.0
+Merida
+Armando Hernandez Marroquin
+GPLv2+
+Staunty
+Chrome
+Chrome — dérivé des silhouettes de Colin M.L. Burnett
+California
+Jerry S.
+Chessnut
+Alexis Luengas
+Apache 2.0
+Spatial
+Maurizio Monge
+Fantasy
+Minimal Warmth
+Kiwen Suwi
+CC BY 4.0
+Invisibles
+Entraînement à l'aveugle (pièces masquées)
+{0}/{1}/{2}{3}.svg
+KQRBN
+--fig-{0}{1}
+url("{0}/{1}/{2}{3}.svg")
+· {0} à réviser
+{0} position{1}{2}
+Répertoire « {0} » (fixé par la séance guidée)
+Répertoire « {0} » : changer
+{1}Changer de répertoire
+(max-width: 719px), (pointer: coarse)
+Aucun répertoire ne correspond.
+Répertoire</b>
+Choisir un répertoire
+Rechercher un répertoire
+{0}px
+{0} sur {1}
+aria-hidden="true"
+role="img" aria-label="{0}"
+<button type="button" class="ring-chip" data-action="{0}"{1}{2}
+{0} : {1} sur {2}
+aria-label="{0}">
+Plume
+Contour
+Ombrée
+Pinceau
+Courbe
+Laser
+(prefers-color-scheme: dark)
+(prefers-reduced-motion: reduce)
+Android
+Mac
+Windows
+Linux
+application installée
+Edge
+Firefox
+Safari
+Partout
+Rechercher partout
+⌘F · Ctrl F
+Onglets Jouer, Statistiques, Entraînement, Finales
+Indice, puis solution
+Espace
+Coup précédent / suivant
+Début de la ligne / position actuelle
+Effacer les annotations
+Déplacer le curseur sur l’échiquier
+puis ← ↑ → ↓
+Jouer la case sous le curseur
+Entrée
+Flèches du répertoire
+Annuler le coup enregistré, sinon Corriger
+Rétablir
+Maj
+Recommencer
+Changer de camp
+Révision du jour (hors séance)
+Revoir les erreurs du bilan (hors séance)
+Solution
+Passer la position
+Passer la mise en situation
+Quitter la séance
+Lancer ou arrêter le moteur
+Jouer le meilleur coup
+Une ligne de plus / de moins
+Ajouter au répertoire
+Quitter
+Exercice suivant
+Théorie
+Annotations
+Flèche
+Clic droit glissé
+Cercle
+Clic droit
+Rouge · bleu · or
+Tout effacer
+Clic gauche
+Fenêtres
+Chercher dans la fenêtre
+Échap
+Apparence
+Mode, échiquier, pièces, flèches
+Jeu et entraînement
+Partie, révisions, mode libre, notation
+Réseau, lignes, profondeur
+Sons et vibrations
+Effets sonores, volume, vibrations
+Accessibilité
+Animations, texte, contraste, annonce
+Données et sauvegarde
+Sauvegarde, import, corbeille
+Raccourcis clavier
+Toutes les touches utiles
+r.bqkbnr
+pppp.ppp
+PPPP.PPP
+RNBQK..R
+Neutre
+Papier
+Brume
+Encre
+ambiance fond teinte gris neutre blanc cassé crème Nocturne vert bleu nuit noir OLED blanc
+aperçu échiquier
+Interface
+Langue
+langue language idioma sprache
+Mode
+« Système » suit le réglage clair / sombre de l’appareil.
+Clair
+Sombre
+Système
+Ambiance
+Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.
+Les couleurs de l’interface en dérivent.
+thème
+Coordonnées
+Lettres et chiffres des cases.
+Emplacement des coordonnées
+Dans les cases
+Autour
+Dernier coup
+Repère du dernier coup
+Pièces prises
+Une ligne de chaque côté de l’échiquier : ce que chaque camp a pris, et son avance.
+matériel avantage capture
+Coups possibles
+Points sur les cases accessibles à la pièce choisie.
+Repère des coups possibles
+Animation des pièces
+Aucune
+Rapide
+Normale
+Pièces et flèches
+Pièces
+Pièces invisibles
+Masque les pièces pour s’entraîner à l’aveugle ; les coups s’écrivent en lettres. Choisir un style de pièces le désactive.
+invisibles aveugle
+Flèches
+Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.
+Cavalier en L
+Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.
+flèches
+Pendant la partie
+Déplacer les pièces
+Glisser ou cliquer
+Glisser
+Cliquer
+Dame automatique
+Promotion en dame. Maintenez Alt en jouant le coup pour choisir une autre pièce.
+promouvoir promotion
+Réponse de l’adversaire
+Entraînement et finales.
+Immédiate
+Posée
+Orienter selon ma couleur
+retourner orientation échiquier
+Avec les Noirs, vos pièces sont en bas. La touche F retourne toujours l’échiquier.
+Indice après
+proposer erreurs
+Affiche la pièce à jouer après plusieurs erreurs sur la même position.
+Jamais
+1 erreur
+Adversaire des finales
+Résistance maximale : la défense la plus longue, le gain le plus rapide. Humain : un coup au hasard parmi ceux qui gardent le même résultat.
+Résistance max.
+Humain
+Révisions
+révision jour
+Positions à réviser chaque jour, et nombre de nouvelles positions ajoutées chaque jour à la révision (les autres attendent les jours suivants) ; la progression s’affiche sur l’accueil.
+Rythme
+révision espacée
+Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent.
+Doux
+Standard
+Intensif
+Lignes fréquentes d’abord
+prioriser fréquence
+Les positions où vos adversaires (ou les joueurs Lichess) vous amènent le plus souvent sortent plus souvent. Sans données, rien ne change.
+Mode libre
+Départ
+Juste avant la position tirée, ou du premier coup de la ligne.
+Position ciblée
+Début de partie
+Profondeur max.
+Seules les positions jusqu’à ce coup sont tirées.
+Toutes
+Coups enchaînés
+Après votre coup, l’adversaire répond et vous continuez.
+Variante
+Notation
+Écriture des coups
+Barre des coups, arbre, statistiques.
+Française
+Anglaise
+Figurines
+exemple notation
+stockfish moteur version licence
+Moteur
+Réseau neuronal
+Complet : nettement plus fort, mais 99 Mo à télécharger une fois et plus de mémoire.
+Léger · 1,8 Mo
+Complet · 99 Mo
+télécharger moteur complet supprimer
+Calcul
+Lignes
+Meilleurs coups affichés en même temps (MultiPV).
+Profondeur
+Le calcul s’arrête à cette profondeur (en demi-coups). ∞ : sans limite.
+Temps par position
+Arrêt au bout de ce temps, même si la profondeur n’est pas atteinte. ∞ : sans limite.
+Calcul automatique
+analyse ouverture
+Le calcul démarre dès l’ouverture de l’Analyse ; sinon, avec le bouton du panneau.
+Évaluation Lichess
+cloud en ligne immédiate
+Pour les positions connues, affiche tout de suite l’évaluation déjà calculée sur Lichess (en ligne).
+Affichage
+Évaluation
+En pions
+Chances de gain
+Meilleur coup
+Cet appareil
+Fils de calcul
+threads cœurs
+Plus de fils : plus rapide, plus gourmand. « Auto » : la moitié des cœurs.
+Auto
+Mémoire
+hash table
+Table de transposition du moteur.
+16 Mo
+64 Mo
+128 Mo
+256 Mo
+512 Mo
+Effets sonores
+Volume
+Quels sons ?
+Coup joué
+Capture
+Coup refusé
+Exercice réussi
+Fin d’un exercice d’entraînement ou d’une finale.
+Vibrations
+Vibration au toucher
+téléphone
+Téléphones compatibles : coup refusé, exercice réussi.
+Animations
+Selon l’appareil
+Réduites
+Complètes
+Taille du texte
+Petite
+Grande
+Contraste renforcé
+bordures lisibilité
+Bordures et textes secondaires plus marqués.
+Annoncer les coups
+voix lecteur d’écran son
+Lecteur d’écran : lu par VoiceOver ou TalkBack. Voix : la synthèse vocale de l’appareil
+(aucune voix française trouvée : accent étranger possible).
+Lu par les lecteurs d’écran (VoiceOver, TalkBack). Ce navigateur n’a pas de synthèse vocale.
+Non
+Lecteur d’écran
+Voix
+sauvegarde restaurer télécharger fichier
+Rappel de sauvegarde
+Pastille sur Paramètres et rappel au lancement, sans compte.
+Chaque semaine
+Chaque mois
+Autres données
+PGN, analyse d’une partie, parties en ligne, corbeille de 30 jours.
+pgn corbeille
+Ouvrir Données
+Installer l’application
+id="install-section"
+{0}Installer
+class="piece-svg"
+class="{0}"
+· cavalier en L
+Aperçu : position après 3. Fb5
+Flèches {5}{6}
+Bois chaud
+Cerisier
+Bouleau
+Olivier
+Ébène
+Bois brûlé
+Marbre
+Marbre rose
+Pierre
+Cuir vert
+Cuir noir
+Tournoi
+Vert club
+Bleu club
+Bleu marine
+Violet
+Hachuré
+Contraste élevé
+Daltonien
+Point
+Petit point
+Point creux
+Cadre
+Selon l’échiquier
+Très discret
+Jaune
+Coins
+{0} Mo
+<b>Téléchargement du moteur complet</b>
+{1} sur {2}
+Il est utilisé pour l’analyse.
+Choisissez « Complet » ci-dessus pour l’utiliser.
+Supprimer le moteur complet
+<b>Moteur complet téléchargé ({0}), disponible hors ligne.</b>
+Votre appareil économise les données : préférez le Wi-Fi.
+Télécharger (99 Mo)
+<b>Pas encore téléchargé : l’analyse utilise le réseau léger en attendant.</b>
+Environ 99 Mo, une seule fois, depuis unpkg.com ; le fichier est vérifié avant d’être gardé.{0}
+{0} Ko
+lang/manifest.json
+Supprimer cette langue
+Télécharger{4}
+À télécharger
+Téléchargement impossible. Vérifiez votre connexion.
+Téléchargement impossible : {0}. Le réseau léger reste utilisé.
+{0} fils de calcul
+1 fil de calcul
+{0} {1} · réseau léger · {2}
+Stockfish, téléchargé au premier usage (environ 1,8 Mo), puis disponible hors ligne.
+Calcul sur plusieurs fils disponible sur cet appareil.
+Ce navigateur limite le moteur à un seul fil de calcul.
+{1} Logiciel libre, licence GPL v3 :
+Stockfish
+, compilé en WebAssembly par
+stockfish.js
+title="{0}"
+{0}<b>Rien sur « {1} »</b>
+{0} résultat{1}
+Aperçu
+Rechercher un réglage
+Langue indisponible pour le moment.
+BUTTON
+Sons activés
+Sons coupés
+, échec et mat
+, échec
+{0} : grand roque{1}
+{0} : petit roque{1}
+, promotion en {0}
+fr-FR
+synchro : affichage de l'état
+synchro : écouteur d'état
+synchro : rechargement de
+synchro : rafraîchissement de l'affichage
+Service de compte non configuré.
+Stockage de l'appareil plein : synchronisation suspendue.
+Limite du compte atteinte (500 documents ou 20 Mo) : synchronisation suspendue.
+Hors ligne : modifications gardées sur cet appareil.
+Erreur de synchronisation : nouvel essai automatique.
+Synchronisation…
+En attente de votre choix de première synchronisation…
+À jour ·
+Clé non synchronisée :
+meta[name="theme-color"]
+Corbeille indisponible (stockage plein) : suppression annulée, rien n'a été effacé.
+Élément introuvable.
+{0} (restauré)
+{0} (restauré {1})
+(le nom d'origine était déjà pris)
+✓ Répertoire « {0} » restauré{1}.
+✓ {0} coup(s) restauré(s). {1} coup(s) conservé(s) dans la corbeille : leur position a reçu un autre coup depuis.
+✓ {0} coup(s) restauré(s) dans « {1} » ({2}).
+Restauration impossible (stockage indisponible).
+La corbeille est vide.
+{0} Répertoire · {1} coup{2}
+{0} Branche · {1} coups
+{0} Coup
+Supprimé le {3} · purge dans {4} j
+Restaurer
+Supprimer définitivement
+Supprimer définitivement cet élément ? Cette action est irréversible.
+s seront supprimés
+sera supprimé
+Vider la corbeille ? {0} élément{1} définitivement.
+Problème pendant : {0}.
+Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).
+CFTDR
+NBRQK
+Brouillon de cette session repris. Rien n’est enregistré tant que vous n’ajoutez pas au répertoire.
+Jouez librement les deux camps : rien n’est enregistré tant que vous n’ajoutez pas au répertoire.
+Abandonner l’analyse ? Le brouillon ({0} coup{1}) sera effacé ; rien n’a été ajouté au répertoire.
+Analyse : {0}
+Ligne ajoutée au brouillon
+Elle apparaît dans l’arbre de l’analyse ; rien n’est encore au répertoire.
+{0}?fen={1}&multiPv={2}
+{0} fils
+Calcul sur plusieurs fils (multi-thread).
+Calcul sur un seul fil : ce navigateur n’isole pas la page (Safari, par exemple).
+léger
+Réseau du moteur : Paramètres › Moteur
+{1} Paramètres › Moteur
+arrêté
+en pause · prof. {0}
+en pause
+chargement…
+reprise…
+Lichess · prof. {0}
+prof. {0}
+prof. {0} · terminé
+calcul…
+Pat
+Mat
+Stockfish {0}
+Recopier cette variante dans le brouillon
+Utiliser cette variante
+Jouer {1}
+Moteur arrêté. Lancez-le pour voir les meilleurs coups.
+Calcul en pause sur cette position : « Reprendre » le relance.
+erreur inconnue
+Le moteur n’a pas pu démarrer ({0}).
+{1} Réessayer
+Chargement du moteur complet…
+Chargement du moteur (environ 1,8 Mo la première fois)…
+{0}</b>{1} : aucun coup à calculer.
+Arrêter
+Reprendre
+Lancer
+Évaluation : {0}
+Évaluation indisponible
+déjà connu
+nouveau coup, ajouté à la fusion
+déjà au répertoire, identique
+conflit : votre coup enregistré est gardé
+conflit : remplacera votre coup enregistré
+Coups ajoutés
+Coups qui remplaceront les vôtres
+Conflits gardés
+Déjà au répertoire
+Aucun de vos coups à ajouter
+réponse adverse
+réponses adverses
+Rien à ajouter
+Voir l’aperçu : {0} à ajouter
+Voir l’aperçu : {0} à examiner
+Effacer le brouillon et revenir à Jouer
+Abandonner
+Jouez les deux camps sur l’échiquier, ou recopiez une ligne du moteur avec « + ».
+<b>Brouillon</b>
+hors répertoire
+coup ajouté
+coups ajoutés
+{0} · {1} {2} dans la corbeille
+{0} à « {1} » · à réviser à la prochaine séance
+Brouillon de la session repris · {1}
+Aucun coup
+ab-mv{0}{1}{2}
+Conflit avec votre coup enregistré : voir l’aperçu
+Conflit sur {2} : ouvrir l’aperçu de fusion
+vous : {0}
+remplace {0}
+Remplacer
+Rien de nouveau : vos coups de ces lignes sont déjà au répertoire.
+{1} ira à la corbeille (30 jours).
+Un conflit garde votre coup actuel et arrête la ligne, sauf si vous choisissez « Remplacer ».
+aria-busy="true"
+title="Rien à ajouter"
+Aperçu de fusion
+Fermer l’aperçu
+Lignes à fusionner
+Ligne affichée
+Toutes les branches
+Ajouter {7}
+Rien n’est écrit avant la confirmation.
+remplacé depuis l’Analyse
+Fusion impossible
+La corbeille n’a pas pu accueillir les coups remplacés : rien n’a été modifié.
+{0} au répertoire
+À réviser dès la prochaine séance d’Entraînement.
+Les coups remplacés sont dans la corbeille.
+Annulation impossible ici
+Un coup a été remplacé : restaurez-le depuis la corbeille.
+Ajout annulé
+Le répertoire est revenu à son état précédent ; le brouillon est conservé.
+Mats élémentaires
+Technique pure : confiner le roi et le mater sans pat.
+Finales de pions
+Carré, opposition, cases clés, triangulation, cases conjuguées, pion passé éloigné ou protégé, courses. Chaque coup est vérifié par le calcul.
+Finales de tours
+Lucena, Philidor, Vancura, puis la règle de Tarrasch, le petit côté, le roi coupé, la Tour active. Jugées par les tables Syzygy.
+Finales de Dame
+Dame contre pion sur la 7e (central, de fou, de tour) et Dame contre Tour.
+Pièces mineures
+Cavalier ou Fou contre pion, Fou contre Cavalier, Fous de couleurs opposées : gagner avec la bonne pièce, annuler avec moins de matériel.
+Tour + pièce
+Tour et Fou contre Tour : la position de Philidor (gagner) et la défense de Cochrane (annuler).
+Roi + Dame contre Roi
+Gardez la Dame à un saut de cavalier du roi adverse : elle lui coupe un maximum de cases sans qu'il puisse l'approcher.
+Rétrécissez la zone pas à pas, puis amenez votre roi en renfort (opposition à deux cases).
+Avant chaque coup : le roi adverse garde-t-il au moins une case libre ? Sinon, c'est pat.
+Dame + Roi contre Roi se gagne toujours en dix coups environ. Confinez le roi sur un bord avec la Dame (à un saut de cavalier), avancez votre roi jusqu'à l'opposition, puis donnez mat. Le seul piège : le pat.
+Roi + Tour contre Roi
+Coupez le roi adverse avec la Tour sur une rangée ou une colonne, loin de lui (il ne doit jamais pouvoir la prendre).
+Méthode de la boîte : à chaque coup de Tour qui rétrécit la zone, avancez votre roi pour la soutenir.
+Quand les rois sont en opposition (une case entre eux), un échec de Tour repousse le roi vers le bord.
+La technique de la « boîte » : la Tour délimite la zone de fuite, le roi s'approche, et chaque opposition permet un échec qui rétrécit la boîte jusqu'au bord. Maximum théorique : 16 coups.
+Deux Tours : le mat de l'escalier
+Les deux Tours se relaient : l'une coupe une rangée, l'autre donne échec sur la rangée suivante.
+Si le roi adverse s'approche d'une Tour, éloignez-la à l'autre bout de sa rangée, sans la laisser en prise.
+Le « mat de l'escalier » : les deux Tours montent tour à tour d'une rangée et repoussent le roi jusqu'au bord, où l'une donne mat pendant que l'autre coupe la rangée voisine. Le roi attaquant n'est même pas nécessaire.
+Roi + deux Fous contre Roi
+Côte à côte, les deux Fous forment une barrière de diagonales voisines que le roi adverse ne peut pas franchir.
+Rapprochez votre roi et réduisez la zone vers un coin, sans jamais laisser le roi adverse sans case libre hors échec : ce serait pat.
+Deux Fous matent toujours, en vingt coups au plus. Placés côte à côte, ils barrent deux diagonales voisines ; le roi fort vient les soutenir, et le roi adverse est repoussé vers un coin, n'importe lequel, où tombe le mat.
+Roi + Fou + Cavalier contre Roi
+Le mat n'est possible que dans un coin de la couleur du Fou : ici a8 ou h1 (cases blanches).
+Repoussez d'abord le roi vers un bord, puis faites-le glisser vers le bon coin : le Cavalier couvre les cases que le Fou ne peut pas contrôler.
+Le plus difficile des mats élémentaires (33 coups au plus). Le roi adverse est d'abord poussé vers un bord ; s'il se réfugie dans un coin de la mauvaise couleur, on le chasse vers le bon coin avec la manœuvre en « W » du Cavalier, le Fou et le roi verrouillant les cases de fuite.
+Règle du carré
+Le roi noir est hors du carré du pion d4 : comptez les coups qu'il lui faut pour rattraper le pion.
+Règle du carré : le côté du carré est le nombre de pas qui séparent le pion de sa case de promotion. Si le roi défenseur (au trait) ne peut pas entrer dans ce carré, le pion court à la promotion sans aide.
+Entrer dans le carré
+Le roi noir est un rang trop bas : un seul coup l'amène dans le carré du pion.
+…Kg4 ! entre dans le carré : après d5 Kf5 d6 Ke6 d7 Kxd7, le roi rattrape le pion. Tout autre coup le laisse hors du carré : le pion se promeut.
+Prendre l'opposition
+Deux rois face à face, une case entre eux : celui qui n'a PAS le trait détient l'opposition.
+Placez votre roi devant le pion, à deux cases du roi adverse, pour que ce soit à lui de jouer.
+Un seul coup gagne : Kd5! prend l'opposition (Kd5 face à Kd7, les Noirs au trait). Le roi noir doit céder du terrain, et le roi blanc gagne les cases clés devant le pion.
+Tenir l'opposition
+Le roi blanc menace d'avancer : placez votre roi pour que ce soit à lui de jouer, face à face.
+Restez devant le pion, jamais sur le côté.
+…Kd7! reprend l'opposition : le roi blanc ne peut plus avancer sans que le roi noir ne garde le contrôle des cases clés. La nulle se tient en gardant l'opposition à chaque coup.
+Cases clés : roi sur la 6e
+Le roi est déjà sur une case clé : ne vous précipitez pas, contournez le roi adverse sans lui laisser le pat.
+Quand le roi fort occupe une case clé (ici la 6e rangée, devant ou à côté d'un pion sur la 5e), la position est gagnée quel que soit le trait. Attention au pat avec un pion en 7e !
+Opposition à distance
+Les rois sont loin l'un de l'autre : c'est l'opposition, et non la vitesse, qui décide.
+Placez votre roi sur la même colonne que le roi noir, avec un nombre impair de cases entre eux.
+Un seul coup gagne : 1.Kb2 ! prend l'opposition à distance (même colonne, cinq cases entre les rois, Noirs au trait). À chaque pas du roi noir, le roi blanc répond par un pas qui conserve cette opposition, jusqu'à atteindre les cases clés devant son pion. Tout autre premier coup laisse l'opposition aux Noirs : nulle.
+Opposition à distance (défense)
+Le roi blanc menace de gagner les cases clés devant son pion : prenez-lui l'opposition, même de loin.
+Même colonne que le roi blanc, nombre impair de cases entre les deux rois.
+Un seul coup annule : …Kb6 ! prend l'opposition à distance (colonne b, trois cases entre les rois). Les Noirs la conservent ensuite à chaque coup en revenant vers le pion, et leur roi arrive à temps devant lui. Tout autre coup laisse le roi blanc prendre l'opposition : le pion passe.
+Le pion passé éloigné
+Le pion a est loin du roi noir : en avançant, il l'attire sur l'aile dame.
+Pendant que le roi noir court après lui, votre roi file vers le pion g6.
+Le pion a peut être sacrifié : c'est le prix du pion g6, puis votre pion g va à dame.
+Un pion passé éloigné est un leurre : le roi défenseur doit l'arrêter, et pendant ce temps le roi attaquant gagne les pions de l'autre aile. Les tables le confirment : presque tous les plans raisonnables gagnent, à condition de ne pas laisser le roi noir revenir.
+Le pion passé protégé
+Le pion d5, protégé par c4, retient le roi noir : il ne peut pas sortir du carré du pion.
+Votre roi est libre : il va prendre le pion g5.
+Ne poussez pas c5+ : le pion d5 perdrait sa protection, et c'est nulle.
+Un pion passé protégé immobilise le roi adverse sans coûter aucun effort au roi attaquant, qui gagne alors les pions de l'autre aile. Seul 1.c5+ ? gâche tout : le pion d5 n'est plus protégé, et le roi noir le prend.
+Pion noir : le pas de côté
+Les règles sont les mêmes, à l'envers : les Noirs avancent vers la 1re rangée.
+Face au roi blanc, un pas de côté permet de contourner l'opposition.
+Les règles sont symétriques. Le roi noir précède son pion, le roi blanc lui fait face sur la 1re rangée. Au trait, les Noirs gagnent par un pas de côté (…Kc3 ou …Ke3) qui contourne l'opposition.
+Pion de tour : le coin
+Avec un pion de colonne a, le roi défenseur nulle s'il atteint le coin de promotion.
+Un pion de colonne a ou h ne gagne pas si le roi défenseur atteint le coin de promotion : le roi attaquant manque de place d'un côté, et les pats tombent dès que le roi noir touche a8 ou b8.
+La percée
+Les rois sont trop loin : un sacrifice peut créer un pion passé que personne ne rattrapera.
+Sacrifiez le pion du milieu ; selon la prise, un second sacrifice libère le pion d'à côté.
+1.b6 ! : si 1…cxb6 2.a6 ! bxa6 3.c6, et si 1…axb6 2.c6 ! bxc6 3.a6 — un pion blanc file à dame, hors de portée du roi noir. Tout autre premier coup laisse aux Noirs le temps de bloquer par …b6 : la percée n'existe plus.
+L'étude de Réti
+Le roi blanc paraît trop loin du pion h… mais un roi peut viser deux objectifs à la fois.
+Marchez en diagonale : vers le pion h et, en même temps, vers votre pion c.
+1.Kg7 ! h4 2.Kf6 ! : le roi menace à la fois de rattraper le pion h et de soutenir son pion c. Après 2…Kb6 3.Ke5 !, si 3…h3 4.Kd6 h2 5.c7, les deux camps vont à dame : nulle ; si 3…Kxc6 4.Kf4, le roi rattrape le pion h. Sur l'échiquier, la diagonale est aussi courte que la ligne droite.
+La majorité à l'aile dame
+À l'aile dame, deux pions contre un : la majorité crée un pion passé.
+Avancez-la (a4, b5) : le pion passé, loin des rois, détourne le roi noir.
+Votre roi profite de son absence pour gagner le pion h6.
+La majorité de pions sur une aile donne un pion passé ; loin des rois, il devient un pion passé éloigné. Le roi défenseur doit s'en occuper, et le roi attaquant gagne les pions restés sans défense.
+Course de pions : promotion avec échec
+Les deux pions vont à dame. Le vôtre arrive le premier… et avec échec, car le roi noir est sur la 8e rangée.
+Après g8=D+, la nouvelle Dame doit arrêter le pion e : visez la case e1.
+Une Dame sur la 1re rangée (ou sur la colonne e) prend le pion ou la Dame adverse dès sa promotion.
+1.g7 ! : si 1…e2, 2.g8=D+ arrive avec échec (le roi noir est sur la 8e rangée), puis la Dame rejoint la 1re rangée et prend le pion ou la Dame qui naît en e1. Les Noirs préfèrent donc 1…Ra7 2.g8=D Ra6 3.Dg1 et le pion e3 tombe. Un coup de roi d'abord (1.Rb1 ?) perd même la course.
+La triangulation
+Le roi blanc vise d6 (ou e6–d6) ; le roi noir garde ces cases depuis d7 et e7.
+Aller droit au but (Re5) ne gagne pas : il faut perdre un temps.
+Tournez autour du roi noir (Rf5, Re5, Rf6…) : la même position revient, mais avec les Noirs au trait.
+1.Rf5 ! Re7 2.Re5 Rd7 3.Rf6 ! : le roi blanc tourne autour du roi noir, qui n'a que deux cases. Après 3…Rc8 4.Re6 Rc7 5.Re7 Rc8 6.Rd6, le roi blanc est entré et la percée d5 décide. La triangulation transmet le trait à l'adversaire : trois coups pour revenir là où deux suffisaient à l'autre camp.
+Les cases conjuguées
+Le roi blanc veut prendre d6 (par e6 ou c6) ; le roi noir doit rester assez près pour l'en empêcher.
+À chaque case du roi blanc correspond une case de défense du roi noir : prenez la bonne en premier.
+Le roi blanc fait le tour par l'aile roi : le roi noir, lié au pion a5, ne peut pas suivre.
+Un seul coup gagne : 1.Rb3 !. Le roi blanc menace b5 (pion a5) et part ensuite vers l'aile roi (Rc4, Rd3, Rd4, Re4, Rf5, Rg6…) ; le roi noir, qui doit garder un œil sur a5, ne suit pas assez vite et le pion d6 tombe. Les cases conjuguées : à chaque case de l'attaquant répond une seule case du défenseur ; qui s'y place le premier gagne.
+4 contre 3 sur la même aile
+Quatre pions contre trois sur la même aile : la nulle est la règle, si vous ne faites pas de cadeau.
+Gardez vos pions liés et votre roi près d'eux.
+Gardez la Tour active ; n'échangez pas de pions sans raison.
+Avec tous les pions sur la même aile, le camp qui a un pion de plus ne peut pas créer de pion passé assez fort : la nulle est théorique. Position de 11 pièces : trop pour les tables Syzygy, chaque coup est jugé par le moteur (verdict estimé).
+Position de Lucena
+Le roi est enfermé devant son pion : il faut construire un « pont » avec la Tour sur la 4e rangée.
+Gardez le roi noir coupé sur la colonne f, et préparez l'interposition de la Tour sur la 4e rangée.
+Lucena : 1.Tf4 ! (le pont) Ta1 2.Re7 Te1+ 3.Rd6 Td1+ 4.Re6 Te1+ 5.Rd5 Td1+ 6.Td4 ! : le roi sort de devant son pion, et la Tour, protégée par le roi, s'interpose sur la 4e rangée pour casser les échecs. Les tables jugent chaque coup : d'autres chemins gagnent aussi, mais le pont est la méthode à connaître.
+Position de Philidor
+Tant que le pion n'a pas atteint la 6e rangée, gardez la Tour noire sur la 6e rangée et le roi sur sa dernière rangée.
+Dès que le pion avance en e6, passez avec la Tour sur la 1re rangée pour donner des échecs par derrière.
+Défense de Philidor : la Tour reste sur la 6e rangée (elle interdit au roi blanc d'avancer) tant que le pion n'est pas en 6e ; dès qu'il avance, la Tour passe derrière et donne échec sur échec, le roi noir restant sur sa dernière rangée.
+Règle de Tarrasch : la Tour derrière le pion
+Placez votre Tour derrière le pion passé : à chaque poussée, elle gagne de l'espace.
+La Tour noire, devant le pion, est condamnée à rester passive.
+Poussez le pion pour l'immobiliser, puis le roi blanc vient prendre le pion h7.
+1.Ta1 ! (la Tour derrière le pion, règle de Tarrasch) : la Tour noire est attachée à la colonne a et le roi noir ne peut pas s'éloigner de l'aile roi. Les Blancs avancent le pion, puis le roi vient l'aider. Les tables acceptent aussi 1.Td5, mais tout autre coup laisse filer le gain.
+Tour contre pion : la course
+La Tour seule n'arrêtera pas le pion soutenu par son roi : votre roi doit revenir.
+Comptez les coups : le roi blanc doit atteindre la case du pion (ou de promotion) à temps.
+Quand le roi blanc approche, la Tour coupe le roi noir ou attaque le pion par derrière.
+Un seul coup gagne : 1.Rf2 !, le roi rentre immédiatement (1…Rd3 2.Td1+ Rc2 3.Td6 et 4.Re2). Tout coup de Tour laisse le roi noir escorter son pion et c'est nulle. Contre un pion soutenu, c'est le roi qui gagne la course, la Tour ne fait que retarder.
+Position de Vancura
+Le roi noir reste en g7 ou h7 : ailleurs, Th8 ! suivi de Th7+ enfile le roi et la Tour.
+La Tour attaque le pion de côté, depuis la 6e rangée ; si le roi blanc vient le soutenir, donnez-lui échec par derrière.
+Quand le pion arrive en 7e, la Tour passe derrière lui, sur la colonne a.
+Défense de Vancura (pion de la colonne a en 6e, Tour blanche devant lui) : la Tour noire attaque le pion de côté, ce qui attache la Tour blanche à sa défense, et le roi noir reste dans le coin g7–h7. Quand le roi blanc approche, il reçoit des échecs ; quand le pion avance en 7e, la Tour noire se place derrière lui. Les Blancs ne peuvent pas progresser.
+Le roi coupé d'une colonne
+Coupez le roi noir avec la Tour sur la colonne e : il ne doit pas rejoindre le pion.
+Avancez roi et pion ensemble ; la Tour noire ne peut que donner des échecs.
+Abritez votre roi devant le pion ; quand il ne reste plus d'échec, le pion avance.
+Deux coups gagnent : 1.Te1 ! (le roi noir est coupé sur la colonne f) et 1.Rc5. Avec le roi défenseur coupé d'une seule colonne, le gain demande de la précision : roi et pion avancent ensemble, la Tour garde la coupure. Laissez le roi noir revenir devant le pion, et c'est la défense de Philidor : nulle.
+La défense du petit côté
+Le roi va du côté court, vers la colonne h (Rf8) : c'est le côté où il y a le moins de colonnes.
+Votre Tour reste du côté long (colonne a), pour donner des échecs de côté, de loin.
+Échecs latéraux à au moins trois colonnes du roi blanc : sinon, il s'approche de votre Tour.
+Seuls …Rf8 (le roi vers le petit côté) et …Ta6+ annulent. Après …Rd8 ?, le roi part du côté long et la Tour blanche le coupe : la Tour noire n'a plus de place pour donner des échecs latéraux. Règle : roi du côté court, Tour du côté long.
+Tour active contre Tour passive
+Activez la Tour avec un échec : elle prend la 6e rangée et soutient le pion a.
+La Tour noire, coincée devant le pion, ne peut que regarder.
+Avec la Tour noire passive, votre Tour finit par gagner le pion h7.
+Un seul coup gagne : 1.Tb6+ !. Après 1…Re5 2.a6, la Tour noire doit quitter la colonne a pour chercher du jeu, et la Tour blanche, active, prend le pion h7 (Tb7, a7, Txh7). Une Tour active vaut souvent un pion : la Tour passive ne fait que défendre.
+Dame contre pion de tour
+Pion de tour : le roi noir s'abrite dans le coin, devant ou à côté de son pion.
+Si la Dame lui enlève toutes ses cases, c'est pat.
+Gardez le roi collé au pion : b2, a1, b1.
+Contre un pion de tour sur la 7e, la Dame ne peut pas gagner de temps : quand le roi noir est en a1 devant son pion, il n'a plus de coup, et la seule façon de l'empêcher de bouger est le pat. Sauf si le roi blanc est tout près, c'est nulle.
+Dame contre pion central sur la 7e
+Échec après échec, la Dame force le roi noir à se placer devant son pion (en d1).
+Chaque fois que le roi noir bloque son pion, votre roi avance d'un pas.
+Quand votre roi est assez près, Dame et roi prennent le pion.
+Contre un pion central (ou de cavalier) sur la 7e, la Dame gagne toujours : par des échecs et des clouages, elle oblige le roi noir à se mettre devant son pion, ce qui donne un temps au roi blanc. On répète jusqu'à ce que le roi blanc arrive.
+Dame contre pion de fou : le pat
+Avec un pion de fou, le roi se réfugie dans le coin a1 : si la Dame prend le pion c2, c'est pat.
+Ne bloquez pas votre pion en c1 : la Dame gagnerait le temps qui manque à son roi.
+Revenez sans cesse menacer la promotion.
+Pion de fou (ou de tour) sur la 7e, roi blanc loin : nulle. Le défenseur va dans le coin (…Ra1) : si la Dame prend le pion, le roi noir est pat ; sinon, il menace à nouveau de promouvoir. …Rc1 ? bloque le pion et laisse au roi blanc le temps d'approcher.
+Dame contre Tour : la méthode de Philidor
+Repoussez le roi noir vers un bord avec la Dame et le roi, sans jamais laisser la Tour donner un échec gênant.
+Visez la position de Philidor : roi noir au bord, Tour collée à lui, roi blanc en face.
+Gagnez un temps avec la Dame pour mettre les Noirs au trait : la Tour doit s'éloigner, et une fourchette la prend.
+Dame contre Tour se gagne toujours (31 coups au plus, d'après les tables), mais la technique est longue. La Dame et le roi refoulent le roi noir au bord ; la Tour reste collée à son roi pour éviter les fourchettes. Philidor a montré la position clé : les Noirs au trait doivent éloigner la Tour, et la Dame la prend par un échec double. Tenez le gain quinze coups face à la meilleure défense.
+Le cavalier contre le pion
+Le pion est à deux pas de la promotion et votre roi est loin : seul le cavalier peut encore l'arrêter.
+Placez le cavalier sur une case d'où il contrôle b7 ou b8, et gardez-le hors de portée du roi blanc.
+Seuls les coups de cavalier vers c5, e5 ou b4 annulent : de là, il contrôle b7 ou rejoint c6 à temps pour couvrir b8. Un coup de roi, même vers le pion, laisse 1.b7 et 2.b8=D. Ensuite, le cavalier tient la case de promotion jusqu'au retour du roi noir.
+Le Fou de la mauvaise couleur
+Le Fou blanc circule sur les cases blanches ; la case de promotion h8 est noire : il ne pourra jamais la contrôler.
+Courez vers le coin h8. Une fois votre roi devant le pion, rien ne peut l'en déloger.
+Roi, Fou et pion de la colonne h contre roi : si le Fou ne contrôle pas la case de promotion, le roi défenseur installé en h8 (ou g7–h8) annule toujours. Il suffit de rejoindre le coin à temps : …Rf7, …Rf6, …Re7 ou …Rf5 y parviennent ; s'éloigner (…Rd6, …Rd5…) laisse le pion passer.
+Fou + pion de tour : barrer le coin
+Le Fou ne contrôle pas h8 : si le roi noir atteint le coin, c'est nulle.
+Empêchez-le d'arriver en f8, g7 ou h8 : votre roi et votre Fou lui barrent la route.
+Une fois le coin fermé, le pion avance sans risque.
+Fou de la mauvaise couleur et pion de tour : le gain n'existe que si le roi défenseur n'atteint pas le coin. Ici 1.Rg6, 1.Rh6, 1.Fc4 ou 1.Fh7 lui ferment la route (1.h6 aussi) ; un coup quelconque le laisse rejoindre f8–g7, et c'est nulle.
+Cavalier + pion de tour : le pat
+Attention : après a7 ?, le roi noir en a8 n'a plus aucun coup : pat.
+Amenez d'abord le Cavalier, ou placez le roi en b6.
+Le pion n'avance que quand le roi noir a encore une case.
+Cavalier et pion de tour contre roi gagnent, à condition d'éviter le pat : 1.a7 ? Ra8… pas de coup, nulle. Il faut d'abord rapprocher le Cavalier (Ce2, Cf3, Ch3) ou le roi (Rb6), puis pousser quand le roi noir peut encore bouger.
+Fou contre Cavalier, pions sur les deux ailes
+Pions sur les deux ailes : le Fou, à longue portée, est plus fort que le Cavalier.
+Créez des menaces des deux côtés : le Cavalier ne peut pas tout couvrir.
+Ne poussez pas g5 trop tôt : le pion deviendrait une cible.
+Avec des pions sur les deux ailes, le Fou surveille de loin les deux côtés à la fois ; le Cavalier, lent, ne peut pas. Les Blancs gagnent en centralisant le roi et en créant un second front. Seuls 1.g5 ? et 1.Fa6 ? laissent échapper le gain.
+Fous de couleurs opposées : la forteresse
+Fous de couleurs opposées : un pion de plus, voire deux, ne suffisent souvent pas.
+Le roi se place devant un pion, sur une case que le Fou blanc ne peut pas attaquer.
+Votre Fou arrête l'autre pion de loin ; sacrifiez-le seulement contre les deux pions.
+Un seul coup annule : …Rf6 !. Le roi bloque le pion f (et surveille e5), le Fou noir tient la diagonale de l'autre pion. Le Fou blanc ne peut jamais chasser le roi d'une case de l'autre couleur : c'est la forteresse classique des Fous de couleurs opposées.
+Tour + Fou contre Tour : la défense de Cochrane
+Votre Tour cloue le Fou contre son roi : tant que le clouage dure, le roi blanc ne peut pas avancer.
+Gardez la Tour sur la colonne e, derrière le Fou (Te2, Te3).
+Ne prenez pas le Fou : …Txe4+ ? Rxe4 laisse Tour contre roi.
+Défense de Cochrane : la Tour du défenseur cloue le Fou sur son roi. Le roi blanc doit perdre du temps pour décrocher, et le roi noir reste loin du coin dangereux. Les tables acceptent plusieurs coups (…Te2, …Te3, …Td1, …Tf1, …Rb8, …Rd8) ; …Txe4+ ? ou une Tour qui quitte la colonne perdent.
+Tour + Fou contre Tour : la position de Philidor
+Les rois se font face : la Tour blanche menace le mat sur la 8e rangée.
+Le Fou coupe la Tour noire de la 8e rangée (Fe6) et prépare la menace de mat.
+Faites manœuvrer la Tour pour forcer la Tour noire à quitter sa rangée, puis matez.
+Un seul coup gagne : 1.Fe6 !. Le Fou empêche la Tour noire de défendre la 8e rangée et menace Tf8+. La suite (1…Re8 2.Tf2 Th6 3.Ta2 Rf8 4.Tg2…) force la Tour noire à céder : la position de Philidor se gagne toujours, en moins de trente coups.
+Les {0} jouent et font mat
+Les {0} jouent et gagnent
+Les {0} jouent et annulent
+le joueur n'a pas le trait
+aucun coup légal
+il faut un roi de chaque camp
+pion sur la 1re ou la 8e rangée
+aucun coup de défense conforme
+verdict absent : lancer node scripts/check-endgames.mjs
+FEN modifiée depuis la vérification : relancer node scripts/check-endgames.mjs
+verdict {0} « {1} » ≠ objectif « {2} »
+aucun coup correct
+la solution annoncée ({0}) n'est pas jugée correcte
+{0} coups jugés corrects, un seul attendu
+gain sans limite (keep ou maxMoves)
+nulle sans nombre de coups à tenir (hold)
+plan absent
+gain non prouvé à l'horizon {0}
+verdict théorique « {0} » ≠ objectif « {1} »
+Kkp
+KPk
+Mater
+Gagner
+{0} essai{1}
+Difficulté {0} sur 5
+{0} coups au plus
+tenir {0} coups
+{0} coups pour conclure
+Réussi sans faute
+Réussi
+{0}Réponse gardée · exact
+{0}Tables Syzygy · exact
+{0}Moteur · verdict estimé
+{0}Calcul exact
+À suivre
+Choisi
+Réussi · {0}
+{0}, pas encore réussi
+Jamais tenté
+{0}{1} étape{2} de plan en indice
+Commencer {5}
+Parcours terminé
+Tout est réussi
+{0} sur {1} sans faute. Rejouez au hasard pour garder la main.
+{2} Au hasard
+À faire
+Réussies
+Catégories
+Aucune finale réussie
+{0} à faire
+Parcours
+sur {1} réussie{2}
+{3} sans faute · {4} en cours
+finales : préparation de la base roi + pion
+(min-width: 920px)
+Aperçu :
+Fermer l'aperçu
+Votre Tour est en prise : elle serait perdue.
+Philidor : tant que le pion n'est pas en 6e, la Tour reste sur la 6e rangée.
+Philidor : gardez le roi noir sur sa dernière rangée (ou la 7e), devant le pion.
+Le pion est en 6e : la Tour doit passer derrière, sur la 1re rangée, pour donner des échecs par derrière.
+La nouvelle Dame doit être prise immédiatement, sinon la partie est perdue.
+Les Blancs prendraient votre Tour sans qu'elle puisse être reprise.
+Philidor : sans échec à parer, le roi reste sur e8 devant le pion ; jouez avec la Tour sur la 6e rangée.
+Après e6, vous n'auriez plus de défense : placez la Tour et le roi autrement.
+Ce coup perd : les Blancs peuvent forcer la promotion du pion.
+Sans Tour, le pion passe : la partie est perdue.
+La Tour blanche est tombée : nulle au moins !
+Vancura : le roi reste dans le coin (g7 ou h7). Ailleurs, Th8 ! puis Th7+ enfile votre roi et votre Tour.
+Vancura : la Tour attaque le pion de côté, depuis la 6e rangée (ou donne échec).
+Le pion est en 7e : placez la Tour derrière lui, sur la colonne a.
+Après la réponse des Blancs, vous n'auriez plus de défense : gardez la Tour loin du roi blanc, prête à revenir sur la colonne a.
+la défense de Philidor
+la défense de Vancura
+Résistance maximale
+{0} — à vous de jouer.
+finales : préparation du calcul
+Gain
+Nulle
+Perte
+class="bad"
+à tenir
+pour conclure
+au plus
+class="is-err"
+Coups joués
+Coup <b>{4}</b> / {5} {6}
+<b>{8}</b> erreur{9}
+<b>{0}</b> indice{1}
+Verdict : {0} devenue {1}
+{0}Théorie
+{1}Théorie{2}
+<b>Exercice réussi</b>
+coup{3}
+erreur{5}
+indice{7}
+Suivant
+{1} Suivant
+{2} Rejouer
+{1}avec les {2}
+{0} Annuler ce coup
+{5} Recommencer
+Adversaire
+Échec et mat ! Bien joué.
+Pat ! La partie est nulle : laissez toujours une case libre au roi adverse (hors échec).
+Votre pièce est abandonnée : le roi adverse la prend et le gain disparaît.
+Trop lent : le mat doit tomber en {0} coups maximum.
+Le pion est perdu : c'est nulle.
+Pat ! C'est nulle (en cas de pat, promouvez plutôt en Tour).
+Promotion en pièce mineure : roi + cavalier ou fou ne peut pas mater, c'est nulle.
+La pièce promue est prise ou le roi adverse est pat : le gain disparaît.
+Ce coup laisse échapper le gain : la position est maintenant nulle.
+Promotion réussie : la position est gagnée.
+Le gain théorique est conservé, mais vous perdez trop de temps : cherchez la ligne la plus directe.
+Ce coup perd : le pion va se promouvoir. Il fallait garder la nulle.
+Pion capturé : nulle !
+Pat : nulle !
+Nulle assurée : vous avez tenu {0} coups sans céder.
+Cette promotion ne gagne pas : la Dame est prise, ou l'adversaire promeut aussitôt.
+Ce coup ne gagne pas, ou trop lentement : cherchez la ligne la plus directe.
+Le gain est toujours là, mais trop lent : cherchez la ligne la plus directe.
+Ce coup perd : l'adversaire peut maintenant forcer la promotion de son pion.
+Vous promouvez à votre tour : nulle (au moins) !
+Plus aucun pion : nulle !
+Il ne reste qu'un pion adverse, et la position est nulle : bien défendu !
+Ce coup perd : la position se retourne.
+Ce coup perd : l'adversaire peut maintenant forcer le gain.
+Pat ! La partie est nulle : laissez toujours une case libre au roi adverse.
+Il ne reste que le roi adverse : le gain est acquis.
+Matériel gagné, gain conservé : la position est gagnée.
+Gain conservé pendant {0} coups : la méthode est acquise.
+L'adversaire n'a plus de quoi gagner : nulle !
+Le dernier pion adverse est tombé : nulle !
+{0} — vérification…
+(verdict estimé)
+— verdict indisponible (hors ligne, moteur absent)
+Conseil : {0}
+L'adversaire ne peut pas répondre : connexion et moteur indisponibles. Réessayez plus tard.
+Adversaire indisponible.
+Aucun indice disponible hors ligne pour cette position.
+une pièce
+Indice : déplacez {0}.
+Appuyez encore pour une étape du plan.
+Plan : {0}
+Solution : {0}
+Partie terminée.
+Adversaire : {0} — à vous.
+Vous êtes mat.
+✗ Vous êtes mat.
+Pat : la partie est nulle.
+✗ Pat.
+Nulle par répétition de position.
+Coup annulé — cherchez un autre coup.
+Indice : {0}
+Flèches du répertoire affichées
+Flèches du répertoire masquées
+Vert : votre coup · bleu : réponse couverte · rouge : réponse non couverte.
+Fous
+Cavaliers
+Tours
+Dames
+aucune prise
+, avantage de {0}
+Vos données sont synchronisées avec votre compte ; un fichier reste utile comme copie de secours.
+Sans compte, vos données ne vivent que dans ce navigateur : gardez une copie.
+Télécharger (.json)
+Répertoires, statistiques, planning, finales
+Restaurer (.json)
+Fusionne un fichier avec vos données
+Ajoute des lignes, variantes comprises
+Exporter en PGN
+Blancs et Noirs, toutes les lignes
+Chess.com, Lichess ou PGN collé : déviations au répertoire
+Corbeille{0}
+Éléments supprimés, gardés 30 jours
+Sauvegarde complète
+Répertoire « {3} »
+Le PGN échange vos lignes avec d'autres logiciels (sans statistiques).
+Ma couleur dans cette partie
+Aucune partie reconnue : collez le PGN complet (exporté depuis Chess.com ou Lichess).
+Cette partie commence depuis une position personnalisée : elle ne peut pas être comparée au répertoire.
+Premier coup illisible ou illégal : <strong>{0}</strong>.
+Coup illisible ({0}) : partie lue jusqu'au coup précédent.
+Partie déjà analysée le {0}.
+✓ Partie 100 % théorique
+{0}Aucun coup n'est sorti du répertoire ({1} demi-coups).{2}
+une réponse
+✓ Traitée depuis : {0}
+Ce coup vous avait sorti de votre préparation.
+Votre répertoire n'avait pas encore de réponse ici.
+Vous avez ajouté {0} depuis : rien n'est compté.{1}
+✗ Erreur d'ouverture : {0}
+Partie déjà analysée.
+{0}Erreur non recomptée.
+Erreur comptée.
+◀ pour retrouver le bon coup.{0}
+Hors répertoire : {0}
+{0}Votre répertoire n'a pas encore de réponse ici.{1}
+Nouveauté adverse : {0}
+Vous étiez au bout de votre préparation.
+Réponse déjà repérée, toujours non couverte.
+Coup absent de votre répertoire.
+Aucune erreur comptée.{0}
+Théorique
+Hors répertoire
+Sans réponse
+Partie Lichess
+Partie Chess.com
+PGN collé
+Répondre
+{0}<b>Aucune nouveauté en attente</b>
+et {0} de plus
+{0}<b>Aucune partie analysée</b>
+Nouveautés
+Parties
+À traiter
+<b>Noyer + Maestro appliqués.</b> Tout se règle dans Paramètres › Apparence.
+Revenir à l'ancien
+<b>Nouvelle apparence</b> L'échiquier Noyer et les pièces Maestro sont les nouveaux défauts. Les essayer ?
+Essayer
+Non merci
+Nouveauté à traiter
+Votre répertoire ne couvre pas ce coup : jouez votre réponse pour l'enregistrer.
+Aucune réponse enregistrée ici : jouez votre coup pour l'enregistrer.
+{0} À vous de jouer : les fréquences portent sur les coups de l’adversaire. Jouez votre coup, ou revenez d’un coup (‹).
+dans vos parties
+{0} Aucune donnée pour cette position{1}.
+Lichess {0}
+{0}vous {1}×
+préparé
+à préparer
+Jouer {1} pour l’adversaire
+{2} parties
+Réponses fréquentes de vos adversaires, pas encore préparées
+{0} partie{1} analysée{2}
+Aucune de vos parties analysée
+Explorateur Lichess activé ·
+Retirer le jeton
+lip_…
+Jeton Lichess
+Statistiques Lichess : collez un
+jeton personnel
+(aucune autorisation à cocher), gardé sur cet appareil.
+Activer
+Ajouter mes parties
+Jouer {1} pour l’adversaire · {2}
+Suites adverses
+Lichess a refusé le jeton : vérifiez-le, ou retirez-le.
+Hors ligne : statistiques Lichess indisponibles.
+Explorateur Lichess injoignable pour le moment.
+Réponse fréquente à préparer
+À vous : jouez le coup que vous voulez retenir.
+Erreur d'ouverture
+Nouveauté adverse
+Erreurs
+Traitées
+Théoriques
+comptée
+déjà
+pseudo {0}
+Pseudo {0}
+Récupération…
+{0} Analyser {1} parties
+récupération…
+disabled aria-busy="true"
+Relancer l'analyse
+Changer de source
+Dernière analyse
+Récupération et analyse des parties…
+Masquer les parties déjà analysées
+Afficher les {0}
+Afficher la partie
+{0} ne répond pas
+Hors ligne · le PGN collé marche sans Internet
+Vérifiez votre connexion et réessayez.
+{0} Réessayer
+{1} Coller un PGN
+Aucune partie trouvée
+Ce pseudo n'a pas de partie récente sur {0}.
+Aucune partie à comparer
+ignorée
+ignorées
+{0} · Chess960 ou position de départ
+Analyser {1} parties
+Rien de nouveau
+partie déjà analysée
+parties déjà analysées
+{0} parties, toutes théoriques
+Partie entièrement théorique
+déjà analysée
+déjà analysées
+Aucun coup n'est sorti du répertoire.
+affichée
+déjà analysée masquée
+déjà analysées masquées
+erreur comptée
+erreurs comptées
+· {0} l'étai{1} déjà
+{0} analysée{1}
+Filtrer par verdict
+Position après le coup déviant
+Dernière position
+Joué
+Répertoire
+Ouverture
+Date
+au {0}
+aucune ({0} demi-coups)
+Partie choisie
+Sortie
+{1} Ouvrir dans Jouer
+{3} Voir dans l'Arbre
+Entrez votre pseudo {0}.
+Pseudo introuvable sur {0}.
+Impossible de joindre le site.
+(position de départ)
+Adversaire : {0}
+À vous de répondre.
+Transposition : position déjà connue par un autre ordre de coups.
+✓ Solution jouée
+✗ Ce n'est pas le coup de la solution.
+✓ Correct ! (transposition)
+✓ Correct !
+✗ Pas le bon coup
+Réessayez, ou appuyez sur Indice.
+un Pion
+un Cavalier
+un Fou
+une Tour
+une Dame
+le Roi
+L'indice n'est disponible que pour vos propres coups.
+Aucun indice — cette position n'est pas encore dans la base.
+Voir la solution compte comme une erreur.
+Appuyez encore pour voir la solution.
+Jouez-le pour continuer.
+— compte une erreur
+Voir la solution (Espace){0}
+— Jouer ne compte rien
+— ne compte pas comme une erreur
+Indice (Espace){0}
+Indice{1}
+Au tour de l'adversaire
+Position inconnue : jouez votre coup pour l'enregistrer
+Attention : la {0} de ce coup rendra {1} coup(s) en aval inaccessible(s). Voulez-vous également nettoyer ces branches orphelines ? (Tout est conservé 30 jours dans la corbeille.)
+Supprimer aussi les {0} coup(s) orphelin(s)
+Supprimer ce coup seulement
+Confirmer
+Aucun coup à annuler.
+Coup adverse annulé
+Choisissez une autre branche.
+Coup annulé.
+Voulez-vous effacer ce coup de votre répertoire pour en enregistrer un nouveau ? (Il est conservé 30 jours dans la corbeille.)
+Coup effacé
+Jouez le nouveau coup de référence.
+{0} coup(s) orphelin(s) nettoyé(s).
+Réponse enregistrée : {0} {1}
+Retirer ce coup du répertoire (il va dans la corbeille, 30 jours)
+Impossible d'annuler
+La corbeille n'a pas pu garder ce coup.
+{0} mis à la corbeille
+Jouez un autre coup, ou rétablissez-le.
+Remettre ce coup au répertoire et le rejouer
+Rétablissement impossible ici
+Le coup reste dans la corbeille (30 jours).
+Rétablissement impossible
+Le coup n'est plus dans la corbeille.
+Nouvelle partie
+Jouez votre premier coup (Blancs).
+Jouez le premier coup des Blancs (adversaire).
+, sélectionnée
+, coup possible
+translate({0}px, {1}px)
+translate(0, 0)
+cubic-bezier(.22,.8,.3,1)
+Aucun coup joué
+Retour à la position actuelle.
+Navigation — position initiale.
+Navigation — coup {0}/{1} : {2}
+translate({0}px, {1}px) scale(1.12)
+Couleur importée
+Collez du PGN ou choisissez un fichier .pgn.
+Aucune partie reconnue dans ce texte.
+nouveau coup ajouté
+nouveaux coups ajoutés
+branche créée
+branches créées
+✓ Import PGN réussi : {0}, {1}.
+{0} Rien de nouveau : tous les coups de ce PGN sont déjà dans le répertoire (ou en conflit).
+Aucun coup valide trouvé dans ce PGN.
+coup déjà connu
+coups déjà connus
+{0} (ignoré{1}).
+partie ignorée
+parties ignorées
+{0} (position de départ personnalisée).
+variante implicite reconnue
+variantes implicites reconnues
+{0} {1} (numéro de coup qui revient en arrière, lu comme une variante) :
+… et {0} autre(s)
+{0} {1} : votre coup déjà enregistré a été conservé, la suite de la ligne n'a pas été importée.
+PGN : <strong>{1}</strong> · conservé : <strong>{2}</strong>
+coup illisible ou illégal
+coups illisibles ou illégaux
+{0} {1} (ligne abandonnée à cet endroit) :
+Répertoire {0} ({1})
+Le répertoire « {0} » ne contient aucune ligne exportable.
+Repertoire_{0}_{1}.pgn
+{0} coup(s) sans ligne connue depuis la position de départ n'ont pas pu être exportés.
+Moi
+Partie
+Partie copiée en PGN
+Partie téléchargée en PGN
+Partie_{0}.pgn
+Remplacer {0} ? L'ancien coup est conservé 30 jours dans la corbeille ; vous jouerez ensuite le nouveau.
+Remplacement de {0}
+Jouez le nouveau coup.
+Placer {0} dans la corbeille ? Il restera restaurable pendant 30 jours.
+{0} supprimé
+Avec {0} coup(s) orphelin(s).
+Restaurable 30 jours depuis la corbeille.
+Non couvert {0}/{1} : {2}
+Jouez votre réponse pour l'enregistrer.
+s isolés
+isolé
+Placer {0} coup{1} dans la corbeille ? Ces coups ne sont rattachés à aucune ligne partant de la position de départ. Ils restent restaurables pendant 30 jours.
+, {0} à retravailler
+Cette variante : {0} % de coups maîtrisés ({1} coups{2})
+Le premier coup ouvre l’arbre
+Aucune ligne rattachée à la position de départ ({0} coup(s) isolé(s)).
+{1} Mettre à la corbeille
+Aller à la prochaine réponse non couverte
+{0} {1} non couvert{2} {3}
+{0} Rien de non couvert
+Coups non rattachés à la position de départ
+{0} isolé{1}
+Nettoyer
+Replie les branches inaccessibles depuis la position affichée
+Affiche tout l'arbre
+Depuis ici
+Vue complète
+</i> mes coups
+</i> adversaire
+Replier ou déplier
+↪ transposition
+Remplacer ou supprimer ce coup
+Actions sur ce coup
+Oublier cette réponse adverse
+Oublier
+{0} Non couvert
+{2} Remplacer
+{4} Supprimer
+Réponse non couverte
+Position chargée : {0}.
+Ouverture du pion roi
+Ouverture du pion dame
+Partie anglaise
+Ouverture Réti
+Ouverture Bird
+Ouverture Larsen
+Ouverture hongroise
+Ouverture Sokolsky
+Ouverture Van Geet
+Ouverture Van 't Kruijs
+Ouverture Mieses
+Ouverture Saragosse
+Partie ouverte
+Partie du cavalier roi
+Défense Philidor
+Défense Philidor · Variante Hanham
+Défense Philidor · Variante d'échange
+Défense Petrov
+Défense Petrov · Variante classique
+Défense Petrov · Attaque Steinitz
+Défense Petrov · Gambit Stafford
+Défense Petrov · Variante des trois cavaliers
+Contre-gambit letton
+Défense Damiano
+Contre-gambit Éléphant
+Partie italienne
+Partie italienne · Giuoco Piano
+Partie italienne · Giuoco Pianissimo
+Partie italienne · Variante c3
+Partie italienne · Ligne principale
+Partie italienne · Gambit Evans
+Partie italienne · Gambit Evans accepté
+Partie italienne · Variante 4. O-O
+Défense des deux cavaliers
+Défense des deux cavaliers · 4. Cg5
+Défense des deux cavaliers · Variante moderne
+Défense des deux cavaliers · Attaque Fegatello
+Défense des deux cavaliers · Contre-attaque Traxler
+Défense des deux cavaliers · 4. d3
+Défense des deux cavaliers · 4. d4
+Défense hongroise
+Partie espagnole
+Partie espagnole · Défense berlinoise
+Partie espagnole · Berlinoise, 4. d3
+Partie espagnole · Finale berlinoise
+Partie espagnole · Défense Morphy
+Partie espagnole · Variante d'échange
+Partie espagnole · Défense Steinitz différée
+Partie espagnole · Variante d3
+Partie espagnole · Variante ouverte
+Partie espagnole · Variante Arkhangelsk
+Partie espagnole · Variante néo-Arkhangelsk
+Partie espagnole · Variante fermée
+Partie espagnole · Attaque Marshall
+Partie espagnole · Anti-Marshall
+Partie espagnole · Variante Tchigorine
+Partie espagnole · Variante Breyer
+Partie espagnole · Variante Zaïtsev
+Partie espagnole · Défense classique
+Partie espagnole · Défense Cozio
+Partie espagnole · Gambit Schliemann
+Partie espagnole · Défense Steinitz
+Partie espagnole · Défense Bird
+Partie espagnole · Variante fianchetto
+Partie écossaise
+Partie écossaise · Variante classique
+Partie écossaise · Variante Schmidt
+Partie écossaise · Variante Mieses
+Partie écossaise · Variante Steinitz
+Gambit écossais
+Gambit Göring
+Partie Ponziani
+Partie des trois cavaliers
+Partie des quatre cavaliers
+Partie des quatre cavaliers · Variante écossaise
+Partie des quatre cavaliers · Variante espagnole
+Partie des quatre cavaliers · Variante italienne
+Partie des quatre cavaliers · Variante Glek
+Partie des quatre cavaliers · Gambit Halloween
+Partie viennoise
+Partie viennoise · 2…Cf6
+Partie viennoise · 2…Cc6
+Partie viennoise · Gambit viennois
+Partie viennoise · 3. Fc4
+Partie viennoise · Variante Frankenstein-Dracula
+Partie viennoise · Variante fianchetto
+Gambit du roi
+Gambit du roi accepté
+Gambit du roi accepté · Gambit du cavalier
+Gambit du roi accepté · Gambit du fou
+Gambit du roi refusé · Variante classique
+Gambit du roi · Contre-gambit Falkbeer
+Partie du fou
+Partie du fou · Défense berlinoise
+Partie du centre
+Gambit danois
+Attaque Parham
+Défense sicilienne
+Sicilienne · Variante Alapin
+Sicilienne · Alapin, 2…d5
+Sicilienne · Alapin, 2…Cf6
+Sicilienne · Variante fermée
+Sicilienne · Attaque Grand Prix
+Sicilienne · Gambit Smith-Morra
+Sicilienne · Gambit de l'aile
+Sicilienne · Variante Bowdler
+Sicilienne · Variante Rossolimo
+Sicilienne · Variante Moscou
+Sicilienne · Variante Moscou, 3…Fd7
+Sicilienne · Variante Moscou, 3…Cd7
+Sicilienne · Variante O'Kelly
+Sicilienne · Variante Nimzowitsch
+Sicilienne · Variante hyperaccélérée
+Sicilienne ouverte
+Sicilienne · Variante Hongroise
+Sicilienne Najdorf
+Sicilienne Najdorf · Attaque anglaise
+Sicilienne Najdorf · 6. Fg5
+Sicilienne Najdorf · Variante Opočenský
+Sicilienne Najdorf · Attaque Fischer-Sozine
+Sicilienne Najdorf · Variante Adams
+Sicilienne Najdorf · 6. f4
+Sicilienne Najdorf · 6. g3
+Sicilienne Najdorf · 6. f3
+Sicilienne Dragon
+Sicilienne Dragon · Attaque yougoslave
+Sicilienne Dragon · Variante classique
+Sicilienne Dragon · Variante Levenfish
+Sicilienne classique
+Sicilienne classique · Attaque Richter-Rauzer
+Sicilienne classique · Attaque Sozine
+Sicilienne Scheveningue
+Sicilienne Scheveningue · Attaque Keres
+Sicilienne Scheveningue · Attaque anglaise
+Sicilienne · Dragon accéléré
+Sicilienne · Dragon accéléré, étau de Maroczy
+Sicilienne Sveshnikov
+Sicilienne Sveshnikov · Ligne principale
+Sicilienne · Variante Kalachnikov
+Sicilienne · Variante des quatre cavaliers
+Sicilienne · Variante Pin
+Sicilienne Taïmanov
+Sicilienne Kan
+Défense française
+Française · Attaque est-indienne
+Française · Variante d'avance
+Française · Avance, ligne principale
+Française · Variante d'échange
+Française · Variante Tarrasch
+Française · Tarrasch, 3…c5
+Française · Tarrasch, 3…Cf6
+Française · Variante Guimard
+Française · Variante Rubinstein
+Française · 3. Cc3
+Française · Variante Winawer
+Française · Winawer, ligne principale
+Française · Variante classique
+Française · Variante Steinitz
+Française · Variante MacCutcheon
+Française · Variante Burn
+Défense Caro-Kann
+Caro-Kann · Variante des deux cavaliers
+Caro-Kann · Variante d'avance
+Caro-Kann · Avance, variante Short
+Caro-Kann · Avance, 3…c5
+Caro-Kann · Avance, attaque Bayonet
+Caro-Kann · Avance, variante Tal
+Caro-Kann · Variante d'échange
+Caro-Kann · Attaque Panov
+Caro-Kann · Variante fantaisie
+Caro-Kann · 3. Cc3
+Caro-Kann · 3. Cd2
+Caro-Kann · Variante classique
+Caro-Kann · Variante Karpov
+Caro-Kann · Variante Bronstein-Larsen
+Défense scandinave
+Scandinave · 2…Dxd5
+Scandinave · 3. Cc3 Da5
+Scandinave · 3. Cc3 Dd6
+Scandinave · 3. Cc3 Dd8
+Scandinave · Variante moderne
+Défense Alekhine
+Alekhine · Variante moderne
+Alekhine · Attaque des quatre pions
+Alekhine · Variante d'échange
+Défense Pirc
+Pirc · Attaque autrichienne
+Pirc · Variante classique
+Pirc · Attaque 150
+Défense moderne
+Défense Owen
+Défense Nimzowitsch
+Défense Saint-Georges
+Partie du pion dame
+Gambit dame
+Gambit dame accepté
+Gambit dame accepté · Variante classique
+Gambit dame refusé
+Gambit dame refusé · 3. Cc3
+Gambit dame refusé · Variante d'échange
+Gambit dame refusé · Variante orthodoxe
+Gambit dame refusé · Variante Tartakover
+Gambit dame refusé · Variante Lasker
+Gambit dame refusé · Variante Cambridge Springs
+Gambit dame refusé · Variante Ragozine
+Gambit dame refusé · 5. Ff4
+Gambit dame refusé · Défense Tarrasch
+Gambit dame refusé · Semi-Tarrasch
+Défense slave
+Slave · Variante d'échange
+Slave · 4. e3
+Slave · Variante principale
+Slave · Variante tchèque
+Slave · Variante Chebanenko
+Semi-slave
+Semi-slave · 5. e3
+Semi-slave · Variante de Merano
+Semi-slave · Variante Botvinnik
+Semi-slave · Variante Moscou
+Contre-gambit Albin
+Défense Tchigorine
+Défense baltique
+Système de Londres
+Système Jobava-Londres
+Système Colle
+Ouverture Veresov
+Gambit Blackmar-Diemer
+Défense indienne
+Attaque Trompowsky
+Attaque Torre
+Défense est-indienne
+Est-indienne · Variante classique
+Est-indienne · Variante Mar del Plata
+Est-indienne · Variante Petrossian
+Est-indienne · Variante Sämisch
+Est-indienne · Attaque des quatre pions
+Est-indienne · Variante Averbakh
+Est-indienne · Variante fianchetto
+Défense Grünfeld
+Grünfeld · Variante d'échange
+Grünfeld · Variante russe
+Grünfeld · 4. Ff4
+Défense nimzo-indienne
+Nimzo-indienne · Variante Rubinstein
+Nimzo-indienne · Variante classique
+Nimzo-indienne · Variante Sämisch
+Nimzo-indienne · Variante Leningrad
+Nimzo-indienne · Variante Kmoch
+Nimzo-indienne · 4. Cf3
+Défense ouest-indienne
+Ouest-indienne · Variante Petrossian
+Ouest-indienne · Variante fianchetto
+Défense bogo-indienne
+Ouverture catalane
+Catalane · Variante ouverte
+Catalane · Variante fermée
+Défense Benoni
+Benoni moderne
+Gambit Benko
+Gambit Benko accepté
+Gambit Budapest
+Défense vieille-indienne
+Défense hollandaise
+Hollandaise · Variante Leningrad
+Hollandaise · Variante Stonewall
+Hollandaise · Variante classique
+Hollandaise · Gambit Staunton
+Défense anglaise
+Défense Englund
+Benoni ancienne
+Anglaise · Sicilienne inversée
+Anglaise · Dragon inversé
+Anglaise · Variante des quatre cavaliers
+Anglaise · Variante symétrique
+Anglaise · Anglo-indienne
+Anglaise · Anglo-indienne, variante Mikenas
+Anglaise · Anglo-Grünfeld
+Anglaise · Anglo-slave
+Anglaise · Anglo-hollandaise
+Anglaise · Anglo-française
+Ouverture Réti · 1…d5
+Ouverture Réti · Gambit Réti
+Ouverture Réti · Attaque est-indienne
+Ouverture Réti · Fianchetto roi
+Ouverture Bird · Gambit From
+À retravailler
+plus d'une erreur sur deux
+Fragiles
+Fragile
+de 30 à 50 % d'erreurs
+En progrès
+de 15 à 30 % d'erreurs
+Solides
+Solide
+moins de 15 % d'erreurs
+À confirmer
+aucune erreur, moins de {0} essais
+Maîtrisées
+Maîtrisée
+aucune erreur en {0} essais ou plus, ou solide et réussie plusieurs révisions d'affilée
+Filtrer la liste par niveau
+dans {0} min
+dans {0} h
+dans {0} j
+Autres positions
+Position
+Position avant votre coup
+Réussite par semaine sur {3} semaines, {4} % cette semaine
+Réussite par semaine
+<b>{0} % cette semaine</b>
+cette sem.
+Maîtrise par couleur · {0}
+Essais par jour sur {3} semaines
+d'affilée
+jours actifs
+moins <i></i>
+</i> plus
+Régularité
+tous répertoires
+avec les {0}
+Aucun essai pour « {0} »
+positions enregistrées
+{0}{1}, aucune encore révisée. Les chiffres viennent de l'Entraînement.
+Ouvrir l'Entraînement {0}
+Répertoire vide
+Les Blancs et les Noirs n'ont
+Les {0} n'ont
+{0} aucune position dans « {1} ».
+{0}Ajouter une ligne
+class="zero"
+Révisions prévues : {2}
+{0} prochains jours
+positions à réviser
+· dont <b>{0} à retravailler</b>
+Environ {2} min{3}{4}
+Révision du jour {6}
+Prochaine révision {0}.
+Aucune révision prévue.
+<b>À jour</b>
+{2}Points faibles {3}
+Aujourd'hui · {0}
+En bref
+Sections
+maîtrisées
+pas encore de niveau
+Maîtrise · {0}
+Réussite : {5} % sur {6}
+Tout voir
+Coup à retrouver
+Blancs ·
+Noirs ·
+Voir la position {2}, {3}
+{3}Entraînement › Points faibles {4}
+Trier
+Trier les ouvertures
+Plus fragiles
+Plus à réviser
+Ordre des coups
+Plus de positions
+Aujourd’hui
+{4} % d'erreurs
+S'entraîner sur cette position (compte comme un essai)
+S'entraîner sur {1}
+Voir la position
+Voir {5}
+{6} err. / {7}
+Afficher les {1} autres positions
+Réviser cette ouverture {1}
+{0} à réviser sur {1}
+Coup
+Niveau
+Révision
+{7} % · {8} pos.
+Aucune position à ce niveau.
+Tout voir : {0}
+Filtrer par niveau
+Par ouverture
+Aperçu · {0}
+{0} · {1} % d'erreurs ({2}/{3})
+Cette position
+Retour aux Statistiques{0}
+Revoir {0} erreurs
+Revoir l’erreur
+{0} à réviser · ≈ {1} min
+{0} · {1} min
+nouveauté à traiter
+nouveautés à traiter
+nouveauté
+nouveautés
+Objectif du jour atteint
+Objectif atteint
+Séance
+Suite
+, {0} sans faute
+Séance : position {0} sur {1}{2}
+Suite : {3}
+capsule Suite
+· {0} jours d’affilée
+Objectif du jour atteint · {0}{1}
+dans {0} jour{1}
+Aucune position {0} à réviser dans ce répertoire.
+Aucune ligne enregistrée pour cette ouverture.
+Temps écoulé · {0} bon{1} coup{2}
+Séance terminée · {0}/{1} du premier coup
+Retour aux statistiques…
+Bilan de la séance…
+Temps restant
+{1}:{2}</b> restantes
+{3}</b> bon{4} coup{5}
+Ligne complète · <b>{0}</b>
+{1}</b> {2} · {3} du premier coup
+×{0} sans faute</b> ·
+· {0} à revoir à la fin
+{0}{1} du premier coup{2}
+non revu depuis longtemps
+revu il y a {0} min
+revu il y a {0} h
+non revu depuis {0} jour{1}
+non revu depuis {0} semaine{1}
+Deuxième passage : erreur plus tôt dans la séance
+Entretien · 100% de réussite · {0}
+Position critique · {0}% d'erreur
+À réviser · {0}
+À consolider · {0}% d'erreur · {1}
+Aucune position dans ce répertoire.
+Mise en situation…
+Toucher pour passer
+· coup {0}{1}
+À vous de jouer{0}
+· {0} réussi{1}
+Deuxième passage
+Ligne complète
+Ligne complète · l'adversaire commence…
+Fin de la variante.
+✓ Fin de la variante.
+Aucune solution connue pour cette position.
+Jouez-le pour continuer (aucune réussite comptée).
+Aucune réussite comptée.
+✓ Bien joué !
+Toujours à 100 % de réussite.
+Taux d'erreur : {0} % → {1} %
+Elle reviendra en fin de séance.
+Taux d'erreur : {0} %. {1}Réessayez, ou appuyez sur Indice.
+✗ Ce n'est pas le coup de la solution
+Réessayez.
+Revoir les {0} erreurs
+Tout de suite, pendant que c’est frais
+Répondre à {0} nouveautés
+Répondre à une nouveauté
+Coups adverses vus dans vos parties
+Ensuite
+Nouveau record !
+{0} bon{1} coup{2}
+Séance interrompue
+Très bonne séance
+Bonne séance
+Séance utile
+{0} bons coups, record {1}
+{0} sur {1} du premier coup
+{0}Objectif du jour atteint
+{0} à revoir
+{0}{1} niveau{2} monté{3}
+{0}{1} descendu{2}
+Rejouer
+Rejouer la ligne
+Réussie
+Ratée
+(min-width: 600px)
+Record : {0}
+du premier coup
+Avant → après
+Bilan de la dernière séance
+Fermer le bilan
+{1}{2} · {3} min
+Blancs au trait
+Noirs au trait
+Retirer le filtre d'ouverture
+Toutes les ouvertures
+Aucune position de cette ouverture
+Ajouter une ligne
+Aperçu de la position
+<b>Rien à réviser pour l’instant</b>
+{3}{4} dans ce répertoire.
+dem.
+{0} révision{1}
+Révisions prévues sur 7 jours : {0}
+{0} nouvelle{1}
+à réviser aujourd’hui · ≈ {1} min
+bientôt
+Prochaine révision {0}
+Révision du jour · {1}
+{5} jour{6} d'affilée
+{7} / {8} aujourd'hui
+début
+ciblée
+{0} coup{1}
+style="--c:var(--lv-{0})"
+disabled title="{0}"
+aria-expanded="{0}"
+{4} pos.
+Aucune ouverture reconnue dans ce répertoire.
+Choisir une ouverture
+Moins
+Jusqu’où
+Coups à enchaîner
+Lancer le mode libre
+Réglages du mode libre
+Partir du début de partie
+Contre-la-montre
+· {0} position{1}
+Aucune position fragile ni à retravailler
+Aucune ouverture reconnue
+Aucune position à confirmer
+record {0}
+pas encore de record
+3 min · {0}
+Exercices
+{0} à confirmer
+Maîtrise
+{0} position{1}
+La plus en retard
+Point faible
+Ligne complète ·
+Contre-la-montre · positions au hasard
+Tout le répertoire · 3 min
+Préparation…
+Erreurs à revoir
+Général
+ex : Défense Sicilienne
+Créer
+Ce répertoire existe déjà.
+Le répertoire par défaut ne peut pas être renommé.
+Renommer le répertoire
+Renommer
+Choisissez un nom différent.
+Ce nom est déjà utilisé.
+lecture de la base
+notation de
+migration des données
+stockage plein
+openingOpp_{0}_{1}
+export de
+La base « {0} » ({1}) est illisible : elle manque dans la sauvegarde.
+ChaysTrainer_backup_{0}.json
+Fichier JSON invalide. Veuillez sélectionner un fichier exporté par Chays Trainer.
+Format de fichier non reconnu. Assurez-vous que le fichier a été créé par la fonction "Exporter" de Chays Trainer.
+Importer "{0}" ? Les répertoires importés s'ajouteront aux vôtres (les entrées existantes seront fusionnées, les nouvelles ajoutées). Cette opération est irréversible sans sauvegarde préalable.
+lecture de
+avant import
+✓ Import réussi : {0} entrée(s) importée(s) ou mise(s) à jour.
+Chays
+Trainer
+Supprimer le répertoire
+Données (import / export)
+Au hasard
+Préc.
+Indice
+S'entraîner
+Suiv.
+Corriger
+Retourner
+Tourner
+Initialisation...
+Coups
+Arbre
+Données
+Répertoire :
+Dernières parties
+Analyser
+J'avais les
+Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.
+Analyser la partie
+Mes coups sont ceux des
+Choisir un fichier .pgn
+Analyser et importer
+Vos données ne sont que dans ce navigateur : téléchargez une sauvegarde, ou connectez-vous pour les synchroniser.
+Répertoires, coups et branches supprimés. Les éléments sont effacés définitivement après 30 jours.
+Vider la corbeille
+PROMOTION — Choisir une pièce
+Accueil
+Retour aux Statistiques
+Compte et réglages
+Comment ça marche ?
+Autres répertoires
+Actions sur les répertoires
+Aujourd'hui
+Modifier la description du répertoire
+Exercice au hasard
+Échiquier — flèches pour se déplacer, Entrée pour jouer
+Coup précédent (←)
+Coup précédent
+Indice (Espace)
+Passer à la position suivante (P)
+Recommencer l'exercice (N)
+Jouer le coup de cette position (compte comme un essai)
+Coup suivant (→)
+Coup suivant
+Corriger le dernier coup : il est retiré de l'échiquier pour en jouer un autre (votre coup enregistré peut ainsi être remplacé)
+Recommencer la partie depuis la position de départ (rien n'est retiré du répertoire)
+Retourner l'échiquier (F)
+Afficher le répertoire en flèches sur l'échiquier (R)
+Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?
+Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin
+Plus d'actions
+Quitter l'entraînement (Q)
+Quitter l'exercice (Q)
+Analyser la position avec le moteur
+Ouvrir la position sur Lichess (nouvel onglet)
+Revenir à Jouer ; le brouillon est gardé pour la session (Q)
+Coups les plus joués par vos adversaires et sur Lichess
+Source
+PGN de la partie
+…ou collez ici le texte PGN&#10;1. e4 e5 2. Nf3 (2. f4 exf4) 2... Nc6 3. Bb5 *

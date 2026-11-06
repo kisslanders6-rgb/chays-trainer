@@ -284,7 +284,7 @@ function initTraining() {
     const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
     const scopeName = { w: 'Blancs', b: 'Noirs', mix: 'Blancs et Noirs' }[_trColor] + (_trOpening ? ' · ' + escapeHtml(_trOpening.name) : '');
     const days = _trForecast(rows, now, plan), max = Math.max(1, ...days.map(d => d.n));
-    const dayName = (t, i) => i === 0 ? 'auj.' : i === 1 ? 'dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' });
+    const dayName = (t, i) => i === 0 ? 'auj.' : i === 1 ? 'dem.' : new Date(t).toLocaleDateString(I18n.locale(), { weekday: 'short' });
     const forecast = `<div class="trr-fc" role="img" aria-label="Révisions prévues sur 7 jours : ${days.map(d => d.n).join(', ')}">${days.map((d, i) =>
         `<div title="${d.n} révision${d.n > 1 ? 's' : ''}"><b>${d.n || ''}</b><i style="height:${Math.max(3, Math.round(36 * d.n / max))}px"></i><span>${dayName(d.t, i)}</span></div>`).join('')}</div>`;
     const hero = `

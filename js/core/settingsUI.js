@@ -52,6 +52,8 @@ function _settingRows() {
     return {
         apparence: [
             { group: null, kind: 'custom', html: _previewHTML, search: 'aperçu échiquier', preview: true },
+            { group: 'Interface', kind: 'custom', pref: 'lang', label: 'Langue', html: _langHTML, col: true,
+              search: 'langue language idioma sprache ' + Object.values(I18n.LANGS).map(l => l.label).join(' ') },
             { group: 'Interface', kind: 'seg', key: 'theme', label: 'Mode', tip: '« Système » suit le réglage clair / sombre de l’appareil.',
               opts: [['light', 'Clair'], ['dark', 'Sombre'], ['system', 'Système']], value: themeMode() },
             { group: 'Interface', kind: 'custom', pref: 'darkBg', label: 'Ambiance', tip: 'Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.',
@@ -259,6 +261,46 @@ function _fullEngineHTML() {
         <div class="pn-actions">${PanelKit.button('Télécharger (99 Mo)', 'fullDownload', { primary: true, icon: 'download' })}</div>${err}</div>`;
 }
 
+// ─── Langue ──────────────────────────────────────────────────────────────────
+// Quatre langues d'office ; les autres sont des paquets à télécharger, comme le moteur complet (i18n.js).
+const _langDl = { have: {}, sizes: {}, busy: null, pct: 0, error: '', checked: false };
+const _ko = n => `${Math.max(1, Math.round(n / 1024))} Ko`;
+function _langCheck() {
+    if (_langDl.checked) return;
+    _langDl.checked = true;
+    const others = Object.keys(I18n.LANGS).filter(id => !I18n.EMBEDDED.includes(id));
+    Promise.all([
+        Promise.all(others.map(id => I18n.hasPack(id).then(ok => { _langDl.have[id] = ok; }))),
+        fetch('lang/manifest.json').then(r => r.json()).then(m => { _langDl.sizes = m; }).catch(() => {})
+    ]).then(() => { if (SettingsPanel.isOpen()) SettingsPanel.refresh(); });
+}
+function _langHTML() {
+    _langCheck();
+    const now = I18n.lang();
+    const name = id => `<b lang="${id}" translate="no">${PanelKit.esc(I18n.LANGS[id].label)}</b>`;
+    const pick = id => `<button type="button" class="pn-lang${id === now ? ' is-on' : ''}" data-pn="act" data-key="langUse" data-v="${id}" aria-pressed="${id === now}">${name(id)}${id === now ? ico('check') : ''}</button>`;
+    // Une langue n'est proposée qu'une fois son paquet publié (lang/manifest.json).
+    const rows = Object.keys(I18n.LANGS).filter(id => !I18n.EMBEDDED.includes(id) && (_langDl.sizes[id] || _langDl.have[id])).map(id => {
+        const size = _langDl.sizes[id] ? ` (${_ko(_langDl.sizes[id])})` : '';
+        if (_langDl.busy === id) return `<div class="pn-lang-row">${name(id)}<progress id="lang-dl-bar" max="100" value="${_langDl.pct}"></progress></div>`;
+        if (_langDl.have[id]) return `<div class="pn-lang-row">${id === now ? `${name(id)}${ico('check')}` : `<button type="button" class="pn-lang" data-pn="act" data-key="langUse" data-v="${id}">${name(id)}</button>
+            <button type="button" class="pn-lang-del" data-pn="act" data-key="langRemove" data-v="${id}" title="Supprimer cette langue" aria-label="Supprimer cette langue">${ico('trash')}</button>`}</div>`;
+        return `<div class="pn-lang-row">${name(id)}<button type="button" class="btn btn-soft pn-lang-get" data-pn="act" data-key="langGet" data-v="${id}"${_langDl.busy ? ' disabled' : ''}>${ico('download')}<span>Télécharger${size}</span></button></div>`;
+    }).join('');
+    return `<div class="pn-langs">${I18n.EMBEDDED.map(pick).join('')}</div>
+        ${rows ? `<h4 class="pn-lang-h">À télécharger</h4><div class="pn-lang-list">${rows}</div>` : ''}
+        ${_langDl.error ? `<p class="pn-dl-err" role="alert">${PanelKit.esc(_langDl.error)}</p>` : ''}`;
+}
+function _langGet(id) {
+    if (_langDl.busy) return;
+    _langDl.busy = id; _langDl.pct = 0; _langDl.error = '';
+    SettingsPanel.refresh();
+    I18n.download(id, f => { _langDl.pct = Math.round(100 * f); const b = document.getElementById('lang-dl-bar'); if (b) b.value = _langDl.pct; })
+        .then(() => { _langDl.have[id] = true; })
+        .catch(() => { _langDl.error = 'Téléchargement impossible. Vérifiez votre connexion.'; })
+        .finally(() => { _langDl.busy = null; if (SettingsPanel.isOpen()) SettingsPanel.refresh(); });
+}
+
 function _fullDownload() {
     if (_fullDl.job || typeof Engine === 'undefined') return;
     _fullDl.error = '';
@@ -445,6 +487,9 @@ const SettingsPanel = PanelKit.create({
         if (kind === 'act') {
             if (key === 'openData')  { SettingsPanel.close(); showData(); }
             if (key === 'openTrash') { SettingsPanel.close(); showTrash(); }
+            if (key === 'langGet') _langGet(value);
+            if (key === 'langUse' && value !== I18n.lang()) I18n.use(value).catch(() => { _langDl.error = 'Langue indisponible pour le moment.'; SettingsPanel.refresh(); });
+            if (key === 'langRemove') I18n.removePack(value).then(() => { _langDl.have[value] = false; SettingsPanel.refresh(); });
             if (key === 'fullDownload') _fullDownload();
             if (key === 'fullCancel' && _fullDl.job) _fullDl.job.cancel();
             if (key === 'fullRemove') Engine.full.remove().then(() => { _fullDl.state = 'absent'; SettingsPanel.refresh(); if (typeof analysisSettingsChanged === 'function') analysisSettingsChanged('engineNet'); });

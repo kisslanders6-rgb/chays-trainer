@@ -269,7 +269,7 @@ function runGameReview() {
     showReviewResult(res);
 }
 
-const _shortDate = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const _shortDate = t => new Date(t).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
 
 // Place l'échiquier après le coup déviant (toute la partie dans l'historique) et résume le verdict.
 // res : résultat de reviewGame.

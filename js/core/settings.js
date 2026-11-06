@@ -100,6 +100,7 @@ const SYNCED_PREFS = {
 
 // Préférences propres à l'appareil (chessTrainer_settings) : valeurs admises et valeur par défaut.
 const LOCAL_PREFS = {
+    lang:     { ok: v => typeof v === 'string' && !!I18n.LANGS[v], def: 'fr' },     // langue de l'interface (i18n.js)
     sound:    { ok: _bool, def: true },
     volume:   { ok: v => typeof v === 'number' && v >= 0 && v <= 1, def: 0.6 },
     sMove:    { ok: _bool, def: true },

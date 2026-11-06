@@ -38,7 +38,7 @@ const SyncEngine = (function () {
     const coded = (code, extra) => Object.assign(new Error(code), { code }, extra);
     const errOf = r => coded(/quota_/.test(r.message || '') ? 'quota' : r.error || 'server', { status: r.status });   // quota : supabase/schema.sql
     const active = () => typeof Auth !== 'undefined' && Auth.isSignedIn() && CloudClient.configured();
-    const hhmm = ts => new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const hhmm = ts => new Date(ts).toLocaleTimeString((typeof I18n !== 'undefined' ? I18n.locale() : 'fr-FR'), { hour: '2-digit', minute: '2-digit' });
 
     function setStatus(level, text) {
         status = { level, text };

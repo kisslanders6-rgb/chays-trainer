@@ -16,13 +16,13 @@
  * (scripts, feuilles de style, logos, icônes), complétée par EXTRA (ressources citées seulement
  * dans le CSS ou le manifeste) et par toutes les pièces. Ajouter un script dans index.html suffit.
  */
-const VERSION = 'v19';
+const VERSION = 'v20';
 const CACHE   = 'chays-trainer-' + VERSION;
 const ENGINE_CACHE = 'chays-engine';
 const ENGINE_FILE  = /\/engine\/\d+\.\d+\.\d+\//;
 
 const EXTRA = [
-    './', 'manifest.json',
+    './', 'manifest.json', 'lang/en.json', 'lang/es.json', 'lang/zh-Hans.json',
     'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png', 'assets/icons/icon-mono-512.png',
     'assets/boards/stone.webp', 'assets/boards/leather.webp', 'assets/boards/walnut.webp',
     'assets/boards/marble.webp', 'assets/boards/tournament.webp', 'assets/boards/cherry.webp',
@@ -92,6 +92,8 @@ self.addEventListener('fetch', e => {
         return;
     }
     if (url.origin !== self.location.origin) return;            // API Chess.com / Lichess / Supabase : on ne s'en mêle pas
+    // Paquets de langue à télécharger : ni dans le cache de l'application, ni servis par lui (i18n.js, cache chays-lang).
+    if (/\/lang\/(?!en\.json|es\.json|zh-Hans\.json)[^/]+\.json$/.test(url.pathname) && !url.pathname.endsWith('/manifest.json')) return;
 
     // Moteur : fichiers versionnés, jamais modifiés. Rangés sans le fragment et rendus dans une réponse neuve
     // (sans adresse) : le Worker garde ainsi l'adresse demandée, dont le fragment « #blob:… » qui désigne le

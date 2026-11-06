@@ -51,7 +51,7 @@ const Palette = (function () {
         const hits = [];
         items.forEach(x => {
             if (x.needsDigit && !/\d/.test(q)) return;
-            const title = norm(x.title), small = norm(x.small), kw = norm(x.words);
+            const title = norm(I18n.t(x.title)) + ' ' + norm(x.title), small = norm(I18n.t(x.small || '')), kw = norm(x.words);
             let score = 0;
             for (const w of words) {
                 const s = wordScore(w, title, small, kw);

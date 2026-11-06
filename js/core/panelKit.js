@@ -176,7 +176,7 @@ const PanelKit = (function () {
         return html.split(/(<[^>]+>)/).map(p => p.startsWith('<') ? p : p.replace(re, '<mark>$1</mark>')).join('');
     }
     const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    const matches = (q, ...texts) => texts.some(t => norm(t).includes(norm(q)));
+    const matches = (q, ...texts) => texts.some(t => norm(t).includes(norm(q)) || norm(I18n.t(String(t))).includes(norm(q)));
 
     return { create, jump, group, row, text, toggle, seg, range, button, localMark, mark, matches, esc, balancedCols };
 })();

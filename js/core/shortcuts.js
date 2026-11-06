@@ -27,7 +27,7 @@ const Shortcuts = (function () {
     const say = text => { if (typeof AccountUI !== 'undefined' && AccountUI.notify) AccountUI.notify(text); };
     const statusAct = label => {
         const b = document.querySelector('#status-bar .status-act');
-        return b && b.textContent.trim() === label ? b : null;
+        return b && b.textContent.trim() === I18n.t(label) ? b : null;
     };
 
     // Annuler le coup qu'on vient d'enregistrer (reçu) ; sinon « Corriger », avec sa confirmation.

@@ -226,7 +226,7 @@ function _regularityHTML() {
     // Calendrier : STATS_HEAT_WEEKS semaines du lundi au dimanche, la semaine en cours en dernier.
     const monday = _dayStart(today, -((new Date(today).getDay() + 6) % 7));
     const first  = _dayStart(monday, -7 * (STATS_HEAT_WEEKS - 1));
-    const fmt = t => new Date(t).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const fmt = t => new Date(t).toLocaleDateString(I18n.locale(), { weekday: 'long', day: 'numeric', month: 'long' });
     // Une colonne par semaine (lundi en haut), précédée des initiales des jours.
     let heat = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="st-heat-d">${d}</span>`).join('');
     for (let w = 0; w < STATS_HEAT_WEEKS; w++) {
@@ -255,7 +255,7 @@ function _regularityHTML() {
         const end = pts[pts.length - 1];
         const area = `${line}L${x(end.i).toFixed(1)},${H - pb}L${x(pts[0].i).toFixed(1)},${H - pb}Z`;
         const grid = [lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - pr + 4}" y="${y(v) + 3}">${Math.round(v)} %</text>`).join('');
-        const startLbl = new Date(_dayStart(monday, -7 * (STATS_TREND_WEEKS - 1))).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        const startLbl = new Date(_dayStart(monday, -7 * (STATS_TREND_WEEKS - 1))).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
         chart = `<div class="st-trend"><span class="st-sub st-trend-h"><span>Réussite par semaine</span><b>${end.v} % cette semaine</b></span>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Réussite par semaine sur ${STATS_TREND_WEEKS} semaines, ${end.v} % cette semaine">
               ${grid}<path class="ar" d="${area}"/><path class="ln" d="${line}"/>
@@ -332,10 +332,10 @@ function initStats() {
     const minutes = Math.max(1, Math.round(dueAll * STATS_SECONDS_PER_POSITION / 60));
     // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
     const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
-    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString('fr-FR', { weekday: 'long' }) : 'aujourd\'hui';
+    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'long' }) : 'aujourd\'hui';
     const forecast = `<div class="st-fc-h"><span>${STATS_FORECAST_DAYS} prochains jours</span><b>${_plural(fcSum, 'position')}</b></div>
             <div class="st-fc" role="img" aria-label="Révisions prévues : ${fc.map((n, i) => `${fcDay(i)} ${n}`).join(', ')}">${fc.map((n, i) =>
-                `<div title="${fcDay(i)} : ${_plural(n, 'position')}"><i style="height:${n ? 4 + Math.round(26 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString('fr-FR', { weekday: 'narrow' })}</span></div>`).join('')}</div>`;
+                `<div title="${fcDay(i)} : ${_plural(n, 'position')}"><i style="height:${n ? 4 + Math.round(26 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>`;
     // Seule action pleine de la page : Révision du jour, ou Points faibles quand tout est à jour.
     const today = `
         <div class="vel-card vel-dark st-today edge-card">

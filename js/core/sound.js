@@ -129,14 +129,15 @@ const _SPOKEN = { K: 'Roi', Q: 'Dame', R: 'Tour', B: 'Fou', N: 'Cavalier', P: 'P
 
 // Phrase d'un coup en notation anglaise (SAN) : roque, prise, promotion, échec et mat compris.
 function spokenMove(san, white) {
-    const who = white ? 'Blancs' : 'Noirs', end = /#$/.test(san) ? ', échec et mat' : /\+$/.test(san) ? ', échec' : '';
+    const t = x => (typeof I18n !== 'undefined' ? I18n.t(x) : x);          // la voix ne passe pas par la page
+    const who = t(white ? 'Blancs' : 'Noirs'), end = t(/#$/.test(san) ? ', échec et mat' : /\+$/.test(san) ? ', échec' : '');
     const s = san.replace(/[+#!?]+$/, '');
-    if (/^O-O-O/.test(s)) return `${who} : grand roque${end}`;
-    if (/^O-O/.test(s)) return `${who} : petit roque${end}`;
+    if (/^O-O-O/.test(s)) return t(`${who} : grand roque${end}`);
+    if (/^O-O/.test(s)) return t(`${who} : petit roque${end}`);
     const m = s.match(/^([KQRBN])?([a-h]?[1-8]?)(x)?([a-h][1-8])(?:=([QRBN]))?/);
     if (!m) return `${who} : ${san}`;
-    const piece = _SPOKEN[m[1] || 'P'], promo = m[5] ? `, promotion en ${_SPOKEN[m[5]]}` : '';
-    return `${who} : ${piece} ${m[3] ? 'prend ' : ''}${m[4]}${promo}${end}`;
+    const piece = t(_SPOKEN[m[1] || 'P']), promo = m[5] ? t(`, promotion en ${_SPOKEN[m[5]]}`) : '';
+    return `${who} : ${piece} ${m[3] ? t('prend') + ' ' : ''}${m[4]}${promo}${end}`;
 }
 
 function announceMove(from, to, capture, promo) {
@@ -179,7 +180,8 @@ const Voice = (function () {
     const pick = () => {
         const s = api(); if (!s) return;
         const all = s.getVoices();
-        voice = all.find(v => /^fr-FR/i.test(v.lang) && v.localService) || all.find(v => /^fr/i.test(v.lang)) || null;
+        const code = typeof I18n !== 'undefined' ? I18n.locale() : 'fr-FR', base = code.split('-')[0].toLowerCase();
+        voice = all.find(v => v.lang.toLowerCase() === code.toLowerCase() && v.localService) || all.find(v => v.lang.toLowerCase().startsWith(base)) || null;
     };
     if (api()) {
         pick();
@@ -194,7 +196,7 @@ const Voice = (function () {
             const s = api(); if (!s) return;
             s.cancel();
             const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'fr-FR'; u.rate = 1.05;
+            u.lang = (typeof I18n !== 'undefined' ? I18n.locale() : 'fr-FR'); u.rate = 1.05;
             if (voice) u.voice = voice;
             current = u;
             u.onend = u.onerror = () => { if (current === u) current = null; };

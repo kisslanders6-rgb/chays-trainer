@@ -69,7 +69,6 @@ const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur 
 //                                 françaises (les glyphes Unicode ♘♗ s'affichaient en emojis, sans rapport
 //                                 avec le jeu de pièces). Toute liste affichée passe donc par formatSan.
 // Le jeu « Invisibles » n'a pas de dessin de pièce : les figurines repassent aux lettres françaises.
-const _SAN_FR  = { N: 'C', B: 'F', R: 'T', Q: 'D', K: 'R' };
 const _FIG_NAMES = { N: 'Cavalier', B: 'Fou', R: 'Tour', Q: 'Dame', K: 'Roi' };
 function _sanMode() {
     const s = typeof appSettings !== 'undefined' ? appSettings : { notation: 'en' };
@@ -78,7 +77,8 @@ function _sanMode() {
 function formatSanText(san, color) {
     const mode = _sanMode();
     if (!san || mode === 'en') return san || '';
-    return san.replace(/[NBRQK]/g, c => _SAN_FR[c]);
+    const L = typeof I18n !== 'undefined' ? I18n.letters() : 'CFTDR';     // lettres de la langue de l'interface
+    return san.replace(/[NBRQK]/g, c => L['NBRQK'.indexOf(c)]);
 }
 function formatSan(san, color) {
     if (!san) return '';
