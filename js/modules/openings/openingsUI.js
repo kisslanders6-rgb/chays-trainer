@@ -94,6 +94,7 @@ function renderBoard() {
     if (typeof renderFreqPanel === 'function') renderFreqPanel();          // onglet « Adversaire » : position affichée
     if (typeof renderOppSuites === 'function') renderOppSuites();          // suites adverses sous la barre d'état (Jouer)
     if (typeof _syncHintBtn === 'function') _syncHintBtn();
+    if (typeof Captures !== 'undefined') Captures.render();                // pièces prises de la position affichée
     if (moveAnim) { const a = moveAnim; moveAnim = null; _runMoveAnim(a); }
     else if (_liveAnim) _resumeMoveAnim();
 }

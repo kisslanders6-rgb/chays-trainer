@@ -42,6 +42,7 @@ const SYNCED_PREFS = {
     coords:     { ok: _bool, def: true },
     coordPos:   { ok: _oneOf(['in', 'out']), def: 'in' },
     lastMove:   { ok: _bool, def: true },
+    captures:   { ok: _bool, def: true },                                               // pièces prises et avantage (captures.js)
     legalDots:  { ok: _bool, def: true },
     anim:       { ok: _oneOf(['off', 'fast', 'normal']), def: 'normal' },
     // Jeu
@@ -280,6 +281,7 @@ function applyDisplayPrefs() {
     d.setAttribute('data-text', s.textSize);
     d.setAttribute('data-contrast', s.contrast ? 'on' : 'off');
     d.setAttribute('data-dark', s.darkBg);
+    d.setAttribute('data-captures', s.captures ? 'on' : 'off');
     d.setAttribute('data-motion', s.motion);
 }
 

@@ -61,6 +61,7 @@ function _settingRows() {
             { group: 'Échiquier', kind: 'toggle', key: 'coords', label: 'Coordonnées', tip: 'Lettres et chiffres des cases.' },
             { group: 'Échiquier', kind: 'seg', key: 'coordPos', label: 'Emplacement des coordonnées', opts: [['in', 'Dans les cases'], ['out', 'Autour']], off: !s.coords },
             { group: 'Échiquier', kind: 'toggle', key: 'lastMove', label: 'Dernier coup', search: 'surligner' },
+            { group: 'Échiquier', kind: 'toggle', key: 'captures', label: 'Pièces prises', tip: 'Une ligne de chaque côté de l’échiquier : ce que chaque camp a pris, et son avance.', search: 'matériel avantage capture' },
             { group: 'Échiquier', kind: 'toggle', key: 'legalDots', label: 'Coups possibles', tip: 'Points sur les cases accessibles à la pièce choisie.' },
             { group: 'Échiquier', kind: 'seg', key: 'anim', label: 'Animation des pièces', opts: [['off', 'Aucune'], ['fast', 'Rapide'], ['normal', 'Normale']] },
             { group: 'Pièces et flèches', kind: 'custom', pref: 'pieceSet', label: 'Pièces', tip: () => _pieceCredit(), html: _piecesHTML, col: true,
@@ -357,6 +358,7 @@ function setPref(key, value) {
         case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
         case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg':
             applyDisplayPrefs(); break;
+        case 'captures': applyDisplayPrefs(); _redrawBoardViews(); break;
         case 'lastMove': _redrawBoardViews(); break;
         case 'notation': refreshNotation(); break;
         case 'dailyGoal': if (typeof renderHomeSummary === 'function') renderHomeSummary(); if (typeof initTraining === 'function') initTraining(); break;

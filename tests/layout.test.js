@@ -24,10 +24,12 @@ t('échiquier 920px+ : jamais plus petit que les 512 px d\'avant, plafonné, arr
 });
 
 t('échiquier 920px+ : --board-chrome-h = marges, liseré et rangée unique des contrôles (48 px)', () => {
-    // 28 (marge du haut) + 4 (marge de l'échiquier) + 4 (liseré) + 16 (sous l'échiquier) + 48 (contrôles) + 16 (marge du bas)
-    const expected = 28 + 4 + 4 + 16 + 48 + 16;
+    // 28 (marge du haut) + 4 (marge de l'échiquier) + 4 (liseré) + 16 (sous l'échiquier) + 12 (ligne des pièces prises) + 48 (contrôles) + 16 (marge du bas)
+    const expected = 28 + 4 + 4 + 16 + 12 + 48 + 16;
     assert(new RegExp(`--board-chrome-h: ${expected}px;`).test(block), `--board-chrome-h attendu : ${expected}px`);
     assert(new RegExp(`html\\[data-coords="out"\\] \\.board-col \\{ --board-chrome-h: ${expected + 18}px;`).test(block), 'coordonnées extérieures : + 18 px');
+    assert(new RegExp(`html\\[data-captures="off"\\] \\.board-col \\{ --board-chrome-h: ${expected - 12}px;`).test(block), 'sans les pièces prises : 12 px de moins');
+    assert(/\.cap-top \{ margin: -22px 0 0; \}/.test(css) && /\.cap-bot \{ margin: -12px 0 2px; \}/.test(css), 'lignes des pièces prises changées : revoir --board-chrome-h');
     assert(/\.game-screen-inner \{ padding-bottom: 16px; \}/.test(block));
     const game = css.slice(css.indexOf('ÉCRAN DE JEU (LOT 7)'));
     assert(/\.board-controls \{ flex-direction: row; align-items: stretch; gap: 8px; height: 48px; \}/.test(game), 'rangée unique de 48 px');

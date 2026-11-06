@@ -356,12 +356,15 @@
 
                 <div class="board-col">
                     <div class="tr-progress" id="tr-progress" hidden></div>
+                    <!-- Pièces prises et avantage matériel (captures.js) : place gardée même vide, l'échiquier ne saute pas -->
+                    <div class="cap-row cap-top" id="cap-top" role="img"></div>
                     <div class="board-wrap">
                         <div class="eval-bar is-empty" id="eval-bar" data-modes="analysis" role="img" aria-label="Évaluation indisponible"></div>
                         <div id="board" role="group" aria-label="Échiquier — flèches pour se déplacer, Entrée pour jouer"></div>
                         <!-- Pastille posée sur l'échiquier, hors du flux (showBoardPill / hideBoardPill, openingsUI.js) -->
                         <div class="board-pill" id="board-pill" role="status" hidden></div>
                     </div>
+                    <div class="cap-row cap-bot" id="cap-bot" role="img"></div>
 
                     <!--
                         Barre de contrôle (commune à tous les modes) ; chaque bouton choisit ses modes avec
@@ -679,6 +682,7 @@
 <script src="js/modules/openings/onlineGames.js"></script>
 <script src="js/modules/openings/homePanels.js"></script>
 <script src="js/modules/openings/moveStats.js"></script>
+<script src="js/modules/openings/captures.js"></script>
 <script src="js/modules/openings/openingsUI.js"></script>
 <script src="js/modules/openings/treeView.js"></script>
 <script src="js/modules/openings/annotations.js"></script>
