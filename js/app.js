@@ -232,7 +232,6 @@ function renderHomeSummary() {
             <div class="hp-ctas"><button type="button" class="btn btn-primary hp-cta" id="hp-start-cta" data-action="homeAddLine" data-arg="w">${ico('play')}<span>Commencer avec les Blancs</span></button></div>
             <div class="hp-alts"><button type="button" class="hp-link" data-action="homeImportPgn">${ico('upload')}Importer un PGN</button>
             <button type="button" class="hp-link" data-action="homeGames">${ico('target')}Partir de mes parties</button></div></div>`;
-        _dockHomeCta();
         HomePanels.render();
         return;
     }
@@ -268,25 +267,8 @@ function renderHomeSummary() {
     host.innerHTML = `<div class="hp-day edge-card${due.length ? '' : ' is-done'}">${head}
         <div class="hp-head"><div><h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p></div>${_homeGoalHTML(today, goal)}</div>
         ${focus}<div class="hp-ctas">${cta}</div>${plan}</div>`;
-    _dockHomeCta();
     HomePanels.render();                         // À traiter : nouveautés des parties, dernières parties
 }
-
-// Téléphone : l'unique action pleine descend dans #hp-dock, juste au-dessus des onglets, sous le pouce.
-// Hors du conteneur de requêtes de #home-tab-play : un conteneur retient position: fixed sur les anciens Safari.
-const _PHONE_MQ = '(max-width: 599px)';
-function _dockHomeCta() {
-    const dock = document.getElementById('hp-dock');
-    if (!dock) return;
-    dock.innerHTML = '';
-    const cta = matchMedia(_PHONE_MQ).matches && document.querySelector('#hp-today .hp-cta');
-    if (cta) dock.appendChild(cta);
-    dock.hidden = !cta;
-}
-(function () {
-    const mq = matchMedia(_PHONE_MQ);
-    if (mq.addEventListener) mq.addEventListener('change', () => renderHomeSummary());
-})();
 
 // Répertoire vide : la carte choisie donne sa couleur à l'unique action.
 function _homePick(c) {
@@ -295,6 +277,7 @@ function _homePick(c) {
     if (!cta) return;
     cta.dataset.arg = c;
     cta.querySelector('span').textContent = 'Commencer avec les ' + (c === 'w' ? 'Blancs' : 'Noirs');
+    if (typeof Dock !== 'undefined') Dock.refresh();
 }
 registerActions({ homePick: _homePick });
 

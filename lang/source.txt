@@ -36,7 +36,6 @@ Prochaine révision <b>{0}</b>
 Aucune révision prévue
 · objectif atteint
 {1}Ajouter une ligne aux {2}
-(max-width: 599px)
 Commencer avec les
 Le répertoire par défaut ne peut pas être supprimé.
 Supprimer le répertoire « {0} » ({1} coup(s) Blancs, {2} coup(s) Noirs) ? Il sera placé dans la corbeille et restera restaurable pendant 30 jours.
@@ -340,6 +339,25 @@ synchro : écouteur
 key,version
 key,data,version,updated_at
 Les deux
+(max-width: 599px)
+Revoir
+Réviser
+Traiter
+Ajouter
+Entraînement
+S'entraîner
+Ajouter ({0})
+Ajouter au répertoire
+Brouillon
+Toutes les branches du brouillon
+Sauter
+Rétablir
+Solution
+Indice
+Passer
+Recommencer
+Arbre
+Arbre du répertoire
 aria-label="{0}"
 le moteur ne répond pas
 remplacé
@@ -355,7 +373,6 @@ depth {0}
 movetime {0}
 le moteur ne répond plus
 Jouer
-Entraînement
 Statistiques
 Finales
 Analyser mes parties
@@ -498,6 +515,7 @@ Ouvre Chays Trainer comme une vraie application, même sans connexion.
 Sur iPhone / iPad : touche le bouton Partager de Safari, puis « Sur l'écran d'accueil ».
 Réduire le panneau
 Agrandir le panneau
+(max-width: 919px)
 Hors ligne · vos données restent sur cet appareil. Parties en ligne et compte indisponibles.
 De retour en ligne.
 réseau : écouteur
@@ -513,7 +531,6 @@ Les <strong>Statistiques</strong> montrent ce qui est maîtrisé et ce qui reste
 aria-current="step"
 Étape {2}
 {0} Précédent
-Passer
 {0} Importer un PGN
 Suivant {0}
 Étape {3} sur {4}
@@ -666,20 +683,16 @@ Jouer la case sous le curseur
 Entrée
 Flèches du répertoire
 Annuler le coup enregistré, sinon Corriger
-Rétablir
 Maj
-Recommencer
 Changer de camp
 Révision du jour (hors séance)
 Revoir les erreurs du bilan (hors séance)
-Solution
 Passer la position
 Passer la mise en situation
 Quitter la séance
 Lancer ou arrêter le moteur
 Jouer le meilleur coup
 Une ligne de plus / de moins
-Ajouter au répertoire
 Quitter
 Exercice suivant
 Théorie
@@ -2189,7 +2202,6 @@ Position critique · maîtrise {0} / 100
 À consolider · maîtrise {0} / 100 · {1}
 Aucune position dans ce répertoire.
 Mise en situation…
-Sauter
 · coup {0}{1}
 À vous de jouer{0}
 · {0} réussi{1}
@@ -2325,15 +2337,12 @@ Supprimer le répertoire
 Données (import / export)
 Au hasard
 Préc.
-Indice
-S'entraîner
 Suiv.
 Corriger
 Retourner
 Tourner
 Initialisation...
 Coups
-Arbre
 Données
 Répertoire :
 Dernières parties
@@ -2366,13 +2375,13 @@ Recommencer l'exercice (N)
 Jouer le coup de cette position (compte comme un essai)
 Coup suivant (→)
 Coup suivant
+Plus d'actions
 Corriger le dernier coup : il est retiré de l'échiquier pour en jouer un autre (votre coup enregistré peut ainsi être remplacé)
 Recommencer la partie depuis la position de départ (rien n'est retiré du répertoire)
 Retourner l'échiquier (F)
 Afficher le répertoire en flèches sur l'échiquier (R)
 Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?
 Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin
-Plus d'actions
 Quitter l'entraînement (Q)
 Quitter l'exercice (Q)
 Analyser la position avec le moteur

@@ -1,5 +1,5 @@
-// Lancer : node tests/thumb.test.js   — téléphone sous le pouce : glisser sur la barre de coups, action principale de l'accueil
-// dans #hp-dock. Charge index.html entier dans jsdom, avec un écran de téléphone simulé (matchMedia).
+// Lancer : node tests/thumb.test.js   — téléphone sous le pouce : glisser sur la barre de coups, centre du dock (dock.js)
+// à l'accueil et en partie. Charge index.html entier dans jsdom, avec un écran de téléphone simulé (matchMedia).
 const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
@@ -89,29 +89,36 @@ async function boot(phone) {
         assert.strictEqual(pos(), 5);
         w.eval(`gameMode = 'play'; goHome('play')`);
     });
-    await t('accueil : l’action principale est dans #hp-dock, une seule, et son action marche encore', () => {
+    await t('accueil : l’action pleine et la capsule Suite rejoignent le centre du dock, son action marche encore', () => {
         w.eval('renderHomeSummary()');
-        const dock = $('#hp-dock');
-        assert.strictEqual(dock.hidden, false);
-        assert.strictEqual(dock.querySelectorAll('.hp-cta').length, 1);
-        assert.strictEqual(w.document.querySelectorAll('#hp-today .hp-cta').length, 0);
-        assert(/Commencer avec les Blancs/.test(dock.textContent), 'répertoire vide');
+        const c = $('#nav-center');
+        assert(/Commencer/.test(c.textContent), 'répertoire vide : ' + c.textContent);
+        assert.strictEqual(w.document.querySelectorAll('#hp-today .hp-cta').length, 1, 'le bouton d’origine reste (caché sur téléphone)');
+        assert(!$('#hp-dock'), 'plus de #hp-dock');
         w.eval(`UI_ACTIONS.homePick('b')`);
-        assert(/Commencer avec les Noirs/.test(dock.textContent), 'le choix de couleur suit');
-        dock.querySelector('.hp-cta').click();
+        assert(/Noirs/.test(c.title), 'le choix de couleur suit');
+        w.eval('Dock.runHome()');
         assert.strictEqual(w.eval('gameMode + playerColor'), 'playb');
-        w.eval(`goHome('play')`);
     });
-    await t('sur ordinateur : rien ne bouge, le dock reste vide', async () => {
+    await t('en partie : centre jamais désactivé (Arbre sans indice possible), ✕ = quitter', () => {
+        const c = $('#dock-center');
+        assert.strictEqual(c.hidden, false);
+        assert(/Arbre|Indice/.test(c.textContent), c.textContent);
+        assert(!c.disabled);
+        w.eval('Dock.exit()');
+        assert(w.document.getElementById('game-screen').classList.contains('hidden'), 'retour à l’accueil');
+    });
+    await t('sur ordinateur : rien ne bouge, le centre reste vide', async () => {
         const d = await boot(false);
         d.w.eval('renderHomeSummary()');
-        assert.strictEqual(d.$('#hp-dock').hidden, true);
+        assert.strictEqual(d.$('#nav-center').textContent, '');
         assert.strictEqual(d.w.document.querySelectorAll('#hp-today .hp-cta').length, 1);
         assert.deepStrictEqual(d.errors, []);
     });
     await t('Corriger passe dans « Plus » ; la barre et sa place sont déclarées', () => {
         const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
         assert(/class="btn btn-tool tb-more" onclick="undoMove\(\)"/.test(html));
+        assert(/id="dock-center" onclick="Dock\.runGame\(\)"/.test(html) && /class="btn btn-tool dock-more"/.test(html), 'centre et Plus du dock');
         assert(/\.game-main \{ padding-bottom: calc\(var\(--thumb-h\)/.test(css), "l'échiquier se pose sur la barre (Ergonomie, lot 2)");
     });
     await t('aucune erreur', () => assert.deepStrictEqual(errors, []));

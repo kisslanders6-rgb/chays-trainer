@@ -1676,7 +1676,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
    BARRE DE CONTRÔLE ET TIROIR (MOBILE)
    ═══════════════════════════════════════════════════════════════════════════ */
 .board-controls { width: 100%; display: flex; flex-direction: column; align-items: center; }
-.mobile-only, .sheet-handle, .sheet-backdrop, .tb-more-btn { display: none; }
+.mobile-only, .sheet-handle, .sheet-backdrop, .dock-center, .dock-more, .nav-center, .topnav-exit { display: none; }
 .tb-more-menu { position: fixed; z-index: 320; top: auto; min-width: 200px; }
 
 @media (max-width: 599px) {
@@ -1698,18 +1698,12 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
         background: var(--surface); border: 1.5px solid var(--border); color: var(--text-muted);
     }
     .board-controls .btn .ico { width: 22px; height: 22px; }
-    .board-controls .tb-more { display: none; }                         /* regroupées dans « Plus » */
-    .board-controls .tb-more-btn { display: inline-flex; }
     .board-controls .btn { font-size: clamp(9.5px, 2.8vw, 10.5px); }   /* iPhone SE (320 px) compris */
     .board-controls .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
     .board-controls .is-exit { color: var(--err); }
     .btn-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mobile-only { display: inline; }
     .desktop-only { display: none; }
-    .board-controls .tb-prev { order: 1; }
-    .board-controls .tb-next { order: 2; }
-    .board-controls .tb-flip { order: 3; }
-    .board-controls .tb-hint { order: 4; }
 
     /* Panneau (statut, coups, arbre, carte de finale) : tiroir sous l'échiquier */
     .side-panel {
@@ -2297,7 +2291,7 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 /* ═══════════════════════════════════════════════════════════════════════════
    TÉLÉPHONE SOUS LE POUCE (point D) : barre d'actions tout en bas, action principale de l'accueil au-dessus des onglets
    ═══════════════════════════════════════════════════════════════════════════ */
-.hp-dock { display: none; }
+/* Dock du téléphone (Ergonomie, lots 2 et 3) */
 @media (max-width: 599px) {
     :root { --thumb-h: 69px; }                        /* 6 + 56 + 6 + filet : la barre fixée, sans la zone du geste */
 
@@ -2306,17 +2300,23 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
         padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
         background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(0, 0, 0, .12);
     }
-    .board-controls .btn { min-height: 56px; }
-    .board-controls .btn .ico { width: 24px; height: 24px; }
-    /* Retourner · ‹ action › · le reste : les outils en icônes seules, l'action et les flèches se partagent la place */
-    .board-controls .btn-tool { order: 1; flex: 0 0 46px; }
-    .board-controls .tb-flip { order: -1; }
-    .board-controls .is-exit { order: -2; margin-right: 8px; }   /* Quitter : à l'opposé du ›, une seule touche suffit à sortir */
-    .board-controls .btn-tool .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    .board-controls .tb-prev, .board-controls .tb-next { order: 0; flex: 1 0 60px; }
-    .board-controls .btn-nav .btn-label { display: none; }
-    .board-controls .btn-grow { order: 0; flex: 20 1 0; font-size: 12px; }
-    .hint-off { display: none; }                      /* « Indice » grisé suffit ici, la raison reste en infobulle */
+    /* Dock (Ergonomie, lot 3) : cinq cases égales, toujours aux mêmes places — Retourner · ‹ · centre · › · Plus.
+       Le centre porte la prochaine action (dock.js) ; les autres boutons du mode passent dans « Plus » ; Quitter
+       devient le ✕ de la barre du haut. */
+    .board-controls .btn { display: none; min-height: 56px; gap: 3px; padding: 2px 0; border: 0; border-radius: 14px; background: none; color: var(--text-muted); }
+    .board-controls :is(.tb-flip, .tb-prev, .tb-next, .dock-center, .dock-more) { display: inline-flex; flex: 1 1 0; }
+    .board-controls :is(.dock-center, .dock-more)[hidden] { visibility: hidden; }
+    .board-controls .tb-flip { order: 1; }
+    .board-controls .tb-prev { order: 2; }
+    .board-controls .dock-center { order: 3; }
+    .board-controls .tb-next { order: 4; }
+    .board-controls .dock-more { order: 5; }
+    .board-controls .btn:not(:disabled):active { background: var(--bg-inset); }
+    .board-controls .btn:disabled { opacity: .35; }
+    .board-controls .btn .ico { width: 22px; height: 22px; }
+    .board-controls .tb-flip .desktop-only { display: inline; }
+    .board-controls .tb-flip .mobile-only { display: none; }
+    .hint-off { display: none; }
 
     /* Échiquier posé sur la barre : la lecture (progression, consigne, coups) en haut, juste au-dessus de lui ;
        l'échiquier et ses pièces prises tout en bas, sur la barre fixée. La main ne cache que l'échiquier. */
@@ -2353,13 +2353,31 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     /* Barre de coups, fiche fermée : le glissement horizontal parcourt les coups (initMovesSwipe), la page défile encore */
     .side-panel:not(.open) .moves-bar { touch-action: pan-y; }
 
-    /* Accueil : l'action principale, juste au-dessus des onglets ; le contenu ne passe pas dessous */
-    .setup-screen:has(#home-tab-play:not(.hidden)) .hp-dock:not([hidden]) {
-        display: block; position: fixed; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 190; padding: 8px 12px;
-        background: var(--bg); border-top: 1px solid var(--border);
+    /* Accueil : l'action pleine et la capsule Suite rejoignent le centre du dock (#nav-center) */
+    #hp-today .hp-cta, #hp-today .hp-ctas:not(:has(> :not(.hp-cta))), .suite-slot { display: none !important; }
+
+    /* Centre du dock, hors partie et en partie : le seul rond plein de l'écran */
+    .nav-center, .board-controls .dock-center { flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; color: var(--text); cursor: pointer; }
+    .nav-center { border: 0; background: none; padding: 0 4px; }
+    .dock-orb { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%;
+        background: var(--accent); color: var(--accent-text); box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 35%, transparent); }
+    .dock-orb .ico { width: 20px; height: 20px; }
+    .dock-orb b { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    [data-tone="soft"] > .dock-orb { background: var(--accent-soft); color: var(--accent); border: 1.5px solid var(--accent-line); box-shadow: none; }
+    [data-tone="warn"] > .dock-orb { background: color-mix(in oklab, #e6b443 24%, var(--surface)); color: var(--text); border: 1.5px solid color-mix(in oklab, #e6b443 60%, var(--border)); box-shadow: none; }
+    [data-tone="err"] > .dock-orb { background: var(--err); color: #fff; box-shadow: none; }
+    .dock-l { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 700; color: var(--text); }
+    .nav-center:active .dock-orb, .board-controls .dock-center:active .dock-orb { transform: scale(.94); }
+
+    /* En partie : ✕ à la place du logo (Dock.exit) ; l'aperçu des Statistiques garde son retour */
+    .topnav:has(#topnav-tabs-game:not([style*="none"])) .topnav-brand { display: none; }
+    .topnav:has(#topnav-tabs-game:not([style*="none"])) .topnav-exit {
+        display: grid; place-items: center; flex: none; width: 40px; height: 40px; margin-left: -6px; padding: 0;
+        border: 0; border-radius: 50%; background: none; color: var(--text-muted); cursor: pointer;
     }
-    .setup-screen:has(#home-tab-play:not(.hidden)):has(.hp-dock:not([hidden])) { padding-bottom: calc(62px + 66px + 24px + env(safe-area-inset-bottom, 0px)); }
-    .hp-ctas:empty { display: none; }
+    .topnav-exit .ico { width: 22px; height: 22px; }
+    .topnav-exit:active { background: var(--bg-inset); }
+    body:has(#game-screen[data-mode="preview"]) .topnav-exit { display: none !important; }
 }
 @media (max-width: 599px) and (max-height: 760px) {
     /* Lecture resserrée : consigne et coups sur moins de hauteur, l'échiquier garde le plus de place possible */

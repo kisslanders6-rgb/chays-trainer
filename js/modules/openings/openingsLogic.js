@@ -414,6 +414,7 @@ function _syncHintBtn() {
         b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>`
                       : `${ico('lightbulb')}<span class="btn-label">Indice${off ? '<span class="hint-off"> indisponible</span>' : ''}</span>`;
     });
+    if (typeof Dock !== 'undefined') Dock.refresh();          // le centre du dock suit l'Indice (téléphone)
 }
 
 // Jouer : raison pour laquelle l'Indice est indisponible dans la position AFFICHÉE ('' s'il est disponible).

@@ -107,6 +107,9 @@
     .setup-screen { padding-bottom: calc(62px + 24px + env(safe-area-inset-bottom, 0px)); }
     body:has(#setup-screen:not(.hidden)) .toast { bottom: calc(62px + 12px + env(safe-area-inset-bottom, 0px)); }
 }
+/* Centre du dock (Ergonomie, lot 3) : seulement sur téléphone, entre Statistiques et Entraînement (dock.js, style.css) */
+#topnav-tabs-setup .nav-center { display: none; }
+@media (max-width: 599px) { #topnav-tabs-setup .nav-center { display: flex; } }
 @media (max-width: 479px) {
     .topnav-inner { padding: 0 10px 0 12px; gap: 8px; }
     .topnav-wm { --wm-size: 15px; }

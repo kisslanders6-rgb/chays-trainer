@@ -205,6 +205,8 @@
                 <svg id="logo-nav" class="topnav-brand-piece" viewBox="186 34 140 320" role="img" aria-label="Chays Trainer"><use href="#ct-piece"/></svg>
                 <span class="ct-wm topnav-wm" aria-hidden="true"><span class="ct-wm-1">Chays</span><span class="ct-wm-2">Trainer</span></span>
             </div>
+            <!-- Téléphone, en partie : ✕ à la place du logo, le Quitter du mode (Dock.exit) -->
+            <button type="button" class="topnav-exit" id="topnav-exit" onclick="Dock.exit()" title="Quitter" aria-label="Quitter"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
 
             <!-- Onglets de l'accueil : dans la barre sur grand écran, en barre fixe en bas sous 900 px
                  (css/home.css). Les séparateurs sont dessinés en CSS entre deux onglets ; l'icône ne
@@ -212,6 +214,8 @@
             <div class="topnav-tabs" id="topnav-tabs-setup">
                 <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-crown"/></svg><span>Jouer</span></div>
                 <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
+                <!-- Téléphone : centre du dock, la prochaine action (Dock, js/core/dock.js) -->
+                <button type="button" class="topnav-tab nav-center" id="nav-center" onclick="Dock.runHome()"></button>
                 <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-target"/></svg><span>Entraînement</span></div>
                 <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-pawn"/></svg><span>Finales</span></div>
             </div>
@@ -267,7 +271,6 @@
     <!-- ─── ÉCRAN D'ACCUEIL ──────────────────────────────────────────────── -->
     <div id="setup-screen" class="setup-screen">
         <!-- Téléphone : l'action principale de « Aujourd'hui », au-dessus des onglets (_dockHomeCta, app.js) -->
-        <div class="hp-dock" id="hp-dock" hidden></div>
         <div class="home-content">
 
             <!-- Onglet Jouer -->
@@ -376,8 +379,8 @@
                           Ordinateur (920 px+) : une seule rangée de 48 px, ‹ [ action ] › puis les outils en icônes,
                                        après un filet (hauteur comptée dans --board-chrome-h).
                           Tablette   : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
-                          Mobile     : barre fixée en bas de l'écran, sous le pouce : retourner · ‹ [ action ] › · le reste
-                                       (classes tb-*, « TÉLÉPHONE SOUS LE POUCE » de style.css).
+                          Mobile     : dock de cinq cases fixé en bas : retourner · ‹ · centre · › · Plus (dock.js) ;
+                                       les autres boutons du mode passent dans « Plus » (« TÉLÉPHONE SOUS LE POUCE » de style.css).
                     -->
                     <div class="board-controls">
                         <div class="controls controls-main">
@@ -398,6 +401,11 @@
                             </button>
                             <button class="btn btn-nav tb-next" id="btn-next" data-modes="play,preview,analysis,training" onclick="navNext()" title="Coup suivant (→)" aria-label="Coup suivant">
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
+                            </button>
+                            <!-- Téléphone : centre du dock (prochaine action du mode) et « Plus » (boutons du mode cachés sur téléphone) -->
+                            <button type="button" class="btn dock-center" id="dock-center" onclick="Dock.runGame()"></button>
+                            <button type="button" class="btn btn-tool dock-more" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
+                                <svg class="ico"><use href="#i-more-horizontal"/></svg><span class="btn-label">Plus</span>
                             </button>
                         </div>
 
@@ -420,10 +428,6 @@
                             </button>
                             <button class="btn btn-tool tb-more" onclick="openAnalysis()" title="Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin">
                                 <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyse</span>
-                            </button>
-                            <!-- Mobile : les actions .tb-more passent dans ce menu pour que chaque bouton garde une largeur confortable -->
-                            <button class="btn btn-tool tb-more-btn" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
-                                <svg class="ico"><use href="#i-more-horizontal"/></svg><span class="btn-label">Plus</span>
                             </button>
                         </div>
                         <div class="controls controls-tools" data-modes="training">
@@ -696,6 +700,7 @@
 <script src="js/modules/training/training.js"></script>
 <script src="js/modules/training/trainingUI.js"></script>
 <script src="js/modules/training/suite.js"></script>
+<script src="js/core/dock.js"></script>
 <script src="js/modules/endgame/egCore.js"></script>
 <script src="js/modules/endgame/egExercises.js"></script>
 <script src="js/modules/endgame/egJudge.js"></script>

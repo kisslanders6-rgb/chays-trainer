@@ -110,17 +110,19 @@ t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de pannea
     assert(/\.st-scope\.hp-scope \{ flex-wrap: nowrap; \}/.test(home), 'téléphone : ⋮ sur la ligne de la puce');
 });
 
-t('écran de jeu : Indice éteint jamais plein, Quitter à l\'opposé du › sur téléphone', () => {
+t('écran de jeu : Indice éteint jamais plein ; dock de cinq cases et ✕ en haut sur téléphone', () => {
     const css = fs.readFileSync('style.css', 'utf8');
     assert(/\.btn\.tb-hint:disabled \{ background: transparent;/.test(css), 'Indice indisponible sans fond plein');
-    const thumb = css.slice(css.indexOf('.hp-dock { display: none; }'));
-    assert(/\.board-controls \.is-exit \{ order: -2;/.test(thumb), 'Quitter avant Retourner, loin du ›');
+    const thumb = css.slice(css.indexOf('/* Dock du téléphone (Ergonomie, lots 2 et 3) */'));
+    ['tb-flip', 'tb-prev', 'dock-center', 'tb-next', 'dock-more'].forEach((c, i) =>
+        assert(new RegExp(`\\.board-controls \\.${c} \\{ order: ${i + 1}; \\}`).test(thumb), 'dock : ' + c + ' en case ' + (i + 1)));
+    assert(/\.topnav-exit \{\s+display: grid;/.test(thumb), 'Quitter : ✕ de la barre du haut, loin du ›');
     assert(!/board-pill/.test(css + fs.readFileSync('index.html', 'utf8')), 'plus de pastille sur l\'échiquier');
 });
 
 t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur ‹ › (Ergonomie, lot 2)', () => {
     const css = fs.readFileSync('style.css', 'utf8');
-    const i = css.indexOf('.hp-dock { display: none; }'), thumb = css.slice(i, css.indexOf('/* Tablette et téléphone en paysage', i));
+    const i = css.indexOf('/* Dock du téléphone (Ergonomie, lots 2 et 3) */'), thumb = css.slice(i, css.indexOf('/* Tablette et téléphone en paysage', i));
     assert(/\.board-col \{ display: contents; \}/.test(thumb), 'les enfants de .board-col se rangent dans .game-main');
     assert(/\.board-col > \.tr-progress \{ order: -3; \}/.test(thumb), 'progression tout en haut');
     assert(/\.side-panel:not\(\.open\) \{\s+order: -2; flex: none; margin-top: auto;/.test(thumb), 'consigne et coups juste au-dessus de l\'échiquier');

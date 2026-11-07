@@ -63,6 +63,7 @@ const Suite = (function () {
         const out = st ? html(st) : '';
         if (host.innerHTML !== out) host.innerHTML = out;
         host.hidden = !st;
+        if (typeof Dock !== 'undefined') Dock.refresh();         // le centre du dock reprend la capsule (téléphone)
     }
 
     // Après une réponse comptée en Entraînement : capsule à jour, et annonce de l'objectif du jour au moment où il est atteint.

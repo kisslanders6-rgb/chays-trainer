@@ -10,7 +10,7 @@
  *   - fiche du panneau de jeu (écrans < 600 px) : poignée entre la lecture et l'échiquier, toucher ou glisser vers le haut
  *   - barre de coups (écrans < 600 px, fiche fermée) : glisser le doigt pour reculer ou avancer d'un coup à la fois
  *   - ‹ › de la barre fixée (écrans < 920 px) : glisser le pouce pour parcourir les coups
- *   - menu « Plus » de la barre d'icônes : actions secondaires (.tb-more), pour des boutons assez larges
+ *   - menu « Plus » du dock : les boutons du mode que le dock cache (dock.js)
  */
 
 'use strict';
@@ -170,9 +170,9 @@ document.addEventListener('keydown', e => {
     });
 })();
 
-// ─── BARRE D'ICÔNES : MENU « PLUS » (mobile) ──────────────────────────────────
-// Les actions secondaires (.tb-more) du groupe affiché sont proposées dans un petit menu au-dessus
-// de la barre ; chaque entrée déclenche le bouton d'origine.
+// ─── DOCK : MENU « PLUS » (mobile) ────────────────────────────────────────────
+// Les boutons du mode que le dock cache sont proposés dans un petit menu au-dessus de la barre ;
+// chaque entrée déclenche le bouton d'origine.
 let _tbMenu = null;
 
 function closeToolbarMore() {
@@ -187,17 +187,19 @@ function toggleToolbarMore(btn) {
     const menu = document.createElement('div');
     menu.className = 'menu tb-more-menu';
     menu.setAttribute('role', 'menu');
-    btn.parentElement.querySelectorAll('.tb-more').forEach(src => {
+    Dock.moreItems(btn).forEach(src => {   // les boutons du mode que le dock cache
         const item = document.createElement('button');
         item.className = 'menu-item';
         item.setAttribute('role', 'menuitem');
-        item.innerHTML = src.querySelector('.ico').outerHTML + ' ' + src.querySelector('.btn-label').textContent;
+        const label = src.querySelector('.btn-label').cloneNode(true);
+        label.querySelectorAll('.hint-off, .desktop-only').forEach(x => x.remove());
+        item.innerHTML = (src.querySelector('.ico') ? src.querySelector('.ico').outerHTML : '') + ' ' + escapeHtml(label.textContent.trim());
         item.addEventListener('click', () => { closeToolbarMore(); src.click(); });
         menu.appendChild(item);
     });
     // Rejoindre un autre onglet de l'accueil (la barre du bas est cachée en partie) : switchHomeTab revient à l'accueil.
     if (gameMode === 'play') {
-        const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep);
+        if (menu.children.length) { const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep); }
         [['stats', 'bar-chart', 'Statistiques'], ['training', 'target', 'Entraînement'], ['endgame', 'pawn', 'Finales']].forEach(([tab, icon, label]) => {
             const item = document.createElement('button');
             item.className = 'menu-item';
