@@ -117,6 +117,9 @@ t('écran de jeu : Indice éteint jamais plein ; dock de cinq cases et ✕ en ha
     ['tb-flip', 'tb-prev', 'dock-center', 'tb-next', 'dock-more'].forEach((c, i) =>
         assert(new RegExp(`\\.board-controls \\.${c} \\{ order: ${i + 1}; \\}`).test(thumb), 'dock : ' + c + ' en case ' + (i + 1)));
     assert(/\.topnav-exit \{\s+display: grid;/.test(thumb), 'Quitter : ✕ de la barre du haut, loin du ›');
+    assert(/html\[data-hand="left"\] \.board-controls \.dock-more \{ order: 1; \}/.test(thumb) && /html\[data-hand="left"\] \.board-controls \.tb-flip \{ order: 5; \}/.test(thumb), 'gaucher : Plus à gauche');
+    const home = fs.readFileSync('css/home.css', 'utf8');
+    assert(/\.topnav-pill > \.theme-toggle:not\(#palette-btn\):not\(\.me-btn\) \{ display: none; \}/.test(home), 'téléphone : loupe et Moi seulement');
     assert(!/board-pill/.test(css + fs.readFileSync('index.html', 'utf8')), 'plus de pastille sur l\'échiquier');
 });
 

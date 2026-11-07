@@ -117,7 +117,8 @@ function updateBackupIndicators() {
     document.querySelectorAll('[data-backup-dot]').forEach(el => {
         el.classList.toggle('has-alert', alert);
         el.dataset.level = st.level;
-        el.title = alert ? 'Paramètres — sauvegarde recommandée' : 'Paramètres';
+        const me = el.dataset.dotLabel === 'Moi';                       // bouton Moi du téléphone (meSheet.js)
+        el.title = alert ? (me ? 'Moi — sauvegarde recommandée' : 'Paramètres — sauvegarde recommandée') : me ? 'Moi' : 'Paramètres';
         el.setAttribute('aria-label', el.title);
     });
 }

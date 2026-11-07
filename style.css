@@ -2311,6 +2311,8 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     .board-controls .dock-center { order: 3; }
     .board-controls .tb-next { order: 4; }
     .board-controls .dock-more { order: 5; }
+    html[data-hand="left"] .board-controls .dock-more { order: 1; }          /* gaucher : « Plus » sous le pouce gauche (thumbHand) */
+    html[data-hand="left"] .board-controls .tb-flip { order: 5; }
     .board-controls .btn:not(:disabled):active { background: var(--bg-inset); }
     .board-controls .btn:disabled { opacity: .35; }
     .board-controls .btn .ico { width: 22px; height: 22px; }
@@ -2385,6 +2387,36 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     .side-panel:not(.open) .moves-bar { padding: 6px 10px; min-height: 0; }
     .side-panel:not(.open) .sheet-handle { height: 14px; padding: 4px 0; }
 }
+
+/* Fiche Moi (Ergonomie, lot 4, meSheet.js) : monte du bas, à portée du pouce */
+.me-backdrop { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0, 0, 0, .35); }
+.me-backdrop.open { display: block; }
+.me-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 410; max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain;
+    padding: 6px 16px calc(18px + env(safe-area-inset-bottom, 0px)); visibility: hidden; transform: translateY(105%);
+    transition: transform .22s var(--ease-out, ease-out), visibility 0s .22s;
+    background: var(--bg-elevated); border: 1px solid var(--border); border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, .25);
+}
+.me-sheet.open { visibility: visible; transform: none; transition: transform .22s var(--ease-out, ease-out); }
+.me-grab { width: 40px; height: 5px; margin: 4px auto 12px; border-radius: 3px; background: var(--border); }
+.me-id { display: flex; align-items: center; gap: 12px; padding: 2px 4px 14px; min-width: 0; }
+.me-id .avatar, .me-id .me-silhouette { --size: 46px; flex: none; }
+.me-id > span:last-child { min-width: 0; }
+.me-id b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.me-id small { color: var(--text-muted); font-size: 12.5px; }
+.me-rows { display: grid; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.me-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.me-row + .me-row { border-top: 1px solid var(--border); }
+.me-row b { flex: 1; font-size: 14.5px; font-weight: 600; }
+.me-row > .ico { width: 20px; height: 20px; flex: none; color: var(--text-muted); }
+.me-row > .ico:last-child { width: 16px; height: 16px; }
+.me-row:active { background: var(--bg-inset); }
+.me-lbl { margin: 18px 4px 8px; color: var(--text-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.me-seg { display: flex; width: 100%; box-shadow: none; }
+.me-seg .seg-btn { flex: 1; min-height: var(--tap, 44px); padding: 0 8px; }
+.me-silhouette { display: grid; place-items: center; width: var(--size, 28px); height: var(--size, 28px); border-radius: 50%; background: var(--bg-inset); color: var(--text-muted); }
+.me-silhouette .ico { width: 56%; height: 56%; }
+@media (prefers-reduced-motion: reduce) { .me-sheet, .me-sheet.open { transition: none; } }
 
 /* Tablette et téléphone en paysage : même barre fixée, sur une seule rangée. Paysage bas : l'échiquier laisse sa place à la barre,
    jusqu'à 1100 px (un grand téléphone en paysage dépasse 920 px, où l'échiquier ne descend pas sous 512 px). */

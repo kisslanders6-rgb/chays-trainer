@@ -169,6 +169,7 @@ const AccountUI = (function () {
         const who = (appSettings.pseudo || '').trim() || (u && u.email);
         btn.title = u ? `Compte — ${who}` : 'Compte (non connecté)';
         btn.setAttribute('aria-label', btn.title);
+        if (typeof MeSheet !== 'undefined') MeSheet.paint();          // bouton Moi du téléphone (meSheet.js)
     }
 
     // ─── Vues hors connexion : une colonne (Google, « ou », e-mail, mot de passe, un bouton) ───
@@ -808,5 +809,6 @@ const AccountUI = (function () {
     // Préférences reçues d'un autre appareil : avatar et fenêtre à jour.
     function refresh() { updateButton(); if (isOpen() && view === 'account') render(); }
 
-    return { open, close, setSyncStatus, ensureIntent, refresh, notify: toast, isNewUser, suggestedName };
+    return { open, close, setSyncStatus, ensureIntent, refresh, notify: toast, isNewUser, suggestedName,
+             avatarHTML: cls => avatarHTML(cls), syncText: () => syncStatus.text };
 })();

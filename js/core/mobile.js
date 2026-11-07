@@ -211,7 +211,8 @@ function toggleToolbarMore(btn) {
     }
     document.body.appendChild(menu);
     const r = btn.getBoundingClientRect();
-    menu.style.right  = Math.max(8, window.innerWidth - r.right) + 'px';
+    if (r.left + r.width / 2 < window.innerWidth / 2) { menu.style.left = Math.max(8, r.left) + 'px'; menu.style.right = 'auto'; }   // « Plus » à gauche (gaucher)
+    else menu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
     menu.style.bottom = (window.innerHeight - r.top + 6) + 'px';
     btn.setAttribute('aria-expanded', 'true');
     _tbMenu = { menu, btn };

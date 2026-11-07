@@ -319,6 +319,8 @@ Vos {0} n'existent que dans ce navigateur, sur cet appareil. Téléchargez une s
 Sauvegarde locale à jour ({0})
 Aucune modification depuis.
 {0} depuis, non sauvegardée{1} hors de ce navigateur.
+Moi
+Moi — sauvegarde recommandée
 Paramètres — sauvegarde recommandée
 Paramètres
 Cet appareil garde une copie pour fonctionner hors ligne ; les modifications sont envoyées dès que la connexion revient.
@@ -509,6 +511,17 @@ translateY(-12px) scale(.92)
 translate(0px, 0px) scale(1)
 translate({0}px, {1}px) scale({2})
 translateY(14px)
+Thème
+Sur cet appareil
+Non connecté
+Données gardées sur cet appareil
+Sombre
+Clair
+Système
+Main du pouce
+Droite
+Gauche
+(pointer: fine)
 (display-mode: standalone)
 sw.js
 Ouvre Chays Trainer comme une vraie application, même sans connexion.
@@ -733,9 +746,6 @@ aperçu échiquier
 Interface
 Mode
 « Système » suit le réglage clair / sombre de l’appareil.
-Clair
-Sombre
-Système
 Ambiance
 Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.
 Les couleurs de l’interface en dérivent.
@@ -880,6 +890,8 @@ Complètes
 Taille du texte
 Petite
 Grande
+gaucher droitier téléphone dock plus
+Téléphone : « Plus » passe du côté de ce pouce, Retourner de l’autre.
 Contraste renforcé
 bordures lisibilité
 Bordures et textes secondaires plus marqués.
@@ -1726,7 +1738,6 @@ Répertoire {0} ({1})
 Le répertoire « {0} » ne contient aucune ligne exportable.
 Repertoire_{0}_{1}.pgn
 {0} coup(s) sans ligne connue depuis la position de départ n'ont pas pu être exportés.
-Moi
 Partie
 Partie copiée en PGN
 Partie téléchargée en PGN

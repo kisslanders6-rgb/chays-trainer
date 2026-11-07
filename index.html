@@ -244,6 +244,8 @@
                 <button class="theme-toggle" id="palette-btn" data-action="paletteOpen" title="Rechercher" aria-label="Rechercher">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </button>
+                <!-- Téléphone : un seul bouton Moi (avatar) ouvre la fiche Compte · Paramètres · Aide · thème · main (meSheet.js) -->
+                <button type="button" class="theme-toggle me-btn" id="me-btn" data-backup-dot data-dot-label="Moi" onclick="MeSheet.toggle()" title="Moi" aria-label="Moi" aria-haspopup="dialog" aria-expanded="false"></button>
                 <button class="theme-toggle" data-backup-dot onclick="showSettings()" title="Paramètres" aria-label="Paramètres">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
@@ -715,6 +717,7 @@
 <script src="js/core/onboarding.js"></script>
 <script src="js/core/avatarPhoto.js"></script>
 <script src="js/core/accountUI.js"></script>
+<script src="js/core/meSheet.js"></script>
 <script src="js/core/syncEngine.js"></script>
 <script src="js/core/mobile.js"></script>
 <script src="js/core/introTimeline.js"></script>

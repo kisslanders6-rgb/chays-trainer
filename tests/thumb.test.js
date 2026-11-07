@@ -108,6 +108,22 @@ async function boot(phone) {
         w.eval('Dock.exit()');
         assert(w.document.getElementById('game-screen').classList.contains('hidden'), 'retour à l’accueil');
     });
+    await t('fiche Moi : Compte, Paramètres, Aide, thème et main du pouce ; la main se garde sur l’appareil', () => {
+        assert($('#me-btn') && $('#me-btn').hasAttribute('data-backup-dot'), 'le point de sauvegarde passe sur Moi');
+        w.eval('MeSheet.open()');
+        const sh = $('#me-sheet');
+        assert(w.eval('MeSheet.isOpen()'));
+        ['settings', 'help'].forEach(a => assert(sh.querySelector(`[data-me="${a}"]`), a));
+        assert.strictEqual(sh.querySelectorAll('[data-me="theme"]').length, 3);
+        sh.querySelector('[data-me="hand"][data-v="left"]').click();
+        assert.strictEqual(w.document.documentElement.dataset.hand, 'left');
+        assert.strictEqual(JSON.parse(w.localStorage.getItem('chessTrainer_settings')).thumbHand, 'left', 'préférence locale');
+        assert(!/thumbHand/.test(w.localStorage.getItem('chessTrainer_prefs') || ''), 'jamais synchronisée');
+        sh.querySelector('[data-me="hand"][data-v="right"]').click();
+        sh.querySelector('[data-me="help"]').click();
+        assert(!w.eval('MeSheet.isOpen()'), 'une destination referme la fiche');
+        w.eval('closeHelp && closeHelp()');
+    });
     await t('sur ordinateur : rien ne bouge, le centre reste vide', async () => {
         const d = await boot(false);
         d.w.eval('renderHomeSummary()');

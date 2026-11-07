@@ -124,6 +124,8 @@ function _settingRows() {
         access: [
             { group: null, kind: 'seg', key: 'motion', label: 'Animations', opts: [['system', 'Selon l’appareil'], ['reduced', 'Réduites'], ['full', 'Complètes']] },
             { group: null, kind: 'seg', key: 'textSize', label: 'Taille du texte', opts: [['s', 'Petite'], ['m', 'Normale'], ['l', 'Grande']] },
+            { group: null, kind: 'seg', key: 'thumbHand', label: 'Main du pouce', search: 'gaucher droitier téléphone dock plus',
+              tip: 'Téléphone : « Plus » passe du côté de ce pouce, Retourner de l’autre.', opts: [['right', 'Droite'], ['left', 'Gauche']] },
             { group: null, kind: 'toggle', key: 'contrast', label: 'Contraste renforcé', search: 'bordures lisibilité', tip: 'Bordures et textes secondaires plus marqués.' },
             { group: null, kind: 'seg', key: 'announce', label: 'Annoncer les coups', search: 'voix lecteur d’écran son',
               tip: voice ? 'Lecteur d’écran : lu par VoiceOver ou TalkBack. Voix : la synthèse vocale de l’appareil' + (Voice.hasFrench() ? '.' : ' (aucune voix française trouvée : accent étranger possible).')
@@ -426,7 +428,7 @@ function setPref(key, value) {
             if (typeof initEndgame === 'function') initEndgame();
             break;
         case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
-        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg': case 'legalStyle': case 'lastStyle':
+        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg': case 'legalStyle': case 'lastStyle': case 'thumbHand':
             applyDisplayPrefs(); break;
         case 'captures': applyDisplayPrefs(); _redrawBoardViews(); break;
         case 'lastMove': _redrawBoardViews(); break;
