@@ -153,7 +153,7 @@ function _resumeMoveAnim() {
 
 function _paintMovesBar(active) {
     const bar = document.getElementById('moves-bar');
-    bar.classList.toggle('locked', gameMode === 'training' || gameMode === 'endgame');   // non cliquable en entraînement
+    bar.classList.toggle('locked', gameMode === 'endgame');   // Finales : non cliquable
     if (!moveHistory.length) {
         bar.innerHTML = '<span style="color:#5a4020">Aucun coup joué</span>';
         return;
@@ -457,9 +457,13 @@ function refreshPieces() {
 // (même mécanisme que Précédent / Suivant ; désactivé en entraînement).
 
 function goToMove(i) {
-    if (gameMode === 'training' || gameMode === 'endgame') return;
+    if (gameMode === 'endgame') return;
     const len = moveHistory.length;
     if (i < 0 || i >= len) return;
+    if (gameMode === 'training') {                       // séance : même navigation que ◀ ▶, jamais pendant un coup adverse
+        if (!trainingState.busy) navGo(i);
+        return;
+    }
     if (i === len - 1) {
         navCursor = -1;
         renderBoard();

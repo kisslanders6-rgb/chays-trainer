@@ -86,4 +86,10 @@ t('« Arrêter » suspend la position affichée seulement : la suivante est calc
     assert.strictEqual(sim.launched.length, 3);
 });
 
+t('un coup joué ne fait jamais défiler la page : le brouillon défile seul', () => {
+    const src = fs.readFileSync('js/modules/analysis/analysis.js', 'utf8');
+    assert.ok(!/scrollIntoView\(/.test(src), 'scrollIntoView ferait descendre la page sous l\'échiquier');
+    assert.ok(/_anRevealInPanel\(box\.querySelector\('\.ab-mv\.is-cur'\)\)/.test(src));
+});
+
 console.log(`\n${n} tests réussis.`);

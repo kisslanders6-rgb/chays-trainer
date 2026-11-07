@@ -111,13 +111,18 @@ function renameRepertoirePrompt(name) {
 // ─── BASE DE DONNÉES (ouvertures) ─────────────────────────────────────────────
 
 // Modèle d'une entrée (une seule réponse par position de MON camp) :
-//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply?, lastReviewed?, due?, interval?, created?, prio? }
+//   openingDB[cléPosition] = { move, san, attempts, failures, path?, ply?, lastReviewed?, due?, interval?, created?, prio?, relearn?, mastery? }
 //   - path : coups UCI depuis la position initiale, mon coup inclus (sert aux stats
 //            et à la cinématique de l'entraînement) ; ply = path.length.
 //   - created : date d'enregistrement de la réponse (absente sur les entrées d'avant octobre 2026) ;
 //               « Analyser mes parties » ne compte pas d'erreur si la réponse est postérieure à la partie.
 //   - prio : réponse ajoutée après une partie (« Traitée depuis ») et jamais réussie : en tête de la révision du jour.
+//   - relearn : position dans la file « À revoir » : réussites espacées déjà obtenues (0 à 2), cf. recordReview.
+//   - mastery : score de maîtrise de 0 à 100, qui suit les derniers passages (absent : déduit des compteurs, cf. masteryOf).
 // Les coups adverses ne sont jamais stockés : ils sont implicites dans les clés.
+
+// File « À revoir » : écart en jours après chaque réussite espacée ; la dernière fait sortir de la file.
+const RELEARN_DAYS = [1, 3, 7];
 
 function dbKeyFor(rep, color) {
     return `openingDB_${rep}_${color}`;
@@ -140,6 +145,8 @@ function normalizeEntry(e) {
     if (Number.isFinite(e.due) && e.due > 0) { out.due = e.due; out.interval = Number.isFinite(e.interval) ? Math.max(0, e.interval) : 0; }
     if (Number.isFinite(e.created) && e.created > 0) out.created = e.created;
     if (Number.isFinite(e.prio) && e.prio > 0) out.prio = e.prio;
+    if (Number.isInteger(e.relearn) && e.relearn >= 0 && e.relearn < RELEARN_DAYS.length) out.relearn = e.relearn;
+    if (Number.isFinite(e.mastery)) out.mastery = Math.min(100, Math.max(0, e.mastery));
     return out;   // l'ancien champ `alt` est volontairement abandonné
 }
 
@@ -350,14 +357,41 @@ function reviewPlan(rep = currentRepertoire, now = Date.now()) {
     };
 }
 
+// ─── SCORE DE MAÎTRISE ────────────────────────────────────────────────────────
+// De 0 à 100, il suit les derniers passages : une erreur ancienne s'efface au fil des réussites, ce que le taux
+// cumulé failures / attempts ne permettait pas. Erreur : il reste 40 % du score. Réussite : il gagne 35 % de ce qui
+// manque, 10 % seulement si la révision n'était pas due (réussir tout de suite après ne prouve pas grand-chose).
+const MASTERY_START     = 60;
+const MASTERY_KEEP      = 0.4;
+const MASTERY_GAIN_DUE  = 0.35;
+const MASTERY_GAIN_SOON = 0.1;
+
+// Sans score enregistré (position d'avant ce système) : déduit des compteurs, les niveaux ne changent donc pas.
+const _masteryFrom = (attempts, failures) => attempts > 0 ? 100 * (1 - failures / attempts) : MASTERY_START;
+const masteryOf = e => Number.isFinite(e.mastery) ? e.mastery : _masteryFrom(e.attempts, e.failures);
+
+// Appelé après la mise à jour des compteurs : le score d'avant ne doit pas compter ce passage.
+function _nextMastery(entry, ok, wasDue) {
+    const m = Number.isFinite(entry.mastery) ? entry.mastery : _masteryFrom(entry.attempts - 1, entry.failures - (ok ? 0 : 1));
+    return Math.round(ok ? m + (wasDue ? MASTERY_GAIN_DUE : MASTERY_GAIN_SOON) * (100 - m) : m * MASTERY_KEEP);
+}
+
+// Une note par passage (une seule, cf. answerTrainingMove). File « À revoir » : une erreur y fait entrer ou y ramène
+// à zéro ; seule une réussite à l'échéance avance (10 min, puis 1, 3 et 7 jours) ; la troisième fait sortir de la file.
 function recordReview(entry, ok) {
     const now = Date.now();
     const wasDue = isDue(entry, now), prev = entry.interval || impliedInterval(entry);
+    entry.mastery = _nextMastery(entry, ok, wasDue);
     entry.lastReviewed = now;
     if (ok) delete entry.prio;                 // réponse « Traitée depuis » enfin retrouvée : priorité levée
     if (!ok) {
         entry.interval = 0;
         entry.due = now + REVIEW_RETRY_MS;
+        entry.relearn = 0;
+    } else if (wasDue && Number.isInteger(entry.relearn)) {
+        entry.interval = RELEARN_DAYS[entry.relearn];
+        entry.due = now + entry.interval * DAY_MS;
+        if (entry.relearn + 1 >= RELEARN_DAYS.length) delete entry.relearn; else entry.relearn++;
     } else if (wasDue) {
         entry.interval = prev ? Math.min(REVIEW_MAX_DAYS, Math.round(prev * reviewGrowth() * 10) / 10) : 1;
         entry.due = now + entry.interval * DAY_MS;

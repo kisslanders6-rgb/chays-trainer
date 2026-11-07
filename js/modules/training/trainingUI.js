@@ -65,7 +65,7 @@ function openTrainingFrom({ color, opening, focus }) {
 // Blancs d'abord, puis les plus fragiles (ordre des séances guidées).
 const _trOrder = (a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1)
     || STATS_LEVEL_ORDER.indexOf(a.lv) - STATS_LEVEL_ORDER.indexOf(b.lv)
-    || (b.e.failures / (b.e.attempts || 1)) - (a.e.failures / (a.e.attempts || 1));
+    || masteryOf(a.e) - masteryOf(b.e);
 
 // Ouvertures nommées de la portée (Ligne complète) : { color, name, path, n }.
 function _trOpenings() {
@@ -274,6 +274,8 @@ function initTraining() {
     const due = rows.filter(r => plan.today(r.color, r.key));
     const weak = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').length;
     const unsure = rows.filter(r => r.lv === 'unsure').length;
+    const inFile = rows.filter(r => Number.isInteger(r.e.relearn)), ready = inFile.filter(r => isDue(r.e, now));
+    const fileNext = inFile.reduce((m, r) => Math.min(m, dueOf(r.e)), Infinity);
     const primary = _trPrimary({ due: due.length, retry, focus: _trFocus, avail: { weak: weak > 0, unsure: unsure > 0, timed: true, free: true } });
     const freeOpen = _trFreeOpen || primary === 'free';
 
@@ -291,7 +293,7 @@ function initTraining() {
         <section class="vel-card vel-dark trr-day edge-card${_trFocus === 'due' ? ' is-focus' : ''}" data-focus="due" aria-label="Révision du jour">
             <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
             ${due.length ? `<div class="trr-big"><b>${due.length}</b><span>à réviser aujourd’hui · ≈ ${minutes} min</span></div>
-                <div class="trr-split">${[fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : '', again ? `${again} à revoir` : ''].filter(Boolean).join(' · ')}</div>`
+                <div class="trr-split">${[fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : '', again ? `${again} révision${again > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')}</div>`
                          : `<div class="trr-big is-text"><b>À jour</b><span>Prochaine révision ${Number.isFinite(next) && next ? _inLabel(next) : 'bientôt'}</span></div>`}
             ${forecast}
             ${due.length ? _trBtn(primary === 'due', 'trainingEx', 'due', 'Commencer', 'play') : ''}
@@ -341,6 +343,7 @@ function initTraining() {
         <section class="trr-ex" aria-labelledby="trr-ex-h">
             <div class="trr-h"><h3 id="trr-ex-h">Exercices</h3></div>
             <div class="trr-list edge-card">
+                ${inFile.length ? row('relearn', 'rotate-ccw', 'fragile', 'À revoir', ready.length, `${inFile.length} dans la file · ${RELEARN_DAYS.length} réussites espacées pour en sortir`, { empty: `Prochaine ${_inLabel(fileNext)}` }) : ''}
                 ${row('weak', 'target', 'weak', 'Points faibles', Math.min(weak, TRAIN_WEAK_MAX), '', { empty: 'Aucune position fragile ni à retravailler' })}
                 ${row('line', 'git-branch', '', 'Ligne complète', openings.length, '', { empty: 'Aucune ouverture reconnue', expanded: _trLineOpen })}
                 ${lineList}
@@ -373,6 +376,7 @@ function initTraining() {
     _trPreviews = {
         due:    _trPreviewOf(sorted(due, (a, b) => dueOf(a.e) - dueOf(b.e))[0], 'La plus en retard'),
         retry:  missed ? _trPreviewOf(missed, 'Ratée') : null,
+        relearn: _trPreviewOf(sorted(ready)[0], 'À revoir'),
         weak:   _trPreviewOf(sorted(rows.filter(r => r.lv === 'weak' || r.lv === 'fragile'))[0], 'Point faible'),
         unsure: _trPreviewOf(sorted(rows.filter(r => r.lv === 'unsure'), (a, b) => a.e.attempts - b.e.attempts)[0], 'À confirmer'),
         line:   firstLine ? { r: { side: firstLine.color, path: firstLine.path, k: null }, after: true, title: 'Ligne complète · ' + firstLine.name,
@@ -393,16 +397,18 @@ function initTraining() {
 
 function startTrainingExercise(kind) {
     const rows = _trRows(), now = Date.now(), items = (list, cmp = _trOrder) => list.sort(cmp).map(r => ({ color: r.color, key: r.key }));
-    const prioFirst = (a, b) => (b.e.prio ? 1 : 0) - (a.e.prio ? 1 : 0) || _trOrder(a, b);     // « Traitée depuis » jamais réussie
+    const prioFirst = (a, b) => (b.e.prio ? 1 : 0) - (a.e.prio ? 1 : 0)     // « Traitée depuis » jamais réussie, puis la file À revoir
+        || (Number.isInteger(b.e.relearn) ? 1 : 0) - (Number.isInteger(a.e.relearn) ? 1 : 0) || _trOrder(a, b);
     if (kind === 'line') { _trLineOpen = !_trLineOpen; initTraining(); return; }
     if (kind === 'free') { startTraining(_trColor); return; }
     if (kind === 'timed') { startSession({ kind: 'timed', label: 'Contre-la-montre', colors: _trSides() }); return; }
     const pick = {
+        relearn: () => rows.filter(r => Number.isInteger(r.e.relearn) && isDue(r.e, now)),
         due:    () => { const plan = reviewPlan(currentRepertoire, now); return rows.filter(r => plan.today(r.color, r.key)); },
         weak:   () => rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort(_trOrder).slice(0, TRAIN_WEAK_MAX),
         unsure: () => rows.filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
     }[kind];
-    const label = { due: 'Révision du jour', weak: 'Points faibles', unsure: 'À confirmer' }[kind];
+    const label = { relearn: 'À revoir', due: 'Révision du jour', weak: 'Points faibles', unsure: 'À confirmer' }[kind];
     if (pick) startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
 }
 

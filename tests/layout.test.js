@@ -8,6 +8,15 @@ const css = fs.readFileSync('style.css', 'utf8');
 const start = css.indexOf("ÉCHIQUIER À LA TAILLE DE L'ÉCRAN");
 const block = css.slice(start, css.indexOf('/* ─── MENU', start));
 
+t('boutons du bas : barre fixée de la tablette et du téléphone en paysage, sans conteneur qui la retiendrait', () => {
+    const i = css.indexOf('Tablette et téléphone en paysage'), bloc = css.slice(i, css.indexOf('/* Arabe', i));
+    assert(i > 0 && /@media \(min-width: 600px\) and \(max-width: 919px\), \(orientation: landscape\) and \(max-height: 520px\) and \(min-width: 600px\) and \(max-width: 1100px\)/.test(bloc));
+    assert(/\.board-controls \{\s+position: fixed; left: 0; right: 0; bottom: 0;/.test(bloc));
+    assert(/\.game-screen-inner \{ padding-bottom: calc\(var\(--thumb-h\)/.test(bloc), 'le contenu ne passe pas sous la barre');
+    assert(/\.game-main \{ container-type: normal;/.test(bloc), 'dès 920 px, .game-main est un conteneur');
+    assert(/--bw: clamp\(180px, calc\(100dvh - 56px - var\(--thumb-h\)/.test(bloc), 'paysage : l\'échiquier laisse la place à la barre');
+});
+
 t("échiquier 920px+ : bloc présent, après la règle .sq de base (même spécificité, l'ordre décide)", () => {
     assert(start > 0, 'bloc « ÉCHIQUIER À LA TAILLE DE L\'ÉCRAN » introuvable');
     const base = css.search(/^\.sq \{ width: 64px/m);

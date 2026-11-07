@@ -366,7 +366,7 @@ html[data-board="hache"] .sq.dark .coord { color: #2d2d2d; }
 .sq.hl-selected { background: rgba(78,115,57,0.40) !important; }
 .sq.hl-legal { position: relative; }
 .sq.hl-legal::after { content: ''; position: absolute; width: 26%; height: 26%; background: rgba(0,0,0,0.22); border-radius: 50%; pointer-events: none; }
-.sq.hl-legal.has-piece::after { content: ''; position: absolute; inset: 0; border-radius: 0; background: none; box-shadow: inset 0 0 0 4px rgba(0,0,0,0.20); }
+.sq.hl-legal.has-piece::after { content: ''; position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; background: none; box-shadow: inset 0 0 0 4px rgba(0,0,0,0.20); }
 
 .piece { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 .piece-w {
@@ -1599,6 +1599,7 @@ html[data-board="violet"] .sq.hl-selected { background: rgba(170, 190, 60, .65) 
 html[data-board="hache"] { --board-light: #d3d3ce; --board-dark: #8c8c88; --board-border: #4a4a48; }
 html[data-board="hache"] .sq { outline: .5px solid rgba(50, 50, 50, .55); outline-offset: -.5px; }
 html[data-board="hache"] .sq.dark { background: repeating-linear-gradient(135deg, rgba(45, 45, 45, .8) 0 1px, #d3d3ce 1px 4px); }
+html[data-board="hache"] #board { background: var(--board-light); }      /* un repère translucide se pose sur une case, pas sur du noir */
 html[data-board="hache"] .sq.hl-from, html[data-board="hache"] .sq.hl-to { background: rgba(205, 200, 80, .5) !important; }
 html[data-board="hache"] .sq.hl-selected { background: rgba(190, 180, 60, .65) !important; }
 html[data-board="hache"] .sq.hl-legal::after { background: rgba(0, 0, 0, .38); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .6); }
@@ -2292,19 +2293,18 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 /* ─── REPÈRES DE CASES (préférences legalStyle, lastStyle) ──────────────────────
    Coups possibles : Point (défaut), Petit point, Point creux, Cadre. Une case occupée garde son cerne.
    Dernier coup : Selon l'échiquier (défaut), Très discret, Jaune, Coins. #board : passe devant les teintes par échiquier. */
-html[data-legal-style="small"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { width: 15%; height: 15%; }
-html[data-legal-style="hollow"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { background: none; box-sizing: border-box; border: 2.5px solid rgba(0, 0, 0, .42); box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
-html[data-legal-style="frame"] #board:not(.show-solution) .sq.hl-legal:not(.has-piece)::after { inset: 4px; width: auto; height: auto; border-radius: 3px; background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .34), inset 0 0 0 4px rgba(255, 255, 255, .3); }
-html[data-last="soft"] #board .sq.hl-from, html[data-last="soft"] #board .sq.hl-to { background: rgba(255, 255, 255, .2) !important; }
-html[data-last="yellow"] #board .sq.hl-from, html[data-last="yellow"] #board .sq.hl-to { background: rgba(242, 225, 76, .55) !important; }
-html[data-last="corners"] #board .sq.hl-from, html[data-last="corners"] #board .sq.hl-to {
+:is(html[data-legal-style="small"] :is(#board:not(.show-solution), .pn-board:not(.mk)), .pn-board.mk[data-mk="small"]) .sq.hl-legal:not(.has-piece)::after { width: 15%; height: 15%; }
+:is(html[data-legal-style="hollow"] :is(#board:not(.show-solution), .pn-board:not(.mk)), .pn-board.mk[data-mk="hollow"]) .sq.hl-legal:not(.has-piece)::after { background: none; box-sizing: border-box; border: 2.5px solid rgba(0, 0, 0, .42); box-shadow: 0 0 0 1px rgba(255, 255, 255, .35); }
+:is(html[data-legal-style="frame"] :is(#board:not(.show-solution), .pn-board:not(.mk)), .pn-board.mk[data-mk="frame"]) .sq.hl-legal:not(.has-piece)::after { inset: 4px; width: auto; height: auto; border-radius: 3px; background: none; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .34), inset 0 0 0 4px rgba(255, 255, 255, .3); }
+:is(html[data-last="soft"] :is(#board, .pn-board:not(.mk)), .pn-board.mk[data-mk="soft"]) :is(.sq.hl-from, .sq.hl-to) { background: rgba(255, 255, 255, .2) !important; }
+:is(html[data-last="yellow"] :is(#board, .pn-board:not(.mk)), .pn-board.mk[data-mk="yellow"]) :is(.sq.hl-from, .sq.hl-to) { background: rgba(242, 225, 76, .55) !important; }
+:is(html[data-last="corners"] :is(#board, .pn-board:not(.mk)), .pn-board.mk[data-mk="corners"]) :is(.sq.hl-from, .sq.hl-to) {
     --c: rgba(242, 225, 76, .95);
     background: linear-gradient(var(--c) 0 0) 0 0 / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 0 0 / 7% 28% no-repeat,
                 linear-gradient(var(--c) 0 0) 100% 0 / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 100% 0 / 7% 28% no-repeat,
                 linear-gradient(var(--c) 0 0) 0 100% / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 0 100% / 7% 28% no-repeat,
                 linear-gradient(var(--c) 0 0) 100% 100% / 28% 7% no-repeat, linear-gradient(var(--c) 0 0) 100% 100% / 7% 28% no-repeat !important;
 }
-.mark-preview { display: block; width: min(84px, 100%); height: auto; aspect-ratio: 3 / 2; border-radius: 6px; overflow: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TÉLÉPHONE SOUS LE POUCE (point D) : barre d'actions tout en bas, action principale de l'accueil au-dessus des onglets
@@ -2343,6 +2343,51 @@ html[data-last="corners"] #board .sq.hl-from, html[data-last="corners"] #board .
     }
     .setup-screen:has(#home-tab-play:not(.hidden)):has(.hp-dock:not([hidden])) { padding-bottom: calc(62px + 66px + 24px + env(safe-area-inset-bottom, 0px)); }
     .hp-ctas:empty { display: none; }
+}
+
+/* Tablette et téléphone en paysage : même barre fixée, sur une seule rangée. Paysage bas : l'échiquier laisse sa place à la barre,
+   jusqu'à 1100 px (un grand téléphone en paysage dépasse 920 px, où l'échiquier ne descend pas sous 512 px). */
+@media (min-width: 600px) and (max-width: 919px), (orientation: landscape) and (max-height: 520px) and (min-width: 600px) and (max-width: 1100px) {
+    :root { --thumb-h: 61px; }
+    .board-controls {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 300; flex-direction: row; align-items: stretch; justify-content: center; gap: 8px; height: auto;
+        padding: 6px max(12px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+        background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(0, 0, 0, .12);
+    }
+    .board-controls .controls { margin: 0; max-width: none; }
+    .board-controls .controls-main { flex: 0 1 420px; width: auto; min-width: 0; }
+    .board-controls .controls-main .btn { min-height: 48px; height: 48px; }
+    .board-controls .controls-main .btn-nav { flex: 0 0 48px; }
+    .board-controls .controls-tools { flex: none; width: auto; gap: 2px; padding-left: 8px; border-left: 1px solid var(--border); justify-content: flex-end; }
+    .board-controls .btn-tool { flex: none; width: 44px; height: 48px; min-height: 48px; max-width: none; padding: 0; justify-content: center; }
+    .board-controls .btn-tool .ico { width: 19px; height: 19px; }
+    .board-controls .btn-tool .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .game-screen-inner { padding-bottom: calc(var(--thumb-h) + 16px + env(safe-area-inset-bottom, 0px)); }
+    body:has(#game-screen:not(.hidden)) .toast { bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+}
+/* Tablette : l'échiquier tient entre la barre du haut et la barre d'actions ; la carte d'une finale passe dessous, comme sur téléphone. */
+@media (min-width: 600px) and (max-width: 919px) and (min-height: 521px) {
+    .board-col { --bw: clamp(320px, calc(100dvh - 300px), 560px); width: var(--bw); }
+    .board-wrap { width: var(--bw); }
+    #board { width: 100%; }
+    .sq { width: auto; height: auto; aspect-ratio: 1 / 1; font-size: calc(var(--bw) * .086); }
+    .side-panel .endgame-card { order: 1; margin: 0; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 600px) and (max-width: 1100px) {
+    .topnav { position: static; height: 56px; }
+    :root { --topnav-h: 0px; }
+    .game-screen-inner { padding-top: 8px; }
+    .game-main { container-type: normal; flex-direction: row; align-items: flex-start; justify-content: center; gap: 16px; }   /* un conteneur retiendrait la barre fixée */
+    /* Un écran de haut, moins la barre du haut, la barre d'actions, les marges et les pièces prises */
+    .board-col { --bw: clamp(180px, calc(100dvh - 56px - var(--thumb-h) - 56px), 46vw); width: var(--bw); }
+    .board-col:has(> .tr-progress:not([hidden])) { --bw: clamp(150px, calc(100dvh - 56px - var(--thumb-h) - 56px - 39px), 46vw); }
+    body:has(#suite-slot .suite-chip.is-live) .board-col:has(> .tr-progress:not([hidden])) { --bw: clamp(180px, calc(100dvh - 56px - var(--thumb-h) - 56px), 46vw); }
+    body:has(#suite-slot .suite-chip.is-live) .tr-progress { display: none; }                  /* la capsule du haut dit déjà « 7 / 14 » */
+    .board-wrap { width: var(--bw); margin-bottom: 4px; }
+    #board { width: 100%; }
+    .sq { width: auto; height: auto; aspect-ratio: 1 / 1; font-size: calc(var(--bw) * .086); }
+    .side-panel { display: flex; order: 0; flex: 1; min-width: 220px; max-width: 420px; }
+    .side-panel .status-bar, .side-panel .moves-bar { order: 0; }
 }
 
 /* Arabe : l'interface se lit de droite à gauche, jamais l'échiquier ni les coups. */

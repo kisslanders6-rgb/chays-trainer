@@ -145,7 +145,7 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
 
     await t('légende : la règle du niveau en title ; plus de bulle ⓘ ni de mention de Jouer', () => {
         seed(w, [-1, 2, 0, 5]);
-        assert(/plus d'une erreur sur deux/.test($('.st-lg[data-arg="weak"]').title));
+        assert(/maîtrise sous 50 sur 100/.test($('.st-lg[data-arg="weak"]').title));
         assert(/moins de 3 essais/.test($('.st-lg[data-arg="unsure"]').title));
         assert(!$('#stats-info-btn') && !$('#stats-info'));
         assert(!/Jouer/.test($('#stats-body').textContent));
@@ -159,7 +159,7 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
         const facts = $('#side-panel #stats-facts');
         assert(facts && facts.previousElementSibling.id === 'status-bar');
         assert.strictEqual(facts.children.length, 3);
-        assert(/Niveau/.test(facts.textContent) && /Erreurs/.test(facts.textContent) && /Révision/.test(facts.textContent));
+        assert(/Niveau/.test(facts.textContent) && /Maîtrise/.test(facts.textContent) && /Révision/.test(facts.textContent));
         assert.strictEqual(facts.style.display, '');
         w.eval(`goHome('stats'); startGame('w')`);
         assert.strictEqual(facts.style.display, 'none');

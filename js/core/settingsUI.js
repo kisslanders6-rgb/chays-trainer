@@ -160,23 +160,22 @@ function _pieceCredit() {
     return `${set.label} · ${set.author} · ${set.license}.`;
 }
 
-// Aperçu en direct, position après 3. Fb5 : dernier coup Ff1-b5, case choisie b5 et ses coups possibles,
+// Aperçu en direct, position après 3. Fb5 : dernier coup Ff1-b5, case choisie f3 et ses coups possibles,
 // flèche verte Fb5 → c6, flèche rouge en L Cf3 → e5 et cercle or sur e5 (drawArrows, annotations.js).
 function _previewHTML() {
     const s = appSettings, out = s.coords && s.coordPos === 'out', blind = s.pieceSet === 'blindfold';
     const at = name => [8 - Number(name[1]), 'abcdefgh'.indexOf(name[0])];
     const has = (list, r, c) => list.some(([a, b]) => a === r && b === c);
     const lastMove = s.lastMove ? ['f1', 'b5'].map(at) : [];
-    const legal = s.legalDots ? ['a6', 'a4', 'c4', 'd3', 'e2'].map(at) : [];
-    const sel = s.legalDots ? at('b5') : null;
+    const legal = s.legalDots ? ['g1', 'd4', 'h4', 'g5'].map(at) : [];
+    const sel = s.legalDots ? at('f3') : null;
     let html = '';
     _PREVIEW_ROWS.forEach((line, r) => line.split('').forEach((ch, c) => {
-        const cls = [(r + c) % 2 ? 'd' : '', has(lastMove, r, c) ? 'lm' : '', sel && r === sel[0] && c === sel[1] ? 'sel' : '',
-                     ch === '.' && has(legal, r, c) ? 'lg' : ''].filter(Boolean).join(' ');
-        let inner = ch !== '.' && !blind ? pieceHTML(ch).replace('class="piece-svg"', '') : '';
-        if (s.coords && r === 7) inner += `<b class="f">${'abcdefgh'[c]}</b>`;
-        if (s.coords && c === 0) inner += `<b class="r">${8 - r}</b>`;
-        html += `<i${cls ? ` class="${cls}"` : ''}>${inner}</i>`;
+        const mark = sel && r === sel[0] && c === sel[1] ? 'hl-selected' : has(lastMove, r, c) ? 'hl-to' : ch === '.' && has(legal, r, c) ? 'hl-legal' : '';
+        let coords = '';
+        if (s.coords && r === 7) coords += `<b class="f">${'abcdefgh'[c]}</b>`;
+        if (s.coords && c === 0) coords += `<b class="r">${8 - r}</b>`;
+        html += _previewCell(ch, mark, (r + c) % 2, coords);
     }));
     const set = PIECE_SETS[s.pieceSet] || PIECE_SETS[DEFAULT_PIECE_SET];
     const arrows = typeof drawArrows !== 'function' ? '' : `<svg class="pn-arrows" viewBox="0 0 8 8">${drawArrows({
@@ -206,31 +205,19 @@ const _piecesHTML = () => _grid('pieceSet', PIECE_SET_IDS.filter(id => id !== 'b
     return `<button type="button" class="theme-opt piece-opt${appSettings.pieceSet === id ? ' active' : ''}" data-piece="${id}" data-pn="seg" data-key="pieceSet" data-v="${id}" aria-pressed="${appSettings.pieceSet === id}"><span class="piece-preview"><span>${s.svg.K}</span><span>${s.svg.n}</span></span>${s.label}</button>`; }).join(''));
 const _arrowsHTML = () => typeof arrowStylePreview !== 'function' ? '' : _grid('arrowStyle', ARROW_STYLE_IDS.map(id =>
     `<button type="button" class="theme-opt arrow-opt${appSettings.arrowStyle === id ? ' active' : ''}" data-arrow="${id}" data-pn="seg" data-key="arrowStyle" data-v="${id}" aria-pressed="${appSettings.arrowStyle === id}">${arrowStylePreview(id)}${ARROW_STYLE_LABELS[id]}</button>`).join(''));
-// Repères de cases : vignette de 3 × 2 cases, cases d'arrivée marquées comme sur l'échiquier.
+// Repères de cases : petite scène de 3 × 2 cases, avec l'échiquier et les pièces choisis. Les repères sont de vraies
+// classes de case (.sq.hl-…), dessinés par les règles de l'échiquier : l'aperçu ne peut pas s'en écarter (style.css).
 const LEGAL_LABELS = { dot: 'Point', small: 'Petit point', hollow: 'Point creux', frame: 'Cadre' };
 const LAST_LABELS  = { board: 'Selon l’échiquier', soft: 'Très discret', yellow: 'Jaune', corners: 'Coins' };
-const _LEGAL_MARKS = {
-    dot:    '<circle cx=".5" cy=".5" r=".17" fill="rgba(0,0,0,.4)"/>',
-    small:  '<circle cx=".5" cy=".5" r=".09" fill="rgba(0,0,0,.5)"/>',
-    hollow: '<circle cx=".5" cy=".5" r=".15" fill="none" stroke="rgba(0,0,0,.5)" stroke-width=".06"/>',
-    frame:  '<rect x=".08" y=".08" width=".84" height=".84" rx=".04" fill="none" stroke="rgba(0,0,0,.42)" stroke-width=".07"/>'
-};
-const _LAST_MARKS = {
-    board:   '<rect width="1" height="1" fill="rgba(226,190,60,.55)"/>',
-    soft:    '<rect width="1" height="1" fill="rgba(255,255,255,.22)"/>',
-    yellow:  '<rect width="1" height="1" fill="rgba(242,225,76,.55)"/>',
-    corners: '<path d="M.05 .3V.05H.3M.7 .05H.95V.3M.95 .7V.95H.7M.3 .95H.05V.7" fill="none" stroke="rgba(242,225,76,.95)" stroke-width=".08"/>'
-};
-function _markSvg(mark, at) {
-    let out = '';
-    for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++)
-        out += `<g transform="translate(${x} ${y})"><rect width="1" height="1" fill="var(${(x + y) % 2 ? '--board-dark' : '--board-light'})"/>${at(x, y) ? mark : ''}</g>`;
-    return `<svg class="mark-preview" viewBox="0 0 3 2" aria-hidden="true">${out}</svg>`;
-}
-const _markGrid = (pref, ids, labels, marks, at) => _grid(pref, ids.map(id =>
-    `<button type="button" class="theme-opt${appSettings[pref] === id ? ' active' : ''}" data-pn="seg" data-key="${pref}" data-v="${id}" aria-pressed="${appSettings[pref] === id}">${_markSvg(marks[id], at)}${labels[id]}</button>`).join(''));
-const _legalHTML = () => _markGrid('legalStyle', LEGAL_STYLES, LEGAL_LABELS, _LEGAL_MARKS, (x, y) => (x === 1 && y === 0) || (x === 2 && y === 1));
-const _lastHTML  = () => _markGrid('lastStyle', LAST_STYLES, LAST_LABELS, _LAST_MARKS, (x, y) => (x === 0 && y === 1) || (x === 1 && y === 0));
+// Une ligne par rangée : pièce (ou « . ») et repère de la case.
+const _LAST_SCENE  = [[['.', ''], ['.', ''], ['N', 'hl-to']], [['.', 'hl-from'], ['.', ''], ['.', '']]];
+const _LEGAL_SCENE = [[['.', 'hl-legal'], ['.', ''], ['.', '']], [['R', 'hl-selected'], ['.', 'hl-legal'], ['p', 'hl-legal has-piece']]];
+const _previewCell = (ch, mark, dark, extra = '') => `<i${dark ? ' class="d"' : ''}>${mark ? `<u class="sq ${mark}"></u>` : ''}${ch !== '.' && appSettings.pieceSet !== 'blindfold' ? pieceHTML(ch).replace('class="piece-svg"', '') : ''}${extra}</i>`;
+const _markScene = (scene, id) => `<span class="pn-board mk" data-mk="${id}" aria-hidden="true">${scene.map((row, y) => row.map(([ch, mark], x) => _previewCell(ch, mark, (x + y) % 2)).join('')).join('')}</span>`;
+const _markGrid = (pref, ids, labels, scene) => _grid(pref, ids.map(id =>
+    `<button type="button" class="theme-opt${appSettings[pref] === id ? ' active' : ''}" data-pn="seg" data-key="${pref}" data-v="${id}" aria-pressed="${appSettings[pref] === id}">${_markScene(scene, id)}${labels[id]}</button>`).join(''));
+const _legalHTML = () => _markGrid('legalStyle', LEGAL_STYLES, LEGAL_LABELS, _LEGAL_SCENE);
+const _lastHTML  = () => _markGrid('lastStyle', LAST_STYLES, LAST_LABELS, _LAST_SCENE);
 // Fond du mode sombre : vignette fond + carte aux couleurs du fond (bloc du fond dans style.css).
 const _darkBgHTML = () => _grid('darkBg', DARK_BGS.map(id =>
     `<button type="button" class="theme-opt pn-bg-opt${appSettings.darkBg === id ? ' active' : ''}" data-bg="${id}" data-pn="seg" data-key="darkBg" data-v="${id}" aria-pressed="${appSettings.darkBg === id}"><span class="pn-bg-sw"><i></i><i></i></span>${DARK_BG_LABELS[id]}</button>`).join(''));

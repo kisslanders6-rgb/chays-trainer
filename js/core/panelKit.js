@@ -88,9 +88,25 @@ const PanelKit = (function () {
                 ${ico(s.icon)}<span>${s.label}<small>${s.desc || ''}</small></span>${s.badge ? `<i class="pn-badge">${s.badge}</i>` : s.local ? localMark() : ''}${ico('chevron-right', 'pn-chev')}</button>`).join('');
             const top = content.scrollTop;
             content.innerHTML = cfg.render(q ? null : st.section, q);
-            content.scrollTop = keepScroll ? top : 0;
+            // Colonnes et contenus d'abord : sans eux la page est plus courte, et le navigateur rognerait la position rendue.
             fitGrids(content);
             if (cfg.afterRender) cfg.afterRender(q ? null : st.section);
+            content.scrollTop = keepScroll ? top : 0;
+            if (keepScroll) _settleOnTouched();
+        }
+
+        // Le contrôle touché reste sous le doigt et garde le focus, même si le réglage change la hauteur de ce qui le précède.
+        let touched = null;
+        function _touch(el) {
+            touched = content.contains(el) ? { el, y: el.getBoundingClientRect().top, focus: document.activeElement === el } : null;
+        }
+        function _settleOnTouched() {
+            if (!touched) return;
+            const { el, y, focus } = touched, d = el.dataset;
+            const same = [...content.querySelectorAll(`[data-pn="${d.pn}"]`)].find(x => x.dataset.key === d.key && x.dataset.v === d.v);
+            if (!same) return;
+            content.scrollTop += same.getBoundingClientRect().top - y;
+            if (focus) same.focus({ preventScroll: true });
         }
         if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitGrids(content)).observe(content);
 
@@ -117,9 +133,11 @@ const PanelKit = (function () {
             if (kind === 'back') { st.drill = false; st.q = ''; if (searchEl) searchEl.value = ''; return refresh(false); }
             if (kind === 'query') { st.q = key; if (searchEl) { searchEl.value = key; searchEl.focus({ preventScroll: true }); } return refresh(false); }
             if (kind === 'section') { st.section = key; st.drill = true; st.q = ''; if (searchEl) searchEl.value = ''; refresh(false); content.focus({ preventScroll: true }); return; }
-            if (kind === 'toggle') return cfg.onControl('toggle', key, el.getAttribute('aria-checked') !== 'true', el);
-            if (kind === 'seg') return cfg.onControl('seg', key, el.dataset.v, el);
-            if (kind === 'act') return cfg.onControl('act', key, el.dataset.v, el);
+            if (kind !== 'toggle' && kind !== 'seg' && kind !== 'act') return;
+            _touch(el);
+            if (kind === 'toggle') cfg.onControl('toggle', key, el.getAttribute('aria-checked') !== 'true', el);
+            else cfg.onControl(kind, key, el.dataset.v, el);
+            touched = null;
         });
         overlay.addEventListener('input', e => {
             const el = e.target;

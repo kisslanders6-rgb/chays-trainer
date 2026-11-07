@@ -77,6 +77,18 @@ t('ajoutée indépendamment, même coup : compteurs additionnés ; lastReviewed 
     const r = S.merge(DB, null, { p: E('e2e4', 1, 0, { lastReviewed: 10 }) }, { p: E('e2e4', 2, 1, { lastReviewed: 30 }) });
     assert.strictEqual(r.p.attempts, 3); assert.strictEqual(r.p.failures, 1); assert.strictEqual(r.p.lastReviewed, 30);
 });
+t('file À revoir et score : ceux du passage le plus récent, dans les deux ordres', () => {
+    const b = { p: E('m', 1, 0, { lastReviewed: 1 }) };
+    const l = { p: E('m', 2, 1, { lastReviewed: 5, relearn: 0, mastery: 24 }) }, r = { p: E('m', 2, 0, { lastReviewed: 9, mastery: 74 }) };
+    const a = S.merge(DB, b, l, r).p, c = S.merge(DB, b, r, l).p;
+    assert.strictEqual(a.mastery, 74); assert.strictEqual(a.relearn, undefined);
+    assert.strictEqual(JSON.stringify(a), JSON.stringify(c));
+    const r2 = { p: E('m', 2, 0, { lastReviewed: 5, mastery: 74 }) };
+    const d = S.merge(DB, b, l, r2).p, f = S.merge(DB, b, r2, l).p;
+    assert.strictEqual(d.relearn, 0, 'égalité : reste dans la file'); assert.strictEqual(d.mastery, 24, 'égalité : score le plus bas');
+    assert.strictEqual(JSON.stringify(d), JSON.stringify(f));
+});
+
 t('failures ne dépasse jamais attempts', () => {
     const r = S.merge(DB, { p: E('e2e4', 4, 0) }, { p: E('e2e4', 4, 4) }, { p: E('e2e4', 4, 4) });
     assert(r.p.failures <= r.p.attempts);

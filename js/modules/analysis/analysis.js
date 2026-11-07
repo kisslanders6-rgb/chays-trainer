@@ -342,8 +342,19 @@ function renderAnalysisPanel() {
     }
     box.innerHTML = `<div class="ab-card ab-engine" id="an-engine"></div>${_anDraftHTML()}`;
     _anPaintEngine();
-    const cur = box.querySelector('.ab-mv.is-cur');
-    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+    _anRevealInPanel(box.querySelector('.ab-mv.is-cur'));
+}
+
+// Amène un élément à l'écran dans le panneau qui défile, jamais la page : sur téléphone, le brouillon est sous
+// l'échiquier (scrollIntoView ferait descendre la page à chaque coup et sortirait l'échiquier de l'écran).
+function _anRevealInPanel(el) {
+    for (let box = el && el.parentElement; box && box !== document.body; box = box.parentElement) {
+        if (!/auto|scroll/.test(getComputedStyle(box).overflowY) || box.scrollHeight <= box.clientHeight) continue;
+        const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom;
+        return;
+    }
 }
 
 // Puces du réseau et des fils : elles mènent à Paramètres › Moteur (le téléchargement du réseau complet se fait là).
@@ -635,7 +646,7 @@ function _anFocusConflict(box) {
     if (!key) return;
     const li = [...box.querySelectorAll('.ab-plan li')].find(l => l.dataset.key === key);
     if (!li) return;
-    if (li.scrollIntoView) li.scrollIntoView({ block: 'nearest' });
+    _anRevealInPanel(li);
     const input = li.querySelector('input');
     if (input) input.focus({ preventScroll: true });
 }

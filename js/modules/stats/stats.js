@@ -15,11 +15,11 @@
  *   5. « Régularité, tous répertoires » : série, calendrier (12 semaines, 5 sur téléphone), réussite par semaine.
  * Portée : répertoire actif, Blancs, Noirs ou les deux (barre collante en tête de l'onglet).
  *
- * Six niveaux, utilisés partout (Statistiques, Entraînement, arbre du répertoire) ; r = failures / attempts :
- *   à retravailler  r > 50 %
- *   fragile         30 % < r ≤ 50 %
- *   en progrès      15 % < r ≤ 30 %
- *   solide          0 < r ≤ 15 %
+ * Six niveaux, utilisés partout (Statistiques, Entraînement, arbre du répertoire) ; m = score de maîtrise (masteryOf, storage.js) :
+ *   à retravailler  m < 50
+ *   fragile         50 ≤ m < 70
+ *   en progrès      70 ≤ m < 85
+ *   solide          m ≥ 85
  *   à confirmer     aucune erreur, moins de STATS_CONFIRM_TRIES essais
  *   maîtrisée       aucune erreur en STATS_CONFIRM_TRIES essais ou plus, ou « solide » réussie plusieurs
  *                   révisions d'affilée (intervalle de révision ≥ STATS_SOLID_DAYS jours, cf. recordReview)
@@ -27,9 +27,9 @@
 
 'use strict';
 
-const STATS_WEAK_MIN      = 0.5;
-const STATS_FRAGILE_MIN   = 0.3;
-const STATS_PROGRESS_MIN  = 0.15;
+const STATS_WEAK_BELOW     = 50;
+const STATS_FRAGILE_BELOW  = 70;
+const STATS_PROGRESS_BELOW = 85;
 const STATS_CONFIRM_TRIES = 3;
 const STATS_SOLID_DAYS    = 7;
 const STATS_LINE_ROWS     = 30;     // positions affichées par ouverture avant « Afficher les autres »
@@ -44,10 +44,10 @@ const STATS_TREND_WEEKS   = 8;
 
 // Du plus fragile au plus sûr (ordre des barres, des filtres et des listes).
 const STATS_LEVELS = {
-    weak:     { label: 'À retravailler', one: 'À retravailler', rule: 'plus d\'une erreur sur deux' },
-    fragile:  { label: 'Fragiles',       one: 'Fragile',        rule: 'de 30 à 50 % d\'erreurs' },
-    progress: { label: 'En progrès',     one: 'En progrès',     rule: 'de 15 à 30 % d\'erreurs' },
-    solid:    { label: 'Solides',        one: 'Solide',         rule: 'moins de 15 % d\'erreurs' },
+    weak:     { label: 'À retravailler', one: 'À retravailler', rule: 'maîtrise sous 50 sur 100' },
+    fragile:  { label: 'Fragiles',       one: 'Fragile',        rule: 'maîtrise de 50 à 69 sur 100' },
+    progress: { label: 'En progrès',     one: 'En progrès',     rule: 'maîtrise de 70 à 84 sur 100' },
+    solid:    { label: 'Solides',        one: 'Solide',         rule: 'maîtrise de 85 sur 100 ou plus' },
     unsure:   { label: 'À confirmer',    one: 'À confirmer',    rule: `aucune erreur, moins de ${STATS_CONFIRM_TRIES} essais` },
     mastered: { label: 'Maîtrisées',     one: 'Maîtrisée',      rule: `aucune erreur en ${STATS_CONFIRM_TRIES} essais ou plus, ou solide et réussie plusieurs révisions d'affilée` }
 };
@@ -67,10 +67,10 @@ let statsScope  = '';        // répertoire + couleur : les ouvertures dépliée
 
 function _level(e) {
     if (!e.failures) return e.attempts >= STATS_CONFIRM_TRIES ? 'mastered' : 'unsure';
-    const r = e.failures / e.attempts;
-    if (r > STATS_WEAK_MIN)     return 'weak';
-    if (r > STATS_FRAGILE_MIN)  return 'fragile';
-    if (r > STATS_PROGRESS_MIN) return 'progress';
+    const m = masteryOf(e);
+    if (m < STATS_WEAK_BELOW)     return 'weak';
+    if (m < STATS_FRAGILE_BELOW)  return 'fragile';
+    if (m < STATS_PROGRESS_BELOW) return 'progress';
     return e.attempts >= STATS_CONFIRM_TRIES && (e.interval || 0) >= STATS_SOLID_DAYS ? 'mastered' : 'solid';
 }
 
@@ -160,7 +160,7 @@ function _assignOpenings(rows) {
 }
 
 // Plus fragiles d'abord : niveau, taux d'erreur, nombre d'essais, ordre du coup.
-const _rate = r => r.e.failures / r.e.attempts;
+const _rate = r => 1 - masteryOf(r.e) / 100;
 const _byWorst = (a, b) => STATS_LEVEL_ORDER.indexOf(a.lv) - STATS_LEVEL_ORDER.indexOf(b.lv)
     || _rate(b) - _rate(a) || b.e.attempts - a.e.attempts || (a.e.ply || 0) - (b.e.ply || 0);
 
@@ -382,17 +382,17 @@ function initStats() {
     const weakest = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort((a, b) => _rate(b) - _rate(a) || b.e.attempts - a.e.attempts).slice(0, STATS_WEAK_CARDS);
     _assignOpenings(rows);
     const arg = r => escapeHtml(r.side + ':' + r.k);
-    const weakN = counts.weak + counts.fragile;
+    const weakN = counts.weak + counts.fragile, relearnN = rows.filter(r => Number.isInteger(r.e.relearn)).length;
     const weakHTML = !weakest.length ? '' : `
         <section class="st-sec st-card st-weak edge-card">
-            <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}</span>${counts.weak ? `<button type="button" class="st-link" data-action="statsLegend" data-arg="weak">Tout voir</button>` : ''}</div>
+            <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span>${counts.weak ? `<button type="button" class="st-link" data-action="statsLegend" data-arg="weak">Tout voir</button>` : ''}</div>
             <div class="st-wlist">${weakest.map(r => {
                 const mv = r.e.ply ? _moveLabel(r.e, true) : 'Coup à retrouver', from = (r.side === 'w' ? 'Blancs · ' : 'Noirs · ');
                 return `
                 <button type="button" class="st-wrow lv-${r.lv}" data-action="statsPreview" data-arg="${arg(r)}" data-origin="weak" aria-label="Voir la position ${escapeHtml(mv)}, ${escapeHtml(from + r.gName)}">
                     ${_miniBoardHTML(r, false, { cls: 'st-wmini' })}
                     <span class="st-wrow-txt"><b>${escapeHtml(mv)}</b><small>${statsColor === 'all' ? from : ''}${r.gHtml}</small></span>
-                    <span class="st-errs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.round(100 * _rate(r))}%"></i></span><span class="st-n">${r.e.failures}/${r.e.attempts}</span>${ico('chevron-right')}</span>
+                    <span class="st-errs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, Math.round(masteryOf(r.e)))}%"></i></span><span class="st-n">${Math.round(masteryOf(r.e))} / 100</span>${ico('chevron-right')}</span>
                 </button>`; }).join('')}</div>
             <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('target')}Entraînement › Points faibles ${ico('chevron-right')}</button>
         </section>`;
@@ -423,11 +423,11 @@ function initStats() {
         const open = statsOpen.has(g.key), items = g.items.slice().sort(_byWorst);
         const shown = open ? (statsAll.has(g.key) ? items : items.slice(0, STATS_LINE_ROWS)) : [];
         const rowsHTML = shown.map(r => {
-            const d = isDue(r.e, now), pct = Math.round(100 * _rate(r));
+            const d = isDue(r.e, now), m = Math.round(masteryOf(r.e));
             return `<div class="st-row">
                 <span class="st-move">${_moveLabel(r.e, false, true)}</span>
                 <span class="st-lvl">${_lvMark(r.lv)}${STATS_LEVELS[r.lv].one}</span>
-                <span class="st-errs lv-${r.lv}" title="${pct} % d'erreurs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, pct)}%"></i></span><span class="st-n">${r.e.failures} err. / ${r.e.attempts}</span></span>
+                <span class="st-errs lv-${r.lv}" title="${r.e.failures} err. / ${r.e.attempts}"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, m)}%"></i></span><span class="st-n">${m} / 100</span></span>
                 <span class="st-when ${d ? 'on' : ''}">${d ? 'Aujourd’hui' : _dueIn(dueOf(r.e))}</span>
                 <span class="st-acts">
                     <button type="button" class="st-ibtn pri" data-action="statsTrain" data-arg="${arg(r)}" title="S'entraîner sur cette position (compte comme un essai)" aria-label="S'entraîner sur ${escapeHtml(_moveLabel(r.e))}">${ico('play')}</button>
@@ -534,8 +534,7 @@ function openStatsPreview(side, key, origin) {
         parseFEN(key);
         renderBoard();
     }
-    const pct = e.attempts ? Math.round(100 * e.failures / e.attempts) : 0;
-    setStatus(`Aperçu · ${_moveLabel(e, true)}`, 'info', `${STATS_LEVELS[_level(e)].one} · ${pct} % d'erreurs (${e.failures}/${e.attempts})`);
+    setStatus(`Aperçu · ${_moveLabel(e, true)}`, 'info', `${STATS_LEVELS[_level(e)].one} · maîtrise ${Math.round(masteryOf(e))} / 100 (${e.failures} err. / ${e.attempts})`);
 }
 
 // Trois faits sous la barre d'état (niveau, erreurs, prochaine révision), dans le panneau latéral : montrés
@@ -556,7 +555,8 @@ function _renderPreviewFacts(e) {
     }
     const lv = _level(e), d = isDue(e, Date.now());
     box.innerHTML = `<div class="lv-${lv}"><span>Niveau</span><b>${_lvMark(lv)}${STATS_LEVELS[lv].one}</b></div>
-        <div><span>Erreurs</span><b class="st-n">${e.failures} / ${e.attempts}</b></div>
+        <div title="${e.failures} err. / ${e.attempts}"><span>Maîtrise</span><b class="st-n">${Math.round(masteryOf(e))} / 100</b></div>
+        ${Number.isInteger(e.relearn) ? `<div><span>À revoir</span><b class="st-n">${e.relearn} / ${RELEARN_DAYS.length}</b></div>` : ''}
         <div><span>Révision</span><b${d ? ' class="on"' : ''}>${d ? 'Aujourd’hui' : _dueIn(dueOf(e))}</b></div>`;
 }
 

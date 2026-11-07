@@ -53,7 +53,7 @@
 .pn-nav button.is-on { background: var(--bg-inset); color: var(--text); font-weight: 600; box-shadow: inset 2px 0 0 var(--board-accent); }
 .pn-badge { width: 8px; height: 8px; border-radius: 50%; background: var(--err); font-size: 0; flex: none; }
 
-.pn-content { overflow-y: auto; padding: 22px 26px 30px; display: flex; flex-direction: column; gap: 10px; outline: none; overscroll-behavior: contain; }
+.pn-content { overflow-y: auto; overflow-anchor: none; padding: 22px 26px 30px; display: flex; flex-direction: column; gap: 10px; outline: none; overscroll-behavior: contain; }
 /* Les blocs gardent leur hauteur : c'est le panneau qui défile (sans cela, un volet en overflow: hidden est écrasé). */
 .pn-content > * { flex-shrink: 0; }
 .pn-h { margin: 14px 0 2px; font-family: var(--font-note); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
@@ -115,9 +115,12 @@
 .pn-board i { position: relative; display: block; width: var(--q); height: var(--q); background: var(--board-light); }
 .pn-board i.d { background: var(--board-dark); }
 .pn-board i:first-child { border-top-left-radius: 4px; }
-.pn-board i.lm { box-shadow: inset 0 0 0 100px rgba(205, 200, 80, .5); }
-.pn-board i.lg::after { content: ''; position: absolute; inset: 37%; border-radius: 50%; background: rgba(0, 0, 0, .25); }
-.pn-board i.sel { box-shadow: inset 0 0 0 100px rgba(230, 150, 40, .45); }
+/* Repère d'une case d'aperçu : une vraie .sq posée sur la case, peinte par les règles de l'échiquier (style.css). */
+.pn-board i > .sq { position: absolute; inset: 0; width: auto; height: auto; aspect-ratio: auto; }
+.pn-board.mk { --q: auto; grid-template-columns: repeat(3, 1fr); width: min(96px, 100%); margin: 0 auto; overflow: hidden; box-shadow: none; pointer-events: none; }
+.pn-board.mk i { width: auto; height: auto; aspect-ratio: 1 / 1; }
+/* Échiquier texturé : les 3 × 2 premières cases de l'image (8 × 8), alignées sur celles de la vignette */
+.pn-board.mk { background-size: calc(100% * 8 / 3) calc(100% * 8 / 2) !important; background-position: 0 0 !important; }
 .pn-arrows { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .pn-board i img { position: absolute; inset: 6%; width: 88%; height: 88%; pointer-events: none; }
 .pn-board i b { position: absolute; font: 700 8px var(--font-sans); color: var(--board-dark); }

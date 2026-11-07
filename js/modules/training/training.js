@@ -19,8 +19,10 @@
  *
  * Pour chaque position : l'échiquier se place 3 demi-coups avant, rejoue automatiquement ces trois coups
  * (contexte, touchez l'échiquier pour passer), puis me rend la main.
- *   - succès : attempts + 1 et planning de révision mis à jour (recordReview, storage.js)
- *   - erreur : coup refusé, attempts + 1 et failures + 1 (comme dans « Jouer »), on réessaie.
+ *   Une seule note par passage, donnée par le premier coup ; le deuxième passage d'une séance n'en donne pas :
+ *   - succès : attempts + 1, score de maîtrise et planning de révision mis à jour (recordReview, storage.js)
+ *   - erreur : coup refusé, attempts + 1 et failures + 1, la position entre dans la file « À revoir » ; on réessaie,
+ *     sans rien compter de plus (erreurs suivantes comme réussite finale).
  *   - solution : 2e appui sur Indice (cf. showHint) ; compte comme une erreur, aucune réussite comptée.
  */
 
@@ -355,7 +357,7 @@ function _ageDays(e, now) {
 }
 
 function _failureFactor(e) {
-    const err    = (e.failures + 0.6) / (e.attempts + 2);
+    const err    = 1 - masteryOf(e) / 100;
     const volume = 1 + 0.25 * Math.log(1 + e.failures);
     return TRAIN_FAIL_FLOOR + err * volume;
 }
@@ -404,11 +406,12 @@ function _drillReason(e) {
     const now = Date.now();
     if (trainingState.session && trainingState.session.items[trainingState.session.cur] && trainingState.session.items[trainingState.session.cur].second)
         return 'Deuxième passage : erreur plus tôt dans la séance';
+    if (Number.isInteger(e.relearn)) return `À revoir · ${e.relearn} / ${RELEARN_DAYS.length}`;
     if (e.failures === 0 || !e.attempts) return `Entretien · 100% de réussite · ${_ageLabel(e, now)}`;
-    const pct = Math.round(100 * e.failures / e.attempts);
-    if (pct >= 50)                return `Position critique · ${pct}% d'erreur`;
+    const m = Math.round(masteryOf(e));
+    if (m <= 50)                  return `Position critique · maîtrise ${m} / 100`;
     if (_ageDays(e, now) >= 2)    return `À réviser · ${_ageLabel(e, now)}`;
-    return `À consolider · ${pct}% d'erreur · ${_ageLabel(e, now)}`;
+    return `À consolider · maîtrise ${m} / 100 · ${_ageLabel(e, now)}`;
 }
 
 // Retrouve la ligne menant à une clé de position en rejouant les chemins des autres entrées
@@ -693,9 +696,10 @@ function showTrainingSolution() {
     if (trainingState.solutionFor !== key) {
         trainingState.solutionFor   = key;
         trainingState.seq.assisted  = true;
-        if (!trainingState.keyErred) _sessionMistake(key);
+        const first = !trainingState.keyErred;
+        if (first) _sessionMistake(key);
         trainingState.keyErred = true;
-        if (TRAIN_SOLUTION_PENALTY) {
+        if (TRAIN_SOLUTION_PENALTY && first && !_secondPass()) {
             entry.attempts++;
             entry.failures++;
             recordReview(entry, false);
@@ -708,22 +712,38 @@ function showTrainingSolution() {
 
 // ─── RÉPONSE DU JOUEUR ────────────────────────────────────────────────────────
 
+// Deuxième passage d'une position ratée plus tôt dans la séance : il sert à retenir, il ne donne pas de note.
+function _secondPass() {
+    const S = trainingState.session, it = S && S.items[S.cur];
+    return !!(it && it.second);
+}
+
+// Ce que le passage a changé : file « À revoir », sinon score de maîtrise.
+function _answerDetail(entry, inFile, before) {
+    if (inFile && !Number.isInteger(entry.relearn)) return 'Acquise : elle sort de la file À revoir.';
+    if (Number.isInteger(entry.relearn)) return entry.relearn === inFile.step ? `À revoir : ${entry.relearn} / ${RELEARN_DAYS.length} · trop tôt pour avancer`
+        : `À revoir : ${entry.relearn} / ${RELEARN_DAYS.length} · ${_dueIn(entry.due)}`;
+    return `Maîtrise : ${Math.round(before)} → ${entry.mastery}`;
+}
+
 // Appelé par executePlayerMove() en mode entraînement (le coup n'est pas encore appliqué).
+// Le premier coup du passage décide : ni les essais suivants ni la réussite finale ne comptent.
 function answerTrainingMove(entry, from, to, promo, movStr) {
     const key      = positionKey();
     const revealed = trainingState.solutionFor === key;
+    const second   = _secondPass();
 
     if (entry && movStr === entry.move) {
-        let msg = '✓ Solution jouée', detail = 'Aucune réussite comptée.';
-        if (!revealed) {
-            const before = entry.attempts ? Math.round(100 * entry.failures / entry.attempts) : 0;
+        let msg = '✓ Bien joué !', detail = 'Deuxième passage : rien de plus n’est compté.';
+        if (revealed) { msg = '✓ Solution jouée'; detail = 'Aucune réussite comptée.'; }
+        else if (trainingState.keyErred) { msg = '✓ Bon coup'; detail = 'L’erreur est déjà comptée pour ce passage.'; }
+        else if (!second) {
+            const before = masteryOf(entry), inFile = Number.isInteger(entry.relearn) ? { step: entry.relearn } : null;
             entry.attempts++;
             recordReview(entry, true);
             saveDB();
             if (typeof Suite !== 'undefined') Suite.afterAnswer();
-            const after = Math.round(100 * entry.failures / entry.attempts);
-            msg    = '✓ Bien joué !';
-            detail = entry.failures === 0 ? 'Toujours à 100 % de réussite.' : `Taux d'erreur : ${before} % → ${after} %`;
+            detail = _answerDetail(entry, inFile, before);
         }
         _sessionRecord(key, !trainingState.keyErred && !revealed);
         trainingState.busy = true;
@@ -731,18 +751,20 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         _renderSessionBar();
         trainingState.seq.done++;
         _continueSequence();
-    } else if (entry && !revealed) {                   // erreur : comptée sur la position exacte, comme en mode « Jouer »
-        entry.attempts++;
-        entry.failures++;
-        recordReview(entry, false);
-        saveDB();
-        if (!trainingState.keyErred) trainingState.combo = 0;
-        if (typeof Suite !== 'undefined') Suite.afterAnswer();
-        if (!trainingState.keyErred) _sessionMistake(key);
+    } else if (entry && !revealed) {
+        const first = !trainingState.keyErred;
+        if (first && !second) {                        // erreur : comptée une fois, sur la position exacte
+            entry.attempts++;
+            entry.failures++;
+            recordReview(entry, false);
+            saveDB();
+            if (typeof Suite !== 'undefined') Suite.afterAnswer();
+        }
+        if (first) { trainingState.combo = 0; _sessionMistake(key); }
         trainingState.keyErred = true;
-        const pct = Math.round(100 * entry.failures / entry.attempts);
         const S = trainingState.session;
-        _rejectMove(to, '✗ Pas le bon coup', `Taux d'erreur : ${pct} %. ${S && S.kind === 'timed' ? '−10 s. ' : S && S.kind !== 'line' ? 'Elle reviendra en fin de séance. ' : ''}Réessayez, ou appuyez sur Indice.`);
+        const told = !first ? '' : S && S.kind === 'timed' ? '−10 s. ' : second ? '' : 'Elle passe dans la file À revoir. ';
+        _rejectMove(to, '✗ Pas le bon coup', `${told}Réessayez, ou appuyez sur Indice.`);
         noteMistake(key);
     } else {
         _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.');

@@ -118,7 +118,7 @@ function buildRepertoireTree() {
         const e  = openingDB[key];
         const mp = path.concat(e.move);
         const row = { kind: 'me', san: e.san, ply: mp.length, depth, path: mp, key: null, entryKey: key,
-                      attempts: e.attempts, failures: e.failures, ref: seen.has(key) };
+                      attempts: e.attempts, failures: e.failures, mastery: Math.round(masteryOf(e)), ref: seen.has(key) };
         rows.push(row);
         if (row.ref) { row.key = keyAfter(mp); return; }      // transposition : déjà développée plus haut
         seen.add(key);
@@ -291,7 +291,7 @@ function renderTree(rebuild) {
         const open = r.kind === 'me' && _treeActionsFor === r.path.join(' ');
         if (r.kind === 'me') {
             if (r.ref) badges += '<span class="tree-ref">↪ transposition</span>';
-            if (r.attempts && r.failures) badges += `<span class="tree-err">${Math.round(100 * r.failures / r.attempts)}%</span>`;
+            if (r.attempts && r.failures) badges += `<span class="tree-err" title="Maîtrise ${r.mastery} / 100">${r.mastery}</span>`;
             badges += `<button class="tree-more ${open ? 'open' : ''}" data-more="${i}" title="Remplacer ou supprimer ce coup" aria-label="Actions sur ce coup" aria-expanded="${open}">${ico('more-horizontal')}</button>`;
         } else if (!r.covered) {
             badges += `<span class="tree-pill">${ico('alert-triangle')} Non couvert</span><button class="tree-forget" data-forget="${i}" title="Oublier cette réponse adverse" aria-label="Oublier">${ico('x')}</button>`;

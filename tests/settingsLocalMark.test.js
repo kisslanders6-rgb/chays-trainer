@@ -135,9 +135,9 @@ const search = (w, q) => {
         w.showSettings('apparence');
         const board = () => $('#settings-overlay .pn-etabli-aside .pn-board');
         assert(board(), 'aperçu à part, hors des cartes de réglages');
-        assert(!$('#settings-overlay .pn-group .pn-board'), 'pas de carte dans une carte');
+        assert(!$('#settings-overlay .pn-group .pn-board:not(.mk)'), 'pas de carte dans une carte');
         const sq = name => board().children[(8 - Number(name[1])) * 8 + 'abcdefgh'.indexOf(name[0])];
-        assert(sq('b5').innerHTML.length > 0 && sq('f1').classList.contains('lm') && sq('b5').classList.contains('lm'), 'dernier coup Ff1-b5');
+        assert(sq('b5').innerHTML.length > 0 && sq('f1').querySelector('.sq.hl-to') && sq('b5').querySelector('.sq.hl-to'), 'dernier coup Ff1-b5');
         assert(sq('c6').innerHTML.length > 0 && sq('f3').innerHTML.length > 0, 'Cc6 et Cf3');
         const svg = board().querySelector('svg.pn-arrows');
         assert(svg && svg.innerHTML.includes('circle'), 'flèches et cercle (drawArrows)');
@@ -146,9 +146,12 @@ const search = (w, q) => {
         $('#settings-overlay [data-key="coordPos"][data-v="out"]').click();
         assert(board().classList.contains('is-out'), 'coordonnées autour');
         $('#settings-overlay [data-key="lastMove"]').click();
-        assert(!sq('f1').classList.contains('lm'), 'dernier coup masqué');
+        assert(!sq('f1').querySelector('.hl-to'), 'dernier coup masqué');
         $('#settings-overlay [data-key="legalDots"]').click();
-        assert(!board().querySelector('.lg'), 'coups possibles masqués');
+        assert(!board().querySelector('.hl-legal'), 'coups possibles masqués');
+        const tile = (pref, v) => $(`#settings-overlay [data-key="${pref}"][data-v="${v}"] .pn-board.mk`);
+        assert(tile('lastStyle', 'corners').dataset.mk === 'corners' && tile('lastStyle', 'corners').querySelector('.sq.hl-from') && tile('lastStyle', 'corners').querySelector('.sq.hl-to'), 'vignette du dernier coup : vraies classes de case');
+        assert(tile('legalStyle', 'frame').querySelector('.sq.hl-selected') && tile('legalStyle', 'frame').querySelector('.sq.hl-legal.has-piece'), 'vignette des coups possibles : case choisie, point et prise');
         const before = svg.innerHTML;
         $('#settings-overlay [data-key="arrowStyle"][data-v="pinceau"]').click();
         assert.notStrictEqual(board().querySelector('svg.pn-arrows').innerHTML, before, 'style de flèches suivi');
@@ -160,6 +163,20 @@ const search = (w, q) => {
         $('#settings-overlay [data-key="notation"][data-v="en"]').click();
         w.showSettings('apparence');
         assert(/3\.\s*B/.test($('#settings-overlay .pn-preview .pn-sample').textContent), 'notation anglaise suivie');
+        w.closeSettings();
+    });
+
+    await t('régler ne fait pas bouger la vue : défilement rendu après les grilles, contrôle touché gardé sous le doigt et au focus', () => {
+        const kit = fs.readFileSync(path.join(__dirname, '..', 'js/core/panelKit.js'), 'utf8');
+        const fn = kit.slice(kit.indexOf('function refresh('), kit.indexOf('function _touch('));
+        assert(fn.indexOf('fitGrids(content)') < fn.indexOf('content.scrollTop = keepScroll') && fn.indexOf('cfg.afterRender(') < fn.indexOf('content.scrollTop = keepScroll'), 'position rendue une fois la hauteur connue');
+        w.showSettings('apparence');
+        const c = () => $('#settings-overlay [data-key="lastStyle"][data-v="yellow"]');
+        c().focus();
+        c().click();
+        assert.strictEqual(w.document.activeElement, c(), 'le focus reste sur le contrôle redessiné');
+        assert.strictEqual(c().getAttribute('aria-pressed'), 'true');
+        $('#settings-overlay [data-key="lastStyle"][data-v="board"]').click();
         w.closeSettings();
     });
 

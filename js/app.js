@@ -406,6 +406,7 @@ function showGameScreen(color) {
     const gs = document.getElementById('game-screen');
     gs.style.display = 'flex';
     gs.classList.remove('hidden');
+    window.scrollTo({ top: 0 });                         // l'échiquier en haut, quel que soit le défilement de l'écran quitté
 
     if (typeof _renderSessionBar === 'function') _renderSessionBar();
     renderGameSide();

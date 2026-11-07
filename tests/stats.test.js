@@ -5,6 +5,7 @@ const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: () => '', formatSan: s => s, formatSanText: s => s,
               document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] } };
+ctx.masteryOf = e => Number.isFinite(e.mastery) ? e.mastery : e.attempts > 0 ? 100 * (1 - e.failures / e.attempts) : 60;
 vm.createContext(ctx);
 for (const f of ['js/core/chessEngine.js', 'js/modules/openings/openingsLogic.js', 'js/modules/stats/openingNames.js', 'js/modules/stats/stats.js'])
     vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
@@ -26,7 +27,12 @@ t('nom d\'ouverture : l\'entrée la plus longue qui commence le chemin', () => {
     assert.strictEqual(openingNameOf(path('a2a3')), null);
 });
 
-t('niveaux : seuils de taux d\'erreur', () => {
+t('niveaux : le score de maîtrise l\'emporte sur les compteurs, une erreur ancienne s\'efface', () => {
+    assert.strictEqual(_level({ attempts: 10, failures: 8, mastery: 90, interval: 3 }), 'solid');
+    assert.strictEqual(_level({ attempts: 100, failures: 1, mastery: 40, interval: 3 }), 'weak');
+});
+
+t('niveaux : sans score, seuils de taux d\'erreur inchangés', () => {
     const lv = (a, f, interval) => _level({ attempts: a, failures: f, interval });
     assert.strictEqual(lv(0, 0), 'unsure');
     assert.strictEqual(lv(2, 0), 'unsure');

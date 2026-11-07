@@ -890,8 +890,6 @@ Ouvrir Données
 Installer l’application
 id="install-section"
 {0}Installer
-class="piece-svg"
-class="{0}"
 · cavalier en L
 Aperçu : position après 3. Fb5
 Flèches {5}{6}
@@ -922,6 +920,8 @@ Selon l’échiquier
 Très discret
 Jaune
 Coins
+class="d"
+class="piece-svg"
 {0} Mo
 <b>Téléchargement du moteur complet</b>
 {1} sur {2}
@@ -936,7 +936,7 @@ Environ 99 Mo, une seule fois, depuis unpkg.com ; le fichier est vérifié avant
 {0} Ko
 lang/manifest.json
 Supprimer cette langue
-Télécharger{4}
+Télécharger
 À télécharger
 Téléchargement impossible. Vérifiez votre connexion.
 Téléchargement impossible : {0}. Le réseau léger reste utilisé.
@@ -1384,6 +1384,7 @@ Gain
 Nulle
 Perte
 class="bad"
+class="{0}"
 à tenir
 pour conclure
 au plus
@@ -1748,6 +1749,7 @@ Vue complète
 </i> adversaire
 Replier ou déplier
 ↪ transposition
+Maîtrise {0} / 100
 Remplacer ou supprimer ce coup
 Actions sur ce coup
 Oublier cette réponse adverse
@@ -2043,15 +2045,15 @@ Ouverture Réti · Attaque est-indienne
 Ouverture Réti · Fianchetto roi
 Ouverture Bird · Gambit From
 À retravailler
-plus d'une erreur sur deux
+maîtrise sous 50 sur 100
 Fragiles
 Fragile
-de 30 à 50 % d'erreurs
+maîtrise de 50 à 69 sur 100
 En progrès
-de 15 à 30 % d'erreurs
+maîtrise de 70 à 84 sur 100
 Solides
 Solide
-moins de 15 % d'erreurs
+maîtrise de 85 sur 100 ou plus
 À confirmer
 aucune erreur, moins de {0} essais
 Maîtrisées
@@ -2104,12 +2106,13 @@ maîtrisées
 pas encore de niveau
 Maîtrise · {0}
 Réussite : {5} % sur {6}
+· {0} dans la file À revoir
 Tout voir
 Coup à retrouver
 Blancs ·
 Noirs ·
 Voir la position {2}, {3}
-{3}Entraînement › Points faibles {4}
+{4}Entraînement › Points faibles {5}
 Trier
 Trier les ouvertures
 Plus fragiles
@@ -2117,12 +2120,11 @@ Plus à réviser
 Ordre des coups
 Plus de positions
 Aujourd’hui
-{4} % d'erreurs
+{4} err. / {5}
 S'entraîner sur cette position (compte comme un essai)
 S'entraîner sur {1}
 Voir la position
 Voir {5}
-{6} err. / {7}
 Afficher les {1} autres positions
 Réviser cette ouverture {1}
 {0} à réviser sur {1}
@@ -2135,8 +2137,11 @@ Tout voir : {0}
 Filtrer par niveau
 Par ouverture
 Aperçu · {0}
-{0} · {1} % d'erreurs ({2}/{3})
+{0} · maîtrise {1} / 100 ({2} err. / {3})
 Cette position
+À revoir
+{3} err. / {4}
+Maîtrise
 Retour aux Statistiques{0}
 Revoir {0} erreurs
 Revoir l’erreur
@@ -2177,10 +2182,11 @@ revu il y a {0} h
 non revu depuis {0} jour{1}
 non revu depuis {0} semaine{1}
 Deuxième passage : erreur plus tôt dans la séance
+À revoir · {0} / {1}
 Entretien · 100% de réussite · {0}
-Position critique · {0}% d'erreur
+Position critique · maîtrise {0} / 100
 À réviser · {0}
-À consolider · {0}% d'erreur · {1}
+À consolider · maîtrise {0} / 100 · {1}
 Aucune position dans ce répertoire.
 Mise en situation…
 Toucher pour passer
@@ -2194,12 +2200,17 @@ Fin de la variante.
 ✓ Fin de la variante.
 Aucune solution connue pour cette position.
 Jouez-le pour continuer (aucune réussite comptée).
-Aucune réussite comptée.
+Acquise : elle sort de la file À revoir.
+À revoir : {0} / {1} · trop tôt pour avancer
+À revoir : {0} / {1} · {2}
+Maîtrise : {0} → {1}
 ✓ Bien joué !
-Toujours à 100 % de réussite.
-Taux d'erreur : {0} % → {1} %
-Elle reviendra en fin de séance.
-Taux d'erreur : {0} %. {1}Réessayez, ou appuyez sur Indice.
+Deuxième passage : rien de plus n’est compté.
+Aucune réussite comptée.
+✓ Bon coup
+L’erreur est déjà comptée pour ce passage.
+Elle passe dans la file À revoir.
+{0}Réessayez, ou appuyez sur Indice.
 ✗ Ce n'est pas le coup de la solution
 Réessayez.
 Revoir les {0} erreurs
@@ -2267,6 +2278,8 @@ Réglages du mode libre
 Partir du début de partie
 Contre-la-montre
 · {0} position{1}
+{0} dans la file · {1} réussites espacées pour en sortir
+Prochaine {0}
 Aucune position fragile ni à retravailler
 Aucune ouverture reconnue
 Aucune position à confirmer
@@ -2275,7 +2288,6 @@ pas encore de record
 3 min · {0}
 Exercices
 {0} à confirmer
-Maîtrise
 {0} position{1}
 La plus en retard
 Point faible

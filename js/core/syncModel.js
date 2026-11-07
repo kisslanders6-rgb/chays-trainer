@@ -7,7 +7,7 @@
  * Unité de synchronisation = une clé de stockage (un « document » JSON).
  *   chessTrainer_repertoires     'list'      noms des répertoires
  *   chessTrainer_repNotes        'notes'     répertoire → { v: description, at: date } : la plus récente l'emporte
- *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due?, created?, prio? }
+ *   openingDB_{rép}_{couleur}    'db'        position → { move, san, attempts, failures, path?, ply?, lastReviewed?, interval?, due?, created?, prio?, relearn?, mastery? }
  *   openingOpp_{rép}_{couleur}   'opp'       position → [coups UCI adverses connus]
  *   chessTrainer_trash           'trash'     [{ id, type, deletedAt, … }]
  *   chessTrainer_endgames        'endgames'  exercice → { tries, wins, perfect, best, last }
@@ -131,6 +131,12 @@ const SyncModel = (function () {
         // Priorité : celle du passage le plus récent (elle est levée par une réussite) ; sinon l'une ou l'autre.
         const prio = num(l.lastReviewed) === num(r.lastReviewed) ? Math.max(num(l.prio), num(r.prio)) : num(s.prio);
         if (prio > 0) out.prio = prio;
+        // File « À revoir » et score : ceux du passage le plus récent ; égalité → le plus prudent (dans la file, score le plus bas).
+        const tie = num(l.lastReviewed) === num(r.lastReviewed);
+        const least = key => { const v = [l[key], r[key]].filter(Number.isFinite); return v.length ? Math.min(...v) : undefined; };
+        const relearn = tie ? least('relearn') : s.relearn, mastery = tie ? least('mastery') : s.mastery;
+        if (Number.isFinite(relearn)) out.relearn = relearn;
+        if (Number.isFinite(mastery)) out.mastery = mastery;
         return out;
     }
 

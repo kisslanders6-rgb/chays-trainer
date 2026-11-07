@@ -791,7 +791,7 @@
 .tp-back { height: var(--tap); }
 .st-facts { display: none; }
 @media (min-width: 920px) {
-    .st-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; width: 100%; max-width: 580px; margin-bottom: 10px;
+    .st-facts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1px; width: 100%; max-width: 580px; margin-bottom: 10px;
         border: 1px solid var(--border); border-radius: 14px; background: var(--border); overflow: hidden; }
     .st-facts > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 14px; background: var(--surface); }
     .st-facts span { font-family: var(--font-note); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }

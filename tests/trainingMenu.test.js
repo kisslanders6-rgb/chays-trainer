@@ -205,6 +205,58 @@ async function boot() {
         assert.strictEqual(w.eval('navCursor'), -1, 'l\'Indice ramène au présent');
         assert.strictEqual(w.eval('moveHistory.length'), len);
         assert(/^Indice/.test($('#status-text .status-title').textContent), 'indice de la position en cours');
+        const tok = i => $(`#moves-bar .move-token[data-i="${i}"]`);
+        assert(!$('#moves-bar').classList.contains('locked'), 'coups cliquables en séance');
+        tok(0).click();
+        assert.strictEqual(w.eval('navCursor'), 0, 'clic sur un coup : position après ce coup');
+        assert($('#moves-bar .move-token.active').dataset.i === '0');
+        assert.strictEqual(w.eval('moveHistory.length'), len, 'séance non tronquée');
+        tok(len - 1).click();
+        assert.strictEqual(w.eval('navCursor'), -1, 'clic sur le dernier coup : retour au présent');
+        assert(/^À vous de jouer/.test($('#status-text .status-title').textContent), 'consigne revenue');
+        w.eval('trainingState.busy = true');
+        tok(0).click();
+        assert.strictEqual(w.eval('navCursor'), -1, 'rien pendant un coup adverse');
+        w.eval('trainingState.busy = false');
+        w.eval('quitTraining()');
+    });
+
+    await t('une seule note par passage : essais suivants et réussite finale ne comptent pas ; deuxième passage sans note', async () => {
+        seed({ dueIn: -1, lastOnly: true });
+        w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining(); startTrainingExercise('due')`);
+        $('#board-pill').click();
+        const entry = () => w.eval('openingDB[positionKey()]');
+        const key = w.eval('positionKey()'), { attempts, failures } = entry();
+        const answer = uci => w.eval(`answerTrainingMove(openingDB[positionKey()], squareToIdx('${uci.slice(0, 2)}'), squareToIdx('${uci.slice(2, 4)}'), null, '${uci}')`);
+        const right = entry().move, bad = right === 'a2a3' ? 'h2h3' : 'a2a3';
+        answer(bad); answer(bad); answer(bad);
+        assert.strictEqual(entry().attempts, attempts + 1, 'trois mauvais coups : un essai');
+        assert.strictEqual(entry().failures, failures + 1, 'trois mauvais coups : une erreur');
+        assert.strictEqual(entry().relearn, 0, 'entrée dans la file À revoir');
+        const after = entry(), snap = [after.attempts, after.failures, after.mastery, after.relearn, after.due].join();
+        answer(right);
+        const e = w.eval(`readDBFor(currentRepertoire, playerColor)['${key.replace(/'/g, "\\'")}']`);
+        assert.strictEqual([e.attempts, e.failures, e.mastery, e.relearn, e.due].join(), snap, 'la réussite finale ne change rien');
+        const S = w.eval('trainingState.session');
+        assert(S.items.some(x => x.second && x.key === key), 'la position revient en fin de séance');
+        w.eval('quitTraining()');
+    });
+
+    await t('exercice À revoir : positions de la file à échéance seulement, chiffre dans le menu', async () => {
+        w.eval(`switchHomeTab('training')`);
+        seed({ dueIn: 3 });
+        const db = w.eval(`readDBFor(currentRepertoire, 'w')`), keys = Object.keys(db);
+        db[keys[0]].relearn = 1; db[keys[0]].due = Date.now() - 1000;
+        db[keys[1]].relearn = 0; db[keys[1]].due = Date.now() + 864e5;
+        w.localStorage.setItem(w.eval(`dbKeyFor(currentRepertoire, 'w')`), JSON.stringify(db));
+        w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining()`);
+        const row = $('.trr-row[data-focus="relearn"]');
+        assert(row && !row.disabled, 'la ligne À revoir apparaît');
+        assert.strictEqual(row.querySelector('.trr-n').textContent, '1', 'une seule à échéance');
+        assert(/2 dans la file/.test(row.textContent));
+        w.eval(`startTrainingExercise('relearn')`);
+        assert.strictEqual(w.eval('trainingState.session.items.length'), 1);
+        assert.strictEqual(w.eval('trainingState.session.items[0].key'), keys[0]);
         w.eval('quitTraining()');
     });
 
