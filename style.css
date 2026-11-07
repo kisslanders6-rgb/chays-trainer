@@ -1832,6 +1832,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     .board-controls .controls-main { flex: 1 1 auto; width: auto; min-width: 0; }
     .board-controls .controls-main .btn { min-height: 48px; height: 48px; }
     .board-controls .controls-main .btn-nav { flex: 0 0 48px; }
+    .board-controls .tb-prev, .board-controls .tb-next { touch-action: none; }
     .board-controls .controls-tools { flex: none; width: auto; gap: 2px; padding-left: 8px; border-left: 1px solid var(--border); justify-content: flex-end; }
     .board-controls .btn-tool { flex: none; width: 44px; height: 48px; min-height: 48px; max-width: none; padding: 0; justify-content: center; }
     .board-controls .btn-tool .ico { width: 19px; height: 19px; }
@@ -2317,11 +2318,39 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     .board-controls .btn-grow { order: 0; flex: 20 1 0; font-size: 12px; }
     .hint-off { display: none; }                      /* « Indice » grisé suffit ici, la raison reste en infobulle */
 
-    .side-panel { padding-bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+    /* Échiquier posé sur la barre : la lecture (progression, consigne, coups) en haut, juste au-dessus de lui ;
+       l'échiquier et ses pièces prises tout en bas, sur la barre fixée. La main ne cache que l'échiquier. */
+    .game-main { padding-bottom: calc(var(--thumb-h) + env(safe-area-inset-bottom, 0px)); }
+    .board-col { display: contents; }
+    .board-col > * { flex-shrink: 0; }
+    .board-col > .tr-progress { order: -3; }
+    /* Petit téléphone : l'échiquier rétrécit pour que la lecture tienne au-dessus (--read-h) sans passer sous la barre */
+    #game-screen { --read-h: 164px; }
+    #game-screen[data-mode="endgame"] { --read-h: 244px; }                      /* la carte de l'exercice en plus */
+    .board-col > .cap-row, .board-col > .board-wrap {
+        width: min(100%, max(240px, calc(100dvh - var(--topnav-h) - var(--thumb-h) - env(safe-area-inset-bottom, 0px) - 48px - var(--read-h))));
+    }
+    .board-col > .cap-top { order: 1; }
+    .board-col > .board-wrap { order: 2; }
+    .board-col > .cap-bot { order: 3; }
+    .side-panel:not(.open) {
+        order: -2; flex: none; margin-top: auto; gap: 6px; padding: 8px 10px 0;
+        background: none; border: 0; border-radius: 0; box-shadow: none;
+    }
+    /* Lecture trop haute (carte d'une finale sur petit écran) : elle défile en elle-même, l'échiquier reste entier */
+    #game-screen:not(.is-analysis) .game-main { max-height: calc(100dvh - var(--topnav-h)); min-height: 0; }
+    #game-screen:not(.is-analysis) .side-panel:not(.open) { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .side-panel:not(.open) > * { flex-shrink: 0; }
+    .side-panel:not(.open) .sheet-handle { order: 9; height: 18px; padding: 6px 0; }   /* entre la lecture et l'échiquier : glisser vers le haut ouvre la fiche */
     .side-panel.open { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .game-main:has(> .side-panel.open) .cap-top { margin-top: auto; }          /* fiche ouverte : l'échiquier reste où il était */
+    /* Analyse : le brouillon est trop haut pour tenir au-dessus ; il reste sous l'échiquier (Ergonomie, lot 5) */
+    #game-screen.is-analysis .side-panel:not(.open) { order: 4; margin-top: 0; }
+    #game-screen.is-analysis .side-panel:not(.open) .sheet-handle { order: -2; }
+    .board-controls .tb-prev, .board-controls .tb-next { touch-action: none; }      /* glisser sur ‹ › parcourt les coups (initNavSwipe) */
     body:has(#game-screen:not(.hidden)) .toast { bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
 
-    /* Barre de coups, tiroir fermé : le glissement horizontal parcourt les coups (initMovesSwipe), la page défile encore */
+    /* Barre de coups, fiche fermée : le glissement horizontal parcourt les coups (initMovesSwipe), la page défile encore */
     .side-panel:not(.open) .moves-bar { touch-action: pan-y; }
 
     /* Accueil : l'action principale, juste au-dessus des onglets ; le contenu ne passe pas dessous */
@@ -2331,6 +2360,12 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     }
     .setup-screen:has(#home-tab-play:not(.hidden)):has(.hp-dock:not([hidden])) { padding-bottom: calc(62px + 66px + 24px + env(safe-area-inset-bottom, 0px)); }
     .hp-ctas:empty { display: none; }
+}
+@media (max-width: 599px) and (max-height: 760px) {
+    /* Lecture resserrée : consigne et coups sur moins de hauteur, l'échiquier garde le plus de place possible */
+    .side-panel:not(.open) .status-bar { padding-block: 5px; min-height: 0; }
+    .side-panel:not(.open) .moves-bar { padding: 6px 10px; min-height: 0; }
+    .side-panel:not(.open) .sheet-handle { height: 14px; padding: 4px 0; }
 }
 
 /* Tablette et téléphone en paysage : même barre fixée, sur une seule rangée. Paysage bas : l'échiquier laisse sa place à la barre,

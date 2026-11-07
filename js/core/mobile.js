@@ -7,8 +7,9 @@
  *     iPhone/iPad : mode d'emploi, Safari n'offre pas d'invite)
  *   - raccourcis de l'icône d'appli : /?tab=stats, /?tab=training…
  *   - petite vibration sur un coup refusé (Android ; suit le réglage « Effets sonores »)
- *   - tiroir du panneau de jeu sous l'échiquier (écrans < 600 px) : toucher la poignée ou glisser
- *   - barre de coups (écrans < 600 px, tiroir fermé) : glisser le doigt pour reculer ou avancer d'un coup à la fois
+ *   - fiche du panneau de jeu (écrans < 600 px) : poignée entre la lecture et l'échiquier, toucher ou glisser vers le haut
+ *   - barre de coups (écrans < 600 px, fiche fermée) : glisser le doigt pour reculer ou avancer d'un coup à la fois
+ *   - ‹ › de la barre fixée (écrans < 920 px) : glisser le pouce pour parcourir les coups
  *   - menu « Plus » de la barre d'icônes : actions secondaires (.tb-more), pour des boutons assez larges
  */
 
@@ -58,8 +59,8 @@ async function installApp() {
     updateInstallRow();
 }
 
-// ─── TIROIR DU PANNEAU DE JEU (mobile) ────────────────────────────────────────
-// Fermé : statut + coups sur une ligne, sous l'échiquier. Ouvert : feuille plein écran (arbre, théorie…).
+// ─── FICHE DU PANNEAU DE JEU (mobile) ─────────────────────────────────────────
+// Fermée : statut + coups sur une ligne, au-dessus de l'échiquier. Ouverte : fiche qui monte du bas (arbre, théorie…).
 let _sheetBackdrop = null;
 
 function setSheetOpen(open) {
@@ -134,6 +135,39 @@ document.addEventListener('keydown', e => {
     bar.addEventListener('click', e => {                  // le clic qui suit un glissement ne choisit pas de coup
         if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
     }, true);
+})();
+
+// ─── ‹ › : GLISSER POUR PARCOURIR LES COUPS ────────────────────────────────────
+// Sur la barre fixée (téléphone, tablette), le pouce est déjà sur ‹ › : le glisser vers la droite avance, vers la
+// gauche recule, un coup tous les 26 px comme sur la barre de coups. Un simple toucher reste un clic.
+(function initNavSwipe() {
+    const STEP = 26, START = 10;
+    ['btn-prev', 'btn-next'].forEach(idBtn => {
+        const btn = document.getElementById(idBtn);
+        if (!btn) return;
+        let id = null, x0 = 0, moved = false;
+        btn.addEventListener('pointerdown', e => {
+            moved = false;
+            if (e.pointerType === 'mouse' || !matchMedia('(max-width: 919px)').matches) return;
+            id = e.pointerId; x0 = e.clientX;
+        });
+        btn.addEventListener('pointermove', e => {
+            if (id === null || e.pointerId !== id) return;
+            if (!moved) {
+                if (Math.abs(e.clientX - x0) < START) return;
+                moved = true;
+                try { btn.setPointerCapture(id); } catch (err) { /* doigt déjà levé */ }
+            }
+            while (e.clientX - x0 >= STEP)  { x0 += STEP; navNext(); }
+            while (e.clientX - x0 <= -STEP) { x0 -= STEP; navPrev(); }
+        });
+        const end = () => { id = null; };
+        btn.addEventListener('pointerup', end);
+        btn.addEventListener('pointercancel', end);
+        btn.addEventListener('click', e => {              // le clic qui suit un glissement ne fait pas un pas de plus
+            if (moved) { e.stopImmediatePropagation(); e.preventDefault(); moved = false; }
+        }, true);
+    });
 })();
 
 // ─── BARRE D'ICÔNES : MENU « PLUS » (mobile) ──────────────────────────────────

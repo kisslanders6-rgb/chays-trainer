@@ -112,7 +112,7 @@ async function boot(phone) {
     await t('Corriger passe dans « Plus » ; la barre et sa place sont déclarées', () => {
         const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
         assert(/class="btn btn-tool tb-more" onclick="undoMove\(\)"/.test(html));
-        assert(/\.side-panel \{ padding-bottom: calc\(var\(--thumb-h\)/.test(css));
+        assert(/\.game-main \{ padding-bottom: calc\(var\(--thumb-h\)/.test(css), "l'échiquier se pose sur la barre (Ergonomie, lot 2)");
     });
     await t('aucune erreur', () => assert.deepStrictEqual(errors, []));
     console.log(`\n${n} tests réussis.`);

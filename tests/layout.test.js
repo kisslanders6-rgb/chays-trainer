@@ -118,6 +118,25 @@ t('écran de jeu : Indice éteint jamais plein, Quitter à l\'opposé du › sur
     assert(!/board-pill/.test(css + fs.readFileSync('index.html', 'utf8')), 'plus de pastille sur l\'échiquier');
 });
 
+t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur ‹ › (Ergonomie, lot 2)', () => {
+    const css = fs.readFileSync('style.css', 'utf8');
+    const i = css.indexOf('.hp-dock { display: none; }'), thumb = css.slice(i, css.indexOf('/* Tablette et téléphone en paysage', i));
+    assert(/\.board-col \{ display: contents; \}/.test(thumb), 'les enfants de .board-col se rangent dans .game-main');
+    assert(/\.board-col > \.tr-progress \{ order: -3; \}/.test(thumb), 'progression tout en haut');
+    assert(/\.side-panel:not\(\.open\) \{\s+order: -2; flex: none; margin-top: auto;/.test(thumb), 'consigne et coups juste au-dessus de l\'échiquier');
+    assert(/\.board-col > \.cap-top \{ order: 1; \}/.test(thumb) && /\.board-col > \.cap-bot \{ order: 3; \}/.test(thumb), 'échiquier et pièces prises en bas');
+    assert(/\.game-main \{ padding-bottom: calc\(var\(--thumb-h\)/.test(thumb), 'l\'échiquier se pose sur la barre, jamais dessous');
+    assert(/var\(--read-h\)\)\)\);/.test(thumb) && /data-mode="endgame"\] \{ --read-h:/.test(thumb), 'petit écran : l\'échiquier rétrécit selon la lecture du mode');
+    assert(/#game-screen\.is-analysis \.side-panel:not\(\.open\) \{ order: 4;/.test(thumb), 'Analyse : brouillon sous l\'échiquier');
+    assert(/\.game-main:has\(> \.side-panel\.open\) \.cap-top \{ margin-top: auto; \}/.test(thumb), 'fiche ouverte : l\'échiquier ne bouge pas');
+    assert(/\.tb-prev, \.board-controls \.tb-next \{ touch-action: none; \}/.test(thumb));
+    const app = fs.readFileSync('js/app.js', 'utf8');
+    assert(/gs\.dataset\.mode = gameMode/.test(app), 'applyModeUI pose data-mode sur #game-screen');
+    const mob = fs.readFileSync('js/core/mobile.js', 'utf8');
+    assert(/function initNavSwipe\(\)[\s\S]{0,1200}\['btn-prev', 'btn-next'\][\s\S]{0,1200}x0 >= STEP\)  \{ x0 \+= STEP; navNext\(\); \}/.test(mob),
+        'glisser vers la droite sur ‹ › avance');
+});
+
 t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule action qui lance la Révision du jour', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     const play = html.slice(html.indexOf('<div id="home-tab-play"'), html.indexOf('<!-- Onglet Statistiques -->'));

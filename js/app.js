@@ -389,6 +389,8 @@ function applyModeUI() {
     document.querySelectorAll('[data-modes-not]').forEach(el => {
         el.style.display = el.dataset.modesNot.split(',').includes(gameMode) ? 'none' : '';
     });
+    const gs = document.getElementById('game-screen');
+    if (gs) gs.dataset.mode = gameMode;                            // la mise en page sur téléphone en dépend (style.css)
     if (typeof _applySideTab === 'function') _applySideTab();     // l'arbre n'est disponible qu'en mode Jouer
     if (document.getElementById('topnav-tabs-setup').classList.contains('in-game')) _gameTabs(true);     // onglet du mode
     if (typeof Suite !== 'undefined') Suite.refresh();
