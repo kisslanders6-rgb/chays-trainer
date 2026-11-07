@@ -132,7 +132,6 @@ t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur �
     assert(/\.board-col > \.cap-top \{ order: 1; \}/.test(thumb) && /\.board-col > \.cap-bot \{ order: 3; \}/.test(thumb), 'échiquier et pièces prises en bas');
     assert(/\.game-main \{ padding-bottom: calc\(var\(--thumb-h\)/.test(thumb), 'l\'échiquier se pose sur la barre, jamais dessous');
     assert(/var\(--read-h\)\)\)\);/.test(thumb) && /data-mode="endgame"\] \{ --read-h:/.test(thumb), 'petit écran : l\'échiquier rétrécit selon la lecture du mode');
-    assert(/#game-screen\.is-analysis \.side-panel:not\(\.open\) \{ order: 4;/.test(thumb), 'Analyse : brouillon sous l\'échiquier');
     assert(/\.game-main:has\(> \.side-panel\.open\) \.cap-top \{ margin-top: auto; \}/.test(thumb), 'fiche ouverte : l\'échiquier ne bouge pas');
     assert(/\.tb-prev, \.board-controls \.tb-next \{ touch-action: none; \}/.test(thumb));
     const app = fs.readFileSync('js/app.js', 'utf8');
@@ -140,6 +139,19 @@ t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur �
     const mob = fs.readFileSync('js/core/mobile.js', 'utf8');
     assert(/function initNavSwipe\(\)[\s\S]{0,1200}\['btn-prev', 'btn-next'\][\s\S]{0,1200}x0 >= STEP\)  \{ x0 \+= STEP; navNext\(\); \}/.test(mob),
         'glisser vers la droite sur ‹ › avance');
+});
+
+t('pages et ordinateur (Ergonomie, lot 5)', () => {
+    const scr = fs.readFileSync('css/screens.css', 'utf8'), css = fs.readFileSync('style.css', 'utf8'), home = fs.readFileSync('css/home.css', 'utf8');
+    assert(/#home-tab-stats > \.st-scope, #home-tab-training > \.st-scope \{ flex-wrap: nowrap; \}/.test(scr), 'Statistiques et Entraînement : puce et capsule sur une ligne');
+    assert(/#home-tab-stats \.st-go \{ display: none; \}/.test(scr), 'Statistiques : l\'action passe au centre du dock');
+    assert(/\.eg-sec:not\(\.is-open\) :is\(\.eg-sec-desc, \.eg-list\) \{ display: none; \}/.test(scr), 'Finales : catégories repliables');
+    assert(/#game-screen\.is-analysis \.side-panel:not\(\.open\) \.ab-line:nth-child\(n\+3\)/.test(css) && /data-mode="analysis"\] \{ --read-h:/.test(css), 'Analyse : deux lignes au-dessus');
+    assert(/#game-rep:has\(> \.rp-chip:disabled\), #game-side:has\(> \.cs-locked\) \{ display: none; \}/.test(css), 'puce et capsule verrouillées cachées');
+    assert(/\.board-controls \.controls-main \.btn\.tb-hint:disabled \{ flex: 0 0 48px;/.test(css), 'Indice éteint : icône');
+    assert(/\.topnav:has\(#topnav-tabs-game:not\(\[style\*="none"\]\)\) \.topnav-pill > \.theme-toggle:not\(#palette-btn\):not\(\.me-btn\) \{ display: none; \}/.test(home), 'en partie : loupe et Moi');
+    const eg = fs.readFileSync('js/modules/endgame/endgame.js', 'utf8');
+    assert(/egToggle: id => toggleEndgameCategory\(id\)/.test(eg) && /aria-expanded="\$\{open\}"/.test(eg));
 });
 
 t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule action qui lance la Révision du jour', () => {

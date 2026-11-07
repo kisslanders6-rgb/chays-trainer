@@ -1793,6 +1793,11 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 
 /* ─── Indice indisponible (position inconnue, trait adverse) : jamais plein, la raison est dans l'infobulle ─── */
 .btn.tb-hint:disabled { background: transparent; border-color: var(--border); color: var(--text-dim); box-shadow: none; opacity: 1; cursor: default; }
+/* Ordinateur (Ergonomie, lot 5) : un Indice éteint devient une icône discrète, la raison reste en infobulle */
+@media (min-width: 920px) {
+    .board-controls .controls-main .btn.tb-hint:disabled { flex: 0 0 48px; width: 48px; min-width: 0; padding: 0; border-color: transparent; }
+    .board-controls .controls-main .btn.tb-hint:disabled .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
 
 /* ─── Suites adverses (renderOppSuites, moveStats.js) ─── */
 .opp-suites { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 580px; min-width: 0; }
@@ -2329,6 +2334,7 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     /* Petit téléphone : l'échiquier rétrécit pour que la lecture tienne au-dessus (--read-h) sans passer sous la barre */
     #game-screen { --read-h: 164px; }
     #game-screen[data-mode="endgame"] { --read-h: 244px; }                      /* la carte de l'exercice en plus */
+    #game-screen[data-mode="analysis"] { --read-h: 236px; }                     /* deux lignes du moteur */
     .board-col > .cap-row, .board-col > .board-wrap {
         width: min(100%, max(240px, calc(100dvh - var(--topnav-h) - var(--thumb-h) - env(safe-area-inset-bottom, 0px) - 48px - var(--read-h))));
     }
@@ -2340,15 +2346,16 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
         background: none; border: 0; border-radius: 0; box-shadow: none;
     }
     /* Lecture trop haute (carte d'une finale sur petit écran) : elle défile en elle-même, l'échiquier reste entier */
-    #game-screen:not(.is-analysis) .game-main { max-height: calc(100dvh - var(--topnav-h)); min-height: 0; }
-    #game-screen:not(.is-analysis) .side-panel:not(.open) { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .game-main { max-height: calc(100dvh - var(--topnav-h)); min-height: 0; }
+    .side-panel:not(.open) { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .side-panel:not(.open) > * { flex-shrink: 0; }
     .side-panel:not(.open) .sheet-handle { order: 9; height: 18px; padding: 6px 0; }   /* entre la lecture et l'échiquier : glisser vers le haut ouvre la fiche */
     .side-panel.open { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
     .game-main:has(> .side-panel.open) .cap-top { margin-top: auto; }          /* fiche ouverte : l'échiquier reste où il était */
-    /* Analyse : le brouillon est trop haut pour tenir au-dessus ; il reste sous l'échiquier (Ergonomie, lot 5) */
-    #game-screen.is-analysis .side-panel:not(.open) { order: 4; margin-top: 0; }
-    #game-screen.is-analysis .side-panel:not(.open) .sheet-handle { order: -2; }
+    /* Analyse (lot 5) : deux lignes du moteur au-dessus de l'échiquier ; le brouillon et la 3e ligne dans la fiche */
+    #game-screen.is-analysis .side-panel:not(.open) .ab-draft,
+    #game-screen.is-analysis .side-panel:not(.open) .ab-line:nth-child(n+3) { display: none; }
+    #game-screen.is-analysis .side-panel:not(.open) .ab-pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .board-controls .tb-prev, .board-controls .tb-next { touch-action: none; }      /* glisser sur ‹ › parcourt les coups (initNavSwipe) */
     body:has(#game-screen:not(.hidden)) .toast { bottom: calc(var(--thumb-h) + 12px + env(safe-area-inset-bottom, 0px)); }
 
@@ -2361,14 +2368,15 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     /* Centre du dock, hors partie et en partie : le seul rond plein de l'écran */
     .nav-center, .board-controls .dock-center { flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; color: var(--text); cursor: pointer; }
     .nav-center { border: 0; background: none; padding: 0 4px; }
-    .dock-orb { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%;
+    .board-controls .dock-center { padding: 0; }                                 /* rond + libellé tiennent dans les 56 px de la barre */
+    .dock-orb { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 50%;
         background: var(--accent); color: var(--accent-text); box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 35%, transparent); }
     .dock-orb .ico { width: 20px; height: 20px; }
     .dock-orb b { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
     [data-tone="soft"] > .dock-orb { background: var(--accent-soft); color: var(--accent); border: 1.5px solid var(--accent-line); box-shadow: none; }
     [data-tone="warn"] > .dock-orb { background: color-mix(in oklab, #e6b443 24%, var(--surface)); color: var(--text); border: 1.5px solid color-mix(in oklab, #e6b443 60%, var(--border)); box-shadow: none; }
     [data-tone="err"] > .dock-orb { background: var(--err); color: #fff; box-shadow: none; }
-    .dock-l { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 700; color: var(--text); }
+    .dock-l { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; line-height: 13px; font-weight: 700; color: var(--text); }
     .nav-center:active .dock-orb, .board-controls .dock-center:active .dock-orb { transform: scale(.94); }
 
     /* En partie : ✕ à la place du logo (Dock.exit) ; l'aperçu des Statistiques garde son retour */
@@ -2387,6 +2395,9 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     .side-panel:not(.open) .moves-bar { padding: 6px 10px; min-height: 0; }
     .side-panel:not(.open) .sheet-handle { height: 14px; padding: 4px 0; }
 }
+
+/* Barre du haut en partie (Ergonomie, lot 5) : puce et capsule seulement quand elles sont utilisables */
+#game-rep:has(> .rp-chip:disabled), #game-side:has(> .cs-locked) { display: none; }
 
 /* Fiche Moi (Ergonomie, lot 4, meSheet.js) : monte du bas, à portée du pouce */
 .me-backdrop { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0, 0, 0, .35); }
@@ -2417,6 +2428,15 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 .me-silhouette { display: grid; place-items: center; width: var(--size, 28px); height: var(--size, 28px); border-radius: 50%; background: var(--bg-inset); color: var(--text-muted); }
 .me-silhouette .ico { width: 56%; height: 56%; }
 @media (prefers-reduced-motion: reduce) { .me-sheet, .me-sheet.open { transition: none; } }
+/* Ordinateur et tablette, en partie (lot 5) : la fiche Moi s'ouvre en panneau sous le bouton, en haut à droite */
+@media (min-width: 600px) {
+    .me-sheet { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(var(--topnav-h, 56px) + 8px); bottom: auto; width: 340px;
+        max-height: calc(100dvh - var(--topnav-h, 56px) - 24px); padding-bottom: 16px; border-bottom: 1px solid var(--border); border-radius: 18px; transform: translateY(-8px); opacity: 0;
+        transition: transform .16s var(--ease-out, ease-out), opacity .16s, visibility 0s .16s; }
+    .me-sheet.open { transform: none; opacity: 1; transition: transform .16s var(--ease-out, ease-out), opacity .16s; }
+    .me-grab { display: none; }
+    .me-backdrop { background: transparent; }
+}
 
 /* Tablette et téléphone en paysage : même barre fixée, sur une seule rangée. Paysage bas : l'échiquier laisse sa place à la barre,
    jusqu'à 1100 px (un grand téléphone en paysage dépasse 920 px, où l'échiquier ne descend pas sous 512 px). */

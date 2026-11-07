@@ -118,6 +118,7 @@ function switchHomeTab(tab) {
     if (tab === 'stats')    initStats();
     if (tab === 'training') initTraining();
     if (tab === 'endgame')  initEndgame();
+    if (typeof Dock !== 'undefined') Dock.refresh();     // centre du dock : l'action de la page (téléphone)
 }
 
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────

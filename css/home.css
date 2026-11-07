@@ -109,6 +109,10 @@
 }
 /* Fiche Moi (Ergonomie, lot 4) : sur téléphone, la loupe et le bouton Moi remplacent Compte, Paramètres, Aide et thème */
 .topnav-pill > .me-btn { display: none; }
+/* Ordinateur, en partie (lot 5) : loupe et Moi aussi ; ⌘F, « , » et « ? » restent */
+.topnav:has(#topnav-tabs-game:not([style*="none"])) .topnav-pill > .theme-toggle:not(#palette-btn):not(.me-btn) { display: none; }
+.topnav:has(#topnav-tabs-game:not([style*="none"])) .topnav-pill > .me-btn { display: grid; place-items: center; padding: 0; }
+.me-btn .avatar, .me-btn .me-silhouette { --size: 26px; }
 @media (max-width: 599px) {
     .topnav-pill > .theme-toggle:not(#palette-btn):not(.me-btn) { display: none; }
     .topnav-pill > .me-btn { display: grid; place-items: center; padding: 0; }

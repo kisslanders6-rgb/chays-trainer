@@ -5,7 +5,8 @@
  * mêmes places, dont le centre porte la prochaine action et n'est jamais désactivé.
  *   Hors partie (#topnav-tabs-setup) : Jouer · Statistiques · centre · Entraînement · Finales.
  *     Centre : la capsule Suite (Revoir, Réviser, Traiter, À jour) et, sans elle, l'action pleine de l'accueil
- *     (#hp-today .hp-cta, cachée sur téléphone) ; à défaut, Entraînement.
+ *     (#hp-today .hp-cta, cachée sur téléphone) ; à défaut, Entraînement. Sur Statistiques et Entraînement, l'action
+ *     principale de la page (.st-go, _trPrimary, « Commencer » de la finale à suivre), cachée ou atténuée sur téléphone (lot 5).
  *   En partie (.board-controls) : Retourner · ‹ · centre · › · Plus.
  *     Centre selon le mode : Sauter (mise en situation), Annuler (reçu d'un coup enregistré), Indice, sinon
  *     Arbre (Jouer), Passer (Entraînement), Recommencer (Finales) ; S'entraîner (aperçu) ; Ajouter (N) ou Brouillon (Analyse).
@@ -41,7 +42,35 @@ const Dock = (function () {
 
     // ─── CENTRE HORS PARTIE ───────────────────────────────────────────────────
     const HOME_LABELS = { retry: 'Revoir', due: 'Réviser', news: 'Traiter', done: 'À jour' };
+    // Statistiques et Entraînement : le centre porte l'action principale de la page (lot 5), cachée ou atténuée sur téléphone.
+    function pageCenter() {
+        const shownTab = id => { const t = document.getElementById(id); return t && !t.classList.contains('hidden') && t.style.display !== 'none'; };
+        if (shownTab('home-tab-stats')) {
+            const b = document.querySelector('#home-tab-stats .st-go');
+            if (b) return b.dataset.arg === 'weak'
+                ? { icon: 'target', label: 'Faiblesses', tone: 'soft', title: 'Points faibles', run: () => b.click() }
+                : { icon: 'play', label: 'Réviser', title: 'Révision du jour', run: () => b.click() };
+        }
+        if (shownTab('home-tab-training')) {
+            const b = [...document.querySelectorAll('#home-tab-training .btn-primary, #home-tab-training .trr-next-row.is-primary')].find(x => x.offsetParent !== null || x.getClientRects().length);
+            if (b) {
+                const a = b.dataset.action, arg = b.dataset.arg;
+                const label = a === 'trainingRetry' ? 'Revoir' : arg === 'due' ? 'Réviser' : 'Commencer';
+                return { icon: a === 'trainingRetry' ? 'rotate-ccw' : 'play', label, tone: a === 'trainingRetry' ? 'err' : '', title: b.textContent.trim().replace(/\s+/g, ' '), run: () => b.click() };
+            }
+        }
+        if (shownTab('home-tab-endgame')) {
+            const b = document.querySelector('#eg-preview .eg-go');
+            if (b) return b.dataset.action === 'egRandom'
+                ? { icon: 'shuffle', label: 'Au hasard', tone: 'soft', title: 'Une finale au hasard', run: () => b.click() }
+                : { icon: 'play', label: 'Commencer', title: 'Commencer la finale à suivre', run: () => b.click() };
+        }
+        return null;
+    }
+
     function homeCenter() {
+        const page = pageCenter();
+        if (page) return page;
         let st = null;
         try { st = typeof Suite !== 'undefined' ? Suite.state() : null; } catch (e) { st = null; }
         if (st && st.kind !== 'live') {

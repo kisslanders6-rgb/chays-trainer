@@ -468,6 +468,7 @@ function initStats() {
     body.insertAdjacentHTML('afterbegin', phoneHead);
     const hs = body.querySelector('.st-heat-scroll');
     if (hs) hs.scrollLeft = hs.scrollWidth;                     // la semaine en cours, à droite
+    if (typeof Dock !== 'undefined') Dock.refresh();             // téléphone : le centre du dock porte l'action de la page
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────

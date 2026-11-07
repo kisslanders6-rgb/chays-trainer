@@ -232,6 +232,15 @@
     .st-seg.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
     .st-seg.seg .seg-btn { padding: 8px 4px; text-align: center; white-space: nowrap; }
     .st-big b { font-size: 46px; }
+    /* Ergonomie, lot 5 : puce et capsule sur une ligne (capsule en pièces seules), action principale au centre du dock */
+    #home-tab-stats > .st-scope, #home-tab-training > .st-scope { flex-wrap: nowrap; }
+    :is(#home-tab-stats, #home-tab-training) > .st-scope .st-rep { flex: 0 1 auto; min-width: 0; }
+    :is(#home-tab-stats, #home-tab-training) > .st-scope .rp-txt small { overflow: hidden; text-overflow: ellipsis; }
+    :is(#home-tab-stats, #home-tab-training) > .st-scope .st-seg { flex: none; min-width: 0; margin-left: auto; }
+    :is(#home-tab-stats, #home-tab-training) > .st-scope .cs-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    :is(#home-tab-stats, #home-tab-training) > .st-scope .cs-opt { padding: 7px 10px; }
+    #home-tab-stats .st-go { display: none; }
+    #home-tab-training .btn-primary { background: var(--accent-soft); border: 1.5px solid var(--accent-line); color: var(--accent); box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .st-cta, .st-line-head > .ico { transition: none; } }
 
@@ -582,6 +591,23 @@
 .eg-st.is-tried { font-family: var(--font-note); font-size: 11.5px; font-weight: 500; color: var(--lv-fragile-ink); white-space: nowrap; }
 .eg-empty { display: flex; flex-direction: column; gap: 4px; padding: 22px; border: 1px dashed var(--border-strong); border-radius: 16px; font-size: 13px; color: var(--text-muted); }
 .eg-empty b { font-family: var(--font-display); font-weight: 600; font-size: 19px; color: var(--text); }
+
+/* Téléphone (Ergonomie, lot 5) : six catégories repliables, anneau en tête ; l'en-tête entier ouvre ou replie */
+.eg-sec-ring, .eg-sec-tg { display: none; }
+@media (max-width: 599px) {
+    .eg-chips, .eg-sec-bar { display: none; }
+    #eg-preview .eg-go { background: var(--accent-soft); border: 1.5px solid var(--accent-line); color: var(--accent); box-shadow: none; }   /* le plein est au centre du dock */
+    .eg-sec { gap: 0; }
+    .eg-sec-h { position: relative; align-items: center; min-height: 56px; }
+    .eg-sec-ring { display: inline-grid; flex: none; }
+    .eg-sec-h h3 { font-size: 18px; }
+    .eg-sec-tg { display: flex; align-items: center; justify-content: flex-end; position: absolute; inset: 0; padding: 0; border: 0; background: none; color: var(--text-muted); cursor: pointer; }
+    .eg-sec-tg .ico { width: 18px; height: 18px; transition: transform .2s; }
+    .eg-sec.is-open .eg-sec-tg .ico { transform: rotate(180deg); }
+    .eg-sec:not(.is-open) :is(.eg-sec-desc, .eg-list) { display: none; }
+    .eg-sec + .eg-sec { border-top: 1px solid var(--border); }
+    .egl-main { gap: 0; }
+}
 
 /* Exercice : carte (à partir de 720 px) */
 @media (min-width: 720px) {

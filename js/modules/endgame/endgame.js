@@ -101,6 +101,8 @@ function _egMini(ex, cls) {
 let egFilter = 'all';
 // Exercice choisi pour l'aperçu de la colonne de droite (bureau) ; null : « À suivre ».
 let egSel = null;
+// Téléphone (Ergonomie, lot 5) : catégories ouvertes ; null : seule celle de l'exercice à suivre ou choisi.
+let egOpen = null;
 
 const _egShown = (prog, e) => egFilter === 'all' || (egFilter === 'done') === _egWon(prog, e);
 
@@ -185,11 +187,13 @@ function initEndgame() {
 
     const sections = visible.map(({ cat, list }) => {
         const full = tracks.find(t => t.cat === cat).list, w = full.filter(e => _egWon(prog, e)).length;
-        return `<section class="eg-sec" id="eg-sec-${escapeHtml(cat.id)}" aria-labelledby="eg-sec-h-${escapeHtml(cat.id)}">
-            <div class="eg-sec-h"><h3 id="eg-sec-h-${escapeHtml(cat.id)}">${escapeHtml(cat.label)}</h3><span class="eg-sec-n">${w} / ${full.length}</span>
-                <span class="eg-sec-bar" aria-hidden="true"><i style="width:${Math.round(100 * w / full.length)}%"></i></span></div>
+        const open = egOpen ? egOpen.has(cat.id) : cat.id === currentCat || (!currentCat && cat === visible[0].cat);
+        return `<section class="eg-sec${open ? ' is-open' : ''}" id="eg-sec-${escapeHtml(cat.id)}" aria-labelledby="eg-sec-h-${escapeHtml(cat.id)}">
+            <div class="eg-sec-h">${Ring.html({ value: w, max: full.length, size: 30, stroke: 9, cls: 'eg-sec-ring', decorative: true })}<h3 id="eg-sec-h-${escapeHtml(cat.id)}">${escapeHtml(cat.label)}</h3><span class="eg-sec-n">${w} / ${full.length}</span>
+                <span class="eg-sec-bar" aria-hidden="true"><i style="width:${Math.round(100 * w / full.length)}%"></i></span>
+                <button type="button" class="eg-sec-tg" data-action="egToggle" data-arg="${escapeHtml(cat.id)}" aria-expanded="${open}" aria-controls="eg-sec-l-${escapeHtml(cat.id)}" aria-label="${escapeHtml(cat.label)}">${ico('chevron-down')}</button></div>
             <p class="eg-sec-desc">${escapeHtml(cat.desc)}</p>
-            <div class="eg-list">${list.map(ex => `<button type="button" class="eg-card${shown && ex.id === shown.id && egSel ? ' is-sel' : ''}" data-action="egPreview" data-arg="${escapeHtml(ex.id)}" aria-haspopup="dialog">
+            <div class="eg-list" id="eg-sec-l-${escapeHtml(cat.id)}">${list.map(ex => `<button type="button" class="eg-card${shown && ex.id === shown.id && egSel ? ' is-sel' : ''}" data-action="egPreview" data-arg="${escapeHtml(ex.id)}" aria-haspopup="dialog">
                 ${_egMini(ex, 'eg-pos')}
                 <span class="eg-card-txt"><b>${escapeHtml(ex.title)}</b>
                     <span class="eg-card-mt">${_egGoalTag(ex)}${_egKing(ex.player)}<span class="sr-only">${EG_SIDE[ex.player]}</span>${_egBudgetText(ex) ? `<span class="eg-card-budget">${escapeHtml(_egBudgetText(ex))}</span>` : ''}</span></span>
@@ -262,6 +266,18 @@ function _egCloseSheet(restore) {
 }
 
 // Puce de catégorie : défile jusqu'à la section.
+// Téléphone : ouvrir ou replier une catégorie, sans redessiner la page.
+function toggleEndgameCategory(id) {
+    const sec = document.getElementById('eg-sec-' + id);
+    if (!sec) return;
+    if (!egOpen) egOpen = new Set([...document.querySelectorAll('#endgame-panel .eg-sec.is-open')].map(s => s.id.slice(7)));
+    const open = !egOpen.has(id);
+    if (open) egOpen.add(id); else egOpen.delete(id);
+    sec.classList.toggle('is-open', open);
+    const tg = sec.querySelector('.eg-sec-tg');
+    if (tg) tg.setAttribute('aria-expanded', String(open));
+}
+
 function jumpEndgameCategory(id) {
     const sec = document.getElementById('eg-sec-' + id);
     if (!sec) return;
@@ -488,6 +504,7 @@ function setEndgameOpponent(policy) {
 }
 
 registerActions({ egFilter: f => { egFilter = f; initEndgame(); }, egRandom: () => startRandomEndgame(), egOpponent: p => setEndgameOpponent(p),
+    egToggle: id => toggleEndgameCategory(id),
     egPreview: id => previewEndgame(id), egCloseSheet: () => _egCloseSheet(true), egJump: id => jumpEndgameCategory(id),
     egTheory: () => { endgameState.theory = !endgameState.theory; renderEndgameCard(); },
     startEndgame: id => startEndgame(id), nextEndgame: () => nextEndgame(), retryEndgame: () => retryEndgame(), undoEndgameMove: () => undoEndgameMove() });

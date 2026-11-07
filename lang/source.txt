@@ -345,6 +345,12 @@ Les deux
 Revoir
 Réviser
 Traiter
+Faiblesses
+Points faibles
+Révision du jour
+Au hasard
+Une finale au hasard
+Commencer la finale à suivre
 Ajouter
 Entraînement
 S'entraîner
@@ -560,11 +566,9 @@ Onglet
 accueil répertoire
 maîtrise régularité progrès
 exercices séance
-Révision du jour
 {0} à réviser aujourd’hui
 Rien à réviser aujourd’hui
 réviser répétition espacée séance
-Points faibles
 Exercice d’Entraînement
 erreurs fragiles
 Jouer les Blancs
@@ -2346,7 +2350,6 @@ Chays
 Trainer
 Supprimer le répertoire
 Données (import / export)
-Au hasard
 Préc.
 Suiv.
 Corriger

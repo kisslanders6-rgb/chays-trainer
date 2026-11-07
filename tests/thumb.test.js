@@ -124,6 +124,20 @@ async function boot(phone) {
         assert(!w.eval('MeSheet.isOpen()'), 'une destination referme la fiche');
         w.eval('closeHelp && closeHelp()');
     });
+    await t('pages : le centre porte l’action de Statistiques et des Finales ; une catégorie de finale se replie', () => {
+        w.eval(`goHome('stats')`);
+        const c = $('#nav-center');
+        if ($('#home-tab-stats .st-go')) assert(/Réviser|Faiblesses/.test(c.textContent), c.textContent);
+        w.eval(`switchHomeTab('endgame')`);
+        assert(/Commencer|Au hasard/.test(c.textContent), c.textContent);
+        const open = w.document.querySelectorAll('#endgame-panel .eg-sec.is-open');
+        assert.strictEqual(open.length, 1, 'une seule catégorie ouverte');
+        const id = open[0].id.slice(7);
+        w.eval(`UI_ACTIONS.egToggle(${JSON.stringify(id)})`);
+        assert.strictEqual(w.document.querySelectorAll('#endgame-panel .eg-sec.is-open').length, 0);
+        assert.strictEqual(open[0].querySelector('.eg-sec-tg').getAttribute('aria-expanded'), 'false');
+        w.eval(`switchHomeTab('play')`);
+    });
     await t('sur ordinateur : rien ne bouge, le centre reste vide', async () => {
         const d = await boot(false);
         d.w.eval('renderHomeSummary()');
