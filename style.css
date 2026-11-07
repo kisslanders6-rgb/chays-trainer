@@ -1797,21 +1797,8 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     border-radius: 14px; color: var(--text-muted); font-size: 13px; }
 .tree-empty.is-blank .ico { width: 16px; height: 16px; }
 
-/* ─── Indice indisponible (position inconnue, trait adverse) : la raison est dans l'infobulle ─── */
-.btn.tb-hint:disabled { opacity: .45; }
-
-/* ─── Pastille posée sur l'échiquier (showBoardPill) : hors du flux, aucune hauteur ajoutée ─── */
-.board-pill {
-    position: absolute; left: 50%; bottom: 14px; z-index: 6; transform: translateX(-50%);
-    max-width: calc(100% - 24px); padding: 9px 16px; border-radius: 999px; pointer-events: none;
-    background: color-mix(in oklab, var(--bg-elevated) 90%, transparent); border: 1px solid var(--border-strong);
-    color: var(--text); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    box-shadow: var(--shadow); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    animation: boardPillIn .2s var(--ease-out, ease-out);
-}
-.board-pill.is-tap { pointer-events: auto; cursor: pointer; min-height: var(--tap); display: inline-flex; align-items: center; }
-@keyframes boardPillIn { from { opacity: 0; transform: translate(-50%, 6px); } }
-@media (prefers-reduced-motion: reduce) { .board-pill { animation: none; } }
+/* ─── Indice indisponible (position inconnue, trait adverse) : jamais plein, la raison est dans l'infobulle ─── */
+.btn.tb-hint:disabled { background: transparent; border-color: var(--border); color: var(--text-dim); box-shadow: none; opacity: 1; cursor: default; }
 
 /* ─── Suites adverses (renderOppSuites, moveStats.js) ─── */
 .opp-suites { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 580px; min-width: 0; }
@@ -2323,6 +2310,7 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     /* Retourner · ‹ action › · le reste : les outils en icônes seules, l'action et les flèches se partagent la place */
     .board-controls .btn-tool { order: 1; flex: 0 0 46px; }
     .board-controls .tb-flip { order: -1; }
+    .board-controls .is-exit { order: -2; margin-right: 8px; }   /* Quitter : à l'opposé du ›, une seule touche suffit à sortir */
     .board-controls .btn-tool .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .board-controls .tb-prev, .board-controls .tb-next { order: 0; flex: 1 0 60px; }
     .board-controls .btn-nav .btn-label { display: none; }

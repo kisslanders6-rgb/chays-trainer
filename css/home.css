@@ -195,7 +195,15 @@
 .hp-tool .ico { width: 16px; height: 16px; fill: none; }
 @media (hover: hover) { .hp-tool:hover { color: var(--text); background: var(--surface); border-color: var(--border); } }
 .hp-tool:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
-@media (max-width: 599px) { .hp-quick { display: none; } }   /* téléphone : la puce seule, comme les autres onglets */
+@media (max-width: 599px) {
+    .hp-quick { display: none; }                  /* téléphone : la puce seule, comme les autres onglets */
+    /* Une seule ligne : la puce cède de la place, outils et ⋮ gardent leurs 44 px */
+    .st-scope.hp-scope { flex-wrap: nowrap; }
+    .hp-scope .st-rep { flex: 0 1 auto; }
+    .hp-scope .hp-tools, .hp-scope .hp-menu { flex: none; }
+    .hp-scope .rp-chip { gap: 8px; padding-right: 8px; }
+    .hp-scope .rp-txt small { overflow: hidden; text-overflow: ellipsis; }
+}
 @media (max-width: 599px) {
     .hp-tool span { display: none; }
     .hp-tool { width: 36px; padding: 0; justify-content: center; }

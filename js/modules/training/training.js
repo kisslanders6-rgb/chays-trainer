@@ -94,7 +94,6 @@ function stopTraining() {
     trainingState.timers = [];
     trainingState.busy   = false;
     trainingState.ctxSkip = null;
-    if (typeof hideBoardPill === 'function') hideBoardPill();
 }
 
 function _inLabel(t) {
@@ -484,7 +483,9 @@ function _startDrill(key, seqLen, opts) {
         const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
         const ctx   = fullPath.slice(start, n);
         loadPositionFromPath(fullPath.slice(0, start));
-        setStatus('Mise en situation…', 'info', ctx.length ? '' : trainingState.reason);
+        setStatus('Mise en situation…', 'info', ctx.length ? '' : trainingState.reason, ctx.length ? {
+            action: 'Sauter', title: 'Passer la mise en situation', run: () => { if (trainingState.ctxSkip) trainingState.ctxSkip(); }
+        } : null);
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
             playMoveSound(m.from, m.to, m.promo);
@@ -499,7 +500,6 @@ function _startDrill(key, seqLen, opts) {
             loadPositionFromPath(fullPath.slice(0, -1));
             _drillReady();
         };
-        if (ctx.length && typeof showBoardPill === 'function') showBoardPill('Toucher pour passer', () => { if (trainingState.ctxSkip) trainingState.ctxSkip(); });
     } else {
         // Dernier recours : aucune ligne connue → position posée directement (historique vide inévitable).
         loadPositionFromPath([]);
@@ -537,7 +537,6 @@ function _positionPosed() {
 
 function _drillReady() {
     trainingState.ctxSkip = null;
-    if (typeof hideBoardPill === 'function') hideBoardPill();
     const key = trainingState.current;
     if (positionKey() !== key) {
         const entry = openingDB[key];

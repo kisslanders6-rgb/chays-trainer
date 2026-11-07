@@ -106,7 +106,16 @@ t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de pannea
     assert(/filter\(n => n !== currentRepertoire\)\.slice\(0, HP_QUICK_MAX\)/.test(app), 'pastilles : les autres répertoires seulement');
     assert(!/à réviser<\/span><span><b>\$\{streak\}/.test(app), '« Aujourd\'hui » ne répète plus les révisions du répertoire');
     const home = fs.readFileSync('css/home.css', 'utf8');
-    assert(/@media \(max-width: 599px\) \{ \.hp-quick \{ display: none; \} \}/.test(home), 'téléphone : la puce seule');
+    assert(/@media \(max-width: 599px\) \{\s*\.hp-quick \{ display: none; \}/.test(home), 'téléphone : la puce seule');
+    assert(/\.st-scope\.hp-scope \{ flex-wrap: nowrap; \}/.test(home), 'téléphone : ⋮ sur la ligne de la puce');
+});
+
+t('écran de jeu : Indice éteint jamais plein, Quitter à l\'opposé du › sur téléphone', () => {
+    const css = fs.readFileSync('style.css', 'utf8');
+    assert(/\.btn\.tb-hint:disabled \{ background: transparent;/.test(css), 'Indice indisponible sans fond plein');
+    const thumb = css.slice(css.indexOf('.hp-dock { display: none; }'));
+    assert(/\.board-controls \.is-exit \{ order: -2;/.test(thumb), 'Quitter avant Retourner, loin du ›');
+    assert(!/board-pill/.test(css + fs.readFileSync('index.html', 'utf8')), 'plus de pastille sur l\'échiquier');
 });
 
 t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule action qui lance la Révision du jour', () => {

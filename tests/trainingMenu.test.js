@@ -1,5 +1,5 @@
 // Lancer : node tests/trainingMenu.test.js   — menu de l'Entraînement « Rampe » (lot 7) : une seule action pleine
-// (_trPrimary), plus de phrases .trx-txt, anneau du bilan, pastille « Toucher pour passer » pendant la mise en
+// (_trPrimary), plus de phrases .trx-txt, anneau du bilan, bouton « Sauter » pendant la mise en
 // situation. Charge index.html entier dans jsdom, comme boot.test.js.
 const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
 const fs = require('fs'), path = require('path'), assert = require('assert');
@@ -162,31 +162,26 @@ async function boot() {
         assert($('.trr-free [data-arg^="maxPlies:"][aria-label="Moins"]').disabled, 'borne basse');
     });
 
-    await t('séance : pastille « Toucher pour passer » pendant la mise en situation, retirée quand la main revient', async () => {
+    await t('séance : bouton « Sauter » dans la barre d\'état pendant la mise en situation, retiré quand la main revient', async () => {
         seed({ dueIn: -1, lastOnly: true });                           // 3. Fc4 : trois demi-coups de mise en situation
-        w.eval(`trainingState.lastSummary = null; _trOpening = null; window.__pill = []; const _s = showBoardPill, _h = hideBoardPill;
-            showBoardPill = (txt, fn) => { __pill.push(['show', txt, typeof fn]); _s(txt, fn); };
-            hideBoardPill = () => { __pill.push(['hide']); _h(); }; initTraining()`);
+        w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining()`);
         w.eval(`startTrainingExercise('due')`);
         assert.strictEqual(w.eval('gameMode'), 'training');
-        const pill = $('#board-pill');
-        assert(!pill.hidden && pill.textContent === 'Toucher pour passer', 'pastille montrée pendant la mise en situation');
-        assert.strictEqual(w.eval('JSON.stringify(__pill.find(x => x[0] === "show"))'), '["show","Toucher pour passer","function"]');
+        const skip = $('#status-bar .status-act');
+        assert(skip && skip.textContent === 'Sauter', 'bouton montré pendant la mise en situation');
         assert.strictEqual($('#status-text').textContent, 'Mise en situation…', 'sans sous-texte redondant');
         assert(/^1 \/ 1$/.test($('#tr-progress .tr-prog-n').textContent), 'compteur « 1 / N »');
-        pill.click();                                                   // passer
-        assert(pill.hidden, 'pastille retirée quand la main revient');
-        assert.strictEqual(w.eval('__pill[__pill.length - 1][0]'), 'hide');
+        skip.click();                                                   // passer
+        assert(!$('#status-bar .status-act'), 'bouton retiré quand la main revient');
         assert(/^À vous de jouer/.test($('#status-text .status-title').textContent));
         assert(/ne compte pas comme une erreur/.test($('.tb-hint').title), 'infobulle de l\'Indice en séance');
         w.eval('quitTraining()');
-        assert(pill.hidden);
     });
 
     await t('séance : ◀ ▶ revoient les coups joués ; toucher l\'échiquier ou l\'Indice ramène au présent sans rien rejouer', async () => {
         seed({ dueIn: -1, lastOnly: true });                           // 3. Fc4 : mise en situation 1. e4 e5 2. Cf3 Cc6
         w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining(); startTrainingExercise('due')`);
-        $('#board-pill').click();                                       // passer la mise en situation
+        $('#status-bar .status-act').click();                                       // passer la mise en situation
         assert.strictEqual(w.eval('trainingState.busy'), false);
         const len = w.eval('moveHistory.length');
         assert(len >= 4, 'coups de contexte dans l\'historique');
@@ -224,7 +219,7 @@ async function boot() {
     await t('une seule note par passage : essais suivants et réussite finale ne comptent pas ; deuxième passage sans note', async () => {
         seed({ dueIn: -1, lastOnly: true });
         w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining(); startTrainingExercise('due')`);
-        $('#board-pill').click();
+        $('#status-bar .status-act').click();
         const entry = () => w.eval('openingDB[positionKey()]');
         const key = w.eval('positionKey()'), { attempts, failures } = entry();
         const answer = uci => w.eval(`answerTrainingMove(openingDB[positionKey()], squareToIdx('${uci.slice(0, 2)}'), squareToIdx('${uci.slice(2, 4)}'), null, '${uci}')`);

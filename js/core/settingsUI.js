@@ -52,8 +52,6 @@ function _settingRows() {
     return {
         apparence: [
             { group: null, kind: 'custom', html: _previewHTML, search: 'aperçu échiquier', preview: true },
-            { group: 'Interface', kind: 'custom', pref: 'lang', label: 'Langue', html: _langHTML, col: true,
-              search: 'langue language idioma sprache ' + Object.values(I18n.LANGS).map(l => l.label).join(' ') },
             { group: 'Interface', kind: 'seg', key: 'theme', label: 'Mode', tip: '« Système » suit le réglage clair / sombre de l’appareil.',
               opts: [['light', 'Clair'], ['dark', 'Sombre'], ['system', 'Système']], value: themeMode() },
             { group: 'Interface', kind: 'custom', pref: 'darkBg', label: 'Ambiance', tip: 'Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.',
@@ -74,7 +72,9 @@ function _settingRows() {
               tip: 'Masque les pièces pour s’entraîner à l’aveugle ; les coups s’écrivent en lettres. Choisir un style de pièces le désactive.', search: 'invisibles aveugle' },
             { group: 'Pièces et flèches', kind: 'custom', pref: 'arrowStyle', label: 'Flèches', tip: 'Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.', html: _arrowsHTML, col: true,
               search: 'style ' + ARROW_STYLE_IDS.map(id => ARROW_STYLE_LABELS[id]).join(' ') },
-            { group: 'Pièces et flèches', kind: 'toggle', key: 'knightArrows', label: 'Cavalier en L', tip: 'Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.', search: 'flèches' }
+            { group: 'Pièces et flèches', kind: 'toggle', key: 'knightArrows', label: 'Cavalier en L', tip: 'Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.', search: 'flèches' },
+            { group: 'Langue', kind: 'custom', pref: 'lang', label: 'Langue', html: _langHTML, col: true,
+              search: 'langue language idioma sprache ' + Object.values(I18n.LANGS).map(l => l.label).join(' ') },
         ],
         jeu: [
             { group: 'Pendant la partie', kind: 'seg', key: 'moveInput', label: 'Déplacer les pièces', opts: [['both', 'Glisser ou cliquer'], ['drag', 'Glisser'], ['click', 'Cliquer']] },

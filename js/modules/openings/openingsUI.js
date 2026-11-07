@@ -209,26 +209,6 @@ function setStatus(msg, type = 'info', detail = '', opts = null) {
     bar.append(btn);
 }
 
-// ─── PASTILLE SUR L'ÉCHIQUIER ─────────────────────────────────────────────────
-// Message court posé sur l'échiquier, hors du flux (aucune hauteur ajoutée) : « Toucher pour passer » pendant
-// la mise en situation de l'Entraînement, par exemple. onTap facultatif : un toucher sur la pastille l'appelle.
-
-function showBoardPill(text, onTap) {
-    const pill = document.getElementById('board-pill');
-    if (!pill) return;
-    pill.textContent = text;
-    pill.onclick = typeof onTap === 'function' ? () => onTap() : null;
-    pill.classList.toggle('is-tap', typeof onTap === 'function');
-    pill.hidden = false;
-}
-
-function hideBoardPill() {
-    const pill = document.getElementById('board-pill');
-    if (!pill) return;
-    pill.hidden = true;
-    pill.onclick = null;
-}
-
 // ─── NAVIGATION VISUELLE (Précédent / Suivant) ────────────────────────────────
 // Ces boutons n'affectent jamais la base ni l'état de jeu réel.
 

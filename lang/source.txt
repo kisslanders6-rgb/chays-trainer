@@ -718,8 +718,6 @@ Encre
 ambiance fond teinte gris neutre blanc cassé crème Nocturne vert bleu nuit noir OLED blanc
 aperçu échiquier
 Interface
-Langue
-langue language idioma sprache
 Mode
 « Système » suit le réglage clair / sombre de l’appareil.
 Clair
@@ -756,6 +754,8 @@ Clic droit glissé sur l’échiquier : flèche ; clic droit : cercle.
 Cavalier en L
 Un saut de cavalier est dessiné en équerre ; sinon en ligne droite. Vaut pour tous les styles.
 flèches
+Langue
+langue language idioma sprache
 Pendant la partie
 Déplacer les pièces
 Glisser ou cliquer
@@ -2189,7 +2189,7 @@ Position critique · maîtrise {0} / 100
 À consolider · maîtrise {0} / 100 · {1}
 Aucune position dans ce répertoire.
 Mise en situation…
-Toucher pour passer
+Sauter
 · coup {0}{1}
 À vous de jouer{0}
 · {0} réussi{1}

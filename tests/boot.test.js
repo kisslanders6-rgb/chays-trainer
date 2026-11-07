@@ -93,13 +93,6 @@ async function boot(storage = {}) {
         const shown = el => !!el && !el.closest('[style*="display: none"]') && !el.closest('[hidden]');
         const tabsHidden = () => $('#topnav-tabs-setup').classList.contains('in-game');      // css/home.css : compacts ≥ 920 px, cachés dessous
         const activeTab = () => $('#topnav-tabs-setup .topnav-tab.active').id.replace('nav-tab-', '');
-        const pill = $('#board-pill');
-        assert(pill && pill.hidden, 'pastille absente ou visible par défaut');
-        w.eval(`showBoardPill('Toucher pour passer')`);
-        assert(!pill.hidden && pill.textContent === 'Toucher pour passer');
-        w.eval('hideBoardPill()');
-        assert(pill.hidden);
-
         w.eval(`startGame('w')`);
         assert(tabsHidden(), 'play');
         assert.strictEqual(activeTab(), 'play');
