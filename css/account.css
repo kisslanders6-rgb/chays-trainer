@@ -13,9 +13,7 @@
 #account-btn[data-sync="error"]::after { background: var(--err); }
 
 /* Fenêtre */
-.account-panel { max-width: 440px; }
-.account-seg { display: flex; width: 100%; margin: 4px 0 16px; }
-.account-seg .seg-btn { flex: 1; }
+
 .account-form { display: flex; flex-direction: column; gap: 12px; }
 .account-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--text-muted); }
 .account-field input {
@@ -34,21 +32,8 @@
 .account-submit:disabled { opacity: .6; cursor: default; transform: none; }
 .account-link { align-self: center; }
 .account-msg:empty { display: none; }
-.account-note { margin-top: 12px; line-height: 1.5; }
 
 /* Compte connecté */
-.account-user { display: flex; align-items: center; gap: 14px; padding: 14px; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
-.account-avatar { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-text); font-size: 18px; font-weight: 800; }
-.account-email { font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
-.account-sync { margin-top: 3px; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-muted); }
-.account-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-.account-sync[data-level="busy"]  .account-sync-dot { background: #d9a21b; }
-.account-sync[data-level="offline"] .account-sync-dot { background: var(--text-dim); }
-.account-sync[data-level="error"] .account-sync-dot { background: var(--err); }
-.account-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.account-actions .btn { min-height: 44px; font-size: 13px; }
-.account-actions .btn-danger { background: transparent; border-color: var(--err); color: var(--err); }
-@media (hover: hover) { .account-actions .btn-danger:hover { background: var(--err); border-color: var(--err); color: #fff; } }
 
 /* Première synchronisation : trois choix */
 .account-choices { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 10px; }
@@ -82,7 +67,6 @@
 .account-or::before, .account-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
 /* Suppression du compte : discrète, sous les actions */
-.account-delete { display: block; margin: 14px auto 0; color: var(--err); font-weight: 700; font-size: 12.5px; }
 
 /* Connexion / Création de compte : deux vues, lien vers l'autre en pied */
 .account-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; }

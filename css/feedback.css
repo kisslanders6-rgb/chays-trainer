@@ -40,16 +40,9 @@
 }
 
 /* Liens texte et icônes posées dans un champ : atténuation */
-:is(.toast-link, .account-link, .tree-goto, .repertoire-chip-new, .account-eye):active {
-    transform: none;
-    opacity: .55;
-    transition-duration: .05s;
-}
 
 /* Puces et segments : l'appui se lit aussi dans la couleur, même sur l'option déjà active */
-:is(.seg-btn, .tr-seg-btn, .tree-mode, .trs-color, .trs-chip, .stats-chip, .side-tab, .topnav-tab, .repertoire-chip):not(:disabled):active {
-    color: var(--text);
-}
+
 :is(.seg-btn, .tr-seg-btn, .tree-mode):not(.active):not(:disabled):active { background-color: var(--press-veil); }
 
 /* ─── Survol des éléments qui n'en avaient pas ──────────────────────────── */
@@ -58,9 +51,6 @@
     :is(.seg-btn, .tr-seg-btn, .tree-mode):not(.active):not(:disabled):hover { color: var(--text); background-color: var(--hover-veil); }
 
     /* Entraînement : couleur de la séance et réglages repliables */
-    .trs-color:not(.active):hover,
-    .trs-chip:not(.open):hover { color: var(--text); border-color: var(--border-strong); }
-    .trs-chip:hover .ico { color: var(--text); }
 
     /* Petits boutons sans cadre */
     .toast-x:hover, .account-eye:hover { color: var(--text); }
