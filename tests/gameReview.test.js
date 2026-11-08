@@ -13,7 +13,7 @@ const ctx = {
 };
 vm.createContext(ctx);
 ctx.registerActions = () => {};
-for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('openingsLogic.js'), scriptPath('pgn.js'), scriptPath('gameReview.js'), scriptPath('onlineGames.js')])
+for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('review.js'), scriptPath('openingsLogic.js'), scriptPath('pgn.js'), scriptPath('gameReview.js'), scriptPath('onlineGames.js')])
     vm.runInContext(readVars(f), ctx, { filename: f });
 vm.runInContext('saveDB = function () {};', ctx);
 

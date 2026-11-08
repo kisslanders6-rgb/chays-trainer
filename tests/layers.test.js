@@ -6,15 +6,9 @@ const { JSDOM } = require('jsdom');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const LAYERS = {
-    core: ['icons', 'utils', 'bus', 'dialogs', 'network', 'storageAdapter', 'i18n', 'cloudConfig', 'rings', 'colorScope', 'dropdown', 'panelKit', 'themeColor'],
-    domain: ['chessEngine', 'pieces', 'levels', 'engine', 'syncModel', 'cloudClient', 'cloudAdapter', 'auth', 'syncEngine', 'storage', 'backup', 'trash', 'settings', 'sound', 'openingNames', 'egCore', 'egJudge', 'egExercises', 'egOpponent'],
-    board: ['openingsLogic', 'openingsUI', 'annotations', 'captures', 'moveStats', 'treeView'],
-    shell: ['app', 'dock', 'mobile', 'shortcuts', 'palette', 'suite', 'meSheet', 'splash', 'introTimeline', 'onboarding', 'repPicker', 'viewRefresh']
-};
 const ORDER = ['core', 'domain', 'board', 'screens', 'shell'];
 const short = f => path.basename(f, '.js');
-const layerOf = f => { const b = short(f); return Object.keys(LAYERS).find(l => LAYERS[l].includes(b)) || 'screens'; };
+const layerOf = f => ORDER.find(l => f.startsWith(`js/${l}/`));
 const rank = f => ORDER.indexOf(layerOf(f));
 
 const BASE = path.join(__dirname, 'layers.baseline.json');

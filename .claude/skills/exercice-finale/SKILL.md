@@ -1,11 +1,11 @@
 ---
 name: exercice-finale
-description: Créer, corriger ou vérifier un exercice de l'onglet Finales de Chays Trainer (catalogue js/modules/endgame/egExercises.js). À utiliser dès que l'utilisateur veut ajouter une finale (Lucena, Philidor, opposition, Dame contre Tour…), changer une FEN, un objectif, un niveau ou un texte d'exercice, ou quand endgameSelfTest échoue, même s'il donne juste une position ou un nom de finale.
+description: Créer, corriger ou vérifier un exercice de l'onglet Finales de Chays Trainer (catalogue js/domain/endgames/egExercises.js). À utiliser dès que l'utilisateur veut ajouter une finale (Lucena, Philidor, opposition, Dame contre Tour…), changer une FEN, un objectif, un niveau ou un texte d'exercice, ou quand endgameSelfTest échoue, même s'il donne juste une position ou un nom de finale.
 ---
 
 # Exercice de finale
 
-Le catalogue est `ENDGAME_EXERCISES` dans `js/modules/endgame/egExercises.js`, catégories dans `ENDGAME_CATEGORIES` (`mats`, `pions`, `tours`, `dame`…). `endgameSelfTest()` (lancé par `npm test`) refuse tout exercice incohérent : lire ses messages, ils disent quoi corriger.
+Le catalogue est `ENDGAME_EXERCISES` dans `js/domain/endgames/egExercises.js`, catégories dans `ENDGAME_CATEGORIES` (`mats`, `pions`, `tours`, `dame`…). `endgameSelfTest()` (lancé par `npm test`) refuse tout exercice incohérent : lire ses messages, ils disent quoi corriger.
 
 ## 1. Choisir le type d'exercice
 

@@ -14,7 +14,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const FILE = path.join(ROOT, 'js/modules/endgame/egExercises.js');
+const FILE = path.join(ROOT, 'js/domain/endgames/egExercises.js');
 const CHECK_ONLY = process.argv.includes('--check');
 const CATEGORY = { win: 2, 'cursed-win': 1, 'maybe-win': 1, draw: 0, 'blessed-loss': -1, 'maybe-loss': -1, loss: -2 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -22,7 +22,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // ─── Catalogue et noyau EG, sans DOM ─────────────────────────────────────────
 const ctx = { console };
 vm.createContext(ctx);
-for (const f of ['js/modules/endgame/egCore.js', 'js/modules/endgame/egExercises.js'])
+for (const f of ['js/domain/endgames/egCore.js', 'js/domain/endgames/egExercises.js'])
     vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
 const { EG, ENDGAME_EXERCISES } = ctx;
 const sq = s => 'abcdefgh'[s & 7] + ((s >> 3) + 1);

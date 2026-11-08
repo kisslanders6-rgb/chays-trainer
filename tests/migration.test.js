@@ -11,7 +11,7 @@ const ctx = {
                  get: k => (k in store ? store[k] : null), set: (k, v) => { store[k] = String(v); return true; }, remove: k => { delete store[k]; return true; } }
 };
 vm.createContext(ctx);
-for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('openingsLogic.js')])
+for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('review.js'), scriptPath('openingsLogic.js')])
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
 

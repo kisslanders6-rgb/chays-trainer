@@ -4,7 +4,7 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const src = fs.readFileSync(scriptPath('storage.js'), 'utf8');
+const src = fs.readFileSync(scriptPath('storage.js'), 'utf8') + fs.readFileSync(scriptPath('review.js'), 'utf8');
 const pick = re => { const m = src.match(re); assert(m, String(re)); return m[0]; };
 const ctx = { console };
 vm.createContext(ctx);
