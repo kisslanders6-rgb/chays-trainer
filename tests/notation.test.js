@@ -4,7 +4,7 @@ let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const props = {};
-const ctx = { console, appSettings: { notation: 'fr', pieceSet: 'maestro' },
+const ctx = { console, window: { addEventListener() {} }, appSettings: { notation: 'fr', pieceSet: 'maestro' },
               document: { addEventListener() {}, getElementById: () => null,
                           documentElement: { setAttribute() {}, style: { setProperty: (k, v) => { props[k] = v; } } } },
               Image: function () {} };

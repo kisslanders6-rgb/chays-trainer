@@ -50,6 +50,14 @@ function reportError(context, err, opts = {}) {
     box.classList.remove('hidden');
 }
 
+// Filet : une erreur que personne n'a prévue laisse une trace ; au démarrage, elle se voit aussi (l'écran peut rester figé).
+let _bootPhase = true;
+window.addEventListener('load', () => setTimeout(() => { _bootPhase = false; }, 3000));
+const _BOOT_ERROR_MSG = "Un problème est survenu au démarrage. Rechargez la page ; si cela continue, exportez une sauvegarde depuis Paramètres › Données.";
+function _uncaught(err) { reportError('erreur imprévue', err, { notify: _bootPhase, message: _BOOT_ERROR_MSG }); }
+window.addEventListener('error', e => { if (e.error || e.message) _uncaught(e.error || e.message); });
+window.addEventListener('unhandledrejection', e => _uncaught(e.reason));
+
 function hideErrorToast() {
     const box = document.getElementById('error-toast');
     if (box) box.classList.add('hidden');

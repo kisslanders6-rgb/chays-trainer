@@ -1029,6 +1029,8 @@ s seront supprimés
 sera supprimé
 Vider la corbeille ? {0} élément{1} définitivement.
 Problème pendant : {0}.
+Un problème est survenu au démarrage. Rechargez la page ; si cela continue, exportez une sauvegarde depuis Paramètres › Données.
+erreur imprévue
 Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).
 CFTDR
 NBRQK

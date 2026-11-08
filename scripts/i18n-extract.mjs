@@ -115,7 +115,12 @@ for (const m of html.matchAll(/\b(?:title|aria-label|placeholder|alt)="([^"]+)"/
 
 // Accords écrits par du code : le chiffre se lit {n} (i18n.js).
 const lines = [...seen];
-fs.writeFileSync(path.join(ROOT, 'lang/source.txt'), lines.join('\n') + '\n');
+// --check : lecture seule (npm test), rien n'est écrit.
+const CHECK = process.argv.includes('--check');
+if (CHECK) {
+    const known = new Set(fs.readFileSync(path.join(ROOT, 'lang/source.txt'), 'utf8').split('\n').filter(Boolean));
+    console.log(lines.filter(l => !known.has(l)).length, 'textes absents de lang/source.txt (relancer sans --check)');
+} else fs.writeFileSync(path.join(ROOT, 'lang/source.txt'), lines.join('\n') + '\n');
 console.log(lines.length, 'textes,', lines.join(' ').split(/\s+/).length, 'mots');
 // Ce qui manque à chaque paquet (une clé absente reste en français à l'écran).
 for (const f of fs.readdirSync(path.join(ROOT, 'lang')).filter(x => x.endsWith('.json') && x !== 'manifest.json')) {
