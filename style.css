@@ -842,7 +842,13 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
     .btn.online-ghost .ico { width: 16px; height: 16px; }
 }
 @media (hover: hover) and (min-width: 920px) { .btn.online-ghost:hover { background: var(--accent-soft); color: var(--accent); border-color: transparent; } }
-@media (max-width: 599px) { .review-panel { --pn-pad: 16px; } }
+@media (max-width: 599px) {
+    .review-panel { --pn-pad: 16px; }
+    /* Ergonomie, lot 5 : fiche ancrée en bas, l'action « Analyser » collée au bord, sous le pouce */
+    #review-overlay { align-items: flex-end; padding: max(16px, env(safe-area-inset-top, 0px)) 0 0; }
+    #review-overlay .review-panel { max-height: 92dvh; border-bottom: 0; border-radius: 20px 20px 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+    #review-overlay .btn.online-go { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 16px var(--bg-elevated); }
+}
 
 /* ─── THÈMES D'ÉCHIQUIER (classique = valeurs par défaut du thème clair/sombre) ─ */
 html[data-board="wood"]  { --board-light: #f0d9b5; --board-dark: #b58863; --board-border: #8a6a4a; }

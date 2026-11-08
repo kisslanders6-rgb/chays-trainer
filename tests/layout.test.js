@@ -150,6 +150,7 @@ t('pages et ordinateur (Ergonomie, lot 5)', () => {
     assert(/#game-rep:has\(> \.rp-chip:disabled\), #game-side:has\(> \.cs-locked\) \{ display: none; \}/.test(css), 'puce et capsule verrouillées cachées');
     assert(/\.board-controls \.controls-main \.btn\.tb-hint:disabled \{ flex: 0 0 48px;/.test(css), 'Indice éteint : icône');
     assert(/\.topnav:has\(#topnav-tabs-game:not\(\[style\*="none"\]\)\) \.topnav-pill > \.theme-toggle:not\(#palette-btn\):not\(\.me-btn\) \{ display: none; \}/.test(home), 'en partie : loupe et Moi');
+    assert(/#review-overlay \{ align-items: flex-end;/.test(css) && /#review-overlay \.btn\.online-go \{ position: sticky; bottom: 0;/.test(css), 'Analyser mes parties : fiche du bas, action sous le pouce');
     const eg = fs.readFileSync('js/modules/endgame/endgame.js', 'utf8');
     assert(/egToggle: id => toggleEndgameCategory\(id\)/.test(eg) && /aria-expanded="\$\{open\}"/.test(eg));
 });
