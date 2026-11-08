@@ -47,19 +47,6 @@ function _pathToSans(path) {
     return path.map(u => { const san = Chess.san(pos, u); pos = Chess.play(pos, u); return san; });
 }
 
-// SAN d'un coup UCI depuis une clé de position ; null si le coup est impossible.
-function _sanForKeyMove(key, uci) {
-    return _withEngineSnapshot(() => {
-        parseFEN(key);
-        const { from, to, promo } = _parseUci(uci);
-        const p = board[from];
-        if (!p || isWhite(p) !== (turn === 'w')) return null;
-        const castle = p.toUpperCase() === 'K' && Math.abs((to % 8) - (from % 8)) === 2 && Math.floor(to / 8) === Math.floor(from / 8);
-        if (!castle && !getRawMoves(from).includes(to)) return null;
-        return toAlgebraic(from, to, promo);
-    });
-}
-
 // Replace l'échiquier (avec historique navigable) après la suite de coups UCI donnée.
 // opts.animateLast : le dernier coup est animé (position qui arrive d'un coup, comme au contre-la-montre).
 function loadPositionFromPath(moves, opts) {

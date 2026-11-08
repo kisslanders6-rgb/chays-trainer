@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
-const SKIP_FILES = /i18n\.js$|icons\.js$|logoData\.js$|cloudConfig\.js$|storageAdapter\.js$/;
+const SKIP_FILES = /i18n\.js$|icons\.js$|cloudConfig\.js$|storageAdapter\.js$/;
 const files = walk(path.join(ROOT, 'js')).filter(f => f.endsWith('.js') && !SKIP_FILES.test(f));
 
 // Toutes les chaînes d'un source : { text } ; un ${…} d'un gabarit est remplacé par {n} et son contenu analysé à son tour.

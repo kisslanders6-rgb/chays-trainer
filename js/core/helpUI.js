@@ -135,7 +135,6 @@ function _hMarkText(text, q, raw = false) {
     return out + enc(text.slice(from));
 }
 // HTML écrit ici (sans entité) : seul le texte hors balises est surligné.
-const _hMark = (html, q) => html.split(/(<[^>]+>)/).map(p => p.startsWith('<') ? p : _hMarkText(p, q, true)).join('');
 
 // ─── BRIQUES ──────────────────────────────────────────────────────────────────
 
