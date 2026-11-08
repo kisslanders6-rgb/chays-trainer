@@ -1,6 +1,6 @@
 // Lancer : node tests/shell/thumb.test.js   — téléphone sous le pouce : glisser sur la barre de coups, centre du dock (dock.js)
 // à l'accueil et en partie. Charge index.html entier dans jsdom, avec un écran de téléphone simulé (matchMedia).
-const { bootApp } = require('../_app.js');
+const { bootApp, mainCss } = require('../_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
@@ -124,7 +124,7 @@ async function boot(phone) {
         assert.deepStrictEqual(d.errors, []);
     });
     await t('Corriger passe dans « Plus » ; la barre et sa place sont déclarées', () => {
-        const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+        const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), css = mainCss();
         assert(/class="btn btn-tool tb-more" onclick="undoMove\(\)"/.test(html));
         assert(/id="dock-center" onclick="Dock\.runGame\(\)"/.test(html) && /class="btn btn-tool dock-more"/.test(html), 'centre et Plus du dock');
         assert(/\.game-main \{ padding-bottom: calc\(var\(--thumb-h\)/.test(css), "l'échiquier se pose sur la barre (Ergonomie, lot 2)");

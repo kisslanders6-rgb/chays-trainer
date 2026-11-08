@@ -57,6 +57,7 @@ function switchHomeTab(tab) {
     const gs = document.getElementById('game-screen');
     if (gs && !gs.classList.contains('hidden')) { goHome(tab); return; }
     closeRepMenu();
+    if (tab !== 'stats') closeStatsWeak();
     ['play', 'stats', 'training', 'endgame'].forEach(t => {
         const tabEl = document.getElementById('home-tab-' + t);
         const navEl = document.getElementById('nav-tab-' + t);
@@ -164,7 +165,8 @@ function renderHomeSummary() {
     // Surtitre : salutation · série.
     const h = new Date().getHours(), name = appSettings.pseudo.trim();
     const act = readActivity(), streak = _streak(act), today = (act[dayStamp(now)] || { a: 0 }).a, goal = appSettings.dailyGoal;
-    const head = `<p class="hp-over">${escapeHtml((h >= 18 || h < 5 ? 'Bonsoir' : 'Bonjour') + (name ? `, ${name}` : ''))}`
+    const evening = h >= 18 || h < 5, hello = name ? (evening ? `Bonsoir, ${name}` : `Bonjour, ${name}`) : (evening ? 'Bonsoir' : 'Bonjour');
+    const head = `<p class="hp-over">${escapeHtml(hello)}`
         + `${streak ? ` · <span class="hp-streak">${pl(streak, 'jour', 'jours')} d'affilée</span>` : ''}</p>`;
 
     // Répertoire vide : par quelle couleur commencer (une carte choisie, une seule action pleine).
@@ -176,7 +178,7 @@ function renderHomeSummary() {
             <div class="hp-picks">${pick('w')}${pick('b')}</div>
             <div class="hp-ctas"><button type="button" class="btn btn-primary hp-cta" id="hp-start-cta" data-action="homeAddLine" data-arg="w">${ico('play')}<span>Commencer avec les Blancs</span></button></div>
             <div class="hp-alts"><button type="button" class="hp-link" data-action="homeImportPgn">${ico('upload')}Importer un PGN</button>
-            <button type="button" class="hp-link" data-action="homeGames">${ico('target')}Partir de mes parties</button></div></div>`;
+            <button type="button" class="hp-link" data-action="homeGames">${ico('flame')}Partir de mes parties</button></div></div>`;
         HomePanels.render();
         return;
     }
@@ -191,7 +193,7 @@ function renderHomeSummary() {
         const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
         title = `<em>${due.length}</em> ${due.length > 1 ? 'positions' : 'position'}<br>à réviser`;
         const fresh = due.filter(r => !r.e.attempts).length;
-        sub = `Environ <b>${minutes} min</b> · ${colors.size > 1 ? 'Blancs et Noirs' : colors.has('w') ? 'Blancs' : 'Noirs'}`
+        sub = `<b>Environ ${minutes} min</b> · ${colors.size > 1 ? 'Blancs et Noirs' : colors.has('w') ? 'Blancs' : 'Noirs'}`
             + (fresh ? ` · dont ${pl(fresh, 'nouvelle', 'nouvelles')}` : '')
             + (today < goal ? ` · encore ${goal - today} pour l'objectif` : '');
         focus = `<div class="hp-focus">${_miniBoardHTML({ side: next.color, path, k: next.key }, false, { cls: 'hp-focus-board', label: 'Position la plus en retard, avant votre coup' })}

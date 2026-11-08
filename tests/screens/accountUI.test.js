@@ -23,7 +23,7 @@ function boot({ backend, store = {}, confirmAnswer = true } = {}) {
     w.matchMedia = () => ({ matches: false, addEventListener() {} });
     [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
-    [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     // location.reload n'est pas implémenté par jsdom : on compte les appels via un espion posé sur Auth.signOut → wipeLocal → reload
     return w;
 }
@@ -41,7 +41,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const w = dom.window; w.fetch = () => {}; w.eval('window.ico=()=>""');
         [scriptPath('storageAdapter.js'), scriptPath('syncModel.js')].forEach(f => { const s = w.document.createElement('script'); s.textContent = fs.readFileSync(f, 'utf8'); w.document.body.appendChild(s); });
         const s0 = w.document.createElement('script'); s0.textContent = "const CLOUD_CONFIG = { url: '', anonKey: '' };"; w.document.body.appendChild(s0);
-        [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => { const s = w.document.createElement('script'); s.textContent = fs.readFileSync(f, 'utf8'); w.document.body.appendChild(s); });
+        [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => { const s = w.document.createElement('script'); s.textContent = fs.readFileSync(f, 'utf8'); w.document.body.appendChild(s); });
         assert.strictEqual(w.document.getElementById('account-btn'), null); assert.strictEqual(w.document.getElementById('account-overlay'), null);
     });
 
@@ -226,7 +226,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
         [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
         add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
-        [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+        [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
         await tick(40); await flush();
         assert(visible(w2)); assert($(w2, '[data-form="newpw"]'));
         type(w2, 'input[name=password]', 'nouveau-mdp-9'); submit(w2, '[data-form="newpw"]'); await flush();
@@ -243,7 +243,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
             const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
             [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
             add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
-            [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+            [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
             await tick(40); await flush(); await tick(40); await flush();
             assert.match(asked, /pirate@test\.fr/);
             assert.strictEqual(w2.eval('Auth.isSignedIn()'), yes);

@@ -168,6 +168,7 @@ function _paintMovesBar(active) {
     bar.innerHTML = html;
     const cur = bar.querySelector('.move-token.active');
     if (cur && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = cur.offsetLeft - bar.clientWidth / 2;   // ligne défilante (mobile)
+    if (cur && bar.scrollHeight > bar.clientHeight) bar.scrollTop = cur.offsetTop - bar.clientHeight / 2;  // historique sur plusieurs lignes (grand téléphone)
     if (typeof syncTreeToPosition === 'function') syncTreeToPosition();     // l'arbre suit la position affichée
 }
 
@@ -196,6 +197,7 @@ function setStatus(msg, type = 'info', detail = '', opts = null) {
     if (detail) text.append(Object.assign(document.createElement('span'), { className: 'status-detail', textContent: detail }));
     const bar = document.getElementById('status-bar');
     if (!bar) return;
+    bar.classList.remove('is-open');                     // petit écran : le détail ouvert au toucher se referme
     bar.dataset.type = type;
     const old = bar.querySelector('.status-act');
     if (old) old.remove();

@@ -112,7 +112,7 @@ t('mode libre : anciennes options de l\'appareil reprises en préférences, anci
 });
 
 t('chaque préférence a son réglage dans l\'interface (Paramètres ou Compte)', () => {
-    const ui = [scriptPath('settingsUI.js'), scriptPath('accountUI.js')].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    const ui = [scriptPath('settingsUI.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].map(f => fs.readFileSync(f, 'utf8')).join('\n');
     const c = boot();
     const internal = ['looksTheme', 'looksSound', 'looksVolume'];          // copies du mode et des sons (option syncLooks)
     const free = { freeMaxPlies: 'training:maxPlies', freeSeqLen: 'training:seqLen', freeFromStart: 'training:fromStart' };

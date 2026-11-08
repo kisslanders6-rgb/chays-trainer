@@ -48,7 +48,7 @@ function renderDataPanel() {
           <div class="data-grid">
             ${card('dataImportPgn', 'upload', 'Importer un PGN', 'Ajoute des lignes, variantes comprises')}
             ${card('dataExportPgn', 'download', 'Exporter en PGN', 'Blancs et Noirs, toutes les lignes')}
-            ${card('dataReview', 'target', 'Analyser mes parties', 'Chess.com, Lichess ou PGN collé : déviations au répertoire')}
+            ${card('dataReview', 'flame', 'Analyser mes parties', 'Chess.com, Lichess ou PGN collé : déviations au répertoire')}
             ${card('dataTrash', 'trash', `Corbeille${nTrash ? ` (${nTrash})` : ''}`, 'Éléments supprimés, gardés 30 jours')}
           </div>
         </div>`;

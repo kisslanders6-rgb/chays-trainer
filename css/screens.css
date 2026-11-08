@@ -86,16 +86,6 @@
 .st-big span { font-size: 15px; font-weight: 600; }
 .st-big-text b { font-size: 38px; }
 .st-today-sub { font-size: 13px; opacity: .82; }
-.st-cta {
-    align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; margin-top: 2px;
-    border: 0; border-radius: 24px; background: var(--card-b-ink); color: var(--card-b-bg);
-    font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .5);
-    transition: transform .15s var(--ease-out);
-}
-.st-cta .ico { width: 14px; height: 14px; fill: currentColor; }
-@media (hover: hover) { .st-cta:hover { transform: translateY(-1px); } }
-.st-cta:active { transform: scale(.97); }
-.st-cta:focus-visible { outline: 2px solid var(--card-b-ink); outline-offset: 3px; }
 .st-foot { margin-top: auto; padding-top: 10px; border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent); font-family: var(--font-note); font-size: 11px; opacity: .68; }
 .st-mbar { height: 12px; gap: 3px; }
 .st-mbar i { border-radius: 4px; min-width: 4px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
@@ -189,11 +179,9 @@
 .st-reg-kpis div { display: flex; flex-direction: column; }
 .st-reg-kpis b { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .st-reg-kpis span { font-size: 12px; color: var(--text-muted); }
-/* Calendrier : une colonne par semaine (lundi en haut), la semaine en cours à droite ; défile s'il manque de place */
-.st-heat-scroll { overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
-.st-heat-scroll::-webkit-scrollbar { display: none; }
-.st-heat { display: grid; grid-template-rows: repeat(7, 18px); grid-auto-flow: column; grid-auto-columns: 18px; gap: 4px; width: max-content; margin-left: auto; }
-.st-heat-d { font-family: var(--font-note); font-size: 9.5px; line-height: 18px; color: var(--text-dim); text-align: center; }
+/* Calendrier : une colonne par semaine (lundi en haut), la semaine en cours à droite ; les cases se partagent la largeur */
+.st-heat { display: grid; grid-template-columns: 14px repeat(var(--weeks), minmax(0, 1fr)); grid-template-rows: repeat(7, auto); grid-auto-flow: column; gap: 4px; width: 100%; max-width: 380px; margin-left: auto; }
+.st-heat-d { align-self: center; font-family: var(--font-note); font-size: 9.5px; line-height: 1; color: var(--text-dim); text-align: center; }
 .st-heat i, .st-heat-leg i { aspect-ratio: 1; border-radius: 4px; background: var(--bg-inset); }
 .st-heat i.h1, .st-heat-leg i.h1 { background: color-mix(in srgb, var(--board-accent) 30%, var(--bg-inset)); }
 .st-heat i.h2, .st-heat-leg i.h2 { background: color-mix(in srgb, var(--board-accent) 60%, var(--bg-inset)); }
@@ -240,7 +228,7 @@
     #home-tab-stats .st-go { display: none; }
     #home-tab-training .btn-primary { background: var(--accent-soft); border: 1.5px solid var(--accent-line); color: var(--accent); box-shadow: none; }
 }
-@media (prefers-reduced-motion: reduce) { .st-cta, .st-line-head > .ico { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .st-line-head > .ico { transition: none; } }
 
 /* ─── Entraînement : menu d'exercices (trainingUI.js) ───
    Barre de contexte partagée avec les Statistiques (.st-scope) ; le menu lui-même est la « Rampe » (plus bas). */
@@ -723,8 +711,9 @@
     .st-more.st-phone { display: block; }
     .st-body.pane-overview [data-pane]:not([data-pane="overview"]),
     .st-body.pane-openings [data-pane]:not([data-pane="openings"]),
-    .st-body.pane-regularity [data-pane]:not([data-pane="regularity"]) { display: none; }
-    .st-body.pane-overview .st-main, .st-body.pane-openings .st-main { display: flex; }
+    .st-body.pane-regularity [data-pane]:not([data-pane="regularity"]),
+    .st-body.pane-games [data-pane]:not([data-pane="games"]) { display: none; }
+    .st-body.pane-overview .st-main, .st-body.pane-openings .st-main, .st-body.pane-games .st-main { display: flex; }
     .st-body.pane-regularity .st-main { display: none; }
     .st-lines.is-capped > .st-line:nth-child(n+6) { display: none; }
     .st-side { position: static; }
@@ -811,6 +800,46 @@
 .st-empty > span:not(.st-empty-i) { max-width: 420px; font-size: 13px; color: var(--text-muted); }
 .st-empty .btn { margin-top: 10px; }
 
+/* Statistiques › Parties (statsGames.js) */
+#stats-games { display: flex; flex-direction: column; gap: 12px; }
+#stats-games > .st-h .st-ibtn { margin-left: auto; }
+.sg-form { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+.sg-err { margin: 0; font-size: 13px; color: var(--err); }
+.sg-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.sg-head h4 { margin: 0; font-size: 14px; font-weight: 700; }
+.sg-site { display: flex; gap: 2px; }
+.sg-site button { min-height: 28px; padding: 0 6px; border: 0; background: none; color: var(--text-dim); font: inherit; font-size: 12px; cursor: pointer; }
+.sg-site button[aria-checked="true"] { color: var(--text); font-weight: 700; }
+.sg-chart { position: relative; touch-action: pan-y; }
+.sg-cross { stroke: var(--text-dim); stroke-dasharray: 3 3; }
+.sg-cross[hidden] { display: none; }
+.sg-tip { position: absolute; top: -6px; padding: 2px 7px; border-radius: 6px; background: var(--text); color: var(--bg); font-family: var(--font-note); font-size: 11px; white-space: nowrap; pointer-events: none; }
+.sg-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sg-tiles > div { display: flex; flex-direction: column; padding: 10px 12px; border-radius: 12px; background: var(--bg-inset); }
+.sg-tiles small { font-size: 12px; color: var(--text-muted); }
+.sg-tiles b { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sg-tiles span { font-size: 11.5px; color: var(--text-muted); }
+.sg-leg { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.sg-leg i { width: 9px; height: 9px; border-radius: 2px; }
+.sg-w { background: var(--lv-mastered); } .sg-d { background: var(--border-strong); } .sg-l { background: var(--err); }
+.sg-wdl { display: grid; grid-template-columns: minmax(0, 104px) minmax(0, 1fr) 40px; align-items: center; gap: 8px; font-size: 12.5px; }
+.sg-wdl-n { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.sg-wdl-n small { display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.sg-wdl > b { text-align: right; font-variant-numeric: tabular-nums; }
+.sg-bar { display: flex; gap: 2px; height: 18px; }
+.sg-bar i { display: grid; place-items: center; min-width: 14px; font-style: normal; font-size: 10px; font-weight: 700; color: #1b1712; }
+.sg-bar i:first-child { border-radius: 4px 2px 2px 4px; }
+.sg-bar i:last-child { border-radius: 2px 4px 4px 2px; }
+.sg-cost { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: var(--tap); padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sg-cost > span { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.sg-cost small { font-size: 12px; color: var(--text-muted); }
+.sg-cost .ico { width: 16px; height: 16px; flex: none; fill: none; color: var(--text-dim); }
+.sg-add { align-self: flex-start; min-height: var(--tap); }
+
+/* « Tout voir » des points faibles : retour en tête de liste */
+.st-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: var(--tap); }
+.st-back .ico { width: 16px; height: 16px; fill: none; }
+
 /* Aperçu d'une position : retour à 44 px ; trois faits sous la barre d'état, dans le panneau latéral (ordinateur). */
 .tp-back { height: var(--tap); }
 .st-facts { display: none; }
@@ -848,8 +877,6 @@
     .st-lg { min-height: var(--tap); }
     #stats-lines .stats-chip { min-height: var(--tap); }
     .st-ibtn { width: var(--tap); height: var(--tap); }
-    .st-heat i.old { display: none; }
-    .st-heat { grid-template-rows: repeat(7, 24px); grid-auto-columns: 24px; }
     .st-empty { padding: 28px 16px; }
 }
 @media (max-width: 599px) { .tp-back { width: var(--tap); height: var(--tap); } }

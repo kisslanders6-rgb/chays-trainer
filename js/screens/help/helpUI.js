@@ -31,14 +31,14 @@ const HELP_TARGETS = {
 
 // count : ce que l'endroit fait évoluer (tone = modificateur de .vbadge).
 const HELP_GUIDES = [
-    { id: 'play', icon: 'crown', title: 'Jouer', sub: 'Construire ses lignes en jouant', to: 'play',
+    { id: 'play', icon: 'swords', title: 'Jouer', sub: 'Construire ses lignes en jouant', to: 'play',
       count: { label: 'Ne compte rien', tone: 'is-muted' },
       points: [
         'Choisissez un <strong>répertoire</strong> (puce en haut) et une couleur, puis jouez <strong>vos coups et ceux de l’adversaire</strong> : chaque coup adverse ouvre une branche.',
         'Position inconnue : votre coup devient l’<strong>unique réponse</strong> enregistrée. « Annuler », dans la barre d’état, la retire aussitôt.',
         'Position connue : retrouvez votre réponse. <kbd>Espace</kbd> montre la pièce, puis le coup.',
         'Onglets <strong>Coups</strong>, <strong>Arbre</strong> (remplacer ou supprimer une réponse) et <strong>Adversaire</strong>. Ici, rien n’est compté : statistiques et révisions n’évoluent qu’à l’Entraînement.'] },
-    { id: 'training', icon: 'target', title: 'Entraînement', sub: 'Réviser au bon moment', to: 'training',
+    { id: 'training', icon: 'flame', title: 'Entraînement', sub: 'Réviser au bon moment', to: 'training',
       count: { label: 'Compte', tone: 'is-ok' },
       points: [
         'Chaque position a une <strong>date de révision</strong> : elle s’éloigne à chaque réussite et revient vite après une erreur.',
@@ -52,7 +52,7 @@ const HELP_GUIDES = [
         'Positions regroupées par <strong>ouverture nommée</strong> ; la régularité (série, calendrier) couvre tous les répertoires.',
         'Les boutons ouvrent l’exercice d’<strong>Entraînement</strong> déjà filtré, sans lancer de séance : les Statistiques observent, l’Entraînement agit.',
         'Aperçu d’une position : « S’entraîner » lance sa révision, « ‹ Statistiques » ramène au même endroit.'] },
-    { id: 'endgame', icon: 'pawn', title: 'Finales', sub: 'Gagner, annuler, mater', to: 'endgame',
+    { id: 'endgame', icon: 'finish-flag', title: 'Finales', sub: 'Gagner, annuler, mater', to: 'endgame',
       count: { label: 'Finales réussies seulement', tone: 'is-muted' },
       points: [
         'Mats, pions, tours, Dame, pièces mineures : toucher un exercice ouvre son <strong>aperçu</strong>, et seul « Commencer » lance la séance.',
@@ -84,8 +84,8 @@ const HELP_GUIDES = [
 
 // Tâches fréquentes : un verbe, les étapes, la destination.
 const HELP_TASKS = [
-    { id: 'build',  icon: 'crown',     title: 'Construire un répertoire',         steps: 'Jouer · Choisir une couleur · Jouer les deux camps', to: 'play' },
-    { id: 'review', icon: 'target',    title: 'Réviser aujourd’hui',              steps: 'Entraînement · Révision du jour · Bilan',            to: 'training' },
+    { id: 'build',  icon: 'swords',     title: 'Construire un répertoire',         steps: 'Jouer · Choisir une couleur · Jouer les deux camps', to: 'play' },
+    { id: 'review', icon: 'flame',    title: 'Réviser aujourd’hui',              steps: 'Entraînement · Révision du jour · Bilan',            to: 'training' },
     { id: 'pgn',    icon: 'upload',    title: 'Importer un PGN',                  steps: 'Jouer › Importer · Coller ou choisir le fichier · Vérifier l’aperçu, puis ajouter', to: 'import' },
     { id: 'games',  icon: 'git-merge', title: 'Comparer mes parties',             steps: 'Jouer › Analyser mes parties · Lichess, Chess.com ou PGN collé', to: 'games' },
     { id: 'sync',   icon: 'cloud',     title: 'Synchroniser mes appareils',       steps: 'Compte · Se connecter · Les données suivent', to: 'account' },
@@ -106,7 +106,7 @@ const HELP_FAQ = [
 const HELP_SUGGEST = ['sauvegarde', 'révision', 'flèche', 'PGN'];
 
 const HELP_SECTIONS = () => [
-    { id: 'start', icon: 'flag', label: 'Premiers pas', desc: 'Trois étapes, tâches fréquentes' },
+    { id: 'start', icon: 'footsteps', label: 'Premiers pas', desc: 'Trois étapes, tâches fréquentes' },
     ...HELP_GUIDES.map(g => ({ id: 'g-' + g.id, icon: g.icon, label: escapeHtml(g.title), desc: escapeHtml(g.sub) })),
     { id: 'keys',  icon: 'keyboard', label: 'Raccourcis',           desc: 'Clavier et souris' },
     { id: 'faq',   icon: 'help',     label: 'Questions fréquentes', desc: 'Données, erreurs, import' },

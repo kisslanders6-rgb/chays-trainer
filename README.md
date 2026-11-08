@@ -42,7 +42,7 @@ Stockfish est un logiciel libre sous licence GPL v3 ; la licence est jointe dans
 
 ```
 index.html            page unique ; l'ordre des <script> compte
-style.css, css/       styles : feuille principale, compte, accueil, panneaux, écrans, retours, lancement
+css/                 styles : base, mise en page, composants, échiquier, écran de jeu, compte, accueil, panneaux, écrans, retours, lancement
 sw.js                 service worker : cache construit à partir d'index.html ; moteur dans un cache à part
 vercel.json           en-têtes d'isolation (moteur multi-thread) et cache du moteur
 engine/               moteur Stockfish embarqué (manifest.json + engine/<version>/)

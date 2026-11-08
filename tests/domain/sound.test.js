@@ -21,9 +21,22 @@ t('niveaux : la somme des crêtes de chaque son reste sous 0,6 (la prise n\'est 
     const sums = {};
     for (const m of block.matchAll(/^    (\w+)\(ctx, out, t\) \{([\s\S]*?)^    \}/gm))
         sums[m[1]] = [...m[2].matchAll(/peak: ([\d.]+)/g)].reduce((a, p) => a + Number(p[1]), 0);
-    assert.deepStrictEqual(Object.keys(sums).sort(), ['capture', 'error', 'move', 'success']);
+    assert.deepStrictEqual(Object.keys(sums).sort(), ['capture', 'castle', 'check', 'end', 'error', 'mate', 'move', 'promote', 'success']);
     for (const [k, v] of Object.entries(sums)) assert(v <= 0.6, `${k} : ${v}`);
     assert(sums.capture <= sums.move * 1.6, 'prise à peine plus pleine que le coup');
+});
+
+t('le son d\'un coup : mat, échec, promotion, roque, prise, coup ordinaire', () => {
+    const ctx = { window: {}, addEventListener() {} };
+    require('vm').createContext(ctx);
+    require('vm').runInContext(src.replace('const Voice =', 'var Voice =').replace(/^function /gm, 'function '), ctx);
+    const kind = ctx.moveSoundKind;
+    assert.strictEqual(kind('Qh7#', true), 'mate');
+    assert.strictEqual(kind('Nf7+', true), 'check');
+    assert.strictEqual(kind('e8=Q', false), 'promote');
+    assert.strictEqual(kind('O-O-O', false), 'castle');
+    assert.strictEqual(kind('Nxe5', true), 'capture');
+    assert.strictEqual(kind('Nf3', false), 'move');
 });
 
 t('sortie : aigus coupés et limiteur avant les haut-parleurs (jamais d\'écrêtage)', () => {

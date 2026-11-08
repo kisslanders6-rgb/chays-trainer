@@ -328,7 +328,7 @@ function _syncHintBtn() {
         const state = sol ? 'sol' : off ? 'off' : 'hint';           // indisponible : le libellé le dit, la raison est en infobulle
         if (b.dataset.sol === state) return;
         b.dataset.sol = state;
-        b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>`
+        b.innerHTML   = sol ? `${ico('flame')}<span class="btn-label">Solution</span>`
                       : `${ico('lightbulb')}<span class="btn-label">Indice${off ? '<span class="hint-off"> indisponible</span>' : ''}</span>`;
     });
     Bus.emit('ui:refresh');          // le centre du dock suit l'Indice (téléphone)

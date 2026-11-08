@@ -39,7 +39,7 @@ function _egBump(id, fn) {
 //  4. ÉCRAN D'ACCUEIL « FINALES » (bibliothèque)
 // ═══════════════════════════════════════════════════════════════════════════
 // Objectif : libellé et icône du sprite.
-const EG_GOALS = { mate: ['Mater', 'flag'], win: ['Gagner', 'target'], draw: ['Annuler', 'shield-check'] };
+const EG_GOALS = { mate: ['Mater', 'footsteps'], win: ['Gagner', 'flame'], draw: ['Annuler', 'shield-check'] };
 
 // Catalogue dans l'ordre des catégories, puis du fichier : ordre de « À suivre » et des sections.
 const _egCatalogue = () => ENDGAME_CATEGORIES.flatMap(c => ENDGAME_EXERCISES.filter(e => e.cat === c.id));

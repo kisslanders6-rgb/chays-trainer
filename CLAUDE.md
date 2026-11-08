@@ -1,6 +1,6 @@
 # Chays Trainer : cadrage pour les assistants
 
-À lire en début de session. Le README décrit l'application pour les humains ; ce fichier donne les invariants communs. Le détail de chaque domaine est à côté de son code : `js/core/CLAUDE.md`, `js/domain/CLAUDE.md`, `js/board/CLAUDE.md`, `js/screens/CLAUDE.md`, `js/shell/CLAUDE.md`, `css/CLAUDE.md` (thèmes, y compris `style.css`). Mettez à jour le bon fichier dans le même commit quand vous ajoutez une clé de stockage, un nom global, un onglet ou une règle métier.
+À lire en début de session. Le README décrit l'application pour les humains ; ce fichier donne les invariants communs. Le détail de chaque domaine est à côté de son code : `js/core/CLAUDE.md`, `js/domain/CLAUDE.md`, `js/board/CLAUDE.md`, `js/screens/CLAUDE.md`, `js/shell/CLAUDE.md`, `css/CLAUDE.md` (thèmes). Mettez à jour le bon fichier dans le même commit quand vous ajoutez une clé de stockage, un nom global, un onglet ou une règle métier.
 
 ## Ce que fait l'application
 
@@ -11,7 +11,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/app/layers.test.js` le vérifie (liens encore tolérés : `tests/app/layers.baseline.json`, ils ne peuvent que baisser).
 
 - `js/core` : socle (échappement, actions, `Bus`, fenêtres `askConfirm` / `askText`, traduction, composants).
-- `js/domain` : règles et données, sans écran (`chess/`, `repertoire/` dont `review.js` et `levels.js`, `sync/`, `endgames/`, moteur, préférences, sons).
+- `js/domain` : règles et données, sans écran (`chess/`, `repertoire/` dont `review.js` et `levels.js`, `sync/`, `endgames/`, `games/`, moteur, préférences, sons).
 - `js/board` : l'écran de jeu de tous les modes.
 - `js/screens` : un dossier par écran.
 - `js/shell` : navigation, barres, accueil.
@@ -61,5 +61,6 @@ Skills du projet (`.claude/skills/`) : `cloture-lot` (vérifications et commit d
 
 L'historique des lots est dans Git. Décidé pour plus tard (bilan du code, novembre 2026) : migrations éparses, CSP, appels réseau en double, geste de glissement, gardes `typeof`, écritures croisées de l'état de partie, noms en `_` partagés, découpe d'`accountUI.js`, découpe de `style.css`, fenêtres natives.
 
+- Arbitrage du 8 novembre 2026 (artefact « Arbitrage Chays Trainer ») : douze suggestions construites ; reste le n° 13, logos officiels Chess.com et Lichess, en attente des droits d'usage.
 - Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Restes à proposer : registre unique des réglages et `chessTrainer_schema` (migrations ordonnées), bouton « Ce coup n'était pas encore dans mon répertoire » (bouton dans `setStatus`), variantes implicites d'un PGN collé proposées comme réponses.
 - Icône et logo de marque : dessin actuel gardé, recoloré Noyer. Icônes de l'interface (`js/core/icons.js`) : choix clos le 27 octobre 2026, ne plus proposer d'alternatives.

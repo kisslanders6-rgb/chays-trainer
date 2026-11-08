@@ -87,15 +87,15 @@ const Palette = (function () {
         const a = (id, icon, title, small, words, run, extra = {}) => ({ id: 'act:' + id, group: 'Actions', icon, title, small, words, run, ...extra });
         const due = reviewPlan(currentRepertoire).forecast(null, 1)[0] || 0;
         const list = [
-            a('play', 'crown', 'Jouer', 'Onglet', 'accueil répertoire', () => goHome('play'), { leave: true, keys: ['1'] }),
+            a('play', 'swords', 'Jouer', 'Onglet', 'accueil répertoire', () => goHome('play'), { leave: true, keys: ['1'] }),
             a('stats', 'bar-chart', 'Statistiques', 'Onglet', 'maîtrise régularité progrès', () => goHome('stats'), { leave: true, keys: ['2'] }),
-            a('training', 'target', 'Entraînement', 'Onglet', 'exercices séance', () => goHome('training'), { leave: true, keys: ['3'] }),
-            a('endgame', 'pawn', 'Finales', 'Onglet', 'exercices', () => goHome('endgame'), { leave: true, keys: ['4'] }),
-            a('daily', 'target', 'Révision du jour', due ? `${due} à réviser aujourd’hui` : 'Rien à réviser aujourd’hui', 'réviser répétition espacée séance',
+            a('training', 'flame', 'Entraînement', 'Onglet', 'exercices séance', () => goHome('training'), { leave: true, keys: ['3'] }),
+            a('endgame', 'finish-flag', 'Finales', 'Onglet', 'exercices', () => goHome('endgame'), { leave: true, keys: ['4'] }),
+            a('daily', 'flame', 'Révision du jour', due ? `${due} à réviser aujourd’hui` : 'Rien à réviser aujourd’hui', 'réviser répétition espacée séance',
                 fromHome(() => startDailyReview()), { leave: true, keys: ['L'], suggest: due > 0, off: !due }),
-            a('weak', 'target', 'Points faibles', 'Exercice d’Entraînement', 'erreurs fragiles', () => { if (gameOpen()) goHome(); openTrainingFrom({ focus: 'weak' }); }, { leave: true }),
-            a('white', 'crown', 'Jouer les Blancs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('w')), { leave: true, suggest: !due }),
-            a('black', 'crown', 'Jouer les Noirs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('b')), { leave: true, suggest: !due }),
+            a('weak', 'flame', 'Points faibles', 'Exercice d’Entraînement', 'erreurs fragiles', () => { if (gameOpen()) goHome(); openTrainingFrom({ focus: 'weak' }); }, { leave: true }),
+            a('white', 'swords', 'Jouer les Blancs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('w')), { leave: true, suggest: !due }),
+            a('black', 'swords', 'Jouer les Noirs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('b')), { leave: true, suggest: !due }),
             a('analysis', 'cpu', 'Analyse', 'Moteur et brouillon', 'stockfish moteur évaluation', () => UI_ACTIONS.helpAnalysis(), { leave: true, suggest: true }),
             a('games', 'microscope', 'Analyser mes parties', 'Lichess, Chess.com, PGN collé', 'importer lichess chesscom chess.com', () => showGameReview(), { leave: true, suggest: true }),
             a('import', 'upload', 'Importer un PGN', 'Ajouter des lignes au répertoire', 'fichier', () => showPgnImport(), { leave: true }),
@@ -125,7 +125,7 @@ const Palette = (function () {
         rows.filter(r => r.path).forEach(r => {
             const line = _movesLabel(r.path.slice(0, -1)) || 'Position initiale';
             items.push({
-                id: `pos:${r.side}|${r.k}`, group: 'Positions', icon: 'target', title: line, needsDigit: true,
+                id: `pos:${r.side}|${r.k}`, group: 'Positions', icon: 'flame', title: line, needsDigit: true,
                 small: `${SIDE[r.side]} · réponse ${formatSanText(r.e.san, r.side)}`, words: _movesLabel(r.path).replace(/\d+\.+\s*/g, ''), leave: true,
                 run: fromHome(() => openStatsPreview(r.side, r.k))
             });
@@ -172,7 +172,7 @@ const Palette = (function () {
             run: () => { if (gameOpen()) switchGameRepertoire(n); else selectRepertoire(n); }
         }));
         const finals = ENDGAME_EXERCISES.map(ex => ({
-            id: 'eg:' + ex.id, group: 'Finales', icon: 'pawn', title: ex.title, leave: true,
+            id: 'eg:' + ex.id, group: 'Finales', icon: 'finish-flag', title: ex.title, leave: true,
             small: (ENDGAME_CATEGORIES.find(c => c.id === ex.cat) || {}).label || 'Finale', run: fromHome(() => startEndgame(ex.id))
         }));
         const all = [...actionItems(), ...rep.items, ...reps, ...settingsSearchIndex(), ...finals, ...otherItems(rep.names), ...helpItems()];

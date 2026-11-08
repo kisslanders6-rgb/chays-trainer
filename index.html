@@ -58,7 +58,11 @@
         })();
     </script>
     <link rel="stylesheet" href="css/splash.css" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/board.css" />
+    <link rel="stylesheet" href="css/game.css" />
     <link rel="stylesheet" href="css/home.css" />
     <link rel="stylesheet" href="css/screens.css" />
     <link rel="stylesheet" href="css/account.css" />
@@ -212,12 +216,12 @@
                  (css/home.css). Les séparateurs sont dessinés en CSS entre deux onglets ; l'icône ne
                  s'affiche que dans la barre du bas. -->
             <div class="topnav-tabs" id="topnav-tabs-setup">
-                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-crown"/></svg><span>Jouer</span></div>
+                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Jouer</span></div>
                 <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
                 <!-- Téléphone : centre du dock, la prochaine action (Dock, js/core/dock.js) -->
                 <button type="button" class="topnav-tab nav-center" id="nav-center" onclick="Dock.runHome()"></button>
-                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-target"/></svg><span>Entraînement</span></div>
-                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-pawn"/></svg><span>Finales</span></div>
+                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
+                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-finish-flag"/></svg><span>Finales</span></div>
             </div>
 
             <!-- Meta dans l'écran de jeu -->
@@ -287,7 +291,7 @@
                         <div class="st-rep repertoire-list" id="repertoire-list"></div>
                         <div class="hp-quick" id="hp-quick" aria-label="Autres répertoires"></div>
                         <div class="hp-tools">
-                            <button type="button" class="hp-tool" data-action="homeGames" title="Analyser mes parties"><svg class="ico"><use href="#i-target"/></svg><span>Analyser mes parties</span></button>
+                            <button type="button" class="hp-tool" data-action="homeGames" title="Analyser mes parties"><svg class="ico"><use href="#i-flame"/></svg><span>Analyser mes parties</span></button>
                             <button type="button" class="hp-tool" data-action="homeImportPgn" title="Importer un PGN"><svg class="ico"><use href="#i-upload"/></svg><span>Importer</span></button>
                         </div>
                         <div class="menu-wrap hp-menu">
@@ -426,7 +430,7 @@
                                 <svg class="ico"><use href="#i-git-branch"/></svg><span class="btn-label">Flèches</span>
                             </button>
                             <button class="btn btn-tool tb-more" onclick="showGameReview()" title="Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?">
-                                <svg class="ico"><use href="#i-target"/></svg><span class="btn-label">Partie</span>
+                                <svg class="ico"><use href="#i-flame"/></svg><span class="btn-label">Partie</span>
                             </button>
                             <button class="btn btn-tool tb-more" onclick="openAnalysis()" title="Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin">
                                 <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyse</span>
@@ -516,7 +520,7 @@
     <div id="review-overlay" class="overlay hidden">
         <div class="panel review-panel" id="review-panel">
             <div class="panel-head">
-                <div class="panel-title"><svg class="ico"><use href="#i-target"/></svg> Analyser mes parties</div>
+                <div class="panel-title"><svg class="ico"><use href="#i-flame"/></svg> Analyser mes parties</div>
                 <button class="panel-x" onclick="closeGameReview()" title="Fermer (Échap)" aria-label="Fermer"><svg class="ico"><use href="#i-x"/></svg></button>
             </div>
             <div class="panel-sub">Répertoire : <strong id="review-target" style="color:var(--accent)"></strong></div>
@@ -703,7 +707,9 @@
 <script src="js/board/annotations.js"></script>
 <script src="js/domain/repertoire/levels.js"></script>
 <script src="js/domain/repertoire/openingNames.js"></script>
+<script src="js/domain/games/gameArchive.js"></script>
 <script src="js/screens/stats/stats.js"></script>
+<script src="js/screens/stats/statsGames.js"></script>
 <script src="js/screens/training/training.js"></script>
 <script src="js/screens/training/trainingUI.js"></script>
 <script src="js/shell/suite.js"></script>
@@ -721,6 +727,7 @@
 <script src="js/shell/palette.js"></script>
 <script src="js/screens/help/onboarding.js"></script>
 <script src="js/screens/account/avatarPhoto.js"></script>
+<script src="js/screens/account/accountSections.js"></script>
 <script src="js/screens/account/accountUI.js"></script>
 <script src="js/shell/meSheet.js"></script>
 <script src="js/shell/viewRefresh.js"></script>

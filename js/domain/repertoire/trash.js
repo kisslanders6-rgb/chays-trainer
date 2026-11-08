@@ -189,7 +189,7 @@ function renderTrash() {
         const side = it.color ? (it.color === 'w' ? 'Blancs' : 'Noirs') : '';
         const kind = it.type === 'repertoire' ? `${ico('folder')} Répertoire · ${it.count} coup${it.count > 1 ? 's' : ''}`
                    : it.type === 'branch'     ? `${ico('git-branch')} Branche · ${it.count} coups`
-                                              : `${ico('pawn')} Coup`;
+                                              : `${ico('finish-flag')} Coup`;
         const where = it.type === 'repertoire' ? '' : ` · ${escapeHtml(it.rep)} (${side})`;
         return `<div class="trash-item">
             <div class="trash-info">

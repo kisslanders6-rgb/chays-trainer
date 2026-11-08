@@ -274,6 +274,7 @@ function _endSession(early, stay) {
     if (typeof Suite !== 'undefined') Suite.refresh();
     if (stay) return;
     if (early || !rows.length) { goHome(back); return; }
+    playSound('end');
     const msg = summary.kind === 'timed' ? `Temps écoulé · ${summary.score} bon${summary.score > 1 ? 's' : ''} coup${summary.score > 1 ? 's' : ''}`
         : `Séance terminée · ${summary.ok}/${summary.total} du premier coup`;
     setStatus(msg, 'ok', back === 'stats' ? 'Retour aux statistiques…' : 'Bilan de la séance…');

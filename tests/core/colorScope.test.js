@@ -1,5 +1,5 @@
 // Lancer : node tests/core/colorScope.test.js   — sélecteur de couleur commun (ColorScope) et capsule de la barre du haut.
-const { scriptPath } = require('../_app.js');
+const { scriptPath, mainCss } = require('../_app.js');
 const fs = require('fs'), assert = require('assert');
 const { JSDOM } = require('jsdom');
 let n = 0;
@@ -40,7 +40,7 @@ t('size « sm » : classe de la barre du haut, libellés gardés pour l\'infobul
     assert(root.classList.contains('cs-sm'));
     assert.strictEqual([...root.querySelectorAll('.cs-l')].map(s => s.textContent).join(), 'Blancs,Noirs,Les deux');
     assert.strictEqual(opt('b').title, 'Noirs');
-    const css = fs.readFileSync('style.css', 'utf8');
+    const css = mainCss();
     assert(/\.cs-sm \.cs-l \{ position: absolute; width: 1px;/.test(css), 'sur téléphone, le libellé est masqué visuellement, pas supprimé');
 });
 
@@ -71,7 +71,7 @@ t('barre du haut : puce du répertoire ronde, initiale + nom + chevron, sans ind
 });
 
 t('barre du haut : changer de répertoire relance le mode en cours ; Finales : titre de l\'exercice ; même hauteur que la capsule', () => {
-    const app = fs.readFileSync(scriptPath('app.js'), 'utf8'), css = fs.readFileSync('style.css', 'utf8');
+    const app = fs.readFileSync(scriptPath('app.js'), 'utf8'), css = mainCss();
     assert(/<span class="game-rep" id="game-rep"><\/span>/.test(fs.readFileSync('index.html', 'utf8')));
     assert(/if \(mode === 'play'\) startGame\(color\);/.test(app) && /startTraining\(mixed \? 'mix' : color\);\s+if \(gameMode !== 'training'\) goHome\('training'\);/.test(app));
     assert(/gameMode === 'endgame'[\s\S]{0,120}game-rep-title/.test(app));

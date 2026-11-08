@@ -74,7 +74,7 @@ async function boot() {
         assert(row.querySelector('.eg-king[data-glyph="k"]'));
         assert(!/[♔♕♖♗♘♙♚♛♜♝♞♟]/.test($('#endgame-panel').textContent));
         assert.deepStrictEqual(['kqk', 'kpk-carre', 'tours-tarrasch'].map(id => $(`.eg-card[data-arg="${id}"] .eg-goal-tag use`).getAttribute('href')),
-            ['#i-flag', '#i-target', '#i-target']);
+            ['#i-footsteps', '#i-flame', '#i-flame']);
     });
 
     await t('un clic sur une ligne ouvre l\'aperçu sans appeler startEndgame (panneau du bas, puis colonne de droite)', () => {

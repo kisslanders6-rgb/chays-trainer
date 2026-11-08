@@ -59,4 +59,7 @@ async function bootApp({ storage = {}, onboarded = true, before } = {}) {
     return { dom, w: dom.window, errors };
 }
 
-module.exports = { ROOT, scriptPath, readVars, bootApp };
+// Feuilles principales (ancien style.css), dans l'ordre d'index.html : la cascade et les tests en dépendent.
+const mainCss = () => ['base', 'layout', 'components', 'board', 'game'].map(n => fs.readFileSync(path.join(ROOT, `css/${n}.css`), 'utf8')).join('\n');
+
+module.exports = { ROOT, scriptPath, readVars, bootApp, mainCss };

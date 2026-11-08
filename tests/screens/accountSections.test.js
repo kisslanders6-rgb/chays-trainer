@@ -19,7 +19,7 @@ async function boot(backend) {
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
     [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
-    [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     await tick(20);
     return w;
 }

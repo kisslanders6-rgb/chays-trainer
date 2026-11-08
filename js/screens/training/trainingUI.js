@@ -337,7 +337,7 @@ function initTraining() {
             <div class="trr-h"><h3 id="trr-ex-h">Exercices</h3></div>
             <div class="trr-list edge-card">
                 ${inFile.length ? row('relearn', 'rotate-ccw', 'fragile', 'À revoir', ready.length, `${inFile.length} dans la file · ${RELEARN_DAYS.length} réussites espacées pour en sortir`, { empty: `Prochaine ${dueInLabel(fileNext, true)}` }) : ''}
-                ${row('weak', 'target', 'weak', 'Points faibles', Math.min(weak, TRAIN_WEAK_MAX), '', { empty: 'Aucune position fragile ni à retravailler' })}
+                ${row('weak', 'flame', 'weak', 'Points faibles', Math.min(weak, TRAIN_WEAK_MAX), '', { empty: 'Aucune position fragile ni à retravailler' })}
                 ${row('line', 'git-branch', '', 'Ligne complète', openings.length, '', { empty: 'Aucune ouverture reconnue', expanded: _trLineOpen })}
                 ${lineList}
                 ${row('unsure', 'check', 'unsure', 'À confirmer', Math.min(unsure, TRAIN_WEAK_MAX), '', { empty: 'Aucune position à confirmer' })}

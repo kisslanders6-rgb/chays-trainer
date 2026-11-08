@@ -48,7 +48,7 @@ const Dock = (function () {
         if (shownTab('home-tab-stats')) {
             const b = document.querySelector('#home-tab-stats .st-go');
             if (b) return b.dataset.arg === 'weak'
-                ? { icon: 'target', label: 'Faiblesses', tone: 'soft', title: 'Points faibles', run: () => b.click() }
+                ? { icon: 'flame', label: 'Faiblesses', tone: 'soft', title: 'Points faibles', run: () => b.click() }
                 : { icon: 'play', label: 'Réviser', title: 'Révision du jour', run: () => b.click() };
         }
         if (shownTab('home-tab-training')) {
@@ -110,7 +110,7 @@ const Dock = (function () {
         const hint = modeBtn('.tb-hint');
         if (hint && !hint.disabled) {
             const sol = hint.dataset.sol === 'sol';
-            return proxy(hint, { icon: sol ? 'target' : 'lightbulb', label: sol ? 'Solution' : 'Indice', tone: hint.classList.contains('is-suggest') ? 'warn' : 'soft', title: hint.title });
+            return proxy(hint, { icon: sol ? 'flame' : 'lightbulb', label: sol ? 'Solution' : 'Indice', tone: hint.classList.contains('is-suggest') ? 'warn' : 'soft', title: hint.title });
         }
         if (gameMode === 'training') {
             const b = modeBtn('[onclick^="nextDrill"]');

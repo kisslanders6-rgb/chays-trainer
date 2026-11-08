@@ -4,6 +4,7 @@
  * Effets sonores synthétisés avec la Web Audio API (aucun fichier externe) :
  *   'move'    toc de bois feutré   'capture' toc plus plein (pas plus fort)   'success' deux notes rondes
  *   'error'   deux notes sourdes descendantes (plus de buzz en dent de scie)
+ *   'check' le coup et une note claire   'castle' deux tocs   'promote' trois notes montantes   'mate' prise et accord   'end' fin de séance
  * Douceur : attaque de 8 ms (plus de clic), aigus coupés au-dessus de 3,2 kHz, limiteur en sortie (jamais d'écrêtage).
  * Respecte appSettings.sound / appSettings.volume (cf. settings.js).
  * Annonce des coups (spokenMove, announceMove, Voice) : lecteurs d'écran ou synthèse vocale, réglage announce.
@@ -81,6 +82,31 @@ const _SOUNDS = {
     error(ctx, out, t) {                         // deux notes sourdes, descendantes
         _tone(ctx, out, t,        { wave: 'triangle', from: 210, to: 180, peak: 0.09, dur: 0.12, lowpass: 700 });
         _tone(ctx, out, t + 0.13, { wave: 'triangle', from: 175, to: 150, peak: 0.085, dur: 0.16, lowpass: 600 });
+    },
+    check(ctx, out, t) {                         // le coup, puis une note claire
+        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.14, dur: 0.04 });
+        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.20, dur: 0.09 });
+        _tone(ctx, out, t + 0.05, { from: 740, to: 740, peak: 0.07, dur: 0.16, attack: 0.01 });
+    },
+    castle(ctx, out, t) {                        // deux tocs rapprochés : le Roi, puis la Tour
+        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.10, dur: 0.04 });
+        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.16, dur: 0.09 });
+        _burst(ctx, out, t + 0.11, { freq: 900, q: 1.3, peak: 0.10, dur: 0.04 });
+        _tone(ctx, out, t + 0.11,  { from: 180, to: 130, peak: 0.16, dur: 0.09 });
+    },
+    promote(ctx, out, t) {                       // le coup, puis trois notes montantes (do, mi, sol)
+        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.10, dur: 0.04 });
+        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.18, dur: 0.09 });
+        [523, 659, 784].forEach((f, i) => _tone(ctx, out, t + 0.06 + i * 0.07, { from: f, to: f, peak: 0.07, dur: 0.20, attack: 0.01 }));
+    },
+    mate(ctx, out, t) {                          // la prise, puis un accord posé (sol, ré)
+        _burst(ctx, out, t, { freq: 800, q: 1.1, peak: 0.14, dur: 0.06 });
+        _tone(ctx, out, t,  { from: 165, to: 110, peak: 0.20, dur: 0.13 });
+        _tone(ctx, out, t + 0.10, { from: 392, to: 392, peak: 0.09, dur: 0.40, attack: 0.012 });
+        _tone(ctx, out, t + 0.10, { from: 587, to: 587, peak: 0.06, dur: 0.50, attack: 0.012 });
+    },
+    end(ctx, out, t) {                           // fin de séance : trois notes rondes (ré, fa dièse, la)
+        [587, 740, 880].forEach((f, i) => _tone(ctx, out, t + i * 0.12, { from: f, to: f, peak: 0.08, dur: 0.34, attack: 0.012 }));
     }
 };
 
@@ -95,7 +121,7 @@ function _soundOut(ctx, volume) {
 }
 
 // Chaque son peut être coupé séparément (Paramètres › Sons et vibrations).
-const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess' };
+const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess', check: 'sMove', castle: 'sMove', promote: 'sMove', mate: 'sMove', end: 'sSuccess' };
 
 // Vibration (téléphones compatibles) : coup refusé, exercice réussi. Indépendante du son.
 function buzz(kind) {
@@ -118,8 +144,23 @@ function playSound(kind) {
 function playMoveSound(from, to, promo) {
     const p = board[from];
     const capture = !!board[to] || (!!p && p.toUpperCase() === 'P' && (from % 8) !== (to % 8));
-    playSound(capture ? 'capture' : 'move');
+    playSound(moveSoundKind(_moveSan(from, to, promo), capture));
     announceMove(from, to, capture, promo);
+}
+
+// SAN du coup à venir dans la position affichée ('' s'il est impossible à lire).
+function _moveSan(from, to, promo) {
+    const p = board[from] || '', last = p.toUpperCase() === 'P' && (to < 8 || to >= 56);
+    try { return Chess.san(Chess.snapshot(), squareToName(from) + squareToName(to) + (promo || (last ? 'q' : ''))); } catch (e) { return ''; }
+}
+
+// Le son d'un coup, du plus marquant au plus ordinaire.
+function moveSoundKind(san, capture) {
+    if (/#/.test(san)) return 'mate';
+    if (/\+/.test(san)) return 'check';
+    if (/=/.test(san)) return 'promote';
+    if (/^O-O/.test(san)) return 'castle';
+    return capture ? 'capture' : 'move';
 }
 
 // ─── ANNONCE DES COUPS (Paramètres › Accessibilité) ──────────────────────────

@@ -56,7 +56,7 @@ const I18n = (function () {
     // « {0} sur {1} » (peu de lettres) n'accepte qu'un nombre ou un mot court : sinon il avalerait toute phrase avec « sur ».
     const WIDE = '(.*?)', NARROW = '([\\d.,]+ ?\\S{0,3}|\\S{0,10})';
     function install(id, table) {
-        lang = id; dict = {}; patterns = []; htmlPatterns = []; memo.clear();
+        lang = id; dict = {}; patterns = []; htmlPatterns = []; memo.clear(); outputs.clear();
         Object.keys(table).forEach(raw => {
             const k = spaces(raw);
             dict[k] = table[raw];
@@ -67,7 +67,7 @@ const I18n = (function () {
             // Un trou annoncé par la ponctuation (« Aperçu : {0} », « {0} : … ») reste large, même dans une phrase courte.
             const parts = k.split(/\{\d\}/);
             const source = parts.map((part, i) => esc(part) + (i === parts.length - 1 ? '' :
-                letters >= 12 || /[:·«]\s*$/.test(part) || /^\s*[:·»]/.test(parts[i + 1]) ? WIDE : NARROW)).join('');
+                letters >= 12 || /[:·«,]\s*$/.test(part) || /^\s*[:·»]/.test(parts[i + 1]) ? WIDE : NARROW)).join('');
             (/<[a-z]/.test(k) ? htmlPatterns : patterns).push({ re: new RegExp('^' + source + '$', 's'), order, out: table[raw], size: letters });
         });
         const bySize = (a, b) => b.size - a.size;                                 // la phrase la plus précise d'abord
@@ -75,13 +75,23 @@ const I18n = (function () {
     }
 
     // ─── TRADUCTION D'UN TEXTE ───────────────────────────────────────────────
+    // Pluriels d'une clé à {n} : « a|b » (singulier, pluriel) ; « a|b|c » (one, few, autres : russe) ; six formes dans l'ordre
+    // zero, one, two, few, many, other (arabe). La forme vient d'Intl.PluralRules, selon le premier nombre de la phrase.
+    const PLURAL_SLOTS = { 2: ['one'], 3: ['one', 'few'], 6: ['zero', 'one', 'two', 'few', 'many'] };
+    function pluralForm(out, n) {
+        const forms = out.split('|');
+        if (forms.length < 2) return out;
+        const i = (PLURAL_SLOTS[forms.length] || []).indexOf(new Intl.PluralRules(LANGS[lang].locale).select(Number(n.replace(/[\s.,]/g, ''))));
+        return forms[i < 0 ? forms.length - 1 : i];
+    }
+
     function lookup(raw, list = patterns) {
         const text = spaces(raw);
         if (Object.prototype.hasOwnProperty.call(dict, text)) return dict[text];
         const nums = text.match(/\d[\d\s.,]*\d|\d/g);
         if (nums) {
             const hit = dict[text.replace(/\d[\d\s.,]*\d|\d/g, '{n}')];
-            if (hit !== undefined) { let i = 0; return hit.replace(/\{n\}/g, () => nums[i++]); }
+            if (hit !== undefined) { let i = 0; return pluralForm(hit, nums[0]).replace(/\{n\}/g, () => nums[i++]); }
         }
         for (const p of list) {
             const m = p.re.exec(text);
@@ -113,12 +123,15 @@ const I18n = (function () {
         if (core && /\p{L}/u.test(core)) {
             const hit = lookup(core);
             if (hit !== null) out = lead + hit + trail;
+            else if (core.includes(' · ')) out = lead + core.split(' · ').map(translate).join(' · ') + trail;   // « A · B » : chaque membre est une phrase
             else if (!outputs.has(core)) missing.add(core);
         }
         memo.set(raw, out);
         outputs.add(out.trim());
         return out;
     }
+
+    const mark = text => { if (dict) outputs.add(String(text).trim()); return text; };
 
     // ─── PAGE ────────────────────────────────────────────────────────────────
     const skipped = el => !el || !el.closest || !!el.closest(SKIP);
@@ -236,6 +249,10 @@ const I18n = (function () {
     return {
         LANGS, EMBEDDED, start, use, download, removePack, hasPack,
         t: text => translate(text),
+        // Texte déjà composé dans la langue (date, nombre, libellé traduit) : la couche de la page n'y touche plus.
+        mark,
+        // « libellé : valeur » avec la ponctuation de la langue ; les deux membres sont déjà traduits.
+        pair: (label, value) => mark(`${label}${lang === 'fr' ? ' : ' : /^(zh|ja)/.test(lang) ? '：' : ': '}${value}`),
         lang: () => lang,
         locale: () => LANGS[lang].locale,
         letters: () => LANGS[lang].letters,

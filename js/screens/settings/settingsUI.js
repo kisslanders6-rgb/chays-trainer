@@ -24,7 +24,7 @@ const KEYBOARD_SHORTCUTS = [
 
 const SETTINGS_SECTIONS = [
     { id: 'apparence', icon: 'palette',  label: 'Apparence',             desc: 'Mode, échiquier, pièces, flèches' },
-    { id: 'jeu',       icon: 'target',   label: 'Jeu et entraînement',   desc: 'Partie, révisions, mode libre, notation' },
+    { id: 'jeu',       icon: 'flame',   label: 'Jeu et entraînement',   desc: 'Partie, révisions, mode libre, notation' },
     { id: 'moteur',    icon: 'cpu',      label: 'Moteur d’analyse',      desc: 'Réseau, lignes, profondeur' },
     { id: 'sons',      icon: 'volume',   label: 'Sons et vibrations',    desc: 'Effets sonores, volume, vibrations' },
     { id: 'access',    icon: 'eye',      label: 'Accessibilité',         desc: 'Animations, texte, contraste, annonce' },
@@ -477,7 +477,7 @@ const SettingsPanel = PanelKit.create({
             if (key === 'openData')  { SettingsPanel.close(); showData(); }
             if (key === 'openTrash') { SettingsPanel.close(); showTrash(); }
             if (key === 'langGet') _langGet(value);
-            if (key === 'langUse' && value !== I18n.lang()) I18n.use(value).catch(() => { _langDl.error = 'Langue indisponible pour le moment.'; SettingsPanel.refresh(); });
+            if (key === 'langUse' && value !== I18n.lang()) _useLanguage(value);
             if (key === 'langRemove') I18n.removePack(value).then(() => { _langDl.have[value] = false; SettingsPanel.refresh(); });
             if (key === 'fullDownload') _fullDownload();
             if (key === 'fullCancel' && _fullDl.job) _fullDl.job.cancel();
@@ -505,6 +505,32 @@ const SettingsPanel = PanelKit.create({
         if (key === 'sound' && value) playSound('move');
         SettingsPanel.refresh();
     }
+});
+
+// Changer de langue recharge la page : les Paramètres se rouvrent au même endroit. Une séance guidée vit en mémoire,
+// elle ne survivrait pas au rechargement : la langue attend sa fin.
+const SETTINGS_RESUME_KEY = 'chays_settingsResume';
+function _useLanguage(id) {
+    if (trainingState.session && gameMode === 'training') {
+        _langDl.error = 'Terminez la séance pour changer de langue.';
+        SettingsPanel.refresh();
+        return;
+    }
+    const content = SettingsPanel.el.querySelector('.pn-content');
+    try { sessionStorage.setItem(SETTINGS_RESUME_KEY, JSON.stringify({ section: SettingsPanel.state.section, y: content ? content.scrollTop : 0 })); } catch (e) { /* retour à l'accueil, sans plus */ }
+    I18n.use(id).catch(() => {
+        try { sessionStorage.removeItem(SETTINGS_RESUME_KEY); } catch (e) { /* rien à effacer */ }
+        _langDl.error = 'Langue indisponible pour le moment.';
+        SettingsPanel.refresh();
+    });
+}
+window.addEventListener('load', () => {
+    let at = null;
+    try { at = JSON.parse(sessionStorage.getItem(SETTINGS_RESUME_KEY) || 'null'); sessionStorage.removeItem(SETTINGS_RESUME_KEY); } catch (e) { /* illisible : on ne rouvre rien */ }
+    if (!at) return;
+    showSettings(at.section);
+    const content = SettingsPanel.el.querySelector('.pn-content');
+    if (content) content.scrollTop = at.y;
 });
 
 function _backupAlert() {

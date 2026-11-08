@@ -74,7 +74,7 @@ const settings = fs.readFileSync(scriptPath('settings.js'), 'utf8'), icons = fs.
     });
 
     await t('composant .avatar : taille par --size, contenu en proportion, couleur « Échiquier » calibrée', () => {
-        const css = fs.readFileSync('css/account.css', 'utf8'), ui = fs.readFileSync(scriptPath('accountUI.js'), 'utf8');
+        const css = fs.readFileSync('css/account.css', 'utf8'), ui = fs.readFileSync(scriptPath('accountUI.js'), 'utf8') + fs.readFileSync(scriptPath('accountSections.js'), 'utf8');
         assert(/\.avatar \{[^}]*aspect-ratio: 1[^}]*overflow: hidden/.test(css));
         assert(/\.avatar \.av-picto svg\.ico \{ width: 100%/.test(css), 'plus spécifique que .topnav-pill > .theme-toggle svg');
         assert(/\.avatar \.av-photo \{[^}]*object-fit: cover/.test(css));

@@ -12,7 +12,7 @@
  *   4. « Par ouverture » : positions regroupées par ouverture nommée (openingNames.js), triables et filtrables ;
  *      chaque position s'affiche en aperçu ou se travaille seule (▶, seule action qui lance une révision) ;
  *      « Réviser cette ouverture » ouvre la Révision du jour filtrée sur elle.
- *   5. « Régularité, tous répertoires » : série, calendrier (12 semaines, 5 sur téléphone), réussite par semaine.
+ *   5. « Régularité, tous répertoires » : série, calendrier (12 semaines, grille fluide), réussite par semaine.
  * Portée : répertoire actif, Blancs, Noirs ou les deux (barre collante en tête de l'onglet).
  *
  * Six niveaux, utilisés partout (Statistiques, Entraînement, arbre du répertoire) ; m = score de maîtrise (masteryOf, storage.js) :
@@ -31,8 +31,8 @@ const STATS_LINE_ROWS     = 30;     // positions affichées par ouverture avant 
 const STATS_WEAK_CARDS    = 3;
 const STATS_SECONDS_PER_POSITION = 30;
 const STATS_DAYS          = 30;
-const STATS_HEAT_WEEKS    = 12;     // calendrier : une colonne par semaine, il défile sur petit écran
-const STATS_PHONE_WEEKS   = 5;      // téléphone : semaines du calendrier montrées (les plus récentes)
+const STATS_HEAT_WEEKS    = 12;     // calendrier : une colonne par semaine, de largeur partagée
+const STATS_WEAK_PAGE     = 30;     // « Points faibles › Tout voir » : positions montrées avant « Afficher les autres »
 const STATS_FORECAST_DAYS = 7;
 const STATS_PHONE_LINES   = 5;      // téléphone : ouvertures montrées avant « Tout voir »
 const STATS_TREND_WEEKS   = 8;
@@ -49,19 +49,22 @@ let statsAll    = new Set(); // ouvertures dont toutes les positions sont affich
 let statsPane   = 'overview'; // téléphone : onglet affiché ('overview' | 'openings' | 'regularity')
 let statsAllLines = false;   // téléphone : toutes les ouvertures affichées
 let statsScope  = '';        // répertoire + couleur : les ouvertures dépliées se réinitialisent quand il change
+let statsWeak   = null;      // vue complète « Points faibles » : { shown, y } (y : défilement de la page quittée), sinon null
 
 // Repère de niveau : couleur ET forme (lisible sans distinguer les couleurs), cf. .lv-mark.
 const _lvMark = l => `<i class="lv-mark lv-${l}" aria-hidden="true"></i>`;
+
+const _lvPair = (l, n) => I18n.pair(I18n.t(STATS_LEVELS[l].label), n);
 
 // Barre de répartition ; counts : { niveau: nombre }. opts.buttons : un bouton par segment, qui filtre la liste
 // comme la légende (statsLegend) ; opts.active : niveau du filtre en cours. Sans opts, des <i> décoratifs.
 function levelBarHTML(counts, cls, opts) {
     const lv = STATS_MASTERY_LEVELS.filter(l => counts[l]);
     if (!opts || !opts.buttons) return `<span class="lv-bar ${cls || ''}" aria-hidden="true">${lv
-        .map(l => `<i class="lv-${l}" style="flex:${counts[l]}" title="${STATS_LEVELS[l].label} : ${counts[l]}"></i>`).join('')}</span>`;
+        .map(l => `<i class="lv-${l}" style="flex:${counts[l]}" title="${_lvPair(l, counts[l])}"></i>`).join('')}</span>`;
     const on = opts.active && opts.active !== 'all' ? opts.active : '';
     return `<span class="lv-bar lv-bar-btn${on ? ' has-on' : ''} ${cls || ''}" role="group" aria-label="Filtrer la liste par niveau">${lv.map(l =>
-        `<button type="button" class="lv-${l}${on === l ? ' on' : ''}" style="flex:${counts[l]}" data-action="statsLegend" data-arg="${l}" aria-pressed="${on === l}" title="${STATS_LEVELS[l].label} : ${counts[l]}" aria-label="${STATS_LEVELS[l].label}, ${counts[l]}"></button>`).join('')}</span>`;
+        `<button type="button" class="lv-${l}${on === l ? ' on' : ''}" style="flex:${counts[l]}" data-action="statsLegend" data-arg="${l}" aria-pressed="${on === l}" title="${_lvPair(l, counts[l])}" aria-label="${I18n.mark(`${I18n.t(STATS_LEVELS[l].label)}, ${counts[l]}`)}"></button>`).join('')}</span>`;
 }
 
 const _plural = (n, one, many) => `${n} ${n > 1 ? many || one + 's' : one}`;
@@ -158,12 +161,12 @@ function _regularityHTML() {
     const first  = _dayStart(monday, -7 * (STATS_HEAT_WEEKS - 1));
     const fmt = t => new Date(t).toLocaleDateString(I18n.locale(), { weekday: 'long', day: 'numeric', month: 'long' });
     // Une colonne par semaine (lundi en haut), précédée des initiales des jours.
-    let heat = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="st-heat-d">${d}</span>`).join('');
+    let heat = [0, 1, 2, 3, 4, 5, 6].map(d => `<span class="st-heat-d" translate="no">${new Date(2024, 0, 1 + d).toLocaleDateString(I18n.locale(), { weekday: 'narrow' }).toUpperCase()}</span>`).join('');
     for (let w = 0; w < STATS_HEAT_WEEKS; w++) {
         for (let d = 0; d < 7; d++) {
             const t = _dayStart(first, w * 7 + d), a = dayAt(t).a;
             const cls = t > today ? 'future' : !a ? '' : a < 10 ? 'h1' : a < 25 ? 'h2' : 'h3';
-            heat += `<i class="${cls}${t === today ? ' today' : ''}${w < STATS_HEAT_WEEKS - STATS_PHONE_WEEKS ? ' old' : ''}" title="${t > today ? '' : `${fmt(t)} : ${_plural(a, 'essai')}`}"></i>`;
+            heat += `<i class="${cls}${t === today ? ' today' : ''}" title="${t > today ? '' : I18n.pair(fmt(t), I18n.t(_plural(a, 'essai')))}"></i>`;
         }
     }
 
@@ -185,7 +188,7 @@ function _regularityHTML() {
         const end = pts[pts.length - 1];
         const area = `${line}L${x(end.i).toFixed(1)},${H - pb}L${x(pts[0].i).toFixed(1)},${H - pb}Z`;
         const grid = [lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - pr + 4}" y="${y(v) + 3}">${Math.round(v)} %</text>`).join('');
-        const startLbl = new Date(_dayStart(monday, -7 * (STATS_TREND_WEEKS - 1))).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
+        const startLbl = I18n.mark(new Date(_dayStart(monday, -7 * (STATS_TREND_WEEKS - 1))).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' }));
         chart = `<div class="st-trend"><span class="st-sub st-trend-h"><span>Réussite par semaine</span><b>${end.v} % cette semaine</b></span>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Réussite par semaine sur ${STATS_TREND_WEEKS} semaines, ${end.v} % cette semaine">
               ${grid}<path class="ar" d="${area}"/><path class="ln" d="${line}"/>
@@ -204,8 +207,8 @@ function _regularityHTML() {
 
     return `
         <div class="st-reg-kpis"><div><b>${_plural(streak, 'jour')}</b><span>d'affilée</span></div><div><b>${active} / ${STATS_DAYS}</b><span>jours actifs</span></div></div>
-        <div class="st-heat-scroll"><div class="st-heat" role="img" aria-label="Essais par jour sur ${STATS_HEAT_WEEKS} semaines">${heat}</div></div>
-        <div class="st-heat-leg">moins <i></i><i class="h1"></i><i class="h2"></i><i class="h3"></i> plus</div>
+        <div class="st-heat" style="--weeks:${STATS_HEAT_WEEKS}" role="img" aria-label="Essais par jour sur ${STATS_HEAT_WEEKS} semaines">${heat}</div>
+        <div class="st-heat-leg">Peu <i></i><i class="h1"></i><i class="h2"></i><i class="h3"></i> Beaucoup</div>
         ${chart}
         ${bySide ? `<div class="st-cmps"><span class="st-sub">Maîtrise par couleur · ${escapeHtml(currentRepertoire)}</span>${bySide}</div>` : ''}`;
 }
@@ -216,6 +219,35 @@ function _renderStatsScope() {
     ColorScope.render(document.getElementById('stats-color'), { options: ['w', 'b', 'all'], value: statsColor, onChange: setStatsColor });
     const rep = document.getElementById('stats-rep');
     if (rep) rep.innerHTML = repertoireDropdownHTML('statsRep');
+}
+
+const _statsArg = r => escapeHtml(r.side + ':' + r.k);
+const _gamesSection = () => `<section class="st-sec st-card edge-card" id="stats-games" data-pane="games">${StatsGames.content()}</section>`;
+
+// Une position fragile : miniature, coup masqué, ouverture, maîtrise ; la ligne entière ouvre l'aperçu.
+function _weakRowHTML(r) {
+    const mv = r.e.ply ? _moveLabel(r.e, true) : 'Coup à retrouver', from = (r.side === 'w' ? 'Blancs · ' : 'Noirs · ');
+    return `
+                <button type="button" class="st-wrow lv-${r.lv}" data-action="statsPreview" data-arg="${_statsArg(r)}" data-origin="weak" aria-label="Voir la position ${escapeHtml(mv)}, ${escapeHtml(from + r.gName)}">
+                    ${_miniBoardHTML(r, false, { cls: 'st-wmini' })}
+                    <span class="st-wrow-txt"><b>${escapeHtml(mv)}</b><small>${statsColor === 'all' ? from : ''}${r.gHtml}</small></span>
+                    <span class="st-errs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, Math.round(masteryOf(r.e)))}%"></i></span><span class="st-n">${Math.round(masteryOf(r.e))} / 100</span>${ico('chevron-right')}</span>
+                </button>`;
+}
+
+// « Points faibles › Tout voir » : toutes les positions à retravailler ou fragiles, les plus fragiles d'abord.
+function _renderWeakList(body, rows, reg, weakN, relearnN) {
+    const all = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort((a, b) => _rate(b) - _rate(a) || b.e.attempts - a.e.attempts);
+    const shown = all.slice(0, statsWeak.shown), rest = all.length - shown.length;
+    body.className = 'st-body pane-overview';                   // téléphone : la colonne Régularité reste cachée
+    body.innerHTML = `<div class="st-main"><section class="st-sec st-card st-weak edge-card" id="stats-weak-all">
+        <button type="button" class="st-link st-back" data-action="statsWeakBack">${ico('chevron-left')}Statistiques</button>
+        <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span></div>
+        <div class="st-wlist">${shown.map(_weakRowHTML).join('')}</div>
+        ${rest ? `<button type="button" class="st-more" data-action="statsWeakMore">Afficher les ${rest} autres positions</button>` : ''}
+        <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
+    </section></div>${reg}`;
+    Bus.emit('ui:refresh');
 }
 
 function initStats() {
@@ -243,7 +275,8 @@ function initStats() {
         };
         body.className = 'st-body';
         body.innerHTML = `<div class="st-main"><section class="st-card st-empty edge-card"><span class="st-empty-i">${ico(empty.icon)}</span>
-            <b>${empty.title}</b><span>${empty.sub}</span>${empty.btn}</section></div>` + reg;
+            <b>${empty.title}</b><span>${empty.sub}</span>${empty.btn}</section>${_gamesSection()}</div>` + reg;
+        StatsGames.mount();
         return;
     }
 
@@ -262,27 +295,27 @@ function initStats() {
     const minutes = Math.max(1, Math.round(dueAll * STATS_SECONDS_PER_POSITION / 60));
     // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
     const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
-    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'long' }) : 'aujourd\'hui';
+    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'long' }) : I18n.t('aujourd\'hui');
     const forecast = `<div class="st-fc-h"><span>${STATS_FORECAST_DAYS} prochains jours</span><b>${_plural(fcSum, 'position')}</b></div>
-            <div class="st-fc" role="img" aria-label="Révisions prévues : ${fc.map((n, i) => `${fcDay(i)} ${n}`).join(', ')}">${fc.map((n, i) =>
-                `<div title="${fcDay(i)} : ${_plural(n, 'position')}"><i style="height:${n ? 4 + Math.round(26 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>`;
+            <div class="st-fc" role="img" aria-label="${I18n.pair(I18n.t('Révisions prévues'), fc.map((n, i) => `${fcDay(i)} ${n}`).join(', '))}">${fc.map((n, i) =>
+                `<div title="${I18n.pair(fcDay(i), I18n.t(_plural(n, 'position')))}"><i style="height:${n ? 4 + Math.round(26 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>`;
     // Seule action pleine de la page : Révision du jour, ou Points faibles quand tout est à jour.
     const today = `
         <div class="vel-card vel-dark st-today edge-card">
             <span class="st-eyebrow">Aujourd'hui · ${_sideName(statsColor)}</span>
             ${dueAll ? `
             <div class="st-big"><b>${dueAll}</b><span>${dueAll > 1 ? 'positions à réviser' : 'position à réviser'}</span></div>
-            <div class="st-today-sub">Environ ${minutes} min${dueWeak ? ` · dont <b>${dueWeak} à retravailler</b>` : ''}${fresh ? ` · ${_plural(fresh, 'nouvelle', 'nouvelles')}` : ''}</div>
+            <div class="st-today-sub">Environ ${minutes} min${dueWeak ? ` · <b>dont ${dueWeak} à retravailler</b>` : ''}${fresh ? ` · ${_plural(fresh, 'nouvelle', 'nouvelles')}` : ''}</div>
             ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="due">Révision du jour ${ico('chevron-right')}</button>` : `
             <div class="st-big st-big-text"><b>À jour</b></div>
             <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${dueInLabel(next)}.` : 'Aucune révision prévue.'}</div>
             ${forecast}
-            <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('target')}Points faibles ${ico('chevron-right')}</button>`}
+            <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Points faibles ${ico('chevron-right')}</button>`}
         </div>`;
 
     // ── Téléphone : trois chiffres et onglets collants (css/screens.css, requête de conteneur) ──
-    const tabs = [['overview', 'Aperçu'], ['openings', 'Ouvertures'], ['regularity', 'Régularité']].filter(([p]) => p !== 'regularity' || reg);
+    const tabs = [['overview', 'Aperçu'], ['openings', 'Ouvertures'], ['regularity', 'Régularité'], ['games', 'Parties']].filter(([p]) => p !== 'regularity' || reg);
     if (!tabs.some(([p]) => p === statsPane)) statsPane = 'overview';
     const phoneHead = `<div class="st-phone st-kpis" role="group" aria-label="En bref">
             <div><b>${dueAll}</b><span>à réviser</span></div>
@@ -294,7 +327,7 @@ function initStats() {
     // ── Maîtrise ── la barre filtre comme la légende ; la règle de chaque niveau est dans son title.
     const totA = rows.reduce((s, r) => s + r.e.attempts, 0), totF = rows.reduce((s, r) => s + r.e.failures, 0);
     const mastery = Math.round(100 * counts.mastered / rows.length);
-    const lg = (l, cls) => `<button type="button" class="st-lg ${cls || ''} ${statsFilter === l ? 'active' : ''}" aria-pressed="${statsFilter === l}" data-action="statsLegend" data-arg="${l}" title="${STATS_LEVELS[l].one} : ${STATS_LEVELS[l].rule}" ${counts[l] ? '' : 'disabled'}>
+    const lg = (l, cls) => `<button type="button" class="st-lg ${cls || ''} ${statsFilter === l ? 'active' : ''}" aria-pressed="${statsFilter === l}" data-action="statsLegend" data-arg="${l}" title="${I18n.pair(I18n.t(STATS_LEVELS[l].one), I18n.t(STATS_LEVELS[l].rule))}" ${counts[l] ? '' : 'disabled'}>
             ${_lvMark(l)}<span>${STATS_LEVELS[l].label}</span><b>${counts[l]}</b></button>`;
     const legend = STATS_MASTERY_LEVELS.map(l => lg(l)).join('');
     const state = `<div class="st-state">${lg(STATS_STATE, 'st-lg-state')}<small>pas encore de niveau</small></div>`;
@@ -311,20 +344,17 @@ function initStats() {
     // ── Points faibles ── la ligne entière ouvre l'aperçu ; l'exercice est dans l'Entraînement.
     const weakest = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort((a, b) => _rate(b) - _rate(a) || b.e.attempts - a.e.attempts).slice(0, STATS_WEAK_CARDS);
     _assignOpenings(rows);
-    const arg = r => escapeHtml(r.side + ':' + r.k);
+    const arg = _statsArg;
     const weakN = counts.weak + counts.fragile, relearnN = rows.filter(r => Number.isInteger(r.e.relearn)).length;
+    if (statsWeak) {
+        if (weakN) { _renderWeakList(body, rows, reg, weakN, relearnN); return; }
+        statsWeak = null;                                       // plus rien à montrer : retour à la page
+    }
     const weakHTML = !weakest.length ? '' : `
         <section class="st-sec st-card st-weak edge-card">
-            <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span>${counts.weak ? `<button type="button" class="st-link" data-action="statsLegend" data-arg="weak">Tout voir</button>` : ''}</div>
-            <div class="st-wlist">${weakest.map(r => {
-                const mv = r.e.ply ? _moveLabel(r.e, true) : 'Coup à retrouver', from = (r.side === 'w' ? 'Blancs · ' : 'Noirs · ');
-                return `
-                <button type="button" class="st-wrow lv-${r.lv}" data-action="statsPreview" data-arg="${arg(r)}" data-origin="weak" aria-label="Voir la position ${escapeHtml(mv)}, ${escapeHtml(from + r.gName)}">
-                    ${_miniBoardHTML(r, false, { cls: 'st-wmini' })}
-                    <span class="st-wrow-txt"><b>${escapeHtml(mv)}</b><small>${statsColor === 'all' ? from : ''}${r.gHtml}</small></span>
-                    <span class="st-errs"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, Math.round(masteryOf(r.e)))}%"></i></span><span class="st-n">${Math.round(masteryOf(r.e))} / 100</span>${ico('chevron-right')}</span>
-                </button>`; }).join('')}</div>
-            <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('target')}Entraînement › Points faibles ${ico('chevron-right')}</button>
+            <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span>${weakN > weakest.length ? `<button type="button" class="st-link" data-action="statsWeakAll">Tout voir</button>` : ''}</div>
+            <div class="st-wlist">${weakest.map(_weakRowHTML).join('')}</div>
+            <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
         </section>`;
 
     // ── Par ouverture ──
@@ -393,11 +423,11 @@ function initStats() {
                 <div class="st-lines${statsAllLines ? '' : ' is-capped'}">${lines || '<div class="empty-tab">Aucune position à ce niveau.</div>'}</div>
                 ${!statsAllLines && list.length > STATS_PHONE_LINES ? `<button type="button" class="st-more st-phone" data-action="statsAllLines">Tout voir : ${_plural(list.length, 'ouverture')}</button>` : ''}
             </section>
+            ${_gamesSection()}
         </div>${reg}`;
     body.className = 'st-body pane-' + statsPane;
     body.insertAdjacentHTML('afterbegin', phoneHead);
-    const hs = body.querySelector('.st-heat-scroll');
-    if (hs) hs.scrollLeft = hs.scrollWidth;                     // la semaine en cours, à droite
+    StatsGames.mount();
     Bus.emit('ui:refresh');             // téléphone : le centre du dock porte l'action de la page
 }
 
@@ -430,10 +460,18 @@ registerActions({
     statsLegend: f => {
         statsFilter = statsFilter === f ? 'all' : f;
         statsOpen = null;                                           // la première ouverture concernée s'ouvre
-        initStats();
         const sec = document.getElementById('stats-lines');
-        if (sec && statsFilter !== 'all') sec.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        // Téléphone : la liste vit dans un autre onglet, il faut y aller pour la voir.
+        const elsewhere = sec && statsFilter !== 'all' && getComputedStyle(sec).display === 'none';
+        if (elsewhere) statsPane = sec.dataset.pane;
+        initStats();
+        if (elsewhere) { window.scrollTo({ top: 0 }); return; }
+        const list = document.getElementById('stats-lines');
+        if (list && statsFilter !== 'all') list.scrollIntoView({ block: 'start', behavior: 'smooth' });
     },
+    statsWeakAll: () => { statsWeak = { shown: STATS_WEAK_PAGE, y: window.scrollY || 0 }; initStats(); window.scrollTo({ top: 0 }); },
+    statsWeakMore: () => { statsWeak.shown += STATS_WEAK_PAGE; initStats(); },
+    statsWeakBack: () => { const y = statsWeak ? statsWeak.y : 0; statsWeak = null; initStats(); window.scrollTo({ top: y }); },
     statsSort: v => { statsSort = v; initStats(); },
     statsLine: k => { if (statsOpen.has(k)) statsOpen.delete(k); else statsOpen.add(k); initStats(); },
     statsMore: k => { statsAll.add(k); initStats(); },
@@ -502,6 +540,12 @@ function _renderStatsBack(lv, origin) {
     btn.setAttribute('aria-label', label);
     cat.innerHTML = `<span class="lv-chip lv-${lv}">${_lvMark(lv)}${STATS_LEVELS[lv].one}</span>${where ? `<span class="tp-origin">· ${escapeHtml(where)}</span>` : ''}`;
 }
+
+// Une ligne de partie à travailler : ouverte dans Jouer, où la réponse s'enregistre.
+function statsOpenLine(color, path) { startGame(color); loadPositionFromPath(path); }
+
+// Quitter l'onglet referme la liste « Tout voir » ; l'aperçu d'une position, lui, y revient (statsBack).
+function closeStatsWeak() { statsWeak = null; }
 
 function statsBack() {
     const y = statsPreviewTarget ? statsPreviewTarget.scrollY : 0;

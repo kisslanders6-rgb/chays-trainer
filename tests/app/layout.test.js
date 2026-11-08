@@ -1,9 +1,9 @@
 // Lancer : node tests/app/layout.test.js   — règles de mise en page lues dans style.css (jsdom ne calcule pas les tailles).
-const { scriptPath } = require('../_app.js');
+const { scriptPath, mainCss } = require('../_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
-const css = fs.readFileSync('style.css', 'utf8');
+const css = mainCss();
 
 // ─── Échiquier à la taille de l'écran (920px+) ───────────────────────────────
 const start = css.indexOf("ÉCHIQUIER À LA TAILLE DE L'ÉCRAN");
@@ -112,7 +112,7 @@ t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de pannea
 });
 
 t('écran de jeu : Indice éteint jamais plein ; dock de cinq cases et ✕ en haut sur téléphone', () => {
-    const css = fs.readFileSync('style.css', 'utf8');
+    const css = mainCss();
     assert(/\.btn\.tb-hint:disabled \{ background: transparent;/.test(css), 'Indice indisponible sans fond plein');
     const thumb = css.slice(css.indexOf('/* Dock du téléphone (Ergonomie, lots 2 et 3) */'));
     ['tb-flip', 'tb-prev', 'dock-center', 'tb-next', 'dock-more'].forEach((c, i) =>
@@ -125,7 +125,7 @@ t('écran de jeu : Indice éteint jamais plein ; dock de cinq cases et ✕ en ha
 });
 
 t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur ‹ › (Ergonomie, lot 2)', () => {
-    const css = fs.readFileSync('style.css', 'utf8');
+    const css = mainCss();
     const i = css.indexOf('/* Dock du téléphone (Ergonomie, lots 2 et 3) */'), thumb = css.slice(i, css.indexOf('/* Tablette et téléphone en paysage', i));
     assert(/\.board-col \{ display: contents; \}/.test(thumb), 'les enfants de .board-col se rangent dans .game-main');
     assert(/\.board-col > \.tr-progress \{ order: -3; \}/.test(thumb), 'progression tout en haut');
@@ -142,8 +142,19 @@ t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur �
         'glisser vers la droite sur ‹ › avance');
 });
 
+t('lecture de l\'écran de jeu selon la hauteur, zoom stable', () => {
+    const css = mainCss(), mob = fs.readFileSync(scriptPath('mobile.js'), 'utf8');
+    assert(/max-height: 700px\) \{\s+#game-screen \{ --read-h: 104px; \}\s+\.side-panel:not\(\.open\) \.side-lower \{ order: -1; \}/.test(css), 'petit écran : les coups d\'abord');
+    assert(/min-height: 761px\) \{\s+\.side-panel:not\(\.open\) \{ flex: 1 1 0;/.test(css), 'grand écran : la lecture occupe la place libre');
+    assert(/\.side-panel:not\(\.open\) \.moves-bar \{ flex: 1 1 auto; min-height: 0; flex-wrap: wrap;/.test(css), 'historique sur plusieurs lignes');
+    assert(/^html \{ touch-action: manipulation; \}/m.test(css), 'pas de zoom au double-toucher');
+    assert(/@media \(pointer: coarse\) \{ input:not\(\[type="range"\], \[type="checkbox"\], \[type="radio"\]\), textarea, select \{ font-size: 16px !important; \} \}/.test(css), 'pas de zoom à la saisie sur iOS');
+    assert(!/user-scalable|maximum-scale/.test(fs.readFileSync('index.html', 'utf8')), 'le zoom reste permis hors partie');
+    assert(/addEventListener\('gesturestart'[\s\S]{0,160}game-screen[\s\S]{0,120}preventDefault/.test(mob), 'pincement bloqué en partie');
+});
+
 t('pages et ordinateur (Ergonomie, lot 5)', () => {
-    const scr = fs.readFileSync('css/screens.css', 'utf8'), css = fs.readFileSync('style.css', 'utf8'), home = fs.readFileSync('css/home.css', 'utf8');
+    const scr = fs.readFileSync('css/screens.css', 'utf8'), css = mainCss(), home = fs.readFileSync('css/home.css', 'utf8');
     assert(/#home-tab-stats > \.st-scope, #home-tab-training > \.st-scope \{ flex-wrap: nowrap; \}/.test(scr), 'Statistiques et Entraînement : puce et capsule sur une ligne');
     assert(/#home-tab-stats \.st-go \{ display: none; \}/.test(scr), 'Statistiques : l\'action passe au centre du dock');
     assert(/\.eg-sec:not\(\.is-open\) :is\(\.eg-sec-desc, \.eg-list\) \{ display: none; \}/.test(scr), 'Finales : catégories repliables');

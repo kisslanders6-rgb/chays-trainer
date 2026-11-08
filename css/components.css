@@ -1,0 +1,325 @@
+/* components.css : Corbeille, badges, boutons, icônes, anneaux, sauvegarde. Feuille chargée dans l'ordre d'index.html : la cascade en dépend. */
+/* ─── CORBEILLE ──────────────────────────────────────────────────────────── */
+.panel-x[data-trash-dot] { position: relative; }
+.panel-x[data-trash-dot].has-items::after { content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--err); }
+.trash-panel { max-width: 560px; }
+.trash-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.trash-info { flex: 1; min-width: 180px; }
+.trash-title { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
+.trash-meta { margin-top: 3px; font-size: 12px; line-height: 1.5; color: var(--text-dim); }
+.trash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.trash-actions .btn { padding: 7px 12px; font-size: 12px; }
+#trash-msg:not(:empty) { margin: 10px 0 4px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HARMONISATION DES COULEURS AVEC LE THÈME D'ÉCHIQUIER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Variables « côtés » dérivées de la palette de l'échiquier actif.
+      Tout est calculé à partir de --board-light / --board-dark : un nouveau
+      thème d'échiquier s'harmonise donc sans écrire une ligne de plus. */
+:root {
+    --side-w-bg:     var(--board-light);
+    --side-w-fg:     color-mix(in srgb, var(--board-dark) 22%, #120d04);
+    --side-w-border: color-mix(in srgb, var(--board-dark) 55%, var(--board-light));
+    --side-b-bg:     color-mix(in srgb, var(--board-dark) 62%, #0b0b0b);
+    --side-b-fg:     var(--board-light);
+    --side-b-border: var(--board-dark);
+    --side-glow:     color-mix(in srgb, var(--board-dark) 45%, transparent);
+    --side-sheen:    linear-gradient(145deg, rgba(255,255,255,.16), transparent 55%);
+
+    /* Teintes globales de l'interface (logo, cartes de l'accueil, filets, repères) :
+         --board-light / --board-dark  cases claires / sombres, exactes
+         --board-accent  case sombre ramenée à une clarté lisible sur le fond (repères de l'interface)
+         --board-on-dark / --board-on-light  encre lisible posée sur une case sombre / claire */
+    --board-accent:   color-mix(in oklab, var(--board-dark) 82%, #000);
+    --board-on-dark:  color-mix(in oklab, var(--board-light) 30%, #fbf8f1);
+    --board-on-light: color-mix(in srgb, var(--board-dark) 22%, #120d04);
+
+    /* Palette « Velours » des cartes de l'accueil : jamais pastel, quel que soit l'échiquier.
+         --theme-dark-deep      teinte de la case sombre, ramenée à une clarté fixe et un peu désaturée
+         --theme-light-refined  case claire fondue dans un ivoire chaud */
+    --theme-dark-deep:     color-mix(in oklab, var(--board-dark) 55%, #120c08);
+    --theme-light-refined: color-mix(in oklab, var(--board-light) 55%, #f3ecdc);
+
+    /* Couleur dominante du logo : la teinte de la case sombre, toujours profonde. Clarté fixe ; la saturation
+       est relevée pour les cases peu colorées (Glace → bleu sombre), les gris restent gris (Pierre, Hachuré).
+       Calibrée pour que l'échiquier Classique redonne le vert sapin d'origine (#2f4a26). */
+    --logo-deep: color-mix(in oklab, var(--board-dark) 62%, #120c08);
+
+    /* 2. Accent de l'interface (boutons, liens, barre système), dérivé de la case sombre : aucun accent écrit
+          à la main par échiquier. La teinte vient de --board-dark, fondue en oklab vers un brun profond ; la clarté
+          est bornée pour que le texte des boutons et l'accent employé comme texte restent lisibles (4,5:1,
+          tests/app/theme.test.js ; contrôle visuel : tests/theme-matrix.html).
+            --board-ring  cerclage de l'échiquier en thème sombre */
+    --ui-accent:     color-mix(in oklab, var(--board-dark) 52%, #1a1208);
+    --accent:        var(--ui-accent);
+    --accent-bright: color-mix(in oklab, var(--ui-accent) 82%, #fff);
+    --accent-dim:    color-mix(in oklab, var(--ui-accent) 55%, var(--surface));
+    --info:          var(--ui-accent);
+    --board-ring:    color-mix(in oklab, var(--board-dark) 45%, #000);
+    /* Surfaces teintées de l'accent : état choisi (--accent-soft), filet d'un bouton secondaire (--accent-line). */
+    --accent-soft:   color-mix(in oklab, var(--accent) 14%, var(--surface));
+    --accent-line:   color-mix(in oklab, var(--accent) 40%, var(--border));
+}
+[data-theme="dark"] {
+    --board-accent:  color-mix(in oklab, var(--board-dark) 45%, #f3ecdc);
+    /* En sombre, l'accent est clair et porte un texte foncé : lisible comme texte sur les cartes ET comme fond de bouton. */
+    --ui-accent:     color-mix(in oklab, var(--board-dark) 48%, #efe6d8);
+    --accent-text:   #12170f;
+    --accent-dim:    color-mix(in oklab, var(--ui-accent) 45%, var(--surface));
+}
+/* Formules exactes (oklch relatif). Safari 16 annonce les reconnaître (CSS.supports) mais plante en les
+   calculant (« Un problème récurrent est survenu », iPhone 8 / iOS 16.7) : elles ne sont lues que par les navigateurs
+   qui connaissent aussi light-dark() (Safari 17.5, Chrome 123, Firefox 120). Les autres gardent les approximations
+   color-mix() ci-dessus. Ne jamais écrire oklch(from …) hors d'un tel bloc (tests/app/theme.test.js). */
+@supports (color: light-dark(red, red)) {
+    :root {
+        --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
+        --board-on-dark:  oklch(from var(--board-dark) clamp(.24, (.68 - l) * 1000, .97) calc(c * .35) h);
+        --theme-dark-deep:     oklch(from var(--board-dark) .3 calc(min(c, .1) * .75) h);
+        --logo-deep: oklch(from var(--board-dark) .37 min(calc(c * 1.75), .07) h);
+        --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.34, l, .45) min(c, .13) h);
+    }
+    [data-theme="dark"] {
+        --board-accent:  oklch(from var(--board-dark) max(l, .74) c h);
+        --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.7, l, .76) min(c, .12) h);
+    }
+}
+[data-theme="dark"] #board { border-color: var(--board-ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--board-dark) 22%, var(--bg)), var(--shadow); }
+
+/* 3. Boutons de choix de camp (écran d'accueil) */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPOSANTS COMMUNS (LOT 7)
+   Partagés par les pages : badge de verdict, bouton secondaire, carte bord à bord sur téléphone,
+   anneau de progression (js/core/rings.js). Couleurs tirées des jetons : rien n'est écrit par échiquier.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Badge de verdict : teinte de --c à 14 %, filet à 35 % ───
+   Le texte est la teinte tirée vers --text (72 % en sombre, 45 % en clair) : la teinte pure reste sous 4,5:1
+   pour l'ambre en clair (1,7:1) et le rouge en sombre (4,3:1). Vérifié par tests/app/theme.test.js. */
+.vbadge {
+    --c: var(--text-muted);
+    display: inline-flex; align-items: center; gap: 5px; flex: none; height: 24px; padding: 0 9px;
+    border-radius: 999px; border: 1px solid color-mix(in oklab, var(--c) 35%, transparent);
+    background: color-mix(in oklab, var(--c) 14%, transparent); color: color-mix(in oklab, var(--c) 72%, var(--text));
+    font-size: 11.5px; font-weight: 600; line-height: 1; white-space: nowrap;
+}
+.vbadge .ico { width: 12px; height: 12px; flex: none; }
+.vbadge.is-ok { --c: var(--ok); }
+.vbadge.is-err { --c: var(--err); }
+.vbadge.is-warn { --c: var(--lv-progress); }
+.vbadge.is-new { --c: var(--new); }
+.vbadge.is-accent { --c: var(--accent); }
+.vbadge.is-muted { --c: var(--text-muted); }
+.vbadge.is-dashed { border-style: dashed; }              /* verdict estimé, « À confirmer » */
+:where(:root:not([data-theme="dark"])) .vbadge { color: color-mix(in oklab, var(--c) 45%, var(--text)); }   /* clair */
+
+/* ─── Bouton secondaire à contour teinté (avec .btn) ─── */
+.btn.btn-soft {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 16px;
+    background: transparent; border: 1.5px solid var(--accent-line); color: var(--accent); font-weight: 700; box-shadow: none;
+}
+@media (hover: hover) { .btn.btn-soft:hover { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); box-shadow: none; } }
+.btn.btn-soft:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.btn-soft:disabled { opacity: .5; cursor: default; transform: none; background: transparent; }
+
+/* ─── Carte bord à bord sur téléphone : la carte porte seule la marge, pas de rayon ni de bords latéraux ─── */
+@media (max-width: 599px) {
+    .edge-card { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+    .edge-card + .edge-card { border-top: 0; }
+}
+
+/* ─── Zone de toucher (téléphone) : 44 px au moins sans changer le dessin ───
+   Un pseudo-élément invisible prolonge vers le haut et le bas les contrôles plus bas que --tap ;
+   les segments (.seg, en overflow: hidden) prennent directement la hauteur. */
+@media (max-width: 599px) {
+    .cs-opt::after, .st-link::after {
+        content: ''; position: absolute; left: 0; right: 0; top: calc(50% - var(--tap) / 2); bottom: calc(50% - var(--tap) / 2);
+    }
+    .st-link { position: relative; }
+    .seg-btn { min-height: var(--tap); }
+}
+
+/* ─── Anneau de progression (Ring.html) et puce à anneau (Ring.chip) ─── */
+.ring { position: relative; display: inline-grid; place-items: center; flex: none; width: var(--ring-size, 60px); height: var(--ring-size, 60px); }
+.ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring circle { fill: none; stroke: var(--border-strong); }
+.ring circle.v { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset .8s var(--ease-out, ease-out); }
+.ring.is-done circle.v { stroke: var(--ok); }
+.ring-txt { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.1; text-align: center; }
+.ring-txt b { font-size: calc(var(--ring-size, 60px) * .24); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+.ring-txt small { font-size: 10px; color: var(--text-dim); }
+.ring-chip {
+    display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 14px 0 6px;
+    border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+    transition: border-color .15s, background-color .15s;
+}
+.ring-chip .ring-txt b { font-size: 9.5px; }
+.ring-chip-max { font-family: var(--font-note); font-size: 11.5px; font-weight: 500; color: var(--text-dim); }
+@media (hover: hover) { .ring-chip:hover { background: var(--accent-soft); border-color: var(--accent-line); } }
+.ring-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ring-chip[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .ring circle.v { transition: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SÉLECTEUR DE STYLE DE PIÈCES (Paramètres)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.piece-preview { display: flex; width: 84px; height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid var(--board-border); }
+.piece-preview > span { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.piece-preview > span:first-child { background: var(--board-light); }
+.piece-preview > span:last-child  { background: var(--board-dark); }
+.piece-preview svg { width: 88%; height: 88%; display: block; pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ICÔNES SVG ET BOUTONS DE L'ÉCRAN DE JEU
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ICÔNES ─────────────────────────────────────────────────────────────── */
+.ico {
+    width: 1.15em; height: 1.15em;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0; display: inline-block; vertical-align: -0.2em;
+    pointer-events: none;
+}
+.ico-xl { width: 40px; height: 40px; stroke-width: 1.6; }
+
+/* Pièces du style actif utilisées comme glyphes (remplacent ♔ ♚) */
+.glyph { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }
+.glyph svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); pointer-events: none; }
+          /* taille = font-size du bouton */
+
+/* Conteneurs qui portent désormais une icône + du texte */
+.seg-btn, .side-tab, .panel-close {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.panel-close { display: flex; }
+
+.panel-x .ico { width: 15px; height: 15px; }
+.toast-x .ico { width: 14px; height: 14px; }
+
+.tree-forget .ico { width: 13px; height: 13px; }
+.tree-pill, .tree-warn-text, .tree-ok-text { display: inline-flex; align-items: center; gap: 4px; }
+.tree-pill .ico { width: 12px; height: 12px; }
+.trash-meta .ico { width: 13px; height: 13px; vertical-align: -0.2em; }
+
+/* ─── BOUTONS : gabarit commun avec icône ───────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn:disabled { cursor: default; transform: none; box-shadow: var(--shadow-sm); }
+@media (hover: hover) { .btn:disabled:hover { background: var(--surface); border-color: var(--border); color: var(--text-muted); } }
+.btn:focus-visible, .panel-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ─── RANGÉE PRINCIPALE : ‹ [ action principale ] › ─────────────────────── */
+.controls.controls-main { display: flex; gap: 8px; margin-bottom: 10px; }
+.controls-main .btn { min-height: 46px; font-size: 13.5px; }
+.controls-main .btn-grow { flex: 1 1 0; }
+.controls-main .btn-nav  { flex: 0 0 58px; padding: 10px 0; }
+.controls-main .btn-nav .ico { width: 20px; height: 20px; }
+
+/* ─── ACTIONS SECONDAIRES : icône au-dessus d'un libellé court ──────────── */
+.controls.controls-tools { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.btn-tool {
+    flex: 1 1 0; max-width: 138px;
+    flex-direction: column; gap: 5px;
+    padding: 9px 4px 8px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px;
+    background: transparent; border-color: transparent; box-shadow: none;
+}
+.btn-tool .ico { width: 20px; height: 20px; }
+@media (hover: hover) { .btn-tool:hover { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow-sm); } }
+@media (hover: hover) { .btn-tool.is-exit:hover { color: var(--err); border-color: var(--err); } }
+.btn-tool.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+
+/* ─── MOBILE ─────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+    .controls-main .btn      { min-height: 52px; font-size: 14.5px; }
+    .controls-main .btn-nav  { flex-basis: 60px; }
+    .btn-tool                { min-height: 58px; max-width: none; font-size: 12px; }
+    .btn-tool .ico           { width: 22px; height: 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATISTIQUES ET CARTE DE SAUVEGARDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── STATISTIQUES ───────────────────────────────────────────────────────── */
+/* Filtres par niveau (onglet Statistiques) */
+.stats-filters { display: flex; gap: 6px; }
+.stats-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, box-shadow .15s, color .15s; }
+.stats-chip b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .stats-chip:hover { border-color: var(--c); } }
+.stats-chip.all { --c: var(--accent); }
+.stats-chip.active { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); color: var(--text); }
+.stats-chip:disabled { opacity: .45; cursor: default; }
+.stats-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Menu déroulant (js/core/dropdown.js) : bouton en pilule, liste en carte surélevée */
+.dd { position: relative; display: inline-flex; min-width: 0; }
+.dd-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px 0 14px;
+    border: 1.5px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm);
+    color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s;
+}
+@media (hover: hover) { .dd-btn:hover { border-color: var(--border-strong); } }
+.dd.open .dd-btn { border-color: var(--board-accent); }
+.dd-btn:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
+.dd-label { font-family: var(--font-note); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+.dd-value { min-width: 0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-btn > .ico { width: 14px; height: 14px; flex: none; color: var(--text-dim); transition: transform .2s; }
+.dd.open .dd-btn > .ico { transform: rotate(180deg); }
+.dd-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 120; min-width: max(100%, 220px); max-width: min(320px, calc(100vw - 32px));
+    max-height: 320px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow);
+    animation: dd-in .14s ease-out;
+}
+.dd-menu[hidden] { display: none; }        /* display: flex ci-dessus l'emporterait sur l'attribut hidden */
+.dd-end .dd-menu { left: auto; right: 0; }
+@keyframes dd-in { from { opacity: 0; transform: translateY(-4px); } }
+.dd-opt {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px;
+    border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.dd-opt-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dd-opt-text small { font-size: 11.5px; color: var(--text-dim); }
+.dd-opt[aria-selected="true"] { font-weight: 650; }
+.dd-opt > .ico { width: 15px; height: 15px; flex: none; color: var(--board-accent); }
+@media (hover: hover) { .dd-opt:hover { background: var(--surface-hover); } }
+.dd-opt:focus-visible { outline: none; background: var(--surface-hover); box-shadow: inset 0 0 0 1.5px var(--board-accent); }
+.dd-foot { justify-content: flex-start; color: var(--board-accent); font-weight: 600; }
+.dd-foot > .ico { color: inherit; }
+.dd-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+.dd-sm .dd-btn { height: 32px; padding: 0 10px 0 12px; border-radius: 10px; font-size: 12.5px; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .dd-menu { animation: none; } .dd-btn > .ico { transition: none; } }
+
+@media (max-width: 599px) {
+    .stats-chip  { padding: 9px 14px; }
+
+}
+
+/* ─── SAUVEGARDE ─────────────────────────────────────────────────────────── */
+.backup-card { --c: var(--ok); display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1.5px solid var(--c); border-radius: 14px; background: color-mix(in srgb, var(--c) 8%, var(--surface)); }
+.backup-card.lv-empty  { --c: var(--text-dim); }
+.backup-card.lv-synced { --c: var(--accent-bright); }
+.backup-card.lv-warn   { --c: #d9a21b; }
+.backup-card.lv-danger { --c: var(--err); }
+.backup-head { display: flex; align-items: flex-start; gap: 12px; }
+.backup-ico { display: flex; color: var(--c); }
+.backup-ico .ico { width: 26px; height: 26px; }
+.backup-title { font-size: 14px; font-weight: 800; color: var(--text); }
+.backup-sub { margin-top: 2px; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+.backup-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-dim); }
+.backup-meta .ico { width: 13px; height: 13px; }
+.backup-meta .toast-link { font-size: 12px; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.backup-actions .btn { flex: 1 1 140px; min-height: 40px; }
+.backup-note { font-size: 11.5px; line-height: 1.5; color: var(--text-dim); }
+
+/* Pastille d'alerte sur le bouton ⚙ de la barre du haut : DANS le coin du bouton, cerclée de son fond,
+   pour ne jamais mordre sur le bouton voisin (même règle que la pastille du compte, css/account.css) */
+.theme-toggle[data-backup-dot] { position: relative; }
+.theme-toggle[data-backup-dot].has-alert::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--err); box-shadow: 0 0 0 2px var(--bg-inset); pointer-events: none; }
+.theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }

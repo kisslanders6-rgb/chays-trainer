@@ -1,11 +1,11 @@
 // Lancer : node tests/app/theme.test.js   — contraste des couleurs dérivées de l'échiquier, pour chaque échiquier × clair / sombre.
 // Les couleurs de cases sont lues dans style.css ; les formules reprennent celles de style.css (« HARMONISATION
 // DES COULEURS ») : --ui-accent, --board-accent. Seuils : 4,5:1 pour du texte, 3:1 pour une surface.
-const { scriptPath } = require('../_app.js');
+const { scriptPath, mainCss } = require('../_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
-const css = fs.readFileSync('style.css', 'utf8');
+const css = mainCss();
 
 // ─── Couleurs : sRGB ↔ OKLab / OKLCH ─────────────────────────────────────────
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -199,7 +199,7 @@ const outsideLightDark = text => {
     return out + text.slice(i);
 };
 t('Safari 16 : aucun oklch(from …) hors du bloc @supports light-dark(), dans toutes les feuilles', () => {
-    const files = ['style.css', ...fs.readdirSync('css').filter(f => f.endsWith('.css')).map(f => 'css/' + f)];
+    const files = [...fs.readdirSync('css').filter(f => f.endsWith('.css')).map(f => 'css/' + f)];
     const bad = files.filter(f => /\b(oklch|oklab|lab|lch|rgb|hsl|color)\(\s*from\b/.test(outsideLightDark(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''))));
     assert.deepStrictEqual(bad, []);
     assert(css.includes(LD), 'bloc des formules exactes présent');

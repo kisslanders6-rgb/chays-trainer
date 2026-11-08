@@ -5,6 +5,7 @@ let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: () => '', formatSan: s => s, formatSanText: s => s,
+              I18n: { t: s => s, mark: s => s, pair: (a, b) => `${a} : ${b}`, locale: () => 'fr-FR' },
               document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] } };
 ctx.masteryOf = e => Number.isFinite(e.mastery) ? e.mastery : e.attempts > 0 ? 100 * (1 - e.failures / e.attempts) : 60;
 vm.createContext(ctx);

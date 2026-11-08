@@ -67,6 +67,7 @@
     content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 16px; margin-top: -8px; background: var(--border);
 }
 .topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); font-weight: 600; }
+.topnav-tab.active > .ico { fill: currentColor; fill-opacity: .28; }          /* l'onglet actif se reconnaît aussi sans la couleur */
 .topnav-tab.active::after {
     content: ''; position: absolute; left: var(--tab-px); right: var(--tab-px); bottom: -1px;
     height: 2px; border-radius: 1px; background: var(--board-accent);
@@ -160,7 +161,6 @@
 @media (prefers-reduced-motion: reduce) { .topnav-theme svg { transition: none; } }
 
 /* Titres d'onglets dans la nouvelle typographie */
-.tab-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; font-size: 24px; }
 
 /* ─── Fond de l'accueil Nocturne : halo et échiquier fantôme aux teintes de l'échiquier ───
    Fixé à la fenêtre (position: fixed) : le halo et le fondu de haut en bas restent en place quand la page
@@ -274,6 +274,9 @@
 .hp-k { width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--border-strong); }
 .hp-k.is-w { background: var(--side-w-bg); } .hp-k.is-b { background: var(--side-b-bg); }
 
+/* Téléphone : « Au programme » disparaît (le détail est dans Statistiques) ; à jour, la prévision sur 7 jours reste */
+@container home-play (max-width: 599px) { .hp-plan:not(.hp-fc-wrap) { display: none; } }
+
 /* Répertoire vide : choisir une couleur */
 .hp-start .hp-title { margin: 0 0 4px; }
 .hp-picks { display: grid; gap: 10px; }
@@ -327,9 +330,6 @@
 .hp-row-txt b { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-note); font-weight: 500; font-size: 13px; }
 .hp-row-txt small { display: block; margin-top: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--text-dim); }
 .hp-row-end { display: flex; align-items: center; }
-.hp-kind { flex: none; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
-.hp-kind.ok { --c: var(--ok); } .hp-kind.err { --c: var(--err); } .hp-kind.info { --c: var(--text-muted); }
-.hp-kind.warn { --c: var(--lv-progress); } .hp-kind.new { --c: var(--accent); }
 .hp-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 12px 16px; text-align: center; font-size: 13px; color: var(--text-dim); }
 .hp-empty .ico { width: 40px; height: 40px; padding: 10px; border-radius: 12px; background: var(--bg-inset); color: var(--ok); fill: none; }
 .hp-empty b { font-size: 14px; color: var(--text); }

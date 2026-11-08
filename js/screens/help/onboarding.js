@@ -14,11 +14,11 @@
 const ONBOARDING_KEY = 'chessTrainer_onboarded';
 
 const ONBOARDING_STEPS = [
-    { icon: 'crown', title: 'Une seule réponse par position',
+    { icon: 'swords', title: 'Une seule réponse par position',
       text: 'Votre répertoire retient <strong>un coup par position</strong> où c’est à vous de jouer : le vôtre. Le but est de le retrouver à chaque fois, quel que soit l’ordre de coups qui y mène.' },
     { icon: 'git-branch', title: 'Construire dans Jouer',
       text: 'Jouez <strong>vos coups et ceux de l’adversaire</strong>. Dans une position nouvelle, votre coup est enregistré. Rien n’est compté ici : explorez librement, ou importez vos lignes depuis un fichier PGN.' },
-    { icon: 'target', title: 'Réviser dans Entraînement',
+    { icon: 'flame', title: 'Réviser dans Entraînement',
       text: 'L’application vous repose chaque position <strong>au bon moment</strong> : une réussite éloigne la prochaine révision, une erreur la ramène vite. Quelques minutes par jour suffisent.' },
     { icon: 'bar-chart', title: 'Suivre ses progrès',
       text: 'Les <strong>Statistiques</strong> montrent ce qui est maîtrisé et ce qui reste fragile. <strong>Mes parties en ligne</strong> compare vos parties Lichess et Chess.com à votre répertoire.' }

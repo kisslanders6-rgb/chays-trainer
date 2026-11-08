@@ -81,7 +81,7 @@ const HomePanels = (function () {
         const ids = Object.keys(ledger).filter(id => ['w', 'b'].some(c => ledger[id].v && ledger[id].v[currentRepertoire + '|' + c]))
             .sort((a, b) => (ledger[b].last || 0) - (ledger[a].last || 0)).slice(0, LIST_MAX);
         shownGames = [];
-        if (!ids.length) return `<div class="hp-empty">${ico('target')}<b>Aucune partie analysée</b>
+        if (!ids.length) return `<div class="hp-empty">${ico('flame')}<b>Aucune partie analysée</b>
             <button type="button" class="st-link" data-action="homeGames">Analyser mes parties</button></div>`;
         return ids.map(id => {
             const g = ledger[id], c = ['w', 'b'].find(k => g.v[currentRepertoire + '|' + k]), v = g.v[currentRepertoire + '|' + c];

@@ -165,13 +165,57 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
         assert.strictEqual(w.eval(`levelBarHTML({ solid: 2 })`), '<span class="lv-bar " aria-hidden="true"><i class="lv-solid" style="flex:2" title="Solides : 2"></i></span>');
     });
 
-    await t('calendrier : 12 semaines, les 7 plus anciennes marquées pour être masquées sur téléphone', () => {
+    await t('calendrier : 12 semaines à toute largeur, cases fluides, rien à faire défiler', () => {
         w.eval(`dataStore.setJSON('chessTrainer_activity', { [dayStamp(Date.now())]: { a: 3, f: 1 } })`);
         seed(w, [-1, 2, 0, 5]);
         assert.strictEqual($$('.st-heat i').length, 12 * 7);
-        assert.strictEqual($$('.st-heat i.old').length, 7 * 7);
+        assert(!$('.st-heat-scroll') && !$('.st-heat i.old'));
         const css = fs.readFileSync(path.join(ROOT, 'css/screens.css'), 'utf8');
-        assert(/@container stats \(max-width: 599px\)[\s\S]*\.st-heat i\.old \{ display: none; \}/.test(css));
+        assert(/\.st-heat \{[^}]*repeat\(var\(--weeks\), minmax\(0, 1fr\)\)/.test(css));
+    });
+
+    // Six positions faibles : plus que les trois de la carte.
+    const seedWeak = () => w.eval(`(() => {
+        const line = 'e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3 g8f6 d2d4 e5d4 c3d4 c5b4'.split(' '), db = {}, now = Date.now();
+        for (let k = 0; k < line.length; k += 2) {
+            const path = line.slice(0, k + 1), pos = Chess.replay(path.slice(0, -1));
+            db[Chess.key(pos)] = { move: path[k], san: Chess.san(pos, path[k]), attempts: 10, failures: k % 4 ? 5 : 8, path, ply: path.length, due: now + 864e5, interval: 3, created: now };
+        }
+        dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db));
+        statsColor = 'all'; statsFilter = 'all'; statsOpen = null; statsPane = 'overview'; statsWeak = null;
+        switchHomeTab('stats'); initStats();
+    })()`);
+
+    await t('« Tout voir » ouvre toutes les positions annoncées ; le retour rend la page', () => {
+        seedWeak();
+        assert.strictEqual($$('.st-weak .st-wrow').length, 3);
+        const link = $('.st-weak .st-link');
+        assert.strictEqual(link.dataset.action, 'statsWeakAll');
+        link.click();
+        assert($('#stats-weak-all'));
+        assert.strictEqual($$('#stats-weak-all .st-wrow').length, 6, 'à retravailler et fragiles');
+        assert.strictEqual(w.eval('statsFilter'), 'all', 'aucun filtre appliqué en silence');
+        $('#stats-weak-all .st-back').click();
+        assert(!$('#stats-weak-all') && $('.st-now'));
+    });
+
+    await t('aperçu ouvert depuis « Tout voir » : le retour revient à la liste, changer d\'onglet la referme', () => {
+        seedWeak();
+        $('.st-weak .st-link').click();
+        $('#stats-weak-all .st-wrow').click();
+        w.eval('statsBack()');
+        assert($('#stats-weak-all'));
+        w.eval(`switchHomeTab('play'); switchHomeTab('stats'); initStats()`);
+        assert(!$('#stats-weak-all'));
+    });
+
+    await t('téléphone : la barre et la légende mènent à l\'onglet Ouvertures, où la liste est visible', () => {
+        seedWeak();
+        $('#stats-lines').style.display = 'none';                   // ce que fait la requête de conteneur dans l'onglet Aperçu
+        $('.st-legend .st-lg[data-arg="weak"]').click();
+        assert.strictEqual(w.eval('statsFilter'), 'weak');
+        assert($('#stats-body').classList.contains('pane-openings'));
+        w.eval(`statsPane = 'overview'; statsFilter = 'all'`);
     });
 
     assert.deepStrictEqual(errors, []);

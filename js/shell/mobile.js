@@ -105,6 +105,17 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && panel && panel.classList.contains('open')) setSheetOpen(false);
 });
 
+// Petit écran : la consigne tient sur une ligne, toucher la barre d'état déplie son détail.
+document.getElementById('status-bar').addEventListener('click', e => {
+    if (!e.target.closest('.status-act') && e.currentTarget.querySelector('.status-detail')) e.currentTarget.classList.toggle('is-open');
+});
+
+// Pendant une partie, pas de zoom au pincement : Safari ne suit pas touch-action pour ce geste (style.css).
+document.addEventListener('gesturestart', e => {
+    const game = document.getElementById('game-screen');
+    if (game && !game.classList.contains('hidden')) e.preventDefault();
+}, { passive: false });
+
 // ─── BARRE DE COUPS : GLISSER POUR PARCOURIR LES COUPS ─────────────────────────
 // Le doigt vers la gauche avance (la ligne défile avec lui), vers la droite recule : un coup tous les 26 px.
 // navPrev / navNext gardent leurs conditions (séance occupée, début et fin de la ligne). Un simple toucher reste un clic.
@@ -200,7 +211,7 @@ function toggleToolbarMore(btn) {
     // Rejoindre un autre onglet de l'accueil (la barre du bas est cachée en partie) : switchHomeTab revient à l'accueil.
     if (gameMode === 'play') {
         if (menu.children.length) { const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep); }
-        [['stats', 'bar-chart', 'Statistiques'], ['training', 'target', 'Entraînement'], ['endgame', 'pawn', 'Finales']].forEach(([tab, icon, label]) => {
+        [['stats', 'bar-chart', 'Statistiques'], ['training', 'flame', 'Entraînement'], ['endgame', 'finish-flag', 'Finales']].forEach(([tab, icon, label]) => {
             const item = document.createElement('button');
             item.className = 'menu-item';
             item.setAttribute('role', 'menuitem');
