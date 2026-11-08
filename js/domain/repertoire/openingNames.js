@@ -6,7 +6,7 @@
  * est celui de l'entrée la plus longue dont les coups sont le début de son chemin (cf. openingNameOf).
  * Plusieurs entrées peuvent porter le même nom (ordres de coups différents).
  * Les coups sont convertis en UCI au premier usage (resolveOpeningNames) : une entrée illégale est ignorée
- * (tests/stats.test.js vérifie qu'il n'y en a aucune).
+ * (tests/screens/stats.test.js vérifie qu'il n'y en a aucune).
  */
 
 'use strict';

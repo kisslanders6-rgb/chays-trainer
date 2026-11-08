@@ -103,7 +103,7 @@
 /* ─── COMPTE CARTE D'IDENTITÉ (LOT 7) ───
    Trois rubriques (Profil, Synchronisation, Sécurité), carte « Velours », atelier d'avatar, état de la
    synchronisation en grand, jauge du mot de passe. Préfixe #account-overlay : panels.css est chargé après
-   ce fichier. Sur .avatar, seule --size change (tests/accountSections.test.js). */
+   ce fichier. Sur .avatar, seule --size change (tests/screens/accountSections.test.js). */
 
 /* Vues hors connexion : une colonne, fenêtre étroite sur ordinateur */
 @media (min-width: 641px) {

@@ -8,7 +8,7 @@
 //   - la licence.
 // Écrit engine/manifest.json (fichiers, tailles, empreintes) et supprime les versions précédentes.
 // L'application ne lit que le manifeste : changer de version ne demande aucune modification du code.
-// Utilisé à la main et par .github/workflows/engine-update.yml. Ensuite : node tests/stockfish.test.js.
+// Utilisé à la main et par .github/workflows/engine-update.yml. Ensuite : node tests/domain/stockfish.test.js.
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';

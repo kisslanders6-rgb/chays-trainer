@@ -247,7 +247,7 @@ function migrateStoredData() {
 
 // ─── JOURNAL D'ACTIVITÉ ─────────────────────────────────────────────────────
 // Chaque passage sur une position en Entraînement appelle recordReview() APRÈS la mise à jour de ses compteurs
-// (« Jouer » ne compte rien : cf. openingsLogic.js ; une erreur relevée dans une vraie partie compte aussi). Planning (inspiré de SM-2) :
+// (« Jouer » ne compte rien : cf. boardLogic.js ; une erreur relevée dans une vraie partie compte aussi). Planning (inspiré de SM-2) :
 //   - réussite alors que la révision était due : intervalle × REVIEW_GROWTH (1 jour la première fois),
 //     plafonné à REVIEW_MAX_DAYS ; une réussite anticipée ne change pas l'échéance ;
 //   - erreur : intervalle remis à zéro, la position redevient due dans REVIEW_RETRY_MS.

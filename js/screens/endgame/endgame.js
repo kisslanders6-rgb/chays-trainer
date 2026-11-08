@@ -867,7 +867,7 @@ function _egFinish(msg) {
 function undoEndgameMove() {
     const s = endgameState;
     if (!s.failed || !s.failed.undoable || !moveHistory.length) return;
-    performUndo();                                           // openingsLogic.js : restaure position, trait, surbrillance
+    performUndo();                                           // boardLogic.js : restaure position, trait, surbrillance
     s.moves = Math.max(0, s.moves - 1);
     s.failed = null; s.verdict = null; s.busy = false; s.hintLevel = 0;
     renderEndgameCard();

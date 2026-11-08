@@ -140,7 +140,7 @@ function discardAnalysis() {
 
 // ─── COUPS ────────────────────────────────────────────────────────────────────
 
-// Appelé par executePlayerMove (openingsLogic.js) : les deux camps sont libres, rien n'est vérifié.
+// Appelé par executePlayerMove (boardLogic.js) : les deux camps sont libres, rien n'est vérifié.
 function analysisMove(from, to, promo) {
     const san = toAlgebraic(from, to, promo);
     _commitMove(from, to, promo, null, `Analyse : ${formatSanText(san, turn)}`, 'info', '');

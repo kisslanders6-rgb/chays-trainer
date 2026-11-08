@@ -36,6 +36,6 @@ Si le verdict ne correspond pas à l'objectif (une « nulle » qui est en fait g
 
 ## 4. Vérifier
 
-- `npm test` (`tests/endgame.test.js` et `endgameSelfTest`).
+- `npm test` (`tests/screens/endgame.test.js` et `endgameSelfTest`).
 - Ouvrir l'exercice dans l'aperçu : la position s'affiche du bon côté, un bon coup est accepté, un coup qui dégrade le résultat est compté comme erreur, l'adversaire répond.
 - Si la catégorie gagne un nouveau thème, mettre à jour sa `desc` dans `ENDGAME_CATEGORIES`.

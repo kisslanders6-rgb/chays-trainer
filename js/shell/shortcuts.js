@@ -2,7 +2,7 @@
  * shell/shortcuts.js
  * ──────────────────────────────────────────────────────────────────────────
  * Raccourcis clavier (point 16), non modifiables : la liste affichée est KEYBOARD_SHORTCUTS (settingsUI.js).
- * Ici : les touches globales et celles de chaque mode ; ← → Espace F R restent dans openingsUI.js,
+ * Ici : les touches globales et celles de chaque mode ; ← → Espace F R restent dans boardView.js,
  * « , » et « ? » dans helpUI.js.
  *
  * Inactifs dans un champ de saisie, avec Ctrl / Cmd / Alt, derrière une fenêtre ouverte ou la liste des répertoires.

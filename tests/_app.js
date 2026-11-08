@@ -23,7 +23,7 @@ function scriptPath(name) {
 const readVars = file => fs.readFileSync(file, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 =');
 
 // ─── APPLICATION ENTIÈRE ──────────────────────────────────────────────────────
-// Lit index.html et ses scripts sur le disque, sans réseau. L'écran de lancement est sauté (tests/splash.test.js le couvre).
+// Lit index.html et ses scripts sur le disque, sans réseau. L'écran de lancement est sauté (tests/shell/splash.test.js le couvre).
 //   storage    clés posées dans localStorage avant le premier script
 //   onboarded  false : la présentation de premier lancement reste possible
 //   before(w)  réglages propres au test, avant le premier script

@@ -21,7 +21,7 @@
 
     --text: #1f2a1a;
     --text-muted: #5f6656;
-    --text-dim: #62675a;                   /* 4,5:1 au moins sur les cartes et les fenêtres (tests/theme.test.js) */
+    --text-dim: #62675a;                   /* 4,5:1 au moins sur les cartes et les fenêtres (tests/app/theme.test.js) */
 
     --accent: #2f4a26;
     --accent-bright: #3d5c2e;
@@ -55,7 +55,7 @@
    un cran plus clair ; bordures à faible contraste ; reflet clair d'un pixel en haut des surfaces.
    Ambiance (préférence darkBg → data-dark sur <html>, voir « AMBIANCES » plus bas) : chaque choix a son jour
    et sa nuit. Ce bloc est la nuit « Neutre » ; les autres le surchargent. Les accents restent dérivés de
-   l'échiquier (HARMONISATION) ; contrastes vérifiés pour chaque ambiance × échiquier par tests/theme.test.js. */
+   l'échiquier (HARMONISATION) ; contrastes vérifiés pour chaque ambiance × échiquier par tests/app/theme.test.js. */
 [data-theme="dark"] {
     --bg: #121314;
     --bg-elevated: #1f2123;
@@ -1000,7 +1000,7 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
     /* 2. Accent de l'interface (boutons, liens, barre système), dérivé de la case sombre : aucun accent écrit
           à la main par échiquier. La teinte vient de --board-dark, fondue en oklab vers un brun profond ; la clarté
           est bornée pour que le texte des boutons et l'accent employé comme texte restent lisibles (4,5:1,
-          tests/theme.test.js ; contrôle visuel : tests/theme-matrix.html).
+          tests/app/theme.test.js ; contrôle visuel : tests/theme-matrix.html).
             --board-ring  cerclage de l'échiquier en thème sombre */
     --ui-accent:     color-mix(in oklab, var(--board-dark) 52%, #1a1208);
     --accent:        var(--ui-accent);
@@ -1022,7 +1022,7 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
 /* Formules exactes (oklch relatif). Safari 16 annonce les reconnaître (CSS.supports) mais plante en les
    calculant (« Un problème récurrent est survenu », iPhone 8 / iOS 16.7) : elles ne sont lues que par les navigateurs
    qui connaissent aussi light-dark() (Safari 17.5, Chrome 123, Firefox 120). Les autres gardent les approximations
-   color-mix() ci-dessus. Ne jamais écrire oklch(from …) hors d'un tel bloc (tests/theme.test.js). */
+   color-mix() ci-dessus. Ne jamais écrire oklch(from …) hors d'un tel bloc (tests/app/theme.test.js). */
 @supports (color: light-dark(red, red)) {
     :root {
         --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
@@ -1048,7 +1048,7 @@ body.dragging { touch-action: none; overscroll-behavior: none; }
 
 /* ─── Badge de verdict : teinte de --c à 14 %, filet à 35 % ───
    Le texte est la teinte tirée vers --text (72 % en sombre, 45 % en clair) : la teinte pure reste sous 4,5:1
-   pour l'ambre en clair (1,7:1) et le rouge en sombre (4,3:1). Vérifié par tests/theme.test.js. */
+   pour l'ambre en clair (1,7:1) et le rouge en sombre (4,3:1). Vérifié par tests/app/theme.test.js. */
 .vbadge {
     --c: var(--text-muted);
     display: inline-flex; align-items: center; gap: 5px; flex: none; height: 24px; padding: 0 9px;

@@ -17,7 +17,7 @@
  * Choix de première synchronisation → SyncIntent (auth.js) + événement window « chays-sync-intent »,
  * consommés par syncEngine.js. API pour ce moteur : AccountUI.setSyncStatus(niveau, texte)
  * avec niveau = 'ok' | 'busy' | 'offline' | 'error'.
- * Prérequis : auth.js, cloudClient.js, cloudAdapter.js ; au besoin askConfirm (openingsLogic.js),
+ * Prérequis : auth.js, cloudClient.js, cloudAdapter.js ; au besoin askConfirm (boardLogic.js),
  * exportDB (storage.js) et ico (icons.js), appelés seulement à l'exécution.
  */
 

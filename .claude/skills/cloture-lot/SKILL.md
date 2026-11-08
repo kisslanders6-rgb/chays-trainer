@@ -28,7 +28,7 @@ Lire `git diff --stat` puis le diff, et vérifier chaque point qui s'applique :
 | ajoute un script | il est dans `index.html`, à sa place dans l'ordre de chargement |
 | modifie une FEN ou ajoute un exercice de finale jugé (sans `kind`) | `node scripts/check-endgames.mjs` relancé (réseau requis), bloc `ENDGAME_VERDICTS` à jour |
 | modifie `supabase/schema.sql` | prévenir l'utilisateur qu'il doit exécuter le SQL lui-même dans Supabase (dire quelle partie) |
-| modifie `style.css` sur les couleurs d'échiquier ou d'accent | `tests/theme.test.js` passe (contrastes 4,5:1) |
+| modifie `style.css` sur les couleurs d'échiquier ou d'accent | `tests/app/theme.test.js` passe (contrastes 4,5:1) |
 | ajoute un nom global | un seul par script (`globals.test.js`) |
 | insère du texte en HTML | `escapeHtml`, et jamais `escapeHtml(formatSan(…))` |
 | ajoute une règle métier | un test correspondant dans `tests/` |

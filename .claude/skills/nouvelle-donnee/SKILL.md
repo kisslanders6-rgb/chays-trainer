@@ -17,14 +17,14 @@ Une entrée = ma réponse unique dans une position (`js/domain/repertoire/storag
 2. `normalizeEntry` : recopier le champ avec sa validation (`Number.isFinite(e.x) && e.x > 0`, etc.). Sans ça il est effacé à chaque lecture.
 3. `js/domain/sync/syncModel.js`, `combineSameMove(b, l, r)` : décider de la règle de fusion entre deux appareils et l'écrire. Elle doit rester **symétrique** (`merge(b,l,r)` = `merge(b,r,l)`). Modèles existants : `created` → le plus ancien ; `prio`, `due` → ceux du passage le plus récent ; compteurs → base + deltas.
 4. Mettre à jour le commentaire d'en-tête de `syncModel.js` (ligne `openingDB_…`) et la phrase « Une entrée = … » de CLAUDE.md.
-5. Tests : `tests/syncModel.test.js` (fusion dans les deux ordres, champ conservé) et, si le champ a un effet sur la révision, `tests/training.test.js`.
+5. Tests : `tests/domain/syncModel.test.js` (fusion dans les deux ordres, champ conservé) et, si le champ a un effet sur la révision, `tests/screens/training.test.js`.
 
 ## B. Nouvelle clé de stockage
 
 1. Nom : `chessTrainer_<nom>`. Lecture et écriture toujours via `dataStore` (`js/core/storageAdapter.js`), jamais `localStorage` en direct.
 2. Synchronisée ou locale ? Synchronisée si l'utilisateur s'attend à la retrouver sur un autre appareil (progression, répertoire, choix d'apparence) ; locale si elle dépend de l'appareil (taille d'écran, cache, photo réduite, état d'interface).
-3. Si synchronisée : ajouter la clé dans `kindOf` de `syncModel.js` avec un type existant ou un nouveau type, écrire sa fonction de fusion (symétrique, à trois points), l'ajouter à l'en-tête. Test dans `tests/syncModel.test.js` et, si le flux complet change, `tests/syncEngine.test.js`.
-4. Si elle remplace une ancienne clé : conversion au démarrage puis suppression de l'ancienne (voir comment `settings.js` traite `chessTrainer_theme`), avec un test dans `tests/migration.test.js`.
+3. Si synchronisée : ajouter la clé dans `kindOf` de `syncModel.js` avec un type existant ou un nouveau type, écrire sa fonction de fusion (symétrique, à trois points), l'ajouter à l'en-tête. Test dans `tests/domain/syncModel.test.js` et, si le flux complet change, `tests/domain/syncEngine.test.js`.
+4. Si elle remplace une ancienne clé : conversion au démarrage puis suppression de l'ancienne (voir comment `settings.js` traite `chessTrainer_theme`), avec un test dans `tests/domain/migration.test.js`.
 5. CLAUDE.md : liste des clés synchronisées ou des « clés seulement locales notables ».
 
 ## C. Préférence (réglage)
@@ -33,7 +33,7 @@ Dans `js/domain/settings.js` :
 
 1. Synchronisée → `SYNCED_PREFS` (stockée datée `{ v, at }` dans `chessTrainer_prefs`, la plus récente gagne). Propre à l'appareil → `LOCAL_PREFS` (`chessTrainer_settings`).
 2. Donner `ok` (validation : `_bool`, `_oneOf([...])`, `_text(max)`) et `def` (défaut). Une valeur invalide reprend le défaut, ce qui protège contre des données d'un autre appareil plus ancien.
-3. Ajouter le contrôle dans `js/screens/settings/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/settings.test.js` échoue si une préférence n'a pas de réglage. Pas de phrase d'aide sous le réglage : l'explication va dans `tip` (infobulle du libellé) et les synonymes dans `search`. Une préférence de `LOCAL_PREFS` reçoit seule le repère « appareil » (`PanelKit.localMark`, `tests/settingsLocalMark.test.js`).
+3. Ajouter le contrôle dans `js/screens/settings/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/domain/settings.test.js` échoue si une préférence n'a pas de réglage. Pas de phrase d'aide sous le réglage : l'explication va dans `tip` (infobulle du libellé) et les synonymes dans `search`. Une préférence de `LOCAL_PREFS` reçoit seule le repère « appareil » (`PanelKit.localMark`, `tests/screens/settingsLocalMark.test.js`).
 4. Lire la valeur via `appSettings.<nom>` (ou `trainingSettings` pour les options d'entraînement).
 5. Si la préférence agit avant le premier rendu (thème, échiquier), garder cohérent le script en ligne en tête d'`index.html`.
 

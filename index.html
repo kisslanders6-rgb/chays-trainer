@@ -38,7 +38,7 @@
                 var g = p.darkBg && p.darkBg.v;       // ambiance (teinte de l'échiquier si aucun choix)
                 d.setAttribute('data-dark', typeof g === 'string' && /^[a-z]+$/.test(g) ? g : 'board');
                 // Barre système dès le lancement en sombre : le fond choisi (mêmes valeurs que --bg dans style.css,
-                // vérifié par tests/theme.test.js ; « Échiquier », calculé, prend le gris neutre jusqu'à themeColor.js).
+                // vérifié par tests/app/theme.test.js ; « Échiquier », calculé, prend le gris neutre jusqu'à themeColor.js).
                 // En clair, themeColor.js la calcule à partir de l'accent.
                 var bars = { neutral: '#121314', night: '#0e141c', oled: '#000000', green: '#0f1711' };
                 var tm = document.querySelector('meta[name="theme-color"]');
@@ -690,7 +690,7 @@
 <script src="js/domain/chess/chessEngine.js"></script>
 <script src="js/domain/engine.js"></script>
 <script src="js/board/modes.js"></script>
-<script src="js/board/openingsLogic.js"></script>
+<script src="js/board/boardLogic.js"></script>
 <script src="js/screens/play/dataPanel.js"></script>
 <script src="js/screens/play/pgn.js"></script>
 <script src="js/screens/games/gameReview.js"></script>
@@ -698,7 +698,7 @@
 <script src="js/screens/play/homePanels.js"></script>
 <script src="js/board/moveStats.js"></script>
 <script src="js/board/captures.js"></script>
-<script src="js/board/openingsUI.js"></script>
+<script src="js/board/boardView.js"></script>
 <script src="js/board/treeView.js"></script>
 <script src="js/board/annotations.js"></script>
 <script src="js/domain/repertoire/levels.js"></script>

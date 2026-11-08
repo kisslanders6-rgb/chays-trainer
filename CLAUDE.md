@@ -8,7 +8,7 @@ Entraîneur d'échecs en français, PWA **sans dépendance d'exécution ni étap
 
 ## Architecture
 
-Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/layers.test.js` le vérifie (liens encore tolérés : `tests/layers.baseline.json`, ils ne peuvent que baisser).
+Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/app/layers.test.js` le vérifie (liens encore tolérés : `tests/app/layers.baseline.json`, ils ne peuvent que baisser).
 
 - `js/core` : socle (échappement, actions, `Bus`, fenêtres `askConfirm` / `askText`, traduction, composants).
 - `js/domain` : règles et données, sans écran (`chess/`, `repertoire/` dont `review.js` et `levels.js`, `sync/`, `endgames/`, moteur, préférences, sons).
@@ -29,7 +29,7 @@ Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/layers.test
 - Clés synchronisées : liste dans `js/domain/sync/syncModel.js`. Toute nouvelle clé à synchroniser doit y être déclarée, sinon elle reste sur l'appareil.
 - `chessTrainer_timedRecord` (record du contre-la-montre) est synchronisé : le plus grand l'emporte.
 - `chessTrainer_repNotes` (description de chaque répertoire, `{ [répertoire]: { v, at } }`, 160 caractères au plus) est synchronisé : la plus récente l'emporte (même fusion que les préférences). `repertoireNote(nom)` / `setRepertoireNote(nom, texte)` (`storage.js`) ; suivie par `renameRepertoire`, `deleteRepertoire` (gardée dans l'élément de corbeille) et la restauration. Saisie : menu ⋮ du répertoire ou toucher la description sous « Jouer » (`editRepNote`, `askText` avec `allowEmpty` / `max`) ; affichée aussi dans la liste de `RepPicker` (`.rp-desc`) et en infobulle de la puce.
-- Clés seulement locales notables : `chessTrainer_mode` (clair / sombre / système), `chessTrainer_avatarLocal` (photo de 128 px), `chessTrainer_looksDefaults`, `chessTrainer_looksTip` (suggestion Noyer + Maestro déjà vue), `chessTrainer_authFlow` (démarche de compte lancée sur cet appareil, 24 h : sans elle, un lien `#access_token=…` n'est appliqué qu'après confirmation du compte nommé, et les données ne partent qu'après le choix « Première synchronisation »), `chessTrainer_paletteRecent` (cinq derniers choix de la palette), `chessTrainer_reviewedGames` (ancienne liste des erreurs comptées, seulement relue), `chessTrainer_splashDay` (jour de la dernière animation de lancement complète, « la plume » ; ensuite « la gravure », courte, via `html.splash-quick` posé par le script de tête ; `tests/splash.test.js`). Convention : `chessTrainer_<nom>` ; les anciennes clés `chessTrainer.trainingSettings`, `chessTrainer.timedRecord` et `chessTrainer_theme` sont converties au démarrage puis supprimées.
+- Clés seulement locales notables : `chessTrainer_mode` (clair / sombre / système), `chessTrainer_avatarLocal` (photo de 128 px), `chessTrainer_looksDefaults`, `chessTrainer_looksTip` (suggestion Noyer + Maestro déjà vue), `chessTrainer_authFlow` (démarche de compte lancée sur cet appareil, 24 h : sans elle, un lien `#access_token=…` n'est appliqué qu'après confirmation du compte nommé, et les données ne partent qu'après le choix « Première synchronisation »), `chessTrainer_paletteRecent` (cinq derniers choix de la palette), `chessTrainer_reviewedGames` (ancienne liste des erreurs comptées, seulement relue), `chessTrainer_splashDay` (jour de la dernière animation de lancement complète, « la plume » ; ensuite « la gravure », courte, via `html.splash-quick` posé par le script de tête ; `tests/shell/splash.test.js`). Convention : `chessTrainer_<nom>` ; les anciennes clés `chessTrainer.trainingSettings`, `chessTrainer.timedRecord` et `chessTrainer_theme` sont converties au démarrage puis supprimées.
 
 ## Pièges connus
 
@@ -37,7 +37,7 @@ Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/layers.test
 - `Chess.fen(pos)` donne la FEN d'une position (`displayedFen()` pour celle affichée).
 - Un seul nom global par script (de préférence un objet, comme `Chess`, `EG`, `SyncModel`) : `npm test` refuse un nom déclaré deux fois.
 - Nouveau script : l'ajouter dans `index.html` ; `sw.js` le met en cache tout seul. Image remplacée : incrémenter `VERSION` dans `sw.js`.
-- Icônes de l'app : PNG 192, 512, masquable et iOS par `swift scripts/export-icons.swift` (`assets/brand/chays-icone.svg`) ; `favicon.ico` (16, 32, 48 px, `assets/brand/chays-favicon.svg`) et `icon-mono-512.png` (manifeste `monochrome`) par `swift scripts/export-favicons.swift` ; `assets/icons/icon.svg` est le favicon adaptatif clair / sombre, écrit à la main (croix épaissie, sans gravure). `tests/pwaIcons.test.js` vérifie balises, manifeste et cache.
+- Icônes de l'app : PNG 192, 512, masquable et iOS par `swift scripts/export-icons.swift` (`assets/brand/chays-icone.svg`) ; `favicon.ico` (16, 32, 48 px, `assets/brand/chays-favicon.svg`) et `icon-mono-512.png` (manifeste `monochrome`) par `swift scripts/export-favicons.swift` ; `assets/icons/icon.svg` est le favicon adaptatif clair / sombre, écrit à la main (croix épaissie, sans gravure). `tests/app/pwaIcons.test.js` vérifie balises, manifeste et cache.
 - Le script en ligne en tête d'`index.html` applique thème et échiquier avant le premier rendu : le garder cohérent avec `settings.js`.
 - Thèmes, couleurs, Safari 16 : `css/CLAUDE.md`.
 
@@ -51,7 +51,7 @@ Cinq couches, chacune ne s'appuie que sur celles du dessous ; `tests/layers.test
 
 ## Tests
 
-`npm test` (`tests/run.js`, Node, aucun réseau : serveur Supabase simulé). `tests/_app.js` : `bootApp()` démarre l'application entière dans jsdom, `scriptPath('nom.js')` retrouve un script (jamais de chemin `js/…` en dur). `boot.test.js` charge `index.html` entier ; `globals.test.js` vérifie les noms globaux ; `layers.test.js` le sens des dépendances ; `gameModes.test.js` ce que l'échiquier fait dans chaque mode ; `critical.test.js` corbeille, arbre et noms piégés ; `i18nSource.test.js` affiche ce qui manque aux traductions. Chaque règle métier a son test : en ajouter un avec toute nouvelle règle. Les tests tournent à chaque push (`.github/workflows/tests.yml`).
+`npm test` (`tests/run.js`, Node, aucun réseau : serveur Supabase simulé). Les tests sont rangés par couche (`tests/core`, `domain`, `board`, `screens`, `shell`), `tests/app` pour le transversal. `tests/_app.js` : `bootApp()` démarre l'application entière dans jsdom, `scriptPath('nom.js')` retrouve un script (jamais de chemin `js/…` en dur). `boot.test.js` charge `index.html` entier ; `globals.test.js` vérifie les noms globaux ; `layers.test.js` le sens des dépendances ; `gameModes.test.js` ce que l'échiquier fait dans chaque mode ; `critical.test.js` corbeille, arbre et noms piégés ; `i18nSource.test.js` affiche ce qui manque aux traductions. Chaque règle métier a son test : en ajouter un avec toute nouvelle règle. Les tests tournent à chaque push (`.github/workflows/tests.yml`).
 
 Prévisualisation locale : `.claude/launch.json` (serveur Node sur le port 8080) ou `npm start`.
 

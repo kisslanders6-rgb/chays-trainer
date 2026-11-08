@@ -19,7 +19,7 @@ grep -rn "celtic" js css sw.js tests assets/pieces/CREDITS.md
 3. `style.css` : `--board-light`, `--board-dark`, `--board-border` sous `html[data-board="<id>"]`. **Ne pas écrire d'accent** : `--ui-accent` et `--board-ring` sont dérivés de `--board-dark` (« HARMONISATION »).
 4. Échiquier texturé : générer `assets/boards/<id>.webp` avec `npm i --no-save sharp && node scripts/gen-boards.mjs <id>` (ajouter son tirage dans le script), puis l'ajouter partout où figurent les autres textures : listes `html:is([data-board=…])` de `style.css`, fond `#board`, vignette `.theme-swatch`, `css/panels.css` (`.pn-board`), et la liste d'images de `sw.js`.
 5. `tests/theme-matrix.html` : ajouter l'id à `BOARDS`.
-6. `npm test` : `tests/theme.test.js` vérifie le contraste 4,5:1 de l'accent dérivé en clair et en sombre. S'il échoue, ajuster `--board-dark`, pas la formule.
+6. `npm test` : `tests/app/theme.test.js` vérifie le contraste 4,5:1 de l'accent dérivé en clair et en sombre. S'il échoue, ajuster `--board-dark`, pas la formule.
 7. Contrôle visuel : ouvrir `tests/theme-matrix.html` dans l'aperçu, en clair et en sombre.
 
 ## Jeu de pièces
@@ -36,7 +36,7 @@ grep -rn "celtic" js css sw.js tests assets/pieces/CREDITS.md
 1. `js/domain/settings.js` : id dans `ARROW_STYLE_IDS` et libellé français dans `ARROW_STYLE_LABELS`.
 2. `js/board/annotations.js` : rendu dans `drawArrows` (fonction pure, sans état global), en gérant `knight` (saut en L).
 3. L'aperçu d'Apparence utilise la même fonction : le vérifier.
-4. `tests/arrows.test.js` : un cas pour le nouveau style.
+4. `tests/board/arrows.test.js` : un cas pour le nouveau style.
 
 ## Dans tous les cas
 

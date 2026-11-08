@@ -63,7 +63,7 @@ function _tone(ctx, out, t0, { wave = 'sine', from, to, peak, dur, lowpass, atta
     o.start(t0); o.stop(t0 + dur + 0.02);
 }
 
-// Niveaux choisis pour qu'aucun son ne dépasse ~0,5 en crête avant le limiteur (tests/sound.test.js).
+// Niveaux choisis pour qu'aucun son ne dépasse ~0,5 en crête avant le limiteur (tests/domain/sound.test.js).
 const _SOUNDS = {
     move(ctx, out, t) {                          // toc de bois feutré
         _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.14, dur: 0.04 });

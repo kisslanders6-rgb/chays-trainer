@@ -1,7 +1,7 @@
 # Mise à jour du moteur Stockfish embarqué (engine/).
 # Chaque lundi (ou à la demande), vérifie la dernière version du paquet npm « stockfish ». S'il y en a une
 # nouvelle : scripts/update-engine.mjs remplace engine/<version>/ et engine/manifest.json, tous les tests
-# tournent (dont tests/stockfish.test.js : empreintes, UCI, mat trouvé), puis une pull request est ouverte.
+# tournent (dont tests/domain/stockfish.test.js : empreintes, UCI, mat trouvé), puis une pull request est ouverte.
 # La fusionner suffit : Vercel déploie, le service worker télécharge le nouveau moteur et purge l'ancien.
 #
 # Prérequis (une fois) : Settings › Actions › General › « Allow GitHub Actions to create and approve pull requests ».
@@ -64,4 +64,4 @@ jobs:
           git push origin "$branch"
           gh pr create --base main --head "$branch" \
             --title "Moteur : Stockfish ${{ steps.v.outputs.latest }}" \
-            --body "Nouvelle version du paquet npm stockfish (moteurs lite). Tests passés, dont tests/stockfish.test.js (empreintes, UCI, mat en 1). Fusionner pour déployer ; le service worker remplace l'ancien moteur."
+            --body "Nouvelle version du paquet npm stockfish (moteurs lite). Tests passés, dont tests/domain/stockfish.test.js (empreintes, UCI, mat en 1). Fusionner pour déployer ; le service worker remplace l'ancien moteur."
