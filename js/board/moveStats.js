@@ -282,7 +282,7 @@ function renderOppSuites() {
     const opp = playerColor === 'w' ? 'b' : 'w';
     box.innerHTML = `<span class="opp-suites-h">Suites adverses</span><div class="opp-suites-list">${rows.map(r => {
         const pct = r.lichPct ?? r.ownPct;
-        return `<button type="button" class="opp-suite" data-action="freqPlay" data-arg="${escapeHtml(r.uci)}" data-san="${escapeHtml(formatSanText(r.san, opp))}" style="--pc:${Math.round(100 * (pct || 0))}%" title="Jouer ${escapeHtml(formatSanText(r.san, opp))} pour l’adversaire · ${r.covered ? 'préparé' : 'à préparer'}">
+        return `<button type="button" class="opp-suite" data-action="freqPlay" data-arg="${escapeHtml(r.uci)}" style="--pc:${Math.round(100 * (pct || 0))}%" title="Jouer ${escapeHtml(formatSanText(r.san, opp))} pour l’adversaire · ${r.covered ? 'préparé' : 'à préparer'}">
             <i class="opp-dot ${r.covered ? 'is-ok' : 'is-todo'}" aria-hidden="true"></i><b>${formatSan(r.san, opp)}</b>${pct ? `<span class="opp-pct">${_pct(pct)}</span>` : ''}
             <span class="sr-only">${r.covered ? 'préparé' : 'à préparer'}</span></button>`;
     }).join('')}</div>`;

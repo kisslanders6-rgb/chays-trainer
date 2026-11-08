@@ -385,7 +385,7 @@
                           Ordinateur (920 px+) : une seule rangée de 48 px, ‹ [ action ] › puis les outils en icônes,
                                        après un filet (hauteur comptée dans --board-chrome-h).
                           Tablette   : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
-                          Mobile     : dock de cinq cases fixé en bas : première case selon le mode · ‹ · centre plein · › · Plus (dock.js) ;
+                          Mobile     : dock de cinq cases fixé en bas : retourner · ‹ · centre · › · Plus (dock.js) ;
                                        les autres boutons du mode passent dans « Plus » (« TÉLÉPHONE SOUS LE POUCE » de style.css).
                     -->
                     <div class="board-controls">
@@ -409,7 +409,6 @@
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
                             </button>
                             <!-- Téléphone : centre du dock (prochaine action du mode) et « Plus » (boutons du mode cachés sur téléphone) -->
-                            <button type="button" class="btn dock-left" id="dock-left" onclick="Dock.runLeft()" hidden></button>
                             <button type="button" class="btn dock-center" id="dock-center" onclick="Dock.runGame()"></button>
                             <button type="button" class="btn btn-tool dock-more" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
                                 <svg class="ico"><use href="#i-more-horizontal"/></svg><span class="btn-label">Plus</span>

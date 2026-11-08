@@ -7,10 +7,8 @@
  *     Centre : la capsule Suite (Revoir, Réviser, Traiter, À jour) et, sans elle, l'action pleine de l'accueil
  *     (#hp-today .hp-cta, cachée sur téléphone) ; à défaut, Entraînement. Sur Statistiques et Entraînement, l'action
  *     principale de la page (.st-go, _trPrimary, « Commencer » de la finale à suivre), cachée ou atténuée sur téléphone (lot 5).
- *   En partie (.board-controls) : première case · ‹ · centre (bouton plein, élargi) · › · Plus.
- *     Première case : Passer (Entraînement), Analyse (aperçu), Rejouer (Finales), sinon Retourner, qui passe alors dans « Plus ».
- *     Centre selon le mode : Sauter (mise en situation), Jouer + la suite la plus jouée (Jouer, au trait adverse),
- *     Annuler (reçu d'un coup enregistré), Indice, sinon
+ *   En partie (.board-controls) : Retourner · ‹ · centre · › · Plus.
+ *     Centre selon le mode : Sauter (mise en situation), Annuler (reçu d'un coup enregistré), Indice, sinon
  *     Arbre (Jouer), Passer (Entraînement), Recommencer (Finales) ; S'entraîner (aperçu) ; Ajouter (N) ou Brouillon (Analyse).
  *     Les boutons du mode cachés sur téléphone passent dans « Plus » (toggleToolbarMore, mobile.js) ; Quitter
  *     devient le ✕ de la barre du haut (#topnav-exit, Dock.exit).
@@ -22,7 +20,7 @@
 
 const Dock = (function () {
     const MQ = '(max-width: 599px)';
-    let homeRun = null, gameRun = null, gameTarget = null, leftTarget = null;
+    let homeRun = null, gameRun = null, gameTarget = null;
 
     const phone = () => matchMedia(MQ).matches;
     const shown = el => !!el && el.style.display !== 'none' && !el.closest('[style*="display: none"]');
@@ -108,9 +106,6 @@ const Dock = (function () {
         // Bouton de la barre d'état qui sert maintenant : Sauter (mise en situation), Annuler ou Rétablir (reçu d'un coup).
         const act = document.querySelector('#status-bar .status-act'), k = act ? act.dataset.act || '' : '';
         if (k === 'Sauter') return proxy(act, { icon: 'skip-forward', label: 'Sauter', tone: 'soft', title: act.title || k });
-        // Jouer, au trait adverse : la suite la plus jouée (« Annuler » du reçu reste dans la carte).
-        const suite = gameMode === 'play' ? document.querySelector('#opp-suites:not([hidden]) .opp-suite') : null;
-        if (suite) return proxy(suite, { icon: 'play', label: 'Jouer ' + suite.dataset.san, title: suite.title });
         if (gameMode === 'play' && (k === 'Annuler' || k === 'Rétablir')) return proxy(act, { icon: 'rotate-ccw', label: k, tone: 'soft', title: act.title || k });
         const hint = modeBtn('.tb-hint');
         if (hint && !hint.disabled) {
@@ -129,24 +124,6 @@ const Dock = (function () {
                  run: () => { if (typeof showSideTab === 'function') showSideTab('tree'); setSheetOpen(true); } };
     }
 
-    // Première case, selon le mode : l'action secondaire utile à la place de Retourner, qui passe alors dans « Plus ».
-    function gameLeft() {
-        const pick = (sel, o) => { const b = modeBtn(sel); return b && !b.disabled && b !== gameTarget ? { ...o, target: b } : null; };
-        if (gameMode === 'training') return pick('[onclick^="nextDrill"]', { icon: 'skip-forward', label: 'Passer' });
-        if (gameMode === 'preview') return pick('[onclick^="openAnalysis"]', { icon: 'microscope', label: 'Analyse' });
-        if (gameMode === 'endgame') return pick('[onclick^="retryEndgame"]', { icon: 'rotate-ccw', label: 'Rejouer' });
-        return null;
-    }
-
-    function paintLeft(el, l) {
-        el.hidden = !l;
-        leftTarget = l ? l.target : null;
-        if (!l) return;
-        const html = `${ico(l.icon)}<span class="btn-label">${escapeHtml(l.label)}</span>`;
-        if (el.innerHTML !== html) el.innerHTML = html;
-        el.title = l.target.title || l.label;
-    }
-
     function refresh() {
         const home = document.getElementById('nav-center'), game = document.getElementById('dock-center');
         if (!phone()) { homeRun = gameRun = null; return; }
@@ -157,8 +134,6 @@ const Dock = (function () {
                 game.hidden = !c;
                 gameTarget = c ? c.target || null : null;
                 if (c) { paint(game, c); gameRun = c.run; }
-                const left = document.getElementById('dock-left');
-                if (left) paintLeft(left, gameLeft());
                 document.querySelectorAll('.board-controls .dock-more').forEach(b => { b.hidden = !moreItems(b).length && gameMode !== 'play'; });
             }
         } catch (e) { if (typeof reportError === 'function') reportError('dock', e); }
@@ -166,13 +141,12 @@ const Dock = (function () {
 
     function runHome() { refresh(); if (homeRun) homeRun(); }
     function runGame() { refresh(); if (gameRun) gameRun(); }
-    function runLeft() { refresh(); if (leftTarget) leftTarget.click(); }
 
     // « Plus » : les boutons du mode que le dock cache, sauf celui que porte le centre et Quitter (✕ du haut).
     function moreItems(moreBtn) {
         const inMode = el => { for (let n = el; n && !n.classList.contains('board-controls'); n = n.parentElement) if (n.style.display === 'none') return false; return true; };
-        return [...document.querySelectorAll('.board-controls button')].filter(b => b !== moreBtn && b !== gameTarget && b !== leftTarget && inMode(b) && !b.disabled
-            && !b.classList.contains('is-exit') && !b.classList.contains('dock-center') && !b.classList.contains('dock-left') && b.querySelector('.btn-label') && getComputedStyle(b).display === 'none');
+        return [...document.querySelectorAll('.board-controls button')].filter(b => b !== moreBtn && b !== gameTarget && inMode(b) && !b.disabled
+            && !b.classList.contains('is-exit') && !b.classList.contains('dock-center') && b.querySelector('.btn-label') && getComputedStyle(b).display === 'none');
     }
 
     // ✕ de la barre du haut : le Quitter du mode s'il existe, sinon l'accueil.
@@ -188,5 +162,5 @@ const Dock = (function () {
 
     Bus.on('ui:refresh', refresh);
 
-    return { refresh, runHome, runGame, runLeft, exit, moreItems, homeCenter, gameCenter, gameLeft };
+    return { refresh, runHome, runGame, exit, moreItems, homeCenter, gameCenter };
 })();

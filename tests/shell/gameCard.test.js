@@ -1,4 +1,4 @@
-// Lancer : node tests/shell/gameCard.test.js   — carte de contexte de l'écran de jeu sur téléphone et dock selon le mode.
+// Lancer : node tests/shell/gameCard.test.js   — carte de contexte de l'écran de jeu sur téléphone.
 const { bootApp, mainCss } = require('../_app.js');
 const assert = require('assert');
 let n = 0;
@@ -27,14 +27,6 @@ async function boot(phone) {
         assert($('#gc-ring').hidden && !$('#gc-tiles').hidden);
     });
 
-    await t('Jouer, au trait adverse : le centre joue la suite la plus fréquente', () => {
-        w.eval(`const b = document.getElementById('opp-suites'); b.hidden = false;
-            b.innerHTML = '<button class="opp-suite" data-san="exd4" title="Jouer exd4"></button><button class="opp-suite" data-san="Fb6"></button>'`);
-        assert.strictEqual(w.eval('Dock.gameCenter().label'), 'Jouer exd4');
-        w.eval(`const b = document.getElementById('opp-suites'); b.hidden = true; b.innerHTML = ''`);
-        assert.notStrictEqual(w.eval('Dock.gameCenter().label'), 'Jouer exd4');
-    });
-
     await t('Entraînement : position sur le total ; justes, erreurs, série', () => {
         w.eval(`trainingState.session = { kind: 'daily', label: 'Révision', items: [{}, {}, {}, {}], results: new Map([['a', { ok: true }], ['b', { ok: true }], ['c', { ok: false }]]), cur: 3, i: 3 };
             trainingState.combo = 2`);
@@ -52,28 +44,6 @@ async function boot(phone) {
         assert.strictEqual(model(), null, 'hors séance guidée');
     });
 
-    // L'Indice porte le centre : sinon le centre reprend Passer ou Recommencer, et la première case garde Retourner.
-    const withHint = m => { mode(m); w.eval(`document.querySelector('.tb-hint').disabled = false; Dock.refresh()`); };
-
-    await t('première case : Passer, Analyse, Rejouer, et Retourner en Jouer', () => {
-        withHint('training');
-        assert.strictEqual(w.eval('Dock.gameLeft() && Dock.gameLeft().label'), 'Passer');
-        assert(!$('#dock-left').hidden);
-        mode('preview');
-        assert.strictEqual(w.eval('Dock.gameLeft().label'), 'Analyse');
-        withHint('endgame');
-        assert.strictEqual(w.eval('Dock.gameLeft().label'), 'Rejouer');
-        mode('play');
-        assert.strictEqual(w.eval('Dock.gameLeft()'), null);
-        assert($('#dock-left').hidden, 'Jouer : Retourner reste en première case');
-    });
-
-    await t('l’action de la première case est retirée de « Plus »', () => {
-        withHint('training');
-        const skip = w.eval(`Dock.gameLeft().target`);
-        assert(!w.eval(`Dock.moreItems(document.querySelector('.dock-more'))`).includes(skip));
-    });
-
     await t('aperçu des Statistiques : maîtrise ; essais, échecs, révision, relus dans la bonne couleur', () => {
         w.eval(`readDBFor = (r, c) => c === 'b' ? { k: { attempts: 13, failures: 8, mastery: 34, due: 0, interval: 0 } } : {};
             statsPreviewTarget = { color: 'b', key: 'k' }`);
@@ -81,13 +51,6 @@ async function boot(phone) {
         const m = model();
         assert.deepStrictEqual([m.ring.value, m.ring.sub], [34, 'maîtrise']);
         assert.deepStrictEqual(m.tiles.slice(0, 2).map(x => x[0]), [13, 8]);
-    });
-
-    await t('si le centre porte déjà Passer, la première case reste Retourner', () => {
-        mode('training');
-        w.eval(`document.querySelector('.tb-hint').disabled = true; Dock.refresh()`);
-        assert.strictEqual(w.eval('Dock.gameCenter().label'), 'Passer');
-        assert($('#dock-left').hidden);
     });
 
     await t('un titre long reste petit ; Finales et Analyse toujours', () => {

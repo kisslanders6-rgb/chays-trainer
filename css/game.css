@@ -140,7 +140,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
    BARRE DE CONTRÔLE ET TIROIR (MOBILE)
    ═══════════════════════════════════════════════════════════════════════════ */
 .board-controls { width: 100%; display: flex; flex-direction: column; align-items: center; }
-.mobile-only, .sheet-handle, .sheet-backdrop, .dock-left, .dock-center, .dock-more, .nav-center, .topnav-exit { display: none; }
+.mobile-only, .sheet-handle, .sheet-backdrop, .dock-center, .dock-more, .nav-center, .topnav-exit { display: none; }
 .tb-more-menu { position: fixed; z-index: 320; top: auto; min-width: 200px; }
 
 @media (max-width: 599px) {
@@ -883,7 +883,7 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TABLEAU (téléphone) : carte de contexte au-dessus de l'échiquier, fil de coups, dock à action pleine (gameCard.js, dock.js)
+   TABLEAU (téléphone) : carte de contexte au-dessus de l'échiquier, fil de coups (gameCard.js)
    ═══════════════════════════════════════════════════════════════════════════ */
 .game-card { display: contents; }
 .gc-ring, .gc-tiles { display: none; }
@@ -913,16 +913,6 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     .side-panel:not(.open) .moves-bar > :first-child { margin-left: auto; }
     .side-panel:not(.open) .moves-export { display: none; }
 
-    /* Dock : la première case suit le mode, le centre est le seul bouton plein */
-    .board-controls .dock-left:not([hidden]) { display: inline-flex; flex: 1 1 0; order: 1; }
-    .board-controls:has(.dock-left:not([hidden])) .tb-flip { display: none; }
-    html[data-hand="left"] .board-controls .dock-left { order: 5; }
-    .board-controls .dock-center { flex: 2.4 1 0; min-width: 0; flex-direction: row; gap: 8px; border-radius: 16px; background: var(--accent); color: var(--accent-text); box-shadow: 0 4px 14px color-mix(in oklab, var(--accent) 28%, transparent); }
-    .board-controls .dock-center .dock-orb { width: auto; height: auto; background: none !important; border: 0 !important; color: inherit; box-shadow: none; }
-    .board-controls .dock-center .dock-l { font-size: 15.5px; line-height: 20px; color: inherit; }
-    .board-controls .dock-center[data-tone="warn"] { background: #e6b443; color: #231a08; }
-    .board-controls .dock-center[data-tone="err"] { background: var(--err); color: #fff; }
-    .board-controls .dock-center:not(:disabled):active { background: color-mix(in oklab, var(--accent) 86%, #000); }
     @media (prefers-reduced-motion: reduce) { .side-panel:not(.open) .game-card { transition: none; } }
 }
 /* Petit écran : carte d'une ligne, fil et poignée resserrés, l'échiquier garde sa place */
