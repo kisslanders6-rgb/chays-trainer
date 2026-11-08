@@ -137,7 +137,14 @@ const SyncEngine = (function () {
 
             let wroteLocal = false;
             if (!eqLocal) {
-                if (L().get(key) !== localRaw) return { raced: true, pushed };   // modifié pendant la synchro : on ne l'écrase pas
+                if (L().get(key) !== localRaw) {                             // modifié pendant la synchro : on ne l'écrase pas
+                    // Déjà envoyé : le passage suivant part de ce local-là, sinon ses deltas seraient comptés deux fois.
+                    if (pushed) {
+                        if (!SyncMeta.setBase(key, localRaw)) throw coded('storage');
+                        SyncMeta.setVersion(key, version);
+                    }
+                    return { raced: true, pushed };
+                }
                 const ok = merged === null ? L().remove(key) : L().set(key, JSON.stringify(merged));
                 if (!ok) throw coded('storage');
                 wroteLocal = true;

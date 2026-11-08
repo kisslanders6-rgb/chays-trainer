@@ -127,20 +127,65 @@ const Auth = (function () {
     }
     function retryLater() { clearTimeout(refreshTimer); refreshTimer = setTimeout(refresh, 30000); }
 
+    // ─── Plusieurs onglets ────────────────────────────────────────────────────
+    // Un jeton de rafraîchissement ne sert qu'une fois : réutilisé, il révoque toute la session. Chaque onglet
+    // relit donc la session partagée avant d'appeler le service, et un seul rafraîchit à la fois (Web Locks).
+    function readStored() {
+        let s = null;
+        try { s = JSON.parse(L().get(SESSION_KEY)); } catch (e) { /* illisible : déconnecté */ }
+        return s && s.access_token && s.refresh_token && s.user && s.user.id ? s : null;
+    }
+
+    function adopt(s) {                                          // session écrite par un autre onglet : rien à réécrire
+        session = s;
+        if (typeof CloudClient !== 'undefined') CloudClient.setSession(s);
+        scheduleRefresh();
+    }
+
+    const newerStored = token => { const s = readStored(); return s && session && s.user.id === session.user.id && s.refresh_token !== token ? s : null; };
+
+    function withRefreshLock(fn) {
+        if (typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request) return navigator.locks.request('chays-auth', fn);
+        return fn();
+    }
+
+    function onStorage(e) {
+        if (e.key !== SESSION_KEY && e.key !== null) return;
+        const s = readStored();
+        if (!s) {
+            if (!session) return;
+            adopt(null); uninstallSyncingAdapter(); emit('signed-out', {});
+        } else if (session && s.user.id === session.user.id) {
+            if (s.refresh_token !== session.refresh_token) { adopt(s); emit('refreshed', { session: s }); }
+        } else {
+            adopt(s);
+            emit('signed-in', { session: s, switched: activate(s), fresh: false });
+        }
+    }
+
     function refresh() {
         if (!session) return Promise.resolve({ ok: false, code: 'no_session' });
         if (refreshing) return refreshing;
-        refreshing = (async () => {
-            const r = await request('/token?grant_type=refresh_token', { body: { refresh_token: session.refresh_token } });
+        refreshing = Promise.resolve(withRefreshLock(async () => {
+            if (!session) return { ok: false, code: 'no_session' };
+            const ahead = newerStored(session.refresh_token);
+            if (ahead) {
+                adopt(ahead); emit('refreshed', { session: ahead });
+                if (ahead.expires_at - nowS() >= MARGIN_S) return { ok: true, session: ahead };
+            }
+            const used = session.refresh_token;
+            const r = await request('/token?grant_type=refresh_token', { body: { refresh_token: used } });
             if (!r.error && r.ok && r.json.access_token) {
                 const s = toSession(Object.assign({ user: session.user }, r.json));
                 apply(s); emit('refreshed', { session: s });
                 return { ok: true, session: s };
             }
             if (r.error || r.status >= 500 || r.status === 429) { retryLater(); return { ok: false, code: r.error || 'server' }; }   // on garde la session
+            const won = newerStored(used);                                                                                       // un autre onglet est passé pendant l'appel
+            if (won) { adopt(won); emit('refreshed', { session: won }); return { ok: true, session: won }; }
             apply(null); uninstallSyncingAdapter(); emit('expired', {});                                                       // jeton définitivement refusé
             return { ok: false, code: 'expired' };
-        })().finally(() => { refreshing = null; });
+        })).finally(() => { refreshing = null; });
         return refreshing;
     }
 
@@ -389,6 +434,7 @@ const Auth = (function () {
         const h = readHash();
         if (h) handleLink(h);
         if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIfNeeded(); });
+        if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('storage', onStorage);
     }
 
     return {

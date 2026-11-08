@@ -155,6 +155,17 @@ const remote = (be, uid, key) => { const d = be.doc(uid, key); return d ? JSON.p
         await A.sync(); eq(Object.keys(A.get(DBW)).sort(), ['a', 'distant', 'local']); eq(remote(be, uid, DBW), A.get(DBW));
     });
 
+    await t('coup joué pendant l\'envoi : les compteurs ne sont pas comptés deux fois', async () => {
+        const { be, A, uid } = await setup(); A.put(DBW, { a: E('e2e4', 10, 0) }); A.intent('upload'); await A.sync();
+        A.put(DBW, { a: E('e2e4', 12, 0) }); be.bump(uid, DBW, { a: E('e2e4', 13, 0) });                // +2 ici, +3 sur l'autre appareil
+        let done = false;
+        be.opts.onRest = (method, key) => { if (method === 'GET' && key === DBW && !done) { done = true; A.put(DBW, { a: E('e2e4', 13, 0) }); } };   // +1 pendant l'envoi
+        const r1 = await A.sync(); be.opts.onRest = null;
+        assert(r1.raced.includes(DBW)); assert.strictEqual(remote(be, uid, DBW).a.attempts, 15);
+        await A.sync();
+        assert.strictEqual(A.get(DBW).a.attempts, 16); assert.strictEqual(remote(be, uid, DBW).a.attempts, 16);
+    });
+
     await t('valeur locale illisible : ignorée, jamais traitée comme une suppression', async () => {
         const { be, A, uid } = await setup(); A.put(DBW, { a: E('e2e4', 1, 0) }); A.intent('upload'); await A.sync();
         A.mem.set(DBW, '{corrompu'); A.run(`SyncMeta.markDirty('${DBW}')`);

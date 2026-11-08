@@ -276,6 +276,40 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         assert.strictEqual(be2.users.has('del@test.fr'), false); assert(c2.events.includes('signed-out'));
         assert.strictEqual((await c2.run('Auth.deleteAccount()')).code, 'no_session');
     });
+    // Deux onglets : même stockage, mémoire séparée.
+    const twoTabs = async () => {
+        const be3 = makeBackend(); be3.addUser('ana@test.fr', 'motdepasse1');
+        const mem = new Map(), a = boot({ backend: be3, mem }), b = boot({ backend: be3, mem });
+        const handlers = [];
+        b.window = { addEventListener: (type, fn) => { if (type === 'storage') handlers.push(fn); } };
+        a.boot(); await a.run(`Auth.signIn('ana@test.fr', 'motdepasse1')`); b.boot();
+        return { be3, mem, a, b, fire: () => handlers.forEach(fn => fn({ key: 'chessTrainer_session' })) };
+    };
+    await t('deux onglets : le jeton renouvelé par l\'un est repris par l\'autre, sans appel ni déconnexion', async () => {
+        const { be3, mem, a, b } = await twoTabs();
+        await a.run('Auth.refresh()');
+        const k = be3.log.length, r = await b.run('Auth.refresh()');
+        assert.strictEqual(r.ok, true); assert.strictEqual(b.run('Auth.isSignedIn()'), true); assert(mem.get('chessTrainer_session'));
+        assert.strictEqual(be3.log.slice(k).filter(l => l.includes('refresh_token')).length, 0);
+    });
+    await t('deux onglets : jeton refusé parce que l\'autre vient de passer → session reprise, pas de déconnexion', async () => {
+        const { be3, a, b } = await twoTabs();
+        const f = be3.fetch; let done = false;
+        b.fetch = async (url, o) => {
+            if (!done && String(url).includes('grant_type=refresh_token')) { done = true; await a.run('Auth.refresh()'); }
+            return f(url, o);
+        };
+        const r = await b.run('Auth.refresh()');
+        assert.strictEqual(r.ok, true); assert.strictEqual(b.run('Auth.isSignedIn()'), true); assert(!b.events.includes('expired'));
+    });
+    await t('deux onglets : l\'événement storage transmet le renouvellement et la déconnexion', async () => {
+        const { a, b, fire } = await twoTabs();
+        const before = b.run('Auth.session().refresh_token');
+        await a.run('Auth.refresh()'); fire();
+        assert.notStrictEqual(b.run('Auth.session().refresh_token'), before); assert(b.events.includes('refreshed'));
+        await a.run('Auth.signOut()'); fire();
+        assert.strictEqual(b.run('Auth.isSignedIn()'), false); assert(b.events.includes('signed-out')); assert.strictEqual(b.run('dataStore.adapter.name'), 'local');
+    });
     await t('updatePassword sans session → erreur claire', async () => {
         const c2 = boot({ backend: makeBackend() }); c2.boot();
         assert.strictEqual((await c2.run(`Auth.updatePassword('abcdefgh')`)).code, 'no_session');
