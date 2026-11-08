@@ -1,5 +1,6 @@
 // Lancer : node tests/announce.test.js   — annonce des coups (js/core/sound.js) : phrase en toutes lettres,
 // région aria-live écrite au tour suivant, synthèse vocale, ancien interrupteur converti.
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
@@ -20,8 +21,8 @@ function boot({ speech = false } = {}) {
                                 cancel() { spoken.push('cancel'); }, speak(u) { spoken.push(u.text); } };
     }
     vm.createContext(ctx);
-    for (const f of ['js/core/chessEngine.js', 'js/core/sound.js'])
-        vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+    for (const f of [scriptPath('chessEngine.js'), scriptPath('sound.js')])
+        vm.runInContext(readVars(f), ctx, { filename: f });
     ctx.run = s => vm.runInContext(s, ctx);
     ctx.flush = () => { timers.splice(0).forEach(fn => fn && fn()); };
     return { ctx, live: nodes['sr-moves'], spoken };
@@ -70,7 +71,7 @@ function boot({ speech = false } = {}) {
         const sctx = { localStorage: { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k), get length() { return mem.size; }, key: i => [...mem.keys()][i] },
                        document: { documentElement: { setAttribute() {} } }, Date, JSON };
         vm.createContext(sctx);
-        ['js/core/storageAdapter.js', 'js/core/settings.js'].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), sctx));
+        [scriptPath('storageAdapter.js'), scriptPath('settings.js')].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), sctx));
         assert.strictEqual(vm.runInContext('appSettings.announce', sctx), 'sr');
         assert.strictEqual(vm.runInContext(`(dataStore.set('chessTrainer_settings', '{"announce":false}'), loadSettings().announce)`, sctx), 'off');
         assert(/<div id="sr-moves" class="sr-only" aria-live="polite" aria-atomic="true"><\/div>/.test(fs.readFileSync('index.html', 'utf8')));

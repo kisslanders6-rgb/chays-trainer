@@ -1,16 +1,17 @@
 // Lancer : node tests/notation.test.js   — écriture des coups (formatSan HTML, formatSanText), figurines du jeu actif
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const props = {};
-const ctx = { console, appSettings: { notation: 'fr', pieceSet: 'maestro' },
+const ctx = { console, window: { addEventListener() {} }, appSettings: { notation: 'fr', pieceSet: 'maestro' },
               document: { addEventListener() {}, getElementById: () => null,
                           documentElement: { setAttribute() {}, style: { setProperty: (k, v) => { props[k] = v; } } } },
               Image: function () {} };
 vm.createContext(ctx);
-for (const f of ['js/core/utils.js', 'js/core/pieces.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('utils.js'), scriptPath('pieces.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 
 t('lettres françaises et anglaises : même texte en HTML et en texte simple', () => {
     assert.strictEqual(ctx.formatSan('Nxe5+', 'w'), 'Cxe5+');

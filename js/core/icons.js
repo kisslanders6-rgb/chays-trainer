@@ -6,8 +6,7 @@
  *
  *   HTML statique :  <svg class="ico"><use href="#i-lightbulb"/></svg>
  *   JS (innerHTML) :  ${ico('lightbulb')}   ou   ${ico('bar-chart', 'ico-xl')}
- *   Pièces         :  ${pieceGlyph('K')}    (suit le style de pièces choisi)
- *                     <span class="glyph" data-glyph="K"></span> + refreshGlyphs()
+ *   Pièces         :  <span class="glyph" data-glyph="K"></span> + refreshGlyphs()
  *
  * À charger EN PREMIER dans <body> (avant le contenu), pour que le sprite existe
  * avant toute référence <use>.
@@ -97,12 +96,6 @@ function ico(name, extraClass) {
     return `<svg class="ico${extraClass ? ' ' + extraClass : ''}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 }
 
-// Pièce du style actif (pieces.js) enveloppée dans .glyph ; repli Unicode si indisponible.
-function pieceGlyph(p) {
-    const svg = (typeof PIECE_SVG !== 'undefined' && PIECE_SVG[p]) || (typeof PIECES !== 'undefined' && PIECES[p]) || '';
-    return `<span class="glyph">${svg}</span>`;
-}
-
 // Remplit les emplacements statiques <span class="glyph" data-glyph="K"></span>.
 // À rappeler après un changement de style de pièces.
 function refreshGlyphs() {
@@ -123,27 +116,4 @@ document.addEventListener('DOMContentLoaded', () => {
         hooked._glyphHooked = true;
         window.applyPieceSet = hooked;
     }
-});
-
-// ─── LOGOS TEINTÉS ────────────────────────────────────────────────────────────
-// <img data-tint> : le PNG sert de MASQUE (son canal alpha), la couleur vient de
-// --logo-color (= couleur d'accent du thème). Les PNG ne sont jamais modifiés.
-// Condition : logo d'une seule couleur sur fond TRANSPARENT.
-// Ouvert en file://, le navigateur refuse un PNG local comme masque (logo invisible) :
-// on charge alors les mêmes logos en data: URI (logoData.js, inutile en ligne).
-function _tintLogos(srcOf) {
-    document.querySelectorAll('img[data-tint]').forEach(img => {
-        const src = srcOf(img);
-        if (!src) return;
-        img.style.setProperty('--tint-src', `url("${src}")`);
-        img.classList.add('is-tinted');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    if (location.protocol !== 'file:') { _tintLogos(img => img.src); return; }
-    const s = document.createElement('script');
-    s.src = 'js/core/logoData.js';
-    s.onload = () => _tintLogos(img => LOGO_DATA[img.getAttribute('src')]);
-    document.head.appendChild(s);
 });

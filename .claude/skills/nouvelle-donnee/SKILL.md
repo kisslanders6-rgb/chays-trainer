@@ -11,11 +11,11 @@ Commencer par décider de quel type est la donnée, puis suivre la section corre
 
 ## A. Champ d'une entrée du répertoire
 
-Une entrée = ma réponse unique dans une position (`js/storage.js`).
+Une entrée = ma réponse unique dans une position (`js/domain/repertoire/storage.js`).
 
 1. `newEntry` : valeur initiale, si le champ doit exister dès l'enregistrement.
 2. `normalizeEntry` : recopier le champ avec sa validation (`Number.isFinite(e.x) && e.x > 0`, etc.). Sans ça il est effacé à chaque lecture.
-3. `js/core/syncModel.js`, `combineSameMove(b, l, r)` : décider de la règle de fusion entre deux appareils et l'écrire. Elle doit rester **symétrique** (`merge(b,l,r)` = `merge(b,r,l)`). Modèles existants : `created` → le plus ancien ; `prio`, `due` → ceux du passage le plus récent ; compteurs → base + deltas.
+3. `js/domain/sync/syncModel.js`, `combineSameMove(b, l, r)` : décider de la règle de fusion entre deux appareils et l'écrire. Elle doit rester **symétrique** (`merge(b,l,r)` = `merge(b,r,l)`). Modèles existants : `created` → le plus ancien ; `prio`, `due` → ceux du passage le plus récent ; compteurs → base + deltas.
 4. Mettre à jour le commentaire d'en-tête de `syncModel.js` (ligne `openingDB_…`) et la phrase « Une entrée = … » de CLAUDE.md.
 5. Tests : `tests/syncModel.test.js` (fusion dans les deux ordres, champ conservé) et, si le champ a un effet sur la révision, `tests/training.test.js`.
 
@@ -29,11 +29,11 @@ Une entrée = ma réponse unique dans une position (`js/storage.js`).
 
 ## C. Préférence (réglage)
 
-Dans `js/core/settings.js` :
+Dans `js/domain/settings.js` :
 
 1. Synchronisée → `SYNCED_PREFS` (stockée datée `{ v, at }` dans `chessTrainer_prefs`, la plus récente gagne). Propre à l'appareil → `LOCAL_PREFS` (`chessTrainer_settings`).
 2. Donner `ok` (validation : `_bool`, `_oneOf([...])`, `_text(max)`) et `def` (défaut). Une valeur invalide reprend le défaut, ce qui protège contre des données d'un autre appareil plus ancien.
-3. Ajouter le contrôle dans `js/core/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/settings.test.js` échoue si une préférence n'a pas de réglage. Pas de phrase d'aide sous le réglage : l'explication va dans `tip` (infobulle du libellé) et les synonymes dans `search`. Une préférence de `LOCAL_PREFS` reçoit seule le repère « appareil » (`PanelKit.localMark`, `tests/settingsLocalMark.test.js`).
+3. Ajouter le contrôle dans `js/screens/settings/settingsUI.js` (ou `accountUI.js` pour le profil) : `tests/settings.test.js` échoue si une préférence n'a pas de réglage. Pas de phrase d'aide sous le réglage : l'explication va dans `tip` (infobulle du libellé) et les synonymes dans `search`. Une préférence de `LOCAL_PREFS` reçoit seule le repère « appareil » (`PanelKit.localMark`, `tests/settingsLocalMark.test.js`).
 4. Lire la valeur via `appSettings.<nom>` (ou `trainingSettings` pour les options d'entraînement).
 5. Si la préférence agit avant le premier rendu (thème, échiquier), garder cohérent le script en ligne en tête d'`index.html`.
 

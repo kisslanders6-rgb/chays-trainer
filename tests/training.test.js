@@ -1,4 +1,5 @@
 // Lancer : node tests/training.test.js   — séances guidées de l'Entraînement (training.js), sans DOM
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -17,8 +18,9 @@ const ctx = {
     goHome: tab => navigations.push(tab)
 };
 vm.createContext(ctx);
-const f = 'js/modules/training/training.js';
-vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+vm.runInContext(fs.readFileSync(scriptPath('modes.js'), 'utf8'), ctx);
+const f = scriptPath('training.js');
+vm.runInContext(readVars(f), ctx, { filename: f });
 const { trainingState } = ctx;
 
 // Séance en cours, telle que startSession la laisse (sans écran de jeu).

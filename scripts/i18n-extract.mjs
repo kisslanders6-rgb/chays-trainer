@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
-const SKIP_FILES = /i18n\.js$|icons\.js$|logoData\.js$|cloudConfig\.js$|storageAdapter\.js$/;
+const SKIP_FILES = /i18n\.js$|icons\.js$|cloudConfig\.js$|storageAdapter\.js$/;
 const files = walk(path.join(ROOT, 'js')).filter(f => f.endsWith('.js') && !SKIP_FILES.test(f));
 
 // Toutes les chaînes d'un source : { text } ; un ${…} d'un gabarit est remplacé par {n} et son contenu analysé à son tour.
@@ -115,7 +115,12 @@ for (const m of html.matchAll(/\b(?:title|aria-label|placeholder|alt)="([^"]+)"/
 
 // Accords écrits par du code : le chiffre se lit {n} (i18n.js).
 const lines = [...seen];
-fs.writeFileSync(path.join(ROOT, 'lang/source.txt'), lines.join('\n') + '\n');
+// --check : lecture seule (npm test), rien n'est écrit.
+const CHECK = process.argv.includes('--check');
+if (CHECK) {
+    const known = new Set(fs.readFileSync(path.join(ROOT, 'lang/source.txt'), 'utf8').split('\n').filter(Boolean));
+    console.log(lines.filter(l => !known.has(l)).length, 'textes absents de lang/source.txt (relancer sans --check)');
+} else fs.writeFileSync(path.join(ROOT, 'lang/source.txt'), lines.join('\n') + '\n');
 console.log(lines.length, 'textes,', lines.join(' ').split(/\s+/).length, 'mots');
 // Ce qui manque à chaque paquet (une clé absente reste en français à l'écran).
 for (const f of fs.readdirSync(path.join(ROOT, 'lang')).filter(x => x.endsWith('.json') && x !== 'manifest.json')) {

@@ -1,4 +1,5 @@
 // Lancer : node tests/syncEngine.test.js   — deux « appareils » simulés partagent un faux serveur Supabase
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const makeBackend = require('./_fakeBackend.js');
 let n = 0; const t = async (name, fn) => { globalThis.__netDown = false; await fn(); n++; console.log('ok  ', name); };
@@ -19,16 +20,16 @@ function device(be) {
     };
     vm.createContext(ctx);
     const load = f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-    load('js/core/storageAdapter.js'); load('js/core/syncModel.js');
+    load(scriptPath('bus.js')); load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
     vm.runInContext("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };", ctx);
-    load('js/core/cloudClient.js'); load('js/core/cloudAdapter.js'); load('js/core/auth.js');
+    load(scriptPath('cloudClient.js')); load(scriptPath('cloudAdapter.js')); load(scriptPath('auth.js'));
     vm.runInContext(`let playerColor = 'w'; function migrateLegacyPaths() {} function askConfirm() {}
         globalThis.__calls = []; globalThis.__status = [];
         function renderRepertoireList() { __calls.push('repList'); } function initStats() { __calls.push('stats'); }
         function initTraining() { __calls.push('training'); } function refreshTree() { __calls.push('tree'); }
         function updateTrashBadges() { __calls.push('trash'); }
-        const AccountUI = { setSyncStatus(l, t) { __status.push([l, t]); } };`, ctx);
-    load('js/storage.js'); load('js/core/syncEngine.js');
+        Bus.on('sync:status', s => __status.push([s.level, s.text]));`, ctx);
+    load(scriptPath('storage.js')); load(scriptPath('viewRefresh.js')); load(scriptPath('syncEngine.js'));
     const run = s => vm.runInContext(s, ctx);
     return {
         ctx, mem, timers, run,
@@ -153,6 +154,17 @@ const remote = (be, uid, key) => { const d = be.doc(uid, key); return d ? JSON.p
         const r1 = await A.sync(); be.opts.onRest = null;
         assert(r1.raced.includes(DBW)); assert(A.get(DBW).local); assert(!A.get(DBW).distant);        // la saisie locale est intacte
         await A.sync(); eq(Object.keys(A.get(DBW)).sort(), ['a', 'distant', 'local']); eq(remote(be, uid, DBW), A.get(DBW));
+    });
+
+    await t('coup joué pendant l\'envoi : les compteurs ne sont pas comptés deux fois', async () => {
+        const { be, A, uid } = await setup(); A.put(DBW, { a: E('e2e4', 10, 0) }); A.intent('upload'); await A.sync();
+        A.put(DBW, { a: E('e2e4', 12, 0) }); be.bump(uid, DBW, { a: E('e2e4', 13, 0) });                // +2 ici, +3 sur l'autre appareil
+        let done = false;
+        be.opts.onRest = (method, key) => { if (method === 'GET' && key === DBW && !done) { done = true; A.put(DBW, { a: E('e2e4', 13, 0) }); } };   // +1 pendant l'envoi
+        const r1 = await A.sync(); be.opts.onRest = null;
+        assert(r1.raced.includes(DBW)); assert.strictEqual(remote(be, uid, DBW).a.attempts, 15);
+        await A.sync();
+        assert.strictEqual(A.get(DBW).a.attempts, 16); assert.strictEqual(remote(be, uid, DBW).a.attempts, 16);
     });
 
     await t('valeur locale illisible : ignorée, jamais traitée comme une suppression', async () => {

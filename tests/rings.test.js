@@ -1,4 +1,5 @@
 // Lancer : node tests/rings.test.js   — anneau de progression commun (Ring, js/core/rings.js).
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 const { JSDOM } = require('jsdom');
 let n = 0;
@@ -6,9 +7,9 @@ const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const dom = new JSDOM('<div id="h"></div>', { runScripts: 'outside-only' });
 const win = dom.window;
-const utils = fs.readFileSync('js/core/utils.js', 'utf8');
+const utils = fs.readFileSync(scriptPath('utils.js'), 'utf8');
 win.eval(utils.match(/const _ESC_MAP[^\n]*\n/)[0] + utils.match(/function escapeHtml[^\n]*\n/)[0] + 'window.escapeHtml = escapeHtml;');
-win.eval(fs.readFileSync('js/core/rings.js', 'utf8') + '\nwindow.Ring = Ring;');   // 'use strict' : eval garde ses noms pour lui
+win.eval(fs.readFileSync(scriptPath('rings.js'), 'utf8') + '\nwindow.Ring = Ring;');   // 'use strict' : eval garde ses noms pour lui
 const host = win.document.getElementById('h');
 const render = html => { host.innerHTML = html; return host.firstElementChild; };
 const offset = el => Number(el.querySelector('circle.v').getAttribute('stroke-dashoffset'));

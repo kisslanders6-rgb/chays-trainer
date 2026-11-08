@@ -1,4 +1,5 @@
 // Lancer : node tests/auth.test.js   (backend Supabase SIMULÉ : aucun réseau)
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const makeBackend = require('./_fakeBackend.js');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
@@ -17,11 +18,11 @@ function boot({ backend, mem = new Map(), hash = '', configured = true, protocol
     };
     vm.createContext(ctx);
     const load = f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-    load('js/core/storageAdapter.js'); load('js/core/syncModel.js');
+    load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
     vm.runInContext(`const CLOUD_CONFIG = ${configured ? `{ url: 'https://x.supabase.co', anonKey: 'anon', googleClientId: '${google}' }` : "{ url: '', anonKey: '' }"};`, ctx);
-    load('js/core/cloudClient.js'); load('js/core/cloudAdapter.js');
+    load(scriptPath('cloudClient.js')); load(scriptPath('cloudAdapter.js'));
     ctx.run = s => vm.runInContext(s, ctx); ctx.mem = mem; ctx.timers = timers; ctx.load = load;
-    ctx.events = []; ctx.boot = () => { load('js/core/auth.js'); ctx.run('Auth.onChange((e, d) => globalThis.__ev.push(e))'); };
+    ctx.events = []; ctx.boot = () => { load(scriptPath('auth.js')); ctx.run('Auth.onChange((e, d) => globalThis.__ev.push(e))'); };
     ctx.__ev = ctx.events;
     return ctx;
 }
@@ -30,7 +31,7 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
 (async () => {
     await t('sans configuration : rien n\'est installé, comportement local pur', async () => {
         const c = boot({ backend: makeBackend(), configured: false }); c.mem.set('chessTrainer_session', '{"access_token":"x","refresh_token":"y","expires_at":9999999999,"user":{"id":"u1","email":"a@b.c"}}');
-        c.load('js/core/auth.js');
+        c.load(scriptPath('auth.js'));
         assert.strictEqual(c.run('Auth.configured()'), false); assert.strictEqual(c.run('Auth.isSignedIn()'), false);
         assert.strictEqual(c.run('dataStore.adapter.name'), 'local');
     });
@@ -275,6 +276,40 @@ const refreshTimer = c => c.timers.filter(x => x.fn && x.ms !== 15000).pop();
         assert.strictEqual(r.ok, true); assert.strictEqual(c2.run('Auth.isSignedIn()'), false);
         assert.strictEqual(be2.users.has('del@test.fr'), false); assert(c2.events.includes('signed-out'));
         assert.strictEqual((await c2.run('Auth.deleteAccount()')).code, 'no_session');
+    });
+    // Deux onglets : même stockage, mémoire séparée.
+    const twoTabs = async () => {
+        const be3 = makeBackend(); be3.addUser('ana@test.fr', 'motdepasse1');
+        const mem = new Map(), a = boot({ backend: be3, mem }), b = boot({ backend: be3, mem });
+        const handlers = [];
+        b.window = { addEventListener: (type, fn) => { if (type === 'storage') handlers.push(fn); } };
+        a.boot(); await a.run(`Auth.signIn('ana@test.fr', 'motdepasse1')`); b.boot();
+        return { be3, mem, a, b, fire: () => handlers.forEach(fn => fn({ key: 'chessTrainer_session' })) };
+    };
+    await t('deux onglets : le jeton renouvelé par l\'un est repris par l\'autre, sans appel ni déconnexion', async () => {
+        const { be3, mem, a, b } = await twoTabs();
+        await a.run('Auth.refresh()');
+        const k = be3.log.length, r = await b.run('Auth.refresh()');
+        assert.strictEqual(r.ok, true); assert.strictEqual(b.run('Auth.isSignedIn()'), true); assert(mem.get('chessTrainer_session'));
+        assert.strictEqual(be3.log.slice(k).filter(l => l.includes('refresh_token')).length, 0);
+    });
+    await t('deux onglets : jeton refusé parce que l\'autre vient de passer → session reprise, pas de déconnexion', async () => {
+        const { be3, a, b } = await twoTabs();
+        const f = be3.fetch; let done = false;
+        b.fetch = async (url, o) => {
+            if (!done && String(url).includes('grant_type=refresh_token')) { done = true; await a.run('Auth.refresh()'); }
+            return f(url, o);
+        };
+        const r = await b.run('Auth.refresh()');
+        assert.strictEqual(r.ok, true); assert.strictEqual(b.run('Auth.isSignedIn()'), true); assert(!b.events.includes('expired'));
+    });
+    await t('deux onglets : l\'événement storage transmet le renouvellement et la déconnexion', async () => {
+        const { a, b, fire } = await twoTabs();
+        const before = b.run('Auth.session().refresh_token');
+        await a.run('Auth.refresh()'); fire();
+        assert.notStrictEqual(b.run('Auth.session().refresh_token'), before); assert(b.events.includes('refreshed'));
+        await a.run('Auth.signOut()'); fire();
+        assert.strictEqual(b.run('Auth.isSignedIn()'), false); assert(b.events.includes('signed-out')); assert.strictEqual(b.run('dataStore.adapter.name'), 'local');
     });
     await t('updatePassword sans session → erreur claire', async () => {
         const c2 = boot({ backend: makeBackend() }); c2.boot();

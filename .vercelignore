@@ -1,0 +1,9 @@
+# Fichiers suivis par Git mais inutiles au site en ligne.
+tests/
+scripts/
+supabase/
+.claude/
+.github/
+CLAUDE.md
+README.md
+lang/source.txt

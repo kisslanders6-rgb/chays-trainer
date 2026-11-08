@@ -1,11 +1,12 @@
 // Lancer : node tests/engine.test.js   — moteur d'échecs (chessEngine.js) : coups légaux, notation SAN, clé de position, sans DOM
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const ctx = { console, renderMoves() {} };
 vm.createContext(ctx);
-const f = 'js/core/chessEngine.js';
+const f = scriptPath('chessEngine.js');
 vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+)(\s*)=/gm, 'var $2$3='), ctx, { filename: f });
 const E = ctx;
 

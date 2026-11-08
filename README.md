@@ -9,7 +9,7 @@ Entraîneur d'échecs en français, sans dépendance ni étape de compilation : 
 - **Analyser mes parties** : récupère vos dernières parties Chess.com ou Lichess (pseudo, API publiques) ou un PGN collé ; chaque partie s'arrête sur le premier coup sorti du répertoire. Votre coup : erreur comptée sur la position (une fois par partie, sur tous les appareils). Coup adverse : nouveauté signalée. Déviation couverte par une réponse ajoutée après la partie : « Traitée depuis », rien de compté.
 - **Finales** : 43 exercices en six catégories (mats, pions, tours, dame, pièces mineures, Tour + Fou contre Tour). Les mats et les finales roi + pion sont jugés hors ligne par un calcul exact ; les autres par les tables Syzygy de Lichess (jusqu'à 7 pièces, réponses gardées sur l'appareil), ou par Stockfish au-delà (verdict « estimé »). L'adversaire calcule : « Résistance maximale » ou « Humain ». Les FEN et leurs verdicts se vérifient avec `node scripts/check-endgames.mjs`.
 - Une présentation en quatre écrans au premier lancement (relançable depuis Aide › Premiers pas).
-- **Apparence** : 13 échiquiers (dont Noyer, Érable, Marbre, Tournoi, Cerisier), 12 jeux de pièces, six styles de flèches ; les couleurs de l'interface sont tirées de l'échiquier, avec des contrastes vérifiés en clair et en sombre (`tests/theme.test.js`, page `tests/theme-matrix.html`).
+- **Apparence** : 20 échiquiers (dont Noyer, Érable, Marbre, Tournoi, Cerisier), 11 jeux de pièces, six styles de flèches ; les couleurs de l'interface sont tirées de l'échiquier, avec des contrastes vérifiés en clair et en sombre (`tests/theme.test.js`, page `tests/theme-matrix.html`).
 - **Compte** : connexion ou création de compte (e-mail ou Google), photo de profil ou l'un des 18 avatars.
 - Import et export **PGN** (notation standard : désambiguïsation, `+` et `#`) et **JSON**, corbeille de 30 jours, flèches et cercles au clic droit, ouverture de la position sur Lichess, mode hors ligne (PWA), synchronisation facultative entre appareils (Supabase).
 
@@ -27,7 +27,7 @@ Le moteur tourne sur un seul fil de calcul sans en-têtes particuliers. Pour le 
 
 ## Moteur d'analyse
 
-`engine/manifest.json` décrit le moteur (version, fichiers, tailles, empreintes) ; `js/core/engine.js` ne lit que ce manifeste.
+`engine/manifest.json` décrit le moteur (version, fichiers, tailles, empreintes) ; `js/domain/engine.js` ne lit que ce manifeste.
 
 - **Réseau léger** (par défaut) : moteurs « lite » de Stockfish, environ 1,8 Mo chacun, embarqués dans `engine/<version>/`.
 - **Réseau complet** (Paramètres › Moteur d'analyse › Réseau neuronal) : nettement plus fort. Son `.wasm` (99 Mo) n'est pas dans le dépôt : il est téléchargé à la demande depuis unpkg (qui autorise CORS et CORP), vérifié par son empreinte sha256 notée dans le manifeste, puis gardé dans le cache du moteur, hors ligne compris. S'il n'est pas téléchargé, ou si unpkg ne répond pas, le réseau léger est utilisé. Un bouton le supprime de l'appareil.
@@ -41,28 +41,17 @@ Stockfish est un logiciel libre sous licence GPL v3 ; la licence est jointe dans
 ## Structure
 
 ```
-index.html            page unique ; l'ordre des <script> compte (dépendances)
-style.css             styles de l'application
-css/account.css       fenêtre « Compte »
-css/home.css          signature (Fraunces + IBM Plex Mono), barre du haut, accueil « Nocturne » (sombre) / « Studio » (clair)
-css/splash.css        écran de lancement
+index.html            page unique ; l'ordre des <script> compte
+style.css, css/       styles : feuille principale, compte, accueil, panneaux, écrans, retours, lancement
 sw.js                 service worker : cache construit à partir d'index.html ; moteur dans un cache à part
 vercel.json           en-têtes d'isolation (moteur multi-thread) et cache du moteur
 engine/               moteur Stockfish embarqué (manifest.json + engine/<version>/)
-js/core/splash.js     moment de sortie de l'écran de lancement ; introTimeline.js : vol du logo vers la barre du haut
 js/
-  app.js              navigation, thème, paramètres, répertoires, fenêtres de saisie
-  storage.js          répertoires, bases d'ouvertures, répétition espacée, journal d'activité, import/export JSON
-  core/               briques communes : utils (échappement HTML, actions data-action, reportError), stockage,
-                      synchronisation (syncModel, cloudAdapter, cloudClient, auth, syncEngine, accountUI),
-                      moteur d'échecs (chessEngine : état affiché + API Chess sans état partagé), pièces, icônes,
-                      sons, corbeille, sauvegarde, présentation (onboarding), mobile
-  core/engine.js      moteur d'analyse (Worker UCI, file d'attente) ; modules/analysis/ : mode Analyse
-  modules/openings/   mode Jouer : logique, échiquier, flèches, arbre (édition des coups), panneau Données, PGN, analyse d'une partie,
-                      fréquences des coups adverses (moveStats)
-  modules/training/   entraînement
-  modules/stats/      statistiques
-  modules/endgame/    finales : noyau (egCore), catalogue (egExercises), séance (endgame)
+  core/               socle : échappement, actions, événements (Bus), fenêtres, traduction, composants communs
+  domain/             règles et données : chess/, repertoire/, sync/, endgames/, moteur, préférences, sons
+  board/              écran de jeu de tous les modes, fiche de chaque mode (modes.js)
+  screens/            un dossier par écran : play, training, stats, endgame, analysis, games, settings, account, help
+  shell/              navigation, barres, accueil, palette, raccourcis, écran de lancement
 supabase/schema.sql   table et règles d'accès pour la synchronisation
 tests/                tests Node (aucun réseau : serveur Supabase simulé)
 scripts/              outils de maintenance
@@ -75,7 +64,7 @@ Une position est identifiée par « pièces trait roques passant » (`positionKe
 ## Synchronisation (facultative)
 
 1. Créez un projet Supabase, puis exécutez `supabase/schema.sql` dans l'éditeur SQL. Relancez-le après une mise à jour : il est sans risque à répéter, et la version d'octobre 2026 ajoute le seau privé `avatars` des photos de profil.
-2. Renseignez `url` et `anonKey` dans `js/core/cloudConfig.js`. Cette clé est publique : la sécurité repose sur les règles RLS du schéma. N'y mettez jamais la clé `service_role`.
+2. Renseignez `url` et `anonKey` dans `js/domain/sync/cloudConfig.js`. Cette clé est publique : la sécurité repose sur les règles RLS du schéma. N'y mettez jamais la clé `service_role`.
 3. Pour vérifier la connexion, ouvrez `tests/cloud-smoke.html` (servi en HTTP).
 4. Authentication → URL Configuration : mettez l'adresse de l'application (ex. `https://chays-trainer.vercel.app`) en « Site URL » et dans « Redirect URLs ».
 5. Connexion avec Google (facultatif) : Authentication → Sign In / Providers → Google, avec un identifiant OAuth créé dans Google Cloud Console. Le bouton « Continuer avec Google » apparaît dès que le fournisseur est activé.

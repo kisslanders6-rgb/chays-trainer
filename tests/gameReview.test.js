@@ -1,4 +1,5 @@
 // Lancer : node tests/gameReview.test.js   — « Analyser une partie » : lecture PGN et détection de la déviation, sans DOM
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -12,8 +13,8 @@ const ctx = {
 };
 vm.createContext(ctx);
 ctx.registerActions = () => {};
-for (const f of ['js/core/chessEngine.js', 'js/storage.js', 'js/modules/openings/openingsLogic.js', 'js/modules/openings/pgn.js', 'js/modules/openings/gameReview.js', 'js/modules/openings/onlineGames.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('review.js'), scriptPath('openingsLogic.js'), scriptPath('pgn.js'), scriptPath('gameReview.js'), scriptPath('onlineGames.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 vm.runInContext('saveDB = function () {};', ctx);
 
 // Base d'un répertoire construite en rejouant des lignes UCI : mes coups deviennent des entrées.

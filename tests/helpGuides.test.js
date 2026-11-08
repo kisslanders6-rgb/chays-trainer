@@ -1,39 +1,18 @@
 // Lancer : node tests/helpGuides.test.js   — fenêtre Aide « Sommaire vivant » (js/core/helpUI.js), dans index.html
 // complet (jsdom) : un seul bouton plein par guide, vers une action enregistrée ; aucun guide ne dit que Jouer
 // compte ; recherche groupée (tâches, guides, questions, raccourcis) au clavier ; focus selon le pointeur.
-const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
+const { bootApp } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
 const ROOT = path.join(__dirname, '..');
 
-class DiskLoader extends ResourceLoader {
-    fetch(url) {
-        const u = new URL(url);
-        if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));
-        return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-    }
-}
-
 async function boot() {
-    const errors = [];
-    const vc = new VirtualConsole();
-    vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message); });
-    const dom = new JSDOM(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
-        beforeParse(w) {
-            w.__coarse = false;                                     // pointeur simulé : fin (souris) par défaut
-            w.matchMedia = q => ({ matches: /pointer:\s*coarse/.test(q) ? w.__coarse : false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.Element.prototype.getAnimations = () => [];
-            w.Element.prototype.animate = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
-            w.Element.prototype.scrollIntoView = () => {};
-            w.fetch = () => Promise.reject(new Error('réseau coupé (test)'));
-            w.addEventListener('error', e => errors.push(e.message));
-        }
-    });
-    await new Promise(r => dom.window.addEventListener('load', r));
-    await new Promise(r => setTimeout(r, 5000));                   // écran de lancement
+    const { dom, errors } = await bootApp({ onboarded: false, before(w) {
+        w.__coarse = false;                                     // pointeur simulé : fin (souris) par défaut
+        w.matchMedia = q => ({ matches: /pointer:\s*coarse/.test(q) ? w.__coarse : false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    } });
     const w = dom.window;
     w.eval('if (typeof closeOnboarding === "function") closeOnboarding()');
     return { w, errors };

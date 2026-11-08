@@ -1,6 +1,7 @@
 // Lancer : node tests/syncModel.test.js
+const { scriptPath } = require('./_app.js');
 const assert = require('assert');
-const { SyncModel: S } = require('../js/core/syncModel.js');
+const { SyncModel: S } = require('../' + scriptPath('syncModel.js'));
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 const E = (move, a, f, extra = {}) => Object.assign({ move, san: move, attempts: a, failures: f }, extra);

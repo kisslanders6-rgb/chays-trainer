@@ -1,6 +1,7 @@
 // Lancer : node tests/swEngine.test.js   — service worker : fichiers du moteur servis sans le fragment du premier chargement.
 // Le moteur complet reçoit l'adresse blob: de son .wasm dans le fragment du script (« stockfish-19.js#blob:… »).
 // Une réponse sortie telle quelle du cache garde l'adresse du premier chargement : le Worker y lirait un blob: révoqué.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
@@ -58,7 +59,7 @@ function request(url) {
         assert.strictEqual(res.headers.get('Content-Type'), 'text/javascript', 'en-têtes conservés (type, COEP)');
     });
     await t('engine.js : purge le script rangé avec un fragment par un ancien service worker', async () => {
-        const src = fs.readFileSync('js/core/engine.js', 'utf8');
+        const src = fs.readFileSync(scriptPath('engine.js'), 'utf8');
         assert(/await dropStaleScript\(full\);[\s\S]*?URL\.createObjectURL/.test(src), 'purge avant de créer le Worker');
     });
     console.log(`\n${n} tests réussis.`);

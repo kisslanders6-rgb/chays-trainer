@@ -1,9 +1,10 @@
 // Lancer : node tests/icons.test.js   — chaque icône demandée existe dans le sprite (js/core/icons.js) :
 // <use href="#i-…"> d'index.html et appels ico('…') / icon('…') à nom fixe dans js/. Une icône renommée
 // (ex. « arrow-left » devenue « w-left ») s'afficherait vide sans erreur.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 
-const src = fs.readFileSync('js/core/icons.js', 'utf8');
+const src = fs.readFileSync(scriptPath('icons.js'), 'utf8');
 const body = src.slice(src.indexOf('const _ICONS = {'), src.indexOf('};', src.indexOf('const _ICONS = {')));
 const known = new Set([...body.matchAll(/^\s*'([a-z0-9-]+)':/gm)].map(m => m[1]));
 

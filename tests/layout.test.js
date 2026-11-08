@@ -1,4 +1,5 @@
 // Lancer : node tests/layout.test.js   — règles de mise en page lues dans style.css (jsdom ne calcule pas les tailles).
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -59,7 +60,7 @@ t('échiquier 920px+ : le liseré (2 × 2 px) et les coordonnées extérieures (
 const vm = require('vm');
 const ctx = { escapeHtml: s => s, document: { addEventListener() {} }, matchMedia: () => ({ matches: false }) };
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync('js/core/panelKit.js', 'utf8').replace(/^const PanelKit =/m, 'var PanelKit ='), ctx);
+vm.runInContext(fs.readFileSync(scriptPath('panelKit.js'), 'utf8').replace(/^const PanelKit =/m, 'var PanelKit ='), ctx);
 const cols = ctx.PanelKit.balancedCols;
 const rows = (n, c) => Array.from({ length: Math.ceil(n / c) }, (_, i) => Math.min(c, n - i * c)).join('+');
 
@@ -82,12 +83,12 @@ t('grilles : colonnes posées par PanelKit (--cols), dernière ligne centrée, p
     const panels = fs.readFileSync('css/panels.css', 'utf8');
     assert(/\.pn \.theme-options \{[^}]*justify-content: center/.test(panels));
     assert(/\.pn \.theme-opt \{[^}]*flex: 0 0 calc\(\(100% - \(var\(--cols\) - 1\) \* 8px\) \/ var\(--cols\)\)/.test(panels));
-    assert(/const GRID_GAP = 8;/.test(fs.readFileSync('js/core/panelKit.js', 'utf8')), 'GRID_GAP doit rester égal au gap CSS');
+    assert(/const GRID_GAP = 8;/.test(fs.readFileSync(scriptPath('panelKit.js'), 'utf8')), 'GRID_GAP doit rester égal au gap CSS');
     assert(!/#(piece|board|arrow)-options/.test(css));
 });
 
 t('« Invisibles » : interrupteur à part, absent de la grille des pièces', () => {
-    const ui = fs.readFileSync('js/core/settingsUI.js', 'utf8');
+    const ui = fs.readFileSync(scriptPath('settingsUI.js'), 'utf8');
     assert(/PIECE_SET_IDS\.filter\(id => id !== 'blindfold'\)/.test(ui), 'la grille des pièces exclut blindfold');
     assert(/kind: 'toggle', key: 'blindfold'/.test(ui), 'rangée « Pièces invisibles »');
     assert(/key === 'blindfold'[\s\S]{0,400}setPref\('pieceSet', 'blindfold'\)/.test(ui), 'l\'interrupteur écrit pieceSet');
@@ -101,8 +102,8 @@ t('accueil Jouer : barre de contexte (puce, pastilles, menu ⋮), plus de pannea
     ['id="repertoire-list"', 'id="hp-quick"', 'id="rep-menu-btn"'].forEach(s => assert(scope.includes(s), 'barre : ' + s));
     assert.strictEqual((play.match(/class="[^"]*\brepertoire-list\b/g) || []).length, 1, 'une seule puce de répertoire dans Jouer');
     assert(!/hp-reps|repertoire-select/.test(play), 'plus de panneau ni de sélecteur en double');
-    assert(!/repsHTML|hp-reps/.test(fs.readFileSync('js/modules/openings/homePanels.js', 'utf8')));
-    const app = fs.readFileSync('js/app.js', 'utf8');
+    assert(!/repsHTML|hp-reps/.test(fs.readFileSync(scriptPath('homePanels.js'), 'utf8')));
+    const app = fs.readFileSync(scriptPath('app.js'), 'utf8');
     assert(/filter\(n => n !== currentRepertoire\)\.slice\(0, HP_QUICK_MAX\)/.test(app), 'pastilles : les autres répertoires seulement');
     assert(!/à réviser<\/span><span><b>\$\{streak\}/.test(app), '« Aujourd\'hui » ne répète plus les révisions du répertoire');
     const home = fs.readFileSync('css/home.css', 'utf8');
@@ -134,9 +135,9 @@ t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur �
     assert(/var\(--read-h\)\)\)\);/.test(thumb) && /data-mode="endgame"\] \{ --read-h:/.test(thumb), 'petit écran : l\'échiquier rétrécit selon la lecture du mode');
     assert(/\.game-main:has\(> \.side-panel\.open\) \.cap-top \{ margin-top: auto; \}/.test(thumb), 'fiche ouverte : l\'échiquier ne bouge pas');
     assert(/\.tb-prev, \.board-controls \.tb-next \{ touch-action: none; \}/.test(thumb));
-    const app = fs.readFileSync('js/app.js', 'utf8');
+    const app = fs.readFileSync(scriptPath('app.js'), 'utf8');
     assert(/gs\.dataset\.mode = gameMode/.test(app), 'applyModeUI pose data-mode sur #game-screen');
-    const mob = fs.readFileSync('js/core/mobile.js', 'utf8');
+    const mob = fs.readFileSync(scriptPath('mobile.js'), 'utf8');
     assert(/function initNavSwipe\(\)[\s\S]{0,1200}\['btn-prev', 'btn-next'\][\s\S]{0,1200}x0 >= STEP\)  \{ x0 \+= STEP; navNext\(\); \}/.test(mob),
         'glisser vers la droite sur ‹ › avance');
 });
@@ -151,7 +152,7 @@ t('pages et ordinateur (Ergonomie, lot 5)', () => {
     assert(/\.board-controls \.controls-main \.btn\.tb-hint:disabled \{ flex: 0 0 48px;/.test(css), 'Indice éteint : icône');
     assert(/\.topnav:has\(#topnav-tabs-game:not\(\[style\*="none"\]\)\) \.topnav-pill > \.theme-toggle:not\(#palette-btn\):not\(\.me-btn\) \{ display: none; \}/.test(home), 'en partie : loupe et Moi');
     assert(/#review-overlay \{ align-items: flex-end;/.test(css) && /#review-overlay \.btn\.online-go \{ position: sticky; bottom: 0;/.test(css), 'Analyser mes parties : fiche du bas, action sous le pouce');
-    const eg = fs.readFileSync('js/modules/endgame/endgame.js', 'utf8');
+    const eg = fs.readFileSync(scriptPath('endgame.js'), 'utf8');
     assert(/egToggle: id => toggleEndgameCategory\(id\)/.test(eg) && /aria-expanded="\$\{open\}"/.test(eg));
 });
 
@@ -161,10 +162,10 @@ t('accueil Jouer : Aujourd\'hui, Jouer, À traiter dans cet ordre ; une seule ac
     const at = id => play.indexOf(`id="${id}"`);
     assert(at('hp-today') > 0 && at('hp-today') < at('hp-play') && at('hp-play') < at('hp-news'), 'ordre téléphone : Aujourd\'hui, Jouer, À traiter');
     assert(!/home-card|home-stats|home-goal|hp-recent/.test(play), 'plus d\'anciens blocs (cartes, chiffres, objectif à part, Dernières parties à part)');
-    const app = fs.readFileSync('js/app.js', 'utf8');
+    const app = fs.readFileSync(scriptPath('app.js'), 'utf8');
     assert(/homeReview: \(\) => startDailyReview\(\)/.test(app), '« Commencer la révision » → startDailyReview');
     assert.strictEqual((app.match(/class="btn btn-primary hp-cta"/g) || []).length, 3, 'une action pleine par état : dû, à jour, vide (tests/homeSummary.test.js)');
-    const tr = fs.readFileSync('js/modules/training/trainingUI.js', 'utf8');
+    const tr = fs.readFileSync(scriptPath('trainingUI.js'), 'utf8');
     assert(/function startDailyReview\(\) \{\s*_trColor = 'mix';\s*_trOpening = null;[\s\S]{0,120}startTrainingExercise\('due'\);/.test(tr),
         'Révision du jour : les deux couleurs, sans filtre d\'ouverture');
 });

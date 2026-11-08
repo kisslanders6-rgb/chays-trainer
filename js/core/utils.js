@@ -50,6 +50,14 @@ function reportError(context, err, opts = {}) {
     box.classList.remove('hidden');
 }
 
+// Filet : une erreur que personne n'a prévue laisse une trace ; au démarrage, elle se voit aussi (l'écran peut rester figé).
+let _bootPhase = true;
+window.addEventListener('load', () => setTimeout(() => { _bootPhase = false; }, 3000));
+const _BOOT_ERROR_MSG = "Un problème est survenu au démarrage. Rechargez la page ; si cela continue, exportez une sauvegarde depuis Paramètres › Données.";
+function _uncaught(err) { reportError('erreur imprévue', err, { notify: _bootPhase, message: _BOOT_ERROR_MSG }); }
+window.addEventListener('error', e => { if (e.error || e.message) _uncaught(e.error || e.message); });
+window.addEventListener('unhandledrejection', e => _uncaught(e.reason));
+
 function hideErrorToast() {
     const box = document.getElementById('error-toast');
     if (box) box.classList.add('hidden');
@@ -60,29 +68,13 @@ registerActions({ hideErrorToast });
 // Message commun quand le navigateur refuse une écriture (stockage plein ou interdit).
 const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).";
 
+// Échéance lisible : « dans 3 h », « dans 4 j » (long : « dans 4 jours »).
+function dueInLabel(t, long) {
+    const min = Math.max(1, Math.round((t - Date.now()) / 60000));
+    if (min < 60)   return `dans ${min} min`;
+    if (min < 1440) return `dans ${Math.round(min / 60)} h`;
+    const d = Math.round(min / 1440);
+    return long ? `dans ${d} jour${d > 1 ? 's' : ''}` : `dans ${d} j`;
+}
+
 // ─── NOTATION DES COUPS ───────────────────────────────────────────────────────
-// Les coups sont stockés en notation anglaise (N B R Q K), affichés selon le réglage « Écriture des coups » :
-// lettres françaises (C F T D R), anglaises, ou figurines.
-//   formatSan(san, couleur)     → HTML (échappé) : en mode figurines, la pièce du jeu actif, à la couleur du camp
-//                                 (<span class="fig">, image lue dans --fig-wN… écrites par applyPieceSet).
-//   formatSanText(san, couleur) → texte simple (barre d'état, title, copie) : en mode figurines, lettres
-//                                 françaises (les glyphes Unicode ♘♗ s'affichaient en emojis, sans rapport
-//                                 avec le jeu de pièces). Toute liste affichée passe donc par formatSan.
-// Le jeu « Invisibles » n'a pas de dessin de pièce : les figurines repassent aux lettres françaises.
-const _FIG_NAMES = { N: 'Cavalier', B: 'Fou', R: 'Tour', Q: 'Dame', K: 'Roi' };
-function _sanMode() {
-    const s = typeof appSettings !== 'undefined' ? appSettings : { notation: 'en' };
-    return s.notation === 'fig' && s.pieceSet === 'blindfold' ? 'fr' : s.notation || 'en';
-}
-function formatSanText(san, color) {
-    const mode = _sanMode();
-    if (!san || mode === 'en') return san || '';
-    const L = typeof I18n !== 'undefined' ? I18n.letters() : 'CFTDR';     // lettres de la langue de l'interface
-    return san.replace(/[NBRQK]/g, c => L['NBRQK'.indexOf(c)]);
-}
-function formatSan(san, color) {
-    if (!san) return '';
-    if (_sanMode() !== 'fig') return escapeHtml(formatSanText(san, color));
-    const c = color === 'b' ? 'b' : 'w';
-    return escapeHtml(san).replace(/[NBRQK]/g, p => `<span class="fig fig-${c}" style="--f:var(--fig-${c}${p})" role="img" aria-label="${_FIG_NAMES[p]}"></span>`);
-}

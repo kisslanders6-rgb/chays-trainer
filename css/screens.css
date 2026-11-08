@@ -4,8 +4,6 @@
    titres et chiffres, IBM Plex Mono pour la notation, filet et repères en --board-accent (teinte de l'échiquier).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.trs-eyebrow { font-family: var(--font-note); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--board-accent); }
-
 /* ─── Niveaux de maîtrise (Statistiques, Entraînement, arbre) ───
    .lv-<niveau> fixe --c ; .lv-mark ajoute une forme propre à chaque niveau (lisible sans les couleurs). */
 .lv-weak     { --c: var(--lv-weak); }

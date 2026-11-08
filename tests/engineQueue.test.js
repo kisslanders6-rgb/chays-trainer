@@ -1,5 +1,6 @@
 // Lancer : node tests/engineQueue.test.js   — file de calcul du moteur (js/core/engine.js) avec un faux Worker :
 // stop perdu, moteur muet, erreur ou silence au chargement. Horloge simulée, aucun réseau.
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 const flush = async () => { for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r)); };
@@ -27,7 +28,7 @@ function boot(behave) {
             variants: [{ id: 'lite-single', net: 'lite', threads: false, js: { path: 'engine/sf.js' }, wasm: {} }] }) })
     };
     vm.createContext(ctx);
-    vm.runInContext(fs.readFileSync('js/core/engine.js', 'utf8') + '\nglobalThis.Engine = Engine;', ctx, { filename: 'js/core/engine.js' });
+    vm.runInContext(fs.readFileSync(scriptPath('engine.js'), 'utf8') + '\nglobalThis.Engine = Engine;', ctx, { filename: scriptPath('engine.js') });
     const advance = async ms => {
         const end = now + ms;
         for (;;) {

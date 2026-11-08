@@ -1,41 +1,19 @@
 // Lancer : node tests/i18n.test.js   — langues (core/i18n.js) : couche de traduction, phrases entières, trous, élément protégé,
 // paquets (trous cohérents, langues d'office en cache, les autres non). Charge index.html entier dans jsdom, comme boot.test.js.
-const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
+const { bootApp } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 const ROOT = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-class DiskLoader extends ResourceLoader {
-    fetch(url) {
-        const u = new URL(url);
-        if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));
-        return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-    }
-}
 async function boot(lang) {
-    const errors = [];
-    const vc = new VirtualConsole();
-    vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message); });
-    const dom = new JSDOM(read('index.html'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
-        beforeParse(w) {
-            w.localStorage.setItem('chessTrainer_onboarded', '1');
-            if (lang) {
-                w.localStorage.setItem('chessTrainer_settings', JSON.stringify({ lang }));
-                w.localStorage.setItem('chays_langPack', JSON.stringify({ id: lang, dict: JSON.parse(read(`lang/${lang}.json`)) }));
-            }
-            w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.Element.prototype.getAnimations = () => [];
-            w.Element.prototype.animate = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
-            w.Element.prototype.scrollIntoView = () => {};
-            w.fetch = () => Promise.reject(new Error('réseau coupé (test)'));
-            w.addEventListener('error', e => errors.push(e.message));
+    const { dom, errors } = await bootApp({ before(w) {
+        if (lang) {
+            w.localStorage.setItem('chessTrainer_settings', JSON.stringify({ lang }));
+            w.localStorage.setItem('chays_langPack', JSON.stringify({ id: lang, dict: JSON.parse(read(`lang/${lang}.json`)) }));
         }
-    });
-    await new Promise(r => dom.window.addEventListener('load', r));
-    await new Promise(r => setTimeout(r, 3500));
+    } });
     return { w: dom.window, errors, $: s => dom.window.document.querySelector(s) };
 }
 

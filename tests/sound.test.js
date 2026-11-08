@@ -1,10 +1,11 @@
 // Lancer : node tests/sound.test.js   — sons de l'application (js/core/sound.js), lus sans audio : douceur garantie.
 // Mesures faites dans un navigateur (OfflineAudioContext, volume 100 %) lors du réglage d'octobre 2026 :
 // crête du coup 0,22 (0,44 avant), de la prise 0,23 (0,92 avant, au bord de l'écrêtage).
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
-const src = fs.readFileSync('js/core/sound.js', 'utf8');
+const src = fs.readFileSync(scriptPath('sound.js'), 'utf8');
 const block = src.slice(src.indexOf('const _SOUNDS = {'), src.indexOf('\n};', src.indexOf('const _SOUNDS = {')));
 
 t('aucun timbre agressif : plus de dent de scie ni de carré', () => {

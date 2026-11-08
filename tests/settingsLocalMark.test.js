@@ -1,39 +1,15 @@
 // Lancer : node tests/settingsLocalMark.test.js   — Paramètres « Établi » (lot 7) : repère local calculé depuis
 // LOCAL_PREFS, résultats de recherche réglables sur place, aperçu d'Apparence en direct, grilles sans tuile seule,
 // ouverture directe de la rubrique Moteur. Charge index.html entier dans jsdom, comme boot.test.js.
-const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
+const { bootApp, scriptPath } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
 const ROOT = path.join(__dirname, '..');
 
-class DiskLoader extends ResourceLoader {
-    fetch(url) {
-        const u = new URL(url);
-        if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));
-        return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-    }
-}
-
 async function boot(storage = {}) {
-    const errors = [];
-    const vc = new VirtualConsole();
-    vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message); });
-    const dom = new JSDOM(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
-        beforeParse(w) {
-            Object.entries(Object.assign({ chessTrainer_onboarded: '1' }, storage)).forEach(([k, v]) => w.localStorage.setItem(k, v));
-            w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.Element.prototype.getAnimations = () => [];
-            w.Element.prototype.animate = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
-            w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; };
-            w.fetch = () => Promise.reject(new Error('réseau coupé (test)'));
-            w.addEventListener('error', e => errors.push(e.message));
-        }
-    });
-    await new Promise(r => dom.window.addEventListener('load', r));
-    await new Promise(r => setTimeout(r, 5000));
+    const { dom, errors } = await bootApp({ storage, before(w) { w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; }; } });
     return { w: dom.window, errors, $: s => dom.window.document.querySelector(s), $$: s => [...dom.window.document.querySelectorAll(s)] };
 }
 
@@ -167,7 +143,7 @@ const search = (w, q) => {
     });
 
     await t('régler ne fait pas bouger la vue : défilement rendu après les grilles, contrôle touché gardé sous le doigt et au focus', () => {
-        const kit = fs.readFileSync(path.join(__dirname, '..', 'js/core/panelKit.js'), 'utf8');
+        const kit = fs.readFileSync(path.join(__dirname, '..', scriptPath('panelKit.js')), 'utf8');
         const fn = kit.slice(kit.indexOf('function refresh('), kit.indexOf('function _touch('));
         assert(fn.indexOf('fitGrids(content)') < fn.indexOf('content.scrollTop = keepScroll') && fn.indexOf('cfg.afterRender(') < fn.indexOf('content.scrollTop = keepScroll'), 'position rendue une fois la hauteur connue');
         w.showSettings('apparence');
