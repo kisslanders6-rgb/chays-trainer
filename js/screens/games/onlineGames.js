@@ -288,7 +288,7 @@ function _renderOnlineDone(show) {
         facts.push(_onlinePl(_online.fetched, 'partie', 'parties'));
         if (s.games) facts.push(_onlinePl(s.games - s.seen, 'nouvelle', 'nouvelles'));
     } else facts.push(_onlinePl(src.count, 'partie', 'parties'));
-    box.innerHTML = `<span class="online-site ${src.site === 'lichess' ? 'lc' : 'cc'} is-lg" aria-hidden="true">${src.site === 'lichess' ? 'li' : 'c'}</span>
+    box.innerHTML = `<span class="online-site ${src.site === 'lichess' ? 'lc' : 'cc'} is-lg" aria-hidden="true">${ico(src.site)}</span>
         <span class="online-who"><b>${escapeHtml(src.user)}</b><small> · ${escapeHtml(facts.join(' · '))}</small></span>
         <button type="button" class="online-icon" data-action="onlineRefetch" data-needs-network title="Relancer l'analyse" aria-label="Relancer l'analyse"${_online.busy ? ' disabled aria-busy="true"' : ''}>${ico('rotate-ccw')}</button>
         <button type="button" class="online-icon" data-action="onlineEditSource" title="Changer de source" aria-label="Changer de source" aria-expanded="false" aria-controls="online-form">${ico('chevron-down')}</button>`;

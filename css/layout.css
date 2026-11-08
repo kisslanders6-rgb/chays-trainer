@@ -461,10 +461,11 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .online-seg .tr-seg-btn { flex: 1; min-height: calc(var(--tap) - 8px); display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .online-seg .tr-seg-btn .ico { width: 15px; height: 15px; }
 .online-sites .tr-seg-btn.is-suggest { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent-line); }
-.online-site { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 6px; font: 800 9px var(--font-sans); letter-spacing: 0; }
-.online-site.lc { background: var(--text); color: var(--bg-elevated); }
-.online-site.cc { background: #81b64c; color: #12170f; }
-.online-site.is-lg { width: 32px; height: 32px; border-radius: 9px; font-size: 12px; }
+.online-site { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; }
+.online-site .ico, .online-seg .tr-seg-btn .online-site .ico { width: 100%; height: 100%; }
+.online-site.lc { color: var(--text); }
+.online-site.cc { color: #81b64c; }
+.online-site.is-lg { width: 32px; height: 32px; }
 .online-field { display: flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 12px; border: 1.5px solid var(--border-strong); border-radius: 12px; background: var(--bg-inset); transition: border-color .15s; }
 .online-field:focus-within { border-color: var(--accent); }
 .online-field.is-bad { border-color: var(--err); }

@@ -61,6 +61,5 @@ Skills du projet (`.claude/skills/`) : `cloture-lot` (vérifications et commit d
 
 L'historique des lots est dans Git. Décidé pour plus tard (bilan du code, novembre 2026) : migrations éparses, CSP, appels réseau en double, geste de glissement, gardes `typeof`, écritures croisées de l'état de partie, noms en `_` partagés, découpe d'`accountUI.js`, découpe de `style.css`, fenêtres natives.
 
-- Arbitrage du 8 novembre 2026 (artefact « Arbitrage Chays Trainer ») : douze suggestions construites ; reste le n° 13, logos officiels Chess.com et Lichess, en attente des droits d'usage.
 - Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Restes à proposer : registre unique des réglages et `chessTrainer_schema` (migrations ordonnées), bouton « Ce coup n'était pas encore dans mon répertoire » (bouton dans `setStatus`), variantes implicites d'un PGN collé proposées comme réponses.
 - Icône et logo de marque : dessin actuel gardé, recoloré Noyer. Icônes de l'interface (`js/core/icons.js`) : choix clos le 27 octobre 2026, ne plus proposer d'alternatives.
