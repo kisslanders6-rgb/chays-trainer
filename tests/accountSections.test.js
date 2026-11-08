@@ -1,5 +1,6 @@
 // Lancer : node tests/accountSections.test.js   — Compte « carte d'identité » (lot 7) : trois rubriques, jauge du
 // mot de passe (PwMeter), atelier d'avatar (AvatarStudio), état de la synchronisation, Zone sensible.
+const { scriptPath } = require('./_app.js');
 let JSDOM; try { ({ JSDOM } = require('jsdom')); } catch (e) { console.log('jsdom absent : « npm i jsdom » puis relancez (test d\'interface ignoré).'); process.exit(0); }
 const fs = require('fs'), assert = require('assert');
 const makeBackend = require('./_fakeBackend.js');
@@ -16,9 +17,9 @@ async function boot(backend) {
     w.eval(`window.askConfirm = (m, ok) => ok(); window.exportDB = () => { window.__exports++; }; window.ico = n => '<svg class="ico" data-i="' + n + '"></svg>';`);
     w.matchMedia = () => ({ matches: false, addEventListener() {} });
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
-    ['js/core/utils.js', 'js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/settings.js', 'js/core/panelKit.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('utils.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
-    ['js/core/cloudClient.js', 'js/core/cloudAdapter.js', 'js/core/auth.js', 'js/core/accountUI.js'].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     await tick(20);
     return w;
 }

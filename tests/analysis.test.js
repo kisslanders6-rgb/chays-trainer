@@ -1,5 +1,6 @@
 // Lancer : node tests/analysis.test.js   — mode Analyse : plan de fusion du brouillon (analysis.js) et lecture
 // des lignes UCI du moteur (engine.js), sans DOM ni Worker
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -7,8 +8,8 @@ const jeq = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b), `
 
 const ctx = { console, registerActions() {}, document: { addEventListener() {} } };
 vm.createContext(ctx);
-for (const f of ['js/core/chessEngine.js', 'js/core/engine.js', 'js/modules/analysis/analysis.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('chessEngine.js'), scriptPath('engine.js'), scriptPath('analysis.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 const run = s => vm.runInContext(s, ctx);
 const key = path => run(`Chess.key(Chess.replay(${JSON.stringify(path)}))`);
 const plan = (lines, color, db, replace = []) => run('(l, c, d, r) => analysisMergePlan(l, c, d, new Set(r))')(lines, color, db, replace);
@@ -87,7 +88,7 @@ t('« Arrêter » suspend la position affichée seulement : la suivante est calc
 });
 
 t('un coup joué ne fait jamais défiler la page : le brouillon défile seul', () => {
-    const src = fs.readFileSync('js/modules/analysis/analysis.js', 'utf8');
+    const src = fs.readFileSync(scriptPath('analysis.js'), 'utf8');
     assert.ok(!/scrollIntoView\(/.test(src), 'scrollIntoView ferait descendre la page sous l\'échiquier');
     assert.ok(/_anRevealInPanel\(box\.querySelector\('\.ab-mv\.is-cur'\)\)/.test(src));
 });

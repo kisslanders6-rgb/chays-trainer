@@ -1,4 +1,5 @@
 // Lancer : node tests/arrows.test.js   — dessin des flèches et cercles (drawArrows, fonction pure d'annotations.js)
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -6,7 +7,7 @@ const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 const ctx = { console, ARROW_STYLE_IDS: ['plume', 'contour', 'ombre', 'pinceau', 'courbe', 'laser'],
               dataStore: { get: () => null, set() {} }, document: { getElementById: () => null } };
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync('js/modules/openings/annotations.js', 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx);
+vm.runInContext(readVars(scriptPath('annotations.js')), ctx);
 const { drawArrows } = ctx;
 const corners = svg => (svg.match(/points="([^"]+)"/) || [, ''])[1].trim().split(' ').length;
 

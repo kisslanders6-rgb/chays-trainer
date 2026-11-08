@@ -1,4 +1,5 @@
 // Lancer : node tests/syncEngine.test.js   — deux « appareils » simulés partagent un faux serveur Supabase
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const makeBackend = require('./_fakeBackend.js');
 let n = 0; const t = async (name, fn) => { globalThis.__netDown = false; await fn(); n++; console.log('ok  ', name); };
@@ -19,16 +20,16 @@ function device(be) {
     };
     vm.createContext(ctx);
     const load = f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-    load('js/core/storageAdapter.js'); load('js/core/syncModel.js');
+    load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
     vm.runInContext("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };", ctx);
-    load('js/core/cloudClient.js'); load('js/core/cloudAdapter.js'); load('js/core/auth.js');
+    load(scriptPath('cloudClient.js')); load(scriptPath('cloudAdapter.js')); load(scriptPath('auth.js'));
     vm.runInContext(`let playerColor = 'w'; function migrateLegacyPaths() {} function askConfirm() {}
         globalThis.__calls = []; globalThis.__status = [];
         function renderRepertoireList() { __calls.push('repList'); } function initStats() { __calls.push('stats'); }
         function initTraining() { __calls.push('training'); } function refreshTree() { __calls.push('tree'); }
         function updateTrashBadges() { __calls.push('trash'); }
         const AccountUI = { setSyncStatus(l, t) { __status.push([l, t]); } };`, ctx);
-    load('js/storage.js'); load('js/core/syncEngine.js');
+    load(scriptPath('storage.js')); load(scriptPath('syncEngine.js'));
     const run = s => vm.runInContext(s, ctx);
     return {
         ctx, mem, timers, run,

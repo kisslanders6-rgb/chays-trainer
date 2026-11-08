@@ -1,10 +1,11 @@
 // Lancer : node tests/uncaught.test.js   — filet des erreurs imprévues (utils.js) : trace toujours, message visible au démarrage seulement.
+const { scriptPath } = require('./_app.js');
 const { JSDOM } = require('jsdom');
 const fs = require('fs'), assert = require('assert');
 const dom = new JSDOM('<div id="error-toast" class="hidden"><span id="error-toast-text"></span></div>', { runScripts: 'outside-only' });
 const w = dom.window, warnings = [];
 w.console.warn = (...a) => warnings.push(a.join(' '));
-w.eval(fs.readFileSync('js/core/utils.js', 'utf8').replace("setTimeout(() => { _bootPhase = false; }, 3000)", 'window.__endBoot = () => { _bootPhase = false; }'));
+w.eval(fs.readFileSync(scriptPath('utils.js'), 'utf8').replace("setTimeout(() => { _bootPhase = false; }, 3000)", 'window.__endBoot = () => { _bootPhase = false; }'));
 const box = w.document.getElementById('error-toast');
 
 w.dispatchEvent(new w.ErrorEvent('error', { message: 'panne au chargement' }));

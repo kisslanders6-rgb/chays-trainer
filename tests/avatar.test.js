@@ -1,4 +1,5 @@
 // Lancer : node tests/avatar.test.js   — avatars du profil (18 motifs, couleur de l'échiquier) et photo (avatarPhoto.js, sans réseau)
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
@@ -15,9 +16,9 @@ const ctx = {
     fetch: async (url, o) => { calls.push([url, o && o.method]); return { ok: false }; }
 };
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync('js/core/avatarPhoto.js', 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx);
+vm.runInContext(readVars(scriptPath('avatarPhoto.js')), ctx);
 const { AvatarPhoto } = ctx;
-const settings = fs.readFileSync('js/core/settings.js', 'utf8'), icons = fs.readFileSync('js/core/icons.js', 'utf8');
+const settings = fs.readFileSync(scriptPath('settings.js'), 'utf8'), icons = fs.readFileSync(scriptPath('icons.js'), 'utf8');
 
 (async () => {
     await t('18 avatars : 2 monogrammes, 6 pièces, 10 pictogrammes présents dans icons.js ; couleur « theme »', () => {
@@ -32,7 +33,7 @@ const settings = fs.readFileSync('js/core/settings.js', 'utf8'), icons = fs.read
         const mem = new Map(), sctx = { localStorage: { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k), get length() { return mem.size; }, key: i => [...mem.keys()][i] },
                                         document: { documentElement: { setAttribute() {} } }, Date, JSON };
         vm.createContext(sctx);
-        ['js/core/storageAdapter.js', 'js/core/settings.js'].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), sctx));
+        [scriptPath('storageAdapter.js'), scriptPath('settings.js')].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), sctx));
         const ok = v => vm.runInContext(`SYNCED_PREFS.avatarPhoto.ok(${JSON.stringify(v)})`, sctx);
         assert(ok('') && ok('0b3c8e8a-1d2f-4c5b-9a7e-6f1d2c3b4a5e/avatar-1793040000000.webp'));
         assert(!ok('autre/avatar-1.webp') && !ok('../x.webp') && !ok('0b3c8e8a-1d2f-4c5b-9a7e-6f1d2c3b4a5e/avatar.png'));
@@ -73,7 +74,7 @@ const settings = fs.readFileSync('js/core/settings.js', 'utf8'), icons = fs.read
     });
 
     await t('composant .avatar : taille par --size, contenu en proportion, couleur « Échiquier » calibrée', () => {
-        const css = fs.readFileSync('css/account.css', 'utf8'), ui = fs.readFileSync('js/core/accountUI.js', 'utf8');
+        const css = fs.readFileSync('css/account.css', 'utf8'), ui = fs.readFileSync(scriptPath('accountUI.js'), 'utf8');
         assert(/\.avatar \{[^}]*aspect-ratio: 1[^}]*overflow: hidden/.test(css));
         assert(/\.avatar \.av-picto svg\.ico \{ width: 100%/.test(css), 'plus spécifique que .topnav-pill > .theme-toggle svg');
         assert(/\.avatar \.av-photo \{[^}]*object-fit: cover/.test(css));

@@ -1,39 +1,15 @@
 // Lancer : node tests/repNotes.test.js   — description d'un répertoire (point 9) : saisie par le menu ⋮,
 // affichage sous « Jouer » et dans la liste des répertoires, suivie au renommage, à la corbeille et à la restauration.
 // Charge index.html entier dans jsdom, comme boot.test.js.
-const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
+const { bootApp } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
 const ROOT = path.join(__dirname, '..');
 
-class DiskLoader extends ResourceLoader {
-    fetch(url) {
-        const u = new URL(url);
-        if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));
-        return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-    }
-}
-
 async function boot() {
-    const errors = [];
-    const vc = new VirtualConsole();
-    vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message); });
-    const dom = new JSDOM(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
-        beforeParse(w) {
-            w.localStorage.setItem('chessTrainer_onboarded', '1');
-            w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.Element.prototype.getAnimations = () => [];
-            w.Element.prototype.animate = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
-            w.Element.prototype.scrollIntoView = () => {};
-            w.fetch = () => Promise.reject(new Error('réseau coupé (test)'));
-            w.addEventListener('error', e => errors.push(e.message));
-        }
-    });
-    await new Promise(r => dom.window.addEventListener('load', r));
-    await new Promise(r => setTimeout(r, 4000));
+    const { dom, errors } = await bootApp();
     return { w: dom.window, errors, $: s => dom.window.document.querySelector(s) };
 }
 

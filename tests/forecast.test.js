@@ -1,9 +1,10 @@
 // Lancer : node tests/forecast.test.js   — programme des révisions (reviewPlan, js/storage.js), sans DOM
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const src = fs.readFileSync('js/storage.js', 'utf8');
+const src = fs.readFileSync(scriptPath('storage.js'), 'utf8');
 const pick = re => { const m = src.match(re); assert(m, String(re)); return m[0]; };
 const ctx = { console };
 vm.createContext(ctx);
@@ -25,7 +26,7 @@ vm.runInContext([
     pick(/function _nextMastery[\s\S]*?\n}\n/),
     pick(/function recordReview[\s\S]*?\n}\n/),
     'function reviewGrowth() { return 2.5; } function logActivity() {} function _noop() {}\n'
-].join('').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: 'js/storage.js' });
+].join('').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: scriptPath('storage.js') });
 // Programme des révisions : base simulée par répertoire et couleur (readDBFor), objectif quotidien réglable.
 ctx.__dbs = {}; ctx.appSettings = { dailyGoal: 10 }; ctx.currentRepertoire = 'R';
 vm.runInContext('var readDBFor = (rep, c) => (__dbs[rep] && __dbs[rep][c]) || {};', ctx);

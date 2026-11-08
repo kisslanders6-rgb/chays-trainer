@@ -1,4 +1,5 @@
 // Lancer : node tests/colorScope.test.js   — sélecteur de couleur commun (ColorScope) et capsule de la barre du haut.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 const { JSDOM } = require('jsdom');
 let n = 0;
@@ -7,7 +8,7 @@ const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 const dom = new JSDOM('<div id="h"></div>', { runScripts: 'outside-only' });
 const win = dom.window;
 win.escapeHtml = s => String(s);
-win.eval(fs.readFileSync('js/core/colorScope.js', 'utf8') + '\nwindow.ColorScope = ColorScope;');   // 'use strict' : eval garde ses noms pour lui
+win.eval(fs.readFileSync(scriptPath('colorScope.js'), 'utf8') + '\nwindow.ColorScope = ColorScope;');   // 'use strict' : eval garde ses noms pour lui
 const host = win.document.getElementById('h');
 const opt = v => host.querySelector(`.cs-opt[data-v="${v}"]`);
 const checked = () => [...host.querySelectorAll('.cs-opt')].filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.dataset.v).join();
@@ -44,7 +45,7 @@ t('size « sm » : classe de la barre du haut, libellés gardés pour l\'infobul
 });
 
 t('barre du haut : la capsule remplace le badge de couleur ; Entraînement libre propose « Les deux », couleur imposée verrouillée', () => {
-    const html = fs.readFileSync('index.html', 'utf8'), app = fs.readFileSync('js/app.js', 'utf8');
+    const html = fs.readFileSync('index.html', 'utf8'), app = fs.readFileSync(scriptPath('app.js'), 'utf8');
     assert(/<div class="game-side" id="game-side"><\/div>/.test(html) && !/color-badge/.test(html));
     assert(/options: training && !locked \? \['w', 'b', 'mix'\] : \['w', 'b'\]/.test(app));
     assert(/const locked = !\(gameMode === 'play' \|\| \(training && !trainingState\.session\)\)/.test(app), 'seuls Jouer et l\'Entraînement libre changent de couleur');
@@ -53,7 +54,7 @@ t('barre du haut : la capsule remplace le badge de couleur ; Entraînement libre
 
 // ─── Puce du répertoire de la barre du haut (RepPicker « sm ») ───────────────
 Object.assign(win, { escapeHtml: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'), ico: name => `<svg data-i="${name}"></svg>`, readDBFor: () => ({}), isDue: () => false, loadRepertoireList: () => ['Général'], UI_ACTIONS: {} });
-win.eval('var currentRepertoire = "Général <test>";\n' + fs.readFileSync('js/core/repPicker.js', 'utf8') + '\nwindow.RepPicker = RepPicker;');
+win.eval('var currentRepertoire = "Général <test>";\n' + fs.readFileSync(scriptPath('repPicker.js'), 'utf8') + '\nwindow.RepPicker = RepPicker;');
 
 t('barre du haut : puce du répertoire ronde, initiale + nom + chevron, sans indicateurs ; verrouillée en séance guidée', () => {
     host.innerHTML = win.RepPicker.html('gameRepertoire', { size: 'sm' });
@@ -70,12 +71,12 @@ t('barre du haut : puce du répertoire ronde, initiale + nom + chevron, sans ind
 });
 
 t('barre du haut : changer de répertoire relance le mode en cours ; Finales : titre de l\'exercice ; même hauteur que la capsule', () => {
-    const app = fs.readFileSync('js/app.js', 'utf8'), css = fs.readFileSync('style.css', 'utf8');
+    const app = fs.readFileSync(scriptPath('app.js'), 'utf8'), css = fs.readFileSync('style.css', 'utf8');
     assert(/<span class="game-rep" id="game-rep"><\/span>/.test(fs.readFileSync('index.html', 'utf8')));
     assert(/if \(mode === 'play'\) startGame\(color\);/.test(app) && /startTraining\(mixed \? 'mix' : color\);\s+if \(gameMode !== 'training'\) goHome\('training'\);/.test(app));
     assert(/gameMode === 'endgame'[\s\S]{0,120}game-rep-title/.test(app));
     assert(/\.rp-chip\.rp-sm \{ min-height: 35px;/.test(css), 'la puce s\'aligne sur la capsule (35 px)');
-    assert(!/repertoire-pill/.test(app + css + fs.readFileSync('js/modules/endgame/endgame.js', 'utf8')));
+    assert(!/repertoire-pill/.test(app + css + fs.readFileSync(scriptPath('endgame.js'), 'utf8')));
 });
 
 console.log(`\n${n} tests réussis.`);

@@ -1,6 +1,7 @@
 // Lancer : node tests/splash.test.js   — écran de lancement : version longue une fois par jour (« la plume »),
 // courte ensuite (« la gravure »). Seuls les scripts en ligne d'index.html tournent (aucune ressource chargée) ;
 // requestAnimationFrame et la géométrie SVG sont simulés pour suivre la plume et l'encre.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 const { JSDOM } = require('jsdom');
 let n = 0;
@@ -63,12 +64,12 @@ t('ouvertures suivantes du jour : version courte, seule la gravure se réécrit 
 });
 
 t('sortie : courte plus rapide, un toucher écourte la suspension, signature de la plume recalée', () => {
-    const splash = fs.readFileSync('js/core/splash.js', 'utf8'), css = fs.readFileSync('css/splash.css', 'utf8');
+    const splash = fs.readFileSync(scriptPath('splash.js'), 'utf8'), css = fs.readFileSync('css/splash.css', 'utf8');
     assert(/const SPEED\s+= QUICK \? \.55 : 1;/.test(splash) && /IntroTimeline\.land\(splash, SPEED\)/.test(splash));
     assert(/\['pointerdown', 'keydown'\]/.test(splash) && /Promise\.race\(\[hold \?/.test(splash), 'toucher pour passer');
     assert(/\.splashing\.splash-quick \.splash \{ animation-duration: \.45s; \}/.test(css), 'suspension courte');
     assert(/\.ct-wm-1 \{ animation: spWrite \.42s linear 1\.56s both; \}/.test(css), 'signature au rythme de la plume (1,56 → 1,98 s)');
-    assert(/function land\(splash, speed = 1\)/.test(fs.readFileSync('js/core/introTimeline.js', 'utf8')));
+    assert(/function land\(splash, speed = 1\)/.test(fs.readFileSync(scriptPath('introTimeline.js'), 'utf8')));
 });
 
 console.log(`\n${n} tests réussis.`);

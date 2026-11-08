@@ -1,9 +1,10 @@
 // Lancer : node tests/swCatalog.test.js   — les listes recopiées à la main (sw.js, script de tête d'index.html) suivent leur source.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 const read = f => fs.readFileSync(f, 'utf8');
-const sw = read('sw.js'), settings = read('js/core/settings.js'), i18n = read('js/core/i18n.js'), html = read('index.html');
+const sw = read('sw.js'), settings = read(scriptPath('settings.js')), i18n = read(scriptPath('i18n.js')), html = read('index.html');
 const strings = s => [...s.matchAll(/'([^']+)'/g)].map(m => m[1]);
 const list = (src, re, what) => { const m = src.match(re); assert(m, what); return strings(m[1]); };
 const extra = list(sw, /const EXTRA = \[([\s\S]*?)\];/, 'EXTRA');

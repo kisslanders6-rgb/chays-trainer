@@ -1,6 +1,7 @@
 // Lancer : node tests/theme.test.js   — contraste des couleurs dérivées de l'échiquier, pour chaque échiquier × clair / sombre.
 // Les couleurs de cases sont lues dans style.css ; les formules reprennent celles de style.css (« HARMONISATION
 // DES COULEURS ») : --ui-accent, --board-accent. Seuils : 4,5:1 pour du texte, 3:1 pour une surface.
+const { scriptPath } = require('./_app.js');
 const fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -70,7 +71,7 @@ t('ambiances : jour et nuit lus pour les quatre palettes fixes, « Échiquier »
     assert.strictEqual(DARK_BGS.green.bg, '#0f1711');
     assert.strictEqual(LIGHTS.green.bg, '#f4f2eb');
     assert.strictEqual(LIGHTS.neutral.bg, '#f3f3f1');
-    const settings = fs.readFileSync('js/core/settings.js', 'utf8');
+    const settings = fs.readFileSync(scriptPath('settings.js'), 'utf8');
     assert(/const DARK_BGS\s*=\s*\['board', 'neutral', 'green', 'night', 'oled'\]/.test(settings), 'liste des ambiances dans settings.js');
     assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'board' \}/.test(settings));
     assert(/data-dark', typeof g === 'string' && \/\^\[a-z\]\+\$\/\.test\(g\) \? g : 'board'\)/.test(fs.readFileSync('index.html', 'utf8')), 'script de tête : Échiquier par défaut');

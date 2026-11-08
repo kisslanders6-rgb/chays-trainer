@@ -1,5 +1,6 @@
 // Lancer : node tests/moveStats.test.js   — fréquences des coups adverses (moveStats.js) : une partie n'est
 // comptée qu'une fois, quelle que soit la façon dont elle arrive ; sans DOM ni réseau
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -11,8 +12,8 @@ const ctx = {
                  get: k => (k in store ? store[k] : null), set: (k, v) => { store[k] = String(v); return true; }, remove: k => { delete store[k]; return true; } }
 };
 vm.createContext(ctx);
-for (const f of ['js/core/chessEngine.js', 'js/storage.js', 'js/modules/openings/openingsLogic.js', 'js/modules/openings/pgn.js',
-                 'js/modules/openings/gameReview.js', 'js/modules/openings/moveStats.js'])
+for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('openingsLogic.js'), scriptPath('pgn.js'),
+                 scriptPath('gameReview.js'), scriptPath('moveStats.js')])
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
 run("var playerColor = 'w';");

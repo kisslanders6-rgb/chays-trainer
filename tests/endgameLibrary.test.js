@@ -1,20 +1,12 @@
 // Lancer : node tests/endgameLibrary.test.js   — Finales « Bibliothèque » (lot 7) : « À suivre », puces de catégorie,
 // aperçu sans lancement, jauge de séance, verdict « avant → après », origine du jugement, théorie repliée.
 // Charge index.html entier dans jsdom, comme boot.test.js ; aucun réseau (juge commun simulé).
-const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
+const { bootApp } = require('./_app.js');
 const fs = require('fs'), path = require('path'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
 const ROOT = path.join(__dirname, '..');
-
-class DiskLoader extends ResourceLoader {
-    fetch(url) {
-        const u = new URL(url);
-        if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));
-        return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-    }
-}
 
 // Progression simulée (chessTrainer_endgames) : deux mats réussis (dont un sans faute), un en cours, deux finales de pions réussies.
 const PROGRESS = {
@@ -27,24 +19,11 @@ const PROGRESS = {
 
 let wide = false;                                   // largeur simulée : ≥ 920 px (colonne d'aperçu) ou non (panneau du bas)
 async function boot() {
-    const errors = [];
-    const vc = new VirtualConsole();
-    vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message); });
-    const dom = new JSDOM(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
-        beforeParse(w) {
-            w.localStorage.setItem('chessTrainer_onboarded', '1');
-            w.localStorage.setItem('chessTrainer_endgames', JSON.stringify(PROGRESS));
-            w.matchMedia = q => ({ matches: wide && /min-width: 920px/.test(q), addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.Element.prototype.getAnimations = () => [];
-            w.Element.prototype.animate = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
-            w.Element.prototype.scrollIntoView = function () { w.__scrolled = this.id; };
-            w.fetch = () => Promise.reject(new Error('réseau coupé (test)'));
-            w.addEventListener('error', e => errors.push(e.message));
-        }
-    });
-    await new Promise(r => dom.window.addEventListener('load', r));
-    await new Promise(r => setTimeout(r, 5000));
+    const { dom, errors } = await bootApp({ before(w) {
+        w.Element.prototype.scrollIntoView = function () { w.__scrolled = this.id; };
+        w.localStorage.setItem('chessTrainer_endgames', JSON.stringify(PROGRESS));
+        w.matchMedia = q => ({ matches: wide && /min-width: 920px/.test(q), addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    } });
     return { w: dom.window, errors, $: s => dom.window.document.querySelector(s), $$: s => [...dom.window.document.querySelectorAll(s)] };
 }
 

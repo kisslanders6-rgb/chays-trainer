@@ -1,4 +1,5 @@
 // Lancer : node tests/stats.test.js   — niveaux de maîtrise et noms d'ouvertures (onglet Statistiques), sans DOM
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -7,8 +8,8 @@ const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: ()
               document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] } };
 ctx.masteryOf = e => Number.isFinite(e.mastery) ? e.mastery : e.attempts > 0 ? 100 * (1 - e.failures / e.attempts) : 60;
 vm.createContext(ctx);
-for (const f of ['js/core/chessEngine.js', 'js/modules/openings/openingsLogic.js', 'js/modules/stats/openingNames.js', 'js/modules/stats/stats.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('chessEngine.js'), scriptPath('openingsLogic.js'), scriptPath('openingNames.js'), scriptPath('stats.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 const { _level, openingNameOf, resolveOpeningNames, _assignOpenings } = ctx;
 const path = s => s.split(' ');
 
@@ -85,8 +86,8 @@ t('Entraînement filtré sur une ouverture : seules ses positions sont proposée
     Object.assign(ctx, { readDBFor: (r, c) => dbs[c], currentRepertoire: 'Général', switchHomeTab: tab => { ctx._tab = tab; },
         dataStore: { get: () => null, getJSON: (k, d) => d, set() {}, setJSON() {}, remove() {} }, appSettings: {}, SYNCED_PREFS: {} });
     ctx.document.querySelector = () => null;
-    for (const f of ['js/modules/training/training.js', 'js/modules/training/trainingUI.js'])
-        vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+    for (const f of [scriptPath('training.js'), scriptPath('trainingUI.js')])
+        vm.runInContext(readVars(f), ctx, { filename: f });
     const tag = [{ side: 'b', k: 'k1', e: dbs.b.k1, path: dbs.b.k1.path }];
     _assignOpenings(tag);
     ctx.openTrainingFrom({ color: 'b', opening: { key: tag[0].gKey, name: tag[0].gName }, focus: 'due' });

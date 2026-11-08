@@ -1,4 +1,5 @@
 // Lancer : node tests/cloud.test.js   (serveur Supabase SIMULÉ en mémoire : aucun réseau)
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const jeq = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b));   // objets issus du contexte vm : comparaison par JSON
@@ -58,7 +59,7 @@ function makeContext(server) {
         fetch: server.fetch, AbortController, URL, setTimeout, clearTimeout, console
     };
     vm.createContext(ctx);
-    ['js/core/storageAdapter.js', 'js/core/syncModel.js', 'js/core/cloudAdapter.js', 'js/core/cloudClient.js']
+    [scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('cloudAdapter.js'), scriptPath('cloudClient.js')]
         .forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
     ctx.mem = mem; ctx.run = s => vm.runInContext(s, ctx);
     return ctx;

@@ -1,4 +1,5 @@
 // Lancer : node tests/endgame.test.js   — module Finales (noyau, catalogue, défense de Philidor), sans DOM
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -6,9 +7,9 @@ const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b)
 
 const ctx = { console, setTimeout, clearTimeout, registerActions() {}, escapeHtml: s => String(s), ico: () => '', dataStore: { getJSON: () => ({}), setJSON() {} } };
 vm.createContext(ctx);
-for (const f of ['js/modules/endgame/egCore.js', 'js/modules/endgame/egExercises.js', 'js/modules/endgame/egJudge.js',
-                 'js/modules/endgame/egOpponent.js', 'js/modules/endgame/endgame.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('egCore.js'), scriptPath('egExercises.js'), scriptPath('egJudge.js'),
+                 scriptPath('egOpponent.js'), scriptPath('endgame.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 const { EG, ENDGAME_BY_ID, _egPhilidorCheck, _egParseUci, _egUci } = ctx;
 
 // Rejoue une suite de coups UCI (promotion « q » acceptée) depuis un FEN.

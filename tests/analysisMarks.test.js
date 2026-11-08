@@ -1,5 +1,6 @@
 // Lancer : node tests/analysisMarks.test.js   — Analyse, brouillon annoté : marques de l'arbre (analysisMarks),
 // compteur du bouton « Ajouter au répertoire (N) » et aperçu de fusion qui n'écrit rien avant la confirmation.
+const { scriptPath, readVars } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const tests = [];
@@ -15,8 +16,8 @@ const ctx = {
     ico: name => `<svg class="ico"><use href="#i-${name}"/></svg>`
 };
 vm.createContext(ctx);
-for (const f of ['js/core/chessEngine.js', 'js/core/engine.js', 'js/modules/analysis/analysis.js'])
-    vm.runInContext(fs.readFileSync(f, 'utf8').replace(/^(const|let) (\w+) =/gm, 'var $2 ='), ctx, { filename: f });
+for (const f of [scriptPath('chessEngine.js'), scriptPath('engine.js'), scriptPath('analysis.js')])
+    vm.runInContext(readVars(f), ctx, { filename: f });
 const run = s => vm.runInContext(s, ctx);
 const key = path => run(`Chess.key(Chess.replay(${JSON.stringify(path)}))`);
 const marks = (lines, color, db, replace = []) => run('(l, c, d, r) => analysisMarks(l, c, d, new Set(r))')(lines, color, db, replace);

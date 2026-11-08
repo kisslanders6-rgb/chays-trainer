@@ -1,4 +1,5 @@
 // Lancer : node tests/settings.test.js   — préférences locales / synchronisées (js/core/settings.js)
+const { scriptPath } = require('./_app.js');
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
@@ -11,7 +12,7 @@ function boot(store = {}) {
         document: { documentElement: { setAttribute() {} } }, Date, JSON
     };
     vm.createContext(ctx);
-    ['js/core/storageAdapter.js', 'js/core/settings.js'].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
+    [scriptPath('storageAdapter.js'), scriptPath('settings.js')].forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
     ctx.run = s => vm.runInContext(s, ctx);
     ctx.prefs = () => JSON.parse(mem.get('chessTrainer_prefs') || 'null');
     ctx.local = () => JSON.parse(mem.get('chessTrainer_settings') || 'null');
@@ -111,7 +112,7 @@ t('mode libre : anciennes options de l\'appareil reprises en préférences, anci
 });
 
 t('chaque préférence a son réglage dans l\'interface (Paramètres ou Compte)', () => {
-    const ui = ['js/core/settingsUI.js', 'js/core/accountUI.js'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    const ui = [scriptPath('settingsUI.js'), scriptPath('accountUI.js')].map(f => fs.readFileSync(f, 'utf8')).join('\n');
     const c = boot();
     const internal = ['looksTheme', 'looksSound', 'looksVolume'];          // copies du mode et des sons (option syncLooks)
     const free = { freeMaxPlies: 'training:maxPlies', freeSeqLen: 'training:seqLen', freeFromStart: 'training:fromStart' };
