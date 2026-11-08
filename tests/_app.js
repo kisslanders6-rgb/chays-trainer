@@ -29,19 +29,18 @@ const readVars = file => fs.readFileSync(file, 'utf8').replace(/^(const|let) (\w
 //   before(w)  réglages propres au test, avant le premier script
 // Renvoie { dom, w, errors } : errors liste les erreurs levées pendant et après le chargement.
 async function bootApp({ storage = {}, onboarded = true, before } = {}) {
-    const { JSDOM, ResourceLoader, VirtualConsole } = require('jsdom');
-    class DiskLoader extends ResourceLoader {
-        fetch(url) {
-            const u = new URL(url);
-            if (u.hostname !== 'localhost') return Promise.resolve(Buffer.from(''));            // polices, CDN : ignorés
-            return fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname)));
-        }
-    }
+    const { JSDOM, VirtualConsole, requestInterceptor } = require('jsdom');
+    const fromDisk = requestInterceptor(async request => {
+        const u = new URL(request.url);
+        if (u.hostname !== 'localhost') return new Response('');                                // polices, CDN : ignorés
+        const type = u.pathname.endsWith('.css') ? 'text/css' : 'text/javascript';
+        return new Response(await fs.promises.readFile(path.join(ROOT, decodeURIComponent(u.pathname))), { headers: { 'Content-Type': type } });
+    });
     const errors = [], vc = new VirtualConsole();
     vc.on('jsdomError', e => { if (!/Not implemented/.test(e.message)) errors.push(e.message + (e.detail ? ' ' + (e.detail.stack || e.detail) : '')); });
     vc.on('error', (...a) => errors.push('console.error ' + a.join(' ')));
     const dom = new JSDOM(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), {
-        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: new DiskLoader(), pretendToBeVisual: true, virtualConsole: vc,
+        url: 'http://localhost/index.html', runScripts: 'dangerously', resources: { interceptors: [fromDisk] }, pretendToBeVisual: true, virtualConsole: vc,
         beforeParse(w) {
             w.sessionStorage.setItem('chays_splash', '1');
             if (onboarded) w.localStorage.setItem('chessTrainer_onboarded', '1');
