@@ -748,3 +748,10 @@ document.addEventListener('visibilitychange', () => {
     clearTimeout(analysis.wait);
     _anLaunch(analysis.fen);
 });
+
+GameModes.register('analysis', {
+    playsBothSides: true,
+    onMove: (from, to, promo) => analysisMove(from, to, promo),      // brouillon : rien n'est vérifié ni enregistré
+    onNavigate: () => analysisPositionChanged(),
+    engineArrows: () => analysisArrowList()
+});

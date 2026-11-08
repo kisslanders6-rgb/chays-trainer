@@ -761,3 +761,17 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.');
     }
 }
+
+GameModes.register('training', {
+    inputBlocked: () => trainingState.busy,
+    navBlocked: () => trainingState.busy,
+    backToLive: () => trainingBackToLive(),
+    sessionCursor: true,
+    hintToSolution: true,
+    hintNote: ' — ne compte pas comme une erreur',
+    solutionNote: ' — compte une erreur',
+    solutionCost: () => (TRAIN_SOLUTION_PENALTY ? ' Voir la solution compte comme une erreur.' : ''),
+    onMove: (from, to, promo) => answerTrainingMove(openingDB[positionKey()], from, to, promo, moveToStr(from, to, promo)),
+    onSolution: () => showTrainingSolution(),
+    liveStatus: () => trainingLiveStatus()
+});

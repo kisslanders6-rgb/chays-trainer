@@ -935,3 +935,10 @@ function endgameHint() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { _egPhilidorCheck, _egVancuraCheck, _egJudgedOutcome };
 }
+
+GameModes.register('endgame', {
+    inputBlocked: () => endgameState.busy,
+    movesLocked: true,
+    onMove: (from, to, promo) => answerEndgameMove(from, to, promo),
+    onHint: () => endgameHint()
+});

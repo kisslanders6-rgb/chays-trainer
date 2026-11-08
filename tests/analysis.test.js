@@ -8,7 +8,7 @@ const jeq = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b), `
 
 const ctx = { console, registerActions() {}, document: { addEventListener() {} } };
 vm.createContext(ctx);
-for (const f of [scriptPath('chessEngine.js'), scriptPath('engine.js'), scriptPath('analysis.js')])
+for (const f of [scriptPath('chessEngine.js'), scriptPath('modes.js'), scriptPath('engine.js'), scriptPath('analysis.js')])
     vm.runInContext(readVars(f), ctx, { filename: f });
 const run = s => vm.runInContext(s, ctx);
 const key = path => run(`Chess.key(Chess.replay(${JSON.stringify(path)}))`);

@@ -153,7 +153,7 @@ function _resumeMoveAnim() {
 
 function _paintMovesBar(active) {
     const bar = document.getElementById('moves-bar');
-    bar.classList.toggle('locked', gameMode === 'endgame');   // Finales : non cliquable
+    bar.classList.toggle('locked', GameModes.current().movesLocked);   // Finales : non cliquable
     if (!moveHistory.length) {
         bar.innerHTML = '<span style="color:#5a4020">Aucun coup joué</span>';
         return;
@@ -250,24 +250,26 @@ function navGo(p) {
         navCursor = -1;
         renderBoard();
         renderMoves();
-        if (!(typeof trainingLiveStatus === 'function' && trainingLiveStatus())) setStatus('Retour à la position actuelle.', 'info');
+        const live = GameModes.current().liveStatus;
+        if (!(live && live())) setStatus('Retour à la position actuelle.', 'info');
     } else {
         navCursor = (p < 0) ? NAV_START : p;
         renderNavBoard();
     }
     updateNavButtons();
-    if (gameMode === 'analysis' && typeof analysisPositionChanged === 'function') analysisPositionChanged();
+    const onNavigate = GameModes.current().onNavigate;
+    if (onNavigate) onNavigate();
 }
 
 function navPrev() {
-    if (moveHistory.length === 0 || (gameMode === 'training' && trainingState.busy)) return;
+    if (moveHistory.length === 0 || GameModes.current().navBlocked()) return;
     const p = _navPos();
     if (p <= -1) return;
     navGo(p - 1);
 }
 
 function navNext() {
-    if (navCursor === -1 || (gameMode === 'training' && trainingState.busy)) return;
+    if (navCursor === -1 || GameModes.current().navBlocked()) return;
     navGo(_navPos() + 1);
 }
 
@@ -432,11 +434,12 @@ function refreshPieces() {
 // (même mécanisme que Précédent / Suivant ; désactivé en entraînement).
 
 function goToMove(i) {
-    if (gameMode === 'endgame') return;
+    const mode = GameModes.current();
+    if (mode.movesLocked) return;
     const len = moveHistory.length;
     if (i < 0 || i >= len) return;
-    if (gameMode === 'training') {                       // séance : même navigation que ◀ ▶, jamais pendant un coup adverse
-        if (!trainingState.busy) navGo(i);
+    if (mode.sessionCursor) {                            // séance : même navigation que ◀ ▶, jamais pendant un coup adverse
+        if (!mode.navBlocked()) navGo(i);
         return;
     }
     if (i === len - 1) {
@@ -464,9 +467,7 @@ let _lastDragEnd     = 0;
 function _dragJustEnded() { return performance.now() - _lastDragEnd < 60; }
 
 function _canInteract() {
-    if (gameMode === 'preview') return false;
-    if (gameMode === 'endgame' && endgameState.busy) return false;
-    if (gameMode === 'training' && trainingState.busy) return false;
+    if (GameModes.current().inputBlocked()) return false;
     return document.getElementById('promo-overlay').classList.contains('hidden');
 }
 
@@ -487,7 +488,7 @@ function _beginDrag(d) {
     const side = _navSide();
     if ((d.cls.includes('piece-w') ? 'w' : 'b') !== side) return false;
 
-    if (gameMode === 'training' && trainingBackToLive()) return false;   // séance : ramène au présent, sans rejouer
+    if (GameModes.current().backToLive()) return false;   // séance : ramène au présent, sans rejouer
     if (navCursor !== -1) _syncEngineToNavCursor();      // glisser depuis une position passée = nouvelle variante
     if (selected !== d.from) handleClick(d.from);
     if (selected !== d.from) return false;
@@ -615,10 +616,10 @@ document.addEventListener('keydown', e => {
     if (!_keyboardAllowed(e)) return;
     switch (e.key) {
         case 'ArrowLeft':
-            if (gameMode === 'endgame') return;
+            if (GameModes.current().movesLocked) return;
             e.preventDefault(); navPrev(); break;
         case 'ArrowRight':
-            if (gameMode === 'endgame') return;
+            if (GameModes.current().movesLocked) return;
             e.preventDefault(); navNext(); break;
         case ' ':
             if (e.repeat) return;

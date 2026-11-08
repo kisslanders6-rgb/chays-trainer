@@ -264,7 +264,8 @@ function renderAnnotations(afterBoardRender) {
     const d = _annotDraw, ghost = a => Object.assign({}, a, { preview: true });
     let book = [];
     try { book = _bookArrowList().map(ghost); } catch (e) { /* position illisible : pas de flèches */ }
-    if (typeof analysisArrowList === 'function') book = book.concat(analysisArrowList().map(ghost));      // meilleurs coups du moteur
+    const engineArrows = GameModes.current().engineArrows;
+    if (engineArrows) book = book.concat(engineArrows().map(ghost));      // meilleurs coups du moteur
     const opts = { style: _arrowStyle(), flipped: boardFlipped, knight: _knightArrows() };
     layer.innerHTML = drawArrows(Object.assign({ arrows: book }, opts))
         + drawArrows(Object.assign({ circles: annotations.circles, arrows: annotations.arrows }, opts))

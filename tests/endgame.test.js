@@ -7,7 +7,7 @@ const jeq = (a, b, m) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b)
 
 const ctx = { console, setTimeout, clearTimeout, registerActions() {}, escapeHtml: s => String(s), ico: () => '', dataStore: { getJSON: () => ({}), setJSON() {} } };
 vm.createContext(ctx);
-for (const f of [scriptPath('egCore.js'), scriptPath('egExercises.js'), scriptPath('egJudge.js'),
+for (const f of [scriptPath('modes.js'), scriptPath('egCore.js'), scriptPath('egExercises.js'), scriptPath('egJudge.js'),
                  scriptPath('egOpponent.js'), scriptPath('endgame.js')])
     vm.runInContext(readVars(f), ctx, { filename: f });
 const { EG, ENDGAME_BY_ID, _egPhilidorCheck, _egParseUci, _egUci } = ctx;

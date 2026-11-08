@@ -8,7 +8,7 @@ const ctx = { console, registerActions() {}, escapeHtml: s => String(s), ico: ()
               document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] } };
 ctx.masteryOf = e => Number.isFinite(e.mastery) ? e.mastery : e.attempts > 0 ? 100 * (1 - e.failures / e.attempts) : 60;
 vm.createContext(ctx);
-for (const f of [scriptPath('chessEngine.js'), scriptPath('openingsLogic.js'), scriptPath('openingNames.js'), scriptPath('levels.js'), scriptPath('stats.js')])
+for (const f of [scriptPath('chessEngine.js'), scriptPath('modes.js'), scriptPath('openingsLogic.js'), scriptPath('openingNames.js'), scriptPath('levels.js'), scriptPath('stats.js')])
     vm.runInContext(readVars(f), ctx, { filename: f });
 const { _level, openingNameOf, resolveOpeningNames, _assignOpenings } = ctx;
 const path = s => s.split(' ');

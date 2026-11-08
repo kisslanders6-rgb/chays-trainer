@@ -18,6 +18,7 @@ const ctx = {
     goHome: tab => navigations.push(tab)
 };
 vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(scriptPath('modes.js'), 'utf8'), ctx);
 const f = scriptPath('training.js');
 vm.runInContext(readVars(f), ctx, { filename: f });
 const { trainingState } = ctx;

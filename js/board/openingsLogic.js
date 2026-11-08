@@ -38,10 +38,8 @@ function loadPositionFromPath(moves, opts) {
 // ─── LOGIQUE DE CLIC ──────────────────────────────────────────────────────────
 
 function handleClick(idx) {
-    if (gameMode === 'preview') return;                                   // aperçu : lecture seule
-    if (gameMode === 'endgame' && endgameState.busy) return;
-    if (gameMode === 'training' && trainingState.busy) return;            // cinématique en cours
-    if (gameMode === 'training' && trainingBackToLive()) return;          // séance : toucher ramène au présent
+    const mode = GameModes.current();
+    if (mode.inputBlocked() || mode.backToLive()) return;       // aperçu, cinématique ; séance : toucher ramène au présent
 
     // Si on visualise une position passée (navigation Précédent/Suivant),
     // jouer ici doit relancer la partie réelle à partir de cette position :
@@ -70,7 +68,7 @@ function handleClick(idx) {
     if (selected === idx) { selected = null; legalMoves = []; renderBoard(); return; }
 
     if (legalMoves.includes(idx)) {
-        if (turn !== playerColor && gameMode !== 'analysis') {      // Analyse : les deux camps passent par executePlayerMove
+        if (turn !== playerColor && !GameModes.current().playsBothSides) {      // Analyse : les deux camps passent par executePlayerMove
             executeOpponentMove(selected, idx);
         } else {
             executePlayerMove(selected, idx);
@@ -212,15 +210,13 @@ function executePlayerMove(from, to, promo) {
         promo = null;
     }
 
-    if (gameMode === 'analysis') { analysisMove(from, to, promo); return; }      // brouillon : rien n'est vérifié ni enregistré
+    const mode = GameModes.current();
+    if (mode.onMove) { mode.onMove(from, to, promo); return; }      // Entraînement, Finales, Analyse
 
     const key    = positionKey();
     const entry  = openingDB[key];
     const movStr = moveToStr(from, to, promo);
     const san    = toAlgebraic(from, to, promo);
-
-    if (gameMode === 'endgame') { answerEndgameMove(from, to, promo); return; }
-    if (gameMode === 'training') { answerTrainingMove(entry, from, to, promo, movStr); return; }
 
     const pathNow = moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
 
@@ -273,9 +269,10 @@ let _solutionKey  = null;     // position dont la solution a été dévoilée en
 let _solutionMove = null;     // { key, from, to } : coup surligné par le halo
 
 function showHint() {
-    if (gameMode === 'endgame') { endgameHint(); return; }
-    if (gameMode === 'preview' || (gameMode === 'training' && trainingState.busy)) return;
-    if (gameMode === 'training') trainingBackToLive();                    // séance : l'indice porte sur la position en cours
+    const mode = GameModes.current();
+    if (mode.onHint) { mode.onHint(); return; }
+    if (mode.inputBlocked()) return;
+    if (mode.sessionCursor) mode.backToLive();                    // séance : l'indice porte sur la position en cours
     else if (navCursor !== -1) _syncEngineToNavCursor();
     if (turn !== playerColor) {
         setStatus("L'indice n'est disponible que pour vos propres coups.", 'info');
@@ -289,12 +286,13 @@ function showHint() {
     const piece = (board[squareToIdx(entry.move.slice(0, 2))] || '').toUpperCase();
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
-    const cost = gameMode === 'training' && TRAIN_SOLUTION_PENALTY ? ' Voir la solution compte comme une erreur.' : '';
+    const cost = GameModes.current().solutionCost();
     setStatus(`Indice : déplacez ${PIECE_HINT[piece] || 'une pièce'}.`, 'hint', 'Appuyez encore pour voir la solution.' + cost);
 }
 
 function showSolution() {
-    if (gameMode === 'training') { showTrainingSolution(); return; }
+    const mode = GameModes.current();
+    if (mode.onSolution) { mode.onSolution(); return; }
     const key   = positionKey();
     const entry = openingDB[key];
     if (!entry || turn !== playerColor) return;
@@ -318,14 +316,15 @@ function _syncHintBtn() {
     const fx  = !!m && m.key === key && navCursor === -1 && selected === m.from && legalMoves.length === 1 && legalMoves[0] === m.to;
     const el  = document.getElementById('board');
     if (el) el.classList.toggle('show-solution', fx);
-    const sol = (gameMode === 'play' || gameMode === 'training') && _hintKey === key && turn === playerColor && navCursor === -1;
+    const mode = GameModes.current();
+    const sol = mode.hintToSolution && _hintKey === key && turn === playerColor && navCursor === -1;
     const off = _hintBlocked();
     const suggest = !off && !sol && _suggestHintKey === key && navCursor === -1;
     document.querySelectorAll('.tb-hint').forEach(b => {
         b.disabled = !!off;
         b.classList.toggle('is-suggest', suggest);
-        b.title = off || (sol ? `Voir la solution (Espace)${gameMode === 'training' ? ' — compte une erreur' : ''}`
-                              : `Indice (Espace)${gameMode === 'play' ? ' — Jouer ne compte rien' : gameMode === 'training' ? ' — ne compte pas comme une erreur' : ''}`);
+        b.title = off || (sol ? `Voir la solution (Espace)${mode.solutionNote}`
+                              : `Indice (Espace)${mode.hintNote}`);
         const state = sol ? 'sol' : off ? 'off' : 'hint';           // indisponible : le libellé le dit, la raison est en infobulle
         if (b.dataset.sol === state) return;
         b.dataset.sol = state;
