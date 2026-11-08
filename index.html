@@ -385,7 +385,7 @@
                           Ordinateur (920 px+) : une seule rangée de 48 px, ‹ [ action ] › puis les outils en icônes,
                                        après un filet (hauteur comptée dans --board-chrome-h).
                           Tablette   : rangée principale ‹ [ action ] › puis actions secondaires discrètes.
-                          Mobile     : dock de cinq cases fixé en bas : retourner · ‹ · centre · › · Plus (dock.js) ;
+                          Mobile     : dock de cinq cases fixé en bas : première case selon le mode · ‹ · centre plein · › · Plus (dock.js) ;
                                        les autres boutons du mode passent dans « Plus » (« TÉLÉPHONE SOUS LE POUCE » de style.css).
                     -->
                     <div class="board-controls">
@@ -409,6 +409,7 @@
                                 <svg class="ico"><use href="#i-chevron-right"/></svg><span class="btn-label mobile-only">Suiv.</span>
                             </button>
                             <!-- Téléphone : centre du dock (prochaine action du mode) et « Plus » (boutons du mode cachés sur téléphone) -->
+                            <button type="button" class="btn dock-left" id="dock-left" onclick="Dock.runLeft()" hidden></button>
                             <button type="button" class="btn dock-center" id="dock-center" onclick="Dock.runGame()"></button>
                             <button type="button" class="btn btn-tool dock-more" onclick="toggleToolbarMore(this)" title="Plus d'actions" aria-haspopup="true" aria-expanded="false">
                                 <svg class="ico"><use href="#i-more-horizontal"/></svg><span class="btn-label">Plus</span>
@@ -477,14 +478,19 @@
                 <div class="side-panel" id="side-panel">
                     <!-- Mobile : poignée du tiroir (toucher = ouvrir / fermer, glisser vers le haut / le bas) -->
                     <button class="sheet-handle" id="sheet-handle" onclick="toggleSheet()" aria-label="Agrandir le panneau" aria-expanded="false"><span></span></button>
-                    <div class="endgame-card" id="endgame-card" data-modes="endgame"></div>
-                    <!-- Barre d'état (setStatus) : titre, détail, et bouton facultatif .status-act (reçu d'un coup enregistré) -->
-                    <div class="status-bar" id="status-bar">
-                        <div class="status-dot dot-info" id="status-dot"></div>
-                        <div class="status-text" id="status-text">Initialisation...</div>
+                    <!-- Carte de contexte du téléphone (gameCard.js) ; sans effet (display: contents) sur les autres largeurs -->
+                    <div class="game-card" id="game-card">
+                        <div class="gc-ring" id="gc-ring" hidden></div>
+                        <div class="endgame-card" id="endgame-card" data-modes="endgame"></div>
+                        <!-- Barre d'état (setStatus) : titre, détail, et bouton facultatif .status-act (reçu d'un coup enregistré) -->
+                        <div class="status-bar" id="status-bar">
+                            <div class="status-dot dot-info" id="status-dot"></div>
+                            <div class="status-text" id="status-text">Initialisation...</div>
+                        </div>
+                        <!-- Suites adverses (Jouer, au trait de l'adversaire) : renderOppSuites, moveStats.js -->
+                        <div class="opp-suites" id="opp-suites" data-modes="play" hidden></div>
+                        <div class="gc-tiles" id="gc-tiles" hidden></div>
                     </div>
-                    <!-- Suites adverses (Jouer, au trait de l'adversaire) : renderOppSuites, moveStats.js -->
-                    <div class="opp-suites" id="opp-suites" data-modes="play" hidden></div>
                     <div class="side-lower">
                         <div class="side-tabs" data-modes="play">
                             <button class="side-tab active" id="side-tab-moves" onclick="showSideTab('moves')">Coups</button>
@@ -714,6 +720,7 @@
 <script src="js/screens/training/trainingUI.js"></script>
 <script src="js/shell/suite.js"></script>
 <script src="js/shell/dock.js"></script>
+<script src="js/shell/gameCard.js"></script>
 <script src="js/domain/endgames/egCore.js"></script>
 <script src="js/domain/endgames/egExercises.js"></script>
 <script src="js/domain/endgames/egJudge.js"></script>

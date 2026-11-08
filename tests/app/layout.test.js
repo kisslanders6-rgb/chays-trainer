@@ -144,9 +144,10 @@ t('téléphone : échiquier posé sur la barre, lecture au-dessus, glisser sur �
 
 t('lecture de l\'écran de jeu selon la hauteur, zoom stable', () => {
     const css = mainCss(), mob = fs.readFileSync(scriptPath('mobile.js'), 'utf8');
-    assert(/max-height: 700px\) \{\s+#game-screen \{ --read-h: 104px; \}\s+\.side-panel:not\(\.open\) \.side-lower \{ order: -1; \}/.test(css), 'petit écran : les coups d\'abord');
+    assert(/max-height: 700px\) \{\s+#game-screen \{ --read-h: 112px; \}\s+\.side-panel:not\(\.open\) \.side-lower \{ order: -1; \}/.test(css), 'petit écran : les coups d\'abord');
     assert(/min-height: 761px\) \{\s+\.side-panel:not\(\.open\) \{ flex: 1 1 0;/.test(css), 'grand écran : la lecture occupe la place libre');
-    assert(/\.side-panel:not\(\.open\) \.moves-bar \{ flex: 1 1 auto; min-height: 0; flex-wrap: wrap;/.test(css), 'historique sur plusieurs lignes');
+    assert(/\.side-panel:not\(\.open\) \.moves-bar \{ height: 38px;/.test(css), 'fil de coups sur une ligne, contre l\'échiquier');
+    assert(/min-height: 761px\) \{[^}]*\}\s+\.side-panel:not\(\.open\) \.game-card \{ flex: 1 1 auto; min-height: 0; \}/.test(css), 'grand écran : la carte de contexte occupe la place libre');
     assert(/^html \{ touch-action: manipulation; \}/m.test(css), 'pas de zoom au double-toucher');
     assert(/@media \(pointer: coarse\) \{ input:not\(\[type="range"\], \[type="checkbox"\], \[type="radio"\]\), textarea, select \{ font-size: 16px !important; \} \}/.test(css), 'pas de zoom à la saisie sur iOS');
     assert(!/user-scalable|maximum-scale/.test(fs.readFileSync('index.html', 'utf8')), 'le zoom reste permis hors partie');

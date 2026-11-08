@@ -155,7 +155,7 @@ function _paintMovesBar(active) {
     const bar = document.getElementById('moves-bar');
     bar.classList.toggle('locked', GameModes.current().movesLocked);   // Finales : non cliquable
     if (!moveHistory.length) {
-        bar.innerHTML = '<span style="color:#5a4020">Aucun coup joué</span>';
+        bar.innerHTML = '<span style="color:var(--text-dim)">Aucun coup joué</span>';
         return;
     }
     let html = '';
