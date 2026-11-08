@@ -305,14 +305,7 @@ function renderNavBoard() {
             tempBoard[Math.floor(from / 8) * 8 + (to % 8)] = '';
         }
         // Roque : déplacement de la tour
-        if (p && p.toUpperCase() === 'K') {
-            const dc = (to % 8) - (from % 8);
-            if (Math.abs(dc) === 2) {
-                const rr = Math.floor(from / 8);
-                if (dc > 0) { tempBoard[rr*8+5] = tempBoard[rr*8+7]; tempBoard[rr*8+7] = ''; }
-                else        { tempBoard[rr*8+3] = tempBoard[rr*8+0]; tempBoard[rr*8+0] = ''; }
-            }
-        }
+        if (p && p.toUpperCase() === 'K') moveCastlingRook(tempBoard, from, to);
     }
 
     // Permutation temporaire des globaux pour l'affichage

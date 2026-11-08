@@ -99,14 +99,6 @@ function _moveLabel(e, masked, html) {
     return w ? `${n}. ${san}` : `${n}… ${san}`;
 }
 
-// Échéance lisible : « dans 3 h », « dans 4 j ».
-function _dueIn(t) {
-    const min = Math.max(1, Math.round((t - Date.now()) / 60000));
-    if (min < 60)   return `dans ${min} min`;
-    if (min < 1440) return `dans ${Math.round(min / 60)} h`;
-    return `dans ${Math.round(min / 1440)} j`;
-}
-
 // ─── POSITIONS ET OUVERTURES ──────────────────────────────────────────────────
 
 function _statsRows() {
@@ -157,6 +149,18 @@ function _assignOpenings(rows) {
         else { r.gName = 'Autres positions'; r.gPath = []; r.gHtml = r.gName; }
         r.gKey = r.side + '|' + r.gName;
     });
+}
+
+// Regroupe des lignes { side, k, e, path } par ouverture : { side, name, path, html, n, named } ; named : ouverture du catalogue.
+function groupByOpening(rows) {
+    _assignOpenings(rows);
+    const groups = new Map();
+    rows.forEach(r => {
+        const g = groups.get(r.gKey) || { side: r.side, name: r.gName, path: r.gPath, html: r.gHtml, n: 0, named: !!r.op };
+        g.n++;
+        groups.set(r.gKey, g);
+    });
+    return [...groups.values()];
 }
 
 // Plus fragiles d'abord : niveau, taux d'erreur, nombre d'essais, ordre du coup.
@@ -346,7 +350,7 @@ function initStats() {
             ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="due">Révision du jour ${ico('chevron-right')}</button>` : `
             <div class="st-big st-big-text"><b>À jour</b></div>
-            <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${_dueIn(next)}.` : 'Aucune révision prévue.'}</div>
+            <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${dueInLabel(next)}.` : 'Aucune révision prévue.'}</div>
             ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('target')}Points faibles ${ico('chevron-right')}</button>`}
         </div>`;
@@ -428,7 +432,7 @@ function initStats() {
                 <span class="st-move">${_moveLabel(r.e, false, true)}</span>
                 <span class="st-lvl">${_lvMark(r.lv)}${STATS_LEVELS[r.lv].one}</span>
                 <span class="st-errs lv-${r.lv}" title="${r.e.failures} err. / ${r.e.attempts}"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, m)}%"></i></span><span class="st-n">${m} / 100</span></span>
-                <span class="st-when ${d ? 'on' : ''}">${d ? 'Aujourd’hui' : _dueIn(dueOf(r.e))}</span>
+                <span class="st-when ${d ? 'on' : ''}">${d ? 'Aujourd’hui' : dueInLabel(dueOf(r.e))}</span>
                 <span class="st-acts">
                     <button type="button" class="st-ibtn pri" data-action="statsTrain" data-arg="${arg(r)}" title="S'entraîner sur cette position (compte comme un essai)" aria-label="S'entraîner sur ${escapeHtml(_moveLabel(r.e))}">${ico('play')}</button>
                     <button type="button" class="st-ibtn" data-action="statsPreview" data-arg="${arg(r)}" data-origin="${escapeHtml(g.name)}" title="Voir la position" aria-label="Voir ${escapeHtml(_moveLabel(r.e))}">${ico('eye')}</button>
@@ -558,7 +562,7 @@ function _renderPreviewFacts(e) {
     box.innerHTML = `<div class="lv-${lv}"><span>Niveau</span><b>${_lvMark(lv)}${STATS_LEVELS[lv].one}</b></div>
         <div title="${e.failures} err. / ${e.attempts}"><span>Maîtrise</span><b class="st-n">${Math.round(masteryOf(e))} / 100</b></div>
         ${Number.isInteger(e.relearn) ? `<div><span>À revoir</span><b class="st-n">${e.relearn} / ${RELEARN_DAYS.length}</b></div>` : ''}
-        <div><span>Révision</span><b${d ? ' class="on"' : ''}>${d ? 'Aujourd’hui' : _dueIn(dueOf(e))}</b></div>`;
+        <div><span>Révision</span><b${d ? ' class="on"' : ''}>${d ? 'Aujourd’hui' : dueInLabel(dueOf(e))}</b></div>`;
 }
 
 // Barre du haut pendant l'aperçu : « ‹ Statistiques », puis la catégorie de la position en puce (marque + niveau)

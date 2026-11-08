@@ -70,14 +70,7 @@ const _trOrder = (a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1)
 // Ouvertures nommées de la portée (Ligne complète) : { color, name, path, n }.
 function _trOpenings() {
     const rows = _trRows().map(r => ({ side: r.color, k: r.key, e: r.e, path: r.e.path && r.e.path.length ? r.e.path : null }));
-    _assignOpenings(rows);
-    const groups = new Map();
-    rows.filter(r => r.op).forEach(r => {
-        const g = groups.get(r.gKey) || { color: r.side, name: r.gName, path: r.gPath, n: 0 };
-        g.n++;
-        groups.set(r.gKey, g);
-    });
-    return [...groups.values()].sort((a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1) || a.path.join(' ').localeCompare(b.path.join(' ')));
+    return groupByOpening(rows).filter(g => g.named).map(g => ({ color: g.side, name: g.name, path: g.path, n: g.n })).sort((a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1) || a.path.join(' ').localeCompare(b.path.join(' ')));
 }
 
 // Révisions prévues sur 7 jours pour la portée affichée (programme du répertoire, reviewPlan : les nouvelles
@@ -294,7 +287,7 @@ function initTraining() {
             <span class="st-eyebrow">Révision du jour · ${scopeName}</span>
             ${due.length ? `<div class="trr-big"><b>${due.length}</b><span>à réviser aujourd’hui · ≈ ${minutes} min</span></div>
                 <div class="trr-split">${[fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : '', again ? `${again} révision${again > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')}</div>`
-                         : `<div class="trr-big is-text"><b>À jour</b><span>Prochaine révision ${Number.isFinite(next) && next ? _inLabel(next) : 'bientôt'}</span></div>`}
+                         : `<div class="trr-big is-text"><b>À jour</b><span>Prochaine révision ${Number.isFinite(next) && next ? dueInLabel(next, true) : 'bientôt'}</span></div>`}
             ${forecast}
             ${due.length ? _trBtn(primary === 'due', 'trainingEx', 'due', 'Commencer', 'play') : ''}
             <span class="trr-foot"><span>${streak} jour${streak > 1 ? 's' : ''} d'affilée</span><span>${Math.min(today, goal)} / ${goal} aujourd'hui</span></span>
@@ -343,7 +336,7 @@ function initTraining() {
         <section class="trr-ex" aria-labelledby="trr-ex-h">
             <div class="trr-h"><h3 id="trr-ex-h">Exercices</h3></div>
             <div class="trr-list edge-card">
-                ${inFile.length ? row('relearn', 'rotate-ccw', 'fragile', 'À revoir', ready.length, `${inFile.length} dans la file · ${RELEARN_DAYS.length} réussites espacées pour en sortir`, { empty: `Prochaine ${_inLabel(fileNext)}` }) : ''}
+                ${inFile.length ? row('relearn', 'rotate-ccw', 'fragile', 'À revoir', ready.length, `${inFile.length} dans la file · ${RELEARN_DAYS.length} réussites espacées pour en sortir`, { empty: `Prochaine ${dueInLabel(fileNext, true)}` }) : ''}
                 ${row('weak', 'target', 'weak', 'Points faibles', Math.min(weak, TRAIN_WEAK_MAX), '', { empty: 'Aucune position fragile ni à retravailler' })}
                 ${row('line', 'git-branch', '', 'Ligne complète', openings.length, '', { empty: 'Aucune ouverture reconnue', expanded: _trLineOpen })}
                 ${lineList}

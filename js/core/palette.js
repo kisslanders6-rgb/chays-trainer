@@ -115,19 +115,9 @@ const Palette = (function () {
 
     // Ouvertures et positions du répertoire actif (même regroupement que les Statistiques).
     function repertoireItems() {
-        const rows = [];
-        ['w', 'b'].forEach(side => {
-            const db = readDBFor(currentRepertoire, side);
-            Object.keys(db).forEach(k => rows.push({ side, k, e: db[k], path: db[k].path && db[k].path.length ? db[k].path : null }));
-        });
-        _assignOpenings(rows);
-        const groups = new Map(), items = [];
-        rows.filter(r => r.op).forEach(r => {
-            const g = groups.get(r.gKey) || { side: r.side, name: r.gName, path: r.gPath, n: 0 };
-            g.n++;
-            groups.set(r.gKey, g);
-        });
-        groups.forEach(g => items.push({
+        const rows = repertoireRows().map(r => ({ side: r.color, k: r.key, e: r.e, path: r.e.path && r.e.path.length ? r.e.path : null }));
+        const items = [];
+        groupByOpening(rows).filter(g => g.named).forEach(g => items.push({
             id: `op:${g.side}|${g.name}`, group: 'Ouvertures', icon: 'book', title: g.name,
             small: `${SIDE[g.side]} · ${g.n} position${g.n > 1 ? 's' : ''}`, words: _movesLabel(g.path), leave: true,
             run: fromHome(() => { startGame(g.side); loadPositionFromPath(g.path); setStatus(g.name, 'info', 'Continuez la ligne depuis cette position.'); })

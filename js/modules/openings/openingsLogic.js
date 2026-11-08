@@ -88,16 +88,9 @@ function migrateLegacyPaths() {
         } else {
             if (seen.has(key)) return;
             seen.add(key);
-            for (let from = 0; from < 64; from++) {
-                const p = board[from];
-                if (!p || isWhite(p) !== (turn === 'w')) continue;
-                for (const to of getLegalMoves(from)) {
-                    const promos = isPromotion(from, to) ? ['q', 'r', 'b', 'n'] : [''];
-                    for (const pr of promos) {
-                        if (!missing.size) return;
-                        step(path, moveToStr(from, to, pr));
-                    }
-                }
+            for (const uci of Chess.legalHere()) {
+                if (!missing.size) return;
+                step(path, uci);
             }
         }
     }
@@ -457,16 +450,7 @@ function _loadEngineAt(key) {
 // Appelle cb() après chaque coup légal du camp au trait (état restauré entre deux appels).
 function _forEachChild(cb) {
     const sb = board.slice(), st = turn, sc = { ...castlingRights }, se = enPassant;
-    const moves = [];
-    for (let from = 0; from < 64; from++) {
-        const p = board[from];
-        if (!p || isWhite(p) !== (turn === 'w')) continue;
-        for (const to of getLegalMoves(from)) {
-            const promos = isPromotion(from, to) ? ['q', 'r', 'b', 'n'] : [''];
-            promos.forEach(pr => moves.push(moveToStr(from, to, pr)));
-        }
-    }
-    moves.forEach(u => {
+    Chess.legalHere().forEach(u => {
         const san = _applyUciRaw(u);
         cb(u, san);
         board = sb.slice(); turn = st; castlingRights = { ...sc }; enPassant = se;

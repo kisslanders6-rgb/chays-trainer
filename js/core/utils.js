@@ -68,6 +68,15 @@ registerActions({ hideErrorToast });
 // Message commun quand le navigateur refuse une écriture (stockage plein ou interdit).
 const STORAGE_FULL_MSG = "Enregistrement impossible : le stockage du navigateur est plein ou indisponible. Exportez une sauvegarde (Données › Exporter), puis libérez de la place (corbeille, répertoires inutiles).";
 
+// Échéance lisible : « dans 3 h », « dans 4 j » (long : « dans 4 jours »).
+function dueInLabel(t, long) {
+    const min = Math.max(1, Math.round((t - Date.now()) / 60000));
+    if (min < 60)   return `dans ${min} min`;
+    if (min < 1440) return `dans ${Math.round(min / 60)} h`;
+    const d = Math.round(min / 1440);
+    return long ? `dans ${d} jour${d > 1 ? 's' : ''}` : `dans ${d} j`;
+}
+
 // ─── NOTATION DES COUPS ───────────────────────────────────────────────────────
 // Les coups sont stockés en notation anglaise (N B R Q K), affichés selon le réglage « Écriture des coups » :
 // lettres françaises (C F T D R), anglaises, ou figurines.

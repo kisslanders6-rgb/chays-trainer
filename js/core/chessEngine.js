@@ -42,6 +42,15 @@ function squareToName(sq)    { return 'abcdefgh'[sq % 8] + (Math.floor(sq / 8) +
 function squareToIdx(name)   { const c = name.charCodeAt(0) - 97, r = parseInt(name[1]) - 1; return r * 8 + c; }
 function moveToStr(from, to, promo) { return squareToName(from) + squareToName(to) + (promo || '').toLowerCase(); }
 
+// Roque : si le roi s'est déplacé de deux cases, amène la tour à côté de lui sur le plateau b.
+function moveCastlingRook(b, from, to) {
+    const dc = (to % 8) - (from % 8);
+    if (Math.abs(dc) !== 2) return;
+    const rr = Math.floor(from / 8);
+    if (dc > 0) { b[rr*8+5] = b[rr*8+7]; b[rr*8+7] = ''; }
+    else        { b[rr*8+3] = b[rr*8];   b[rr*8]   = ''; }
+}
+
 // ─── CLEF DE POSITION (base d'ouvertures) ─────────────────────────────────────
 // « pièces trait roques passant », comme les quatre premiers champs d'un FEN. La case de prise en
 // passant n'est notée que si une prise y est réellement jouable : sinon deux positions identiques
@@ -288,12 +297,7 @@ function applyMoveRaw(from, to) {
     if (type === 'K') {
         if (isWhite(p)) { castlingRights.K = false; castlingRights.Q = false; }
         else            { castlingRights.k = false; castlingRights.q = false; }
-        const dc = (to % 8) - (from % 8);
-        if (Math.abs(dc) === 2) {
-            const rr = Math.floor(from / 8);
-            if (dc > 0) { board[rr*8+5] = board[rr*8+7]; board[rr*8+7] = ''; }
-            else        { board[rr*8+3] = board[rr*8];   board[rr*8]   = ''; }
-        }
+        moveCastlingRook(board, from, to);
     }
 
     // Droits perdus si une tour part de son coin OU est capturée dans son coin
@@ -454,5 +458,5 @@ const Chess = (function () {
         return `${rows.join('/')} ${pos.turn} ${castle} ${pos.ep >= 0 ? squareToName(pos.ep) : '-'} 0 1`;
     }
 
-    return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, replay, fen };
+    return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, legalHere, replay, fen };
 })();

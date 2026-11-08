@@ -96,14 +96,6 @@ function stopTraining() {
     trainingState.ctxSkip = null;
 }
 
-function _inLabel(t) {
-    const min = Math.max(1, Math.round((t - Date.now()) / 60000));
-    if (min < 60)   return `dans ${min} min`;
-    if (min < 1440) return `dans ${Math.round(min / 60)} h`;
-    const d = Math.round(min / 1440);
-    return `dans ${d} jour${d > 1 ? 's' : ''}`;
-}
-
 // ─── MODE LIBRE ───────────────────────────────────────────────────────────────
 
 // Univers de révision : positions du répertoire respectant la profondeur maximale choisie.
@@ -721,7 +713,7 @@ function _secondPass() {
 function _answerDetail(entry, inFile, before) {
     if (inFile && !Number.isInteger(entry.relearn)) return 'Acquise : elle sort de la file À revoir.';
     if (Number.isInteger(entry.relearn)) return entry.relearn === inFile.step ? `À revoir : ${entry.relearn} / ${RELEARN_DAYS.length} · trop tôt pour avancer`
-        : `À revoir : ${entry.relearn} / ${RELEARN_DAYS.length} · ${_dueIn(entry.due)}`;
+        : `À revoir : ${entry.relearn} / ${RELEARN_DAYS.length} · ${dueInLabel(entry.due)}`;
     return `Maîtrise : ${Math.round(before)} → ${entry.mastery}`;
 }
 

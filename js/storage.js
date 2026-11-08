@@ -305,13 +305,19 @@ function newPerDay() {
     return Math.max(1, (typeof appSettings !== 'undefined' && appSettings.dailyGoal) || 10);
 }
 
+// Toutes les positions d'un répertoire, deux couleurs : [{ color, key, e }].
+function repertoireRows(rep = currentRepertoire) {
+    const rows = [];
+    ['w', 'b'].forEach(color => { const db = readDBFor(rep, color); Object.keys(db).forEach(key => rows.push({ color, key, e: db[key] })); });
+    return rows;
+}
+
 // plan.dayOf(couleur, clé) : jour prévu (0 = aujourd'hui) ; plan.today(…) ; plan.forecast(filtre, jours) ;
 // plan.next(filtre) : instant de la prochaine révision après aujourd'hui (Infinity s'il n'y en a pas).
 // filtre(couleur, clé) facultatif : la portée affichée (une couleur, une ouverture).
 function reviewPlan(rep = currentRepertoire, now = Date.now()) {
     const d0 = new Date(now), start = i => new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i).getTime();
-    const items = [];
-    ['w', 'b'].forEach(color => { const db = readDBFor(rep, color); Object.keys(db).forEach(key => items.push({ color, key, e: db[key] })); });
+    const items = repertoireRows(rep);
     // Nouvelle = jamais révisée et déjà échue (une échéance future explicite est respectée comme une révision).
     items.forEach(x => { x.fresh = !x.e.attempts && dueOf(x.e) <= now; });
     const fresh = items.filter(x => x.fresh)

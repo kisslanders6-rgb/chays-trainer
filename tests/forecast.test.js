@@ -15,6 +15,7 @@ vm.runInContext([
     pick(/const dueOf[^\n]*\n/),
     pick(/const isDue[^\n]*\n/),
     pick(/function newPerDay[\s\S]*?\n}\n/),
+    pick(/function repertoireRows[\s\S]*?\n}\n/),
     pick(/function reviewPlan[\s\S]*?\n}\n/),
     pick(/const RELEARN_DAYS[^\n]*\n/),
     pick(/const REVIEW_GROWTH[^\n]*\n/),

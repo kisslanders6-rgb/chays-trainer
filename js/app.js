@@ -154,10 +154,7 @@ const HOME_PLAN_MAX = 4;          // ouvertures listées sous « Au programme »
 // Positions du répertoire actif groupées par ouverture nommée (même regroupement que les Statistiques).
 function _homePlan(list) {
     const rows = list.map(x => ({ side: x.color, k: x.key, e: x.e, path: x.e.path && x.e.path.length ? x.e.path : null }));
-    _assignOpenings(rows);
-    const groups = new Map();
-    rows.forEach(r => { const g = groups.get(r.gKey) || { side: r.side, html: r.gHtml, n: 0 }; g.n++; groups.set(r.gKey, g); });
-    return [...groups.values()].sort((a, b) => b.n - a.n);
+    return groupByOpening(rows).sort((a, b) => b.n - a.n);
 }
 
 function _homePlanHTML(title, list, muted) {
@@ -195,8 +192,7 @@ function renderHomeSummary() {
     const host = document.getElementById('hp-today');
     if (!host) return;
     const now = Date.now(), pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
-    const rows = [];
-    ['w', 'b'].forEach(color => { const db = readDBFor(currentRepertoire, color); Object.keys(db).forEach(key => rows.push({ color, key, e: db[key] })); });
+    const rows = repertoireRows();
     const rp = reviewPlan(currentRepertoire, now);              // programme des révisions (storage.js)
     const side = c => rows.filter(r => r.color === c), due = rows.filter(r => rp.today(r.color, r.key));
     document.getElementById('hp-grid').classList.toggle('is-empty', !rows.length);
@@ -261,7 +257,7 @@ function renderHomeSummary() {
         const nextAt = rp.next();
         const c = side('w').length <= side('b').length ? 'w' : 'b';
         title = `Tout est <em>à jour</em>.`;
-        sub = (Number.isFinite(nextAt) ? `Prochaine révision <b>${_inLabel(nextAt)}</b>` : 'Aucune révision prévue') + (today >= goal ? ' · objectif atteint' : '');
+        sub = (Number.isFinite(nextAt) ? `Prochaine révision <b>${dueInLabel(nextAt, true)}</b>` : 'Aucune révision prévue') + (today >= goal ? ' · objectif atteint' : '');
         cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>${link}`;
         plan = _homeForecastHTML(rp.forecast(null, 7), now);
     }
