@@ -16,7 +16,6 @@ for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptP
                  scriptPath('gameReview.js'), scriptPath('moveStats.js')])
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
-run("var playerColor = 'w';");
 
 const game = (link, moves, extra = '') => run('pgnMainLine')(`[White "moi"]\n[Black "lui"]\n[Date "2026.10.01"]\n${link}${extra}\n\n${moves} *`);
 const SICI = '1. e4 c5 2. Nf3 d6 3. d4';

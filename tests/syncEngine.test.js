@@ -20,7 +20,7 @@ function device(be) {
     };
     vm.createContext(ctx);
     const load = f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-    load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
+    load(scriptPath('bus.js')); load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
     vm.runInContext("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };", ctx);
     load(scriptPath('cloudClient.js')); load(scriptPath('cloudAdapter.js')); load(scriptPath('auth.js'));
     vm.runInContext(`let playerColor = 'w'; function migrateLegacyPaths() {} function askConfirm() {}
@@ -28,8 +28,8 @@ function device(be) {
         function renderRepertoireList() { __calls.push('repList'); } function initStats() { __calls.push('stats'); }
         function initTraining() { __calls.push('training'); } function refreshTree() { __calls.push('tree'); }
         function updateTrashBadges() { __calls.push('trash'); }
-        const AccountUI = { setSyncStatus(l, t) { __status.push([l, t]); } };`, ctx);
-    load(scriptPath('storage.js')); load(scriptPath('syncEngine.js'));
+        Bus.on('sync:status', s => __status.push([s.level, s.text]));`, ctx);
+    load(scriptPath('storage.js')); load(scriptPath('viewRefresh.js')); load(scriptPath('syncEngine.js'));
     const run = s => vm.runInContext(s, ctx);
     return {
         ctx, mem, timers, run,

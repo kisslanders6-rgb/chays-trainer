@@ -200,7 +200,7 @@ function setStatus(msg, type = 'info', detail = '', opts = null) {
     const old = bar.querySelector('.status-act');
     if (old) old.remove();
     bar.classList.toggle('has-act', !!(opts && opts.action));
-    if (!opts || !opts.action) { if (typeof Dock !== 'undefined') Dock.refresh(); return; }
+    if (!opts || !opts.action) { Bus.emit('ui:refresh'); return; }
     const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-soft status-act' });
     btn.dataset.act = opts.action;                       // libellé français d'origine, lu par le dock (le texte peut être traduit)
     if (opts.title) btn.title = opts.title;
@@ -208,7 +208,7 @@ function setStatus(msg, type = 'info', detail = '', opts = null) {
     btn.append(Object.assign(document.createElement('span'), { textContent: opts.action }));
     btn.addEventListener('click', () => { if (typeof opts.run === 'function') opts.run(); });
     bar.append(btn);
-    if (typeof Dock !== 'undefined') Dock.refresh();
+    Bus.emit('ui:refresh');
 }
 
 // ─── NAVIGATION VISUELLE (Précédent / Suivant) ────────────────────────────────

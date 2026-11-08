@@ -19,34 +19,6 @@
 
 // ─── OUTILS MOTEUR (sans effet sur l'affichage) ───────────────────────────────
 
-const _parseUci = u => Chess.parseUci(u);
-const _withEngineSnapshot = fn => Chess.isolated(fn);       // calcul sur une autre position que celle affichée
-
-// Joue un coup UCI sur l'état brut du moteur (sans historique) et renvoie son SAN.
-function _applyUciRaw(uci) {
-    const { from, to, promo } = _parseUci(uci);
-    const san = toAlgebraic(from, to, promo);
-    Chess.playRaw(uci);
-    return san;
-}
-
-// html : figurines du jeu actif (HTML déjà échappé, à ne pas repasser dans escapeHtml) ; sinon texte simple.
-function formatLinePrefix(sans, html) {
-    if (!sans.length) return '(position de départ)';
-    const fmt = html ? formatSan : formatSanText;
-    let out = '';
-    sans.forEach((san, i) => {
-        if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
-        out += fmt(san, i % 2 ? 'b' : 'w') + ' ';
-    });
-    return out.trim();
-}
-
-function _pathToSans(path) {
-    let pos = Chess.start();
-    return path.map(u => { const san = Chess.san(pos, u); pos = Chess.play(pos, u); return san; });
-}
-
 // Replace l'échiquier (avec historique navigable) après la suite de coups UCI donnée.
 // opts.animateLast : le dernier coup est animé (position qui arrive d'un coup, comme au contre-la-montre).
 function loadPositionFromPath(moves, opts) {
@@ -61,40 +33,6 @@ function loadPositionFromPath(moves, opts) {
     renderMoves();
     renderBoard();
     if (typeof updateNavButtons === 'function') updateNavButtons();
-}
-
-// Migration : retrouve le chemin des anciennes entrées (sans `path`) en parcourant
-// les lignes connues. Borné à 16 demi-coups comme l'ancien panneau ; les entrées
-// non retrouvées se complètent d'elles-mêmes dès qu'on rejoue la ligne dans « Jouer ».
-function migrateLegacyPaths() {
-    const missing = new Set(Object.keys(openingDB).filter(k => !openingDB[k].path));
-    if (!missing.size) return;
-    const seen = new Set();
-
-    function step(path, uci) {
-        const sb = board.slice(), st = turn, sc = { ...castlingRights }, se = enPassant;
-        _applyUciRaw(uci);
-        explore(path.concat(uci));
-        board = sb; turn = st; castlingRights = sc; enPassant = se;
-    }
-    function explore(path) {
-        if (!missing.size || path.length > 16) return;
-        const key = positionKey();
-        if (turn === playerColor) {
-            const e = openingDB[key];
-            if (!e) return;
-            if (missing.has(key)) { e.path = path.concat(e.move); e.ply = e.path.length; missing.delete(key); }
-            if (squareToIdx(e.move.slice(0, 2)) >= 0 && board[squareToIdx(e.move.slice(0, 2))]) step(path, e.move);
-        } else {
-            if (seen.has(key)) return;
-            seen.add(key);
-            for (const uci of Chess.legalHere()) {
-                if (!missing.size) return;
-                step(path, uci);
-            }
-        }
-    }
-    _withEngineSnapshot(() => { parseFEN(INIT_FEN); explore([]); });
 }
 
 // ─── LOGIQUE DE CLIC ──────────────────────────────────────────────────────────
@@ -394,7 +332,7 @@ function _syncHintBtn() {
         b.innerHTML   = sol ? `${ico('target')}<span class="btn-label">Solution</span>`
                       : `${ico('lightbulb')}<span class="btn-label">Indice${off ? '<span class="hint-off"> indisponible</span>' : ''}</span>`;
     });
-    if (typeof Dock !== 'undefined') Dock.refresh();          // le centre du dock suit l'Indice (téléphone)
+    Bus.emit('ui:refresh');          // le centre du dock suit l'Indice (téléphone)
 }
 
 // Jouer : raison pour laquelle l'Indice est indisponible dans la position AFFICHÉE ('' s'il est disponible).
@@ -409,21 +347,6 @@ function _hintBlocked() {
 function _resetHint() { _hintKey = null; _solutionKey = null; _solutionMove = null; }
 
 // ─── CONFIRMATION MODALE ──────────────────────────────────────────────────────
-
-function askConfirm(message, onConfirm) {
-    const overlay    = document.getElementById('confirm-overlay');
-    document.getElementById('confirm-text').textContent = message;
-    overlay.classList.remove('hidden');
-    const okBtn     = document.getElementById('confirm-ok-btn');
-    const cancelBtn = document.getElementById('confirm-cancel-btn');
-    const cleanup   = () => {
-        overlay.classList.add('hidden');
-        okBtn.onclick     = null;
-        cancelBtn.onclick = null;
-    };
-    okBtn.onclick     = () => { cleanup(); onConfirm(); };
-    cancelBtn.onclick = () => { cleanup(); };
-}
 
 // ─── ANALYSE DE L'ARBRE : COUPS ORPHELINS ─────────────────────────────────────
 // Graphe des positions de MON camp : de l'entrée K, on joue sa réponse, puis
@@ -530,39 +453,6 @@ function confirmDeleteEntry(key, message, onDone) {
             { cascade: `Supprimer aussi les ${orphans.length} coup(s) orphelin(s)`, solo: 'Supprimer ce coup seulement' },
             () => finish(orphans), () => finish([]));
     }
-}
-
-// Confirmation à trois issues : cascade / ce coup seulement / annuler.
-function askConfirmChoice(message, labels, onCascade, onSolo) {
-    const overlay = document.getElementById('confirm-overlay');
-    const actions = overlay.querySelector('.confirm-actions');
-    const okBtn   = document.getElementById('confirm-ok-btn');
-    const cancel  = document.getElementById('confirm-cancel-btn');
-    let alt = document.getElementById('confirm-alt-btn');
-    if (!alt) {
-        alt = document.createElement('button');
-        alt.id = 'confirm-alt-btn';
-        alt.className = 'btn';
-        actions.insertBefore(alt, okBtn);
-    }
-    document.getElementById('confirm-text').textContent = message;
-    actions.style.flexDirection = 'column';
-    okBtn.textContent = labels.cascade;  okBtn.style.order  = 0;
-    alt.textContent   = labels.solo;     alt.style.order    = 1;  alt.style.display = '';
-    cancel.style.order = 2;
-    overlay.classList.remove('hidden');
-
-    const cleanup = () => {
-        overlay.classList.add('hidden');
-        actions.style.flexDirection = '';
-        okBtn.textContent = 'Confirmer';
-        okBtn.style.order = cancel.style.order = '';
-        alt.style.display = 'none';
-        okBtn.onclick = alt.onclick = cancel.onclick = null;
-    };
-    okBtn.onclick  = () => { cleanup(); onCascade(); };
-    alt.onclick    = () => { cleanup(); onSolo(); };
-    cancel.onclick = cleanup;
 }
 
 // ─── ANNULATION / MODIFICATION D'UN COUP ENREGISTRÉ ──────────────────────────
@@ -711,4 +601,27 @@ function resetGame() {
         setStatus('Nouvelle partie', 'info', 'Jouez le premier coup des Blancs (adversaire).');
     }
     renderBoard();
+}
+
+function applyMove(from, to, promo, newDbKey) {
+    const san = toAlgebraic(from, to, promo);
+    moveHistory.push({
+        from, to, promo, san,
+        boardBefore:    board.slice(),
+        turnBefore:     turn,
+        castlingBefore: { ...castlingRights },
+        epBefore:       enPassant,
+        newDbKey:       newDbKey || null
+    });
+    applyMoveRaw(from, to);
+    if (promo) {
+        board[to] = turn === 'w' ? promo.toUpperCase() : promo.toLowerCase();
+    } else if (board[to] && board[to].toUpperCase() === 'P') {
+        const r2 = Math.floor(to / 8);
+        if (r2 === 7) board[to] = 'Q';
+        if (r2 === 0) board[to] = 'q';
+    }
+    lastFrom = from; lastTo = to;
+    turn = turn === 'w' ? 'b' : 'w';
+    renderMoves();
 }

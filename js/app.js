@@ -11,11 +11,6 @@
 
 'use strict';
 
-// ─── ÉTAT GLOBAL DE LA SESSION ────────────────────────────────────────────────
-
-let playerColor = 'w';
-let gameMode    = 'play';   // 'play' | 'preview' | 'training'
-
 // ─── THÈME ────────────────────────────────────────────────────────────────────
 
 function loadTheme() { applyThemeMode(); }
@@ -29,54 +24,7 @@ function toggleTheme() {
 // ─── SAISIE DE TEXTE (remplace prompt()) ──────────────────────────────────────
 // askText({ title, value?, placeholder?, ok?, validate?(texte) → message d'erreur | '' }, onOk(texte))
 
-function askText(opts, onOk) {
-    const overlay = document.getElementById('text-overlay');
-    const form    = document.getElementById('text-form');
-    const input   = document.getElementById('text-input');
-    const err     = document.getElementById('text-error');
-    document.getElementById('text-title').textContent = opts.title;
-    document.getElementById('text-ok-btn').textContent = opts.ok || 'OK';
-    input.value = opts.value || '';
-    input.placeholder = opts.placeholder || '';
-    input.maxLength = opts.max || 60;
-    err.textContent = '';
-    overlay.classList.remove('hidden');
-    input.focus();
-    input.select();
-
-    const close = () => {
-        overlay.classList.add('hidden');
-        form.onsubmit = null; input.oninput = null; overlay.onmousedown = null; overlay.onkeydown = null;
-        document.getElementById('text-cancel-btn').onclick = null;
-    };
-    form.onsubmit = e => {
-        e.preventDefault();
-        const v = input.value.trim();
-        const msg = !v && !opts.allowEmpty ? 'Le nom ne peut pas être vide.' : (opts.validate ? opts.validate(v) : '');
-        if (msg) { err.textContent = msg; input.focus(); return; }
-        close();
-        onOk(v);
-    };
-    input.oninput = () => { err.textContent = ''; };
-    document.getElementById('text-cancel-btn').onclick = close;
-    overlay.onmousedown = e => { if (e.target === overlay) close(); };
-    overlay.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
-}
-
 // ─── RAPPEL DE SAUVEGARDE (toast) ─────────────────────────────────────────────
-
-let _toastTimer = null;
-
-function showBackupToast() {
-    document.getElementById('backup-toast').classList.remove('hidden');
-    clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(hideBackupToast, 20000);
-}
-
-function hideBackupToast() {
-    clearTimeout(_toastTimer);
-    document.getElementById('backup-toast').classList.add('hidden');
-}
 
 function exportFromToast() { exportDB(); }          // exportDB() remet le compteur à zéro et ferme le toast
 
@@ -555,3 +503,20 @@ registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => crea
     renderRepertoireList();
     updateTrashBadges();
 })();
+
+function createRepertoirePrompt() {
+    askText({ title: 'Nouveau répertoire', placeholder: 'ex : Défense Sicilienne', ok: 'Créer',
+              validate: n => loadRepertoireList().includes(n) ? 'Ce répertoire existe déjà.' : '' }, name => {
+        const clean = addRepertoire(name);
+        if (clean) selectRepertoire(clean);
+    });
+}
+
+function renameRepertoirePrompt(name) {
+    if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être renommé.'); return; }
+    askText({ title: 'Renommer le répertoire', value: name, ok: 'Renommer',
+              validate: n => n === name ? 'Choisissez un nom différent.' : loadRepertoireList().includes(n) ? 'Ce nom est déjà utilisé.' : '' }, n => {
+        const clean = renameRepertoire(name, n);
+        if (clean) selectRepertoire(clean);
+    });
+}

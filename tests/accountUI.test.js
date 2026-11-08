@@ -21,7 +21,7 @@ function boot({ backend, store = {}, confirmAnswer = true } = {}) {
             window.exportDB = () => { window.__exports++; }; window.ico = () => '';`);
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
     w.matchMedia = () => ({ matches: false, addEventListener() {} });
-    [scriptPath('utils.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
     [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     // location.reload n'est pas implémenté par jsdom : on compte les appels via un espion posé sur Auth.signOut → wipeLocal → reload
@@ -224,7 +224,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
         const w2 = dom.window; w2.fetch = be2.fetch; w2.eval('window.ico=()=>"";'); w2.matchMedia = () => ({ matches: false, addEventListener() {} });
         w2.localStorage.setItem('chessTrainer_authFlow', JSON.stringify({ kind: 'recovery', at: Date.now() }));   // démarche lancée sur cet appareil
         const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
-        [scriptPath('utils.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+        [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
         add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
         [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
         await tick(40); await flush();
@@ -241,7 +241,7 @@ const visible = w => !$(w, '#account-overlay').classList.contains('hidden');
             let asked = ''; w2.confirm = m => { asked = m; return yes; };
             w2.localStorage.setItem('openingDB_Général_w', JSON.stringify({ k1: { move: 'e2e4', san: 'e4', attempts: 0, failures: 0 } }));
             const add = code => { const s = w2.document.createElement('script'); s.textContent = code; w2.document.body.appendChild(s); };
-            [scriptPath('utils.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+            [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
             add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
             [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
             await tick(40); await flush(); await tick(40); await flush();

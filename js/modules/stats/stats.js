@@ -30,7 +30,6 @@
 const STATS_WEAK_BELOW     = 50;
 const STATS_FRAGILE_BELOW  = 70;
 const STATS_PROGRESS_BELOW = 85;
-const STATS_CONFIRM_TRIES = 3;
 const STATS_SOLID_DAYS    = 7;
 const STATS_LINE_ROWS     = 30;     // positions affichées par ouverture avant « Afficher les autres »
 const STATS_WEAK_CARDS    = 3;
@@ -42,16 +41,6 @@ const STATS_FORECAST_DAYS = 7;
 const STATS_PHONE_LINES   = 5;      // téléphone : ouvertures montrées avant « Tout voir »
 const STATS_TREND_WEEKS   = 8;
 
-// Du plus fragile au plus sûr (ordre des barres, des filtres et des listes).
-const STATS_LEVELS = {
-    weak:     { label: 'À retravailler', one: 'À retravailler', rule: 'maîtrise sous 50 sur 100' },
-    fragile:  { label: 'Fragiles',       one: 'Fragile',        rule: 'maîtrise de 50 à 69 sur 100' },
-    progress: { label: 'En progrès',     one: 'En progrès',     rule: 'maîtrise de 70 à 84 sur 100' },
-    solid:    { label: 'Solides',        one: 'Solide',         rule: 'maîtrise de 85 sur 100 ou plus' },
-    unsure:   { label: 'À confirmer',    one: 'À confirmer',    rule: `aucune erreur, moins de ${STATS_CONFIRM_TRIES} essais` },
-    mastered: { label: 'Maîtrisées',     one: 'Maîtrisée',      rule: `aucune erreur en ${STATS_CONFIRM_TRIES} essais ou plus, ou solide et réussie plusieurs révisions d'affilée` }
-};
-const STATS_LEVEL_ORDER = Object.keys(STATS_LEVELS);
 // « À confirmer » est un état (trop peu d'essais pour juger), pas un niveau de maîtrise : il reste hors des barres.
 const STATS_STATE = 'unsure';
 const STATS_MASTERY_LEVELS = STATS_LEVEL_ORDER.filter(l => l !== STATS_STATE);
@@ -64,15 +53,6 @@ let statsAll    = new Set(); // ouvertures dont toutes les positions sont affich
 let statsPane   = 'overview'; // téléphone : onglet affiché ('overview' | 'openings' | 'regularity')
 let statsAllLines = false;   // téléphone : toutes les ouvertures affichées
 let statsScope  = '';        // répertoire + couleur : les ouvertures dépliées se réinitialisent quand il change
-
-function _level(e) {
-    if (!e.failures) return e.attempts >= STATS_CONFIRM_TRIES ? 'mastered' : 'unsure';
-    const m = masteryOf(e);
-    if (m < STATS_WEAK_BELOW)     return 'weak';
-    if (m < STATS_FRAGILE_BELOW)  return 'fragile';
-    if (m < STATS_PROGRESS_BELOW) return 'progress';
-    return e.attempts >= STATS_CONFIRM_TRIES && (e.interval || 0) >= STATS_SOLID_DAYS ? 'mastered' : 'solid';
-}
 
 // Repère de niveau : couleur ET forme (lisible sans distinguer les couleurs), cf. .lv-mark.
 const _lvMark = l => `<i class="lv-mark lv-${l}" aria-hidden="true"></i>`;
@@ -111,56 +91,6 @@ function _statsRows() {
         });
     });
     return rows;
-}
-
-// Libellé « 1. e4 c5 2. Cf3 » d'un chemin ; html : figurines du jeu actif. Le cache dépend de l'écriture
-// des coups et du jeu de pièces (sinon un changement de réglage gardait les anciens libellés).
-const _lineLabels = {};
-function _movesLabel(path, html) {
-    const key = [html ? 'h' : 't', appSettings.notation, appSettings.pieceSet, path.join(' ')].join('|');
-    if (!(key in _lineLabels)) {
-        try { _lineLabels[key] = formatLinePrefix(_pathToSans(path), html); } catch (err) { _lineLabels[key] = html ? escapeHtml(path.join(' ')) : path.join(' '); }
-    }
-    return _lineLabels[key];
-}
-
-// Ouverture de chaque position : l'entrée nommée la plus précise de son chemin. Une position dont toutes les
-// suites enregistrées (même couleur) relèvent d'une seule ouverture plus précise rejoint cette ouverture :
-// les coups communs d'une ligne restent avec elle, et seuls les vrais troncs communs forment leur propre groupe.
-function _assignOpenings(rows) {
-    rows.forEach(r => {
-        r.op  = r.path ? openingNameOf(r.path) : null;
-        r.pre = r.path ? r.path.join(' ') + ' ' : null;
-    });
-    rows.forEach(r => {
-        if (!r.path) return;
-        const deeper = new Map();
-        rows.forEach(q => {
-            if (q !== r && q.side === r.side && q.op && q.path && q.path.length > r.path.length && q.pre.startsWith(r.pre))
-                deeper.set(q.op.name, q.op);
-        });
-        if (deeper.size !== 1) return;
-        const only = deeper.values().next().value;
-        if (!r.op || only.path.length > r.op.path.length) r.op = only;
-    });
-    rows.forEach(r => {
-        if (r.op) { r.gName = r.op.name; r.gPath = r.op.path; r.gHtml = escapeHtml(r.gName); }
-        else if (r.path) { r.gPath = r.path.slice(0, 4); r.gName = _movesLabel(r.gPath); r.gHtml = _movesLabel(r.gPath, true); }
-        else { r.gName = 'Autres positions'; r.gPath = []; r.gHtml = r.gName; }
-        r.gKey = r.side + '|' + r.gName;
-    });
-}
-
-// Regroupe des lignes { side, k, e, path } par ouverture : { side, name, path, html, n, named } ; named : ouverture du catalogue.
-function groupByOpening(rows) {
-    _assignOpenings(rows);
-    const groups = new Map();
-    rows.forEach(r => {
-        const g = groups.get(r.gKey) || { side: r.side, name: r.gName, path: r.gPath, html: r.gHtml, n: 0, named: !!r.op };
-        g.n++;
-        groups.set(r.gKey, g);
-    });
-    return [...groups.values()];
 }
 
 // Plus fragiles d'abord : niveau, taux d'erreur, nombre d'essais, ordre du coup.
@@ -472,7 +402,7 @@ function initStats() {
     body.insertAdjacentHTML('afterbegin', phoneHead);
     const hs = body.querySelector('.st-heat-scroll');
     if (hs) hs.scrollLeft = hs.scrollWidth;                     // la semaine en cours, à droite
-    if (typeof Dock !== 'undefined') Dock.refresh();             // téléphone : le centre du dock porte l'action de la page
+    Bus.emit('ui:refresh');             // téléphone : le centre du dock porte l'action de la page
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────

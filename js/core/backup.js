@@ -204,15 +204,10 @@ function checkBackupOnStart() {
     setTimeout(() => { if (typeof showBackupToast === 'function' && !isCloudBackedUp()) showBackupToast(); }, 1500);   // session restaurée entre-temps
 }
 
-// ─── AUTO-BRANCHEMENT (aucune modification d'app.js ni de storage.js requise) ─
+// ─── BRANCHEMENT ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     // 1. La pastille se met à jour après chaque modification ou export.
-    ['noteChange', 'markExported'].forEach(name => {
-        const orig = window[name];
-        if (typeof orig !== 'function' || orig._bk) return;
-        window[name] = function (...args) { const r = orig.apply(this, args); updateBackupIndicators(); return r; };
-        window[name]._bk = true;
-    });
+    Bus.on('backup:changed', updateBackupIndicators);
     // 2. Rappel éventuel au lancement.
     checkBackupOnStart();
     // 3. Connexion / déconnexion : la carte et la pastille changent de discours.
@@ -228,3 +223,16 @@ registerActions({
     importDBPrompt: () => importDBPrompt(),
     requestPersistence: () => requestPersistence()
 });
+
+let _toastTimer = null;
+
+function showBackupToast() {
+    document.getElementById('backup-toast').classList.remove('hidden');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(hideBackupToast, 20000);
+}
+
+function hideBackupToast() {
+    clearTimeout(_toastTimer);
+    document.getElementById('backup-toast').classList.add('hidden');
+}

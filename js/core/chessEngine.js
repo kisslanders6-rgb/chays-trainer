@@ -1,9 +1,8 @@
 /**
  * core/chessEngine.js
  * ──────────────────────────────────────────────────────────────────────────
- * Moteur mathématique pur : règles des échecs, coups légaux, FEN,
- * détection d'échec, roque, en passant, promotion.
- * Ce module est totalement indépendant de l'affichage.
+ * Règles des échecs (coups légaux, FEN, échec, roque, en passant, promotion) et état de la partie affichée
+ * (board, turn, moveHistory…). Aucun affichage ici ; l'API Chess calcule sur d'autres positions sans toucher à cet état.
  */
 
 'use strict';
@@ -30,6 +29,8 @@ let castlingRights  = { K: true, Q: true, k: true, q: true };
 let enPassant       = -1;
 let hintPiece       = null;
 let awaitingPromotion = null;
+let playerColor = 'w';
+let gameMode = 'play';   // 'play' | 'preview' | 'training' | 'endgame' | 'analysis'
 
 // ─── UTILITAIRES DE BASE ──────────────────────────────────────────────────────
 
@@ -367,29 +368,6 @@ function isPromotion(from, to) {
 
 // ─── APPLICATION COMPLÈTE (avec historique et promotion) ──────────────────────
 
-function applyMove(from, to, promo, newDbKey) {
-    const san = toAlgebraic(from, to, promo);
-    moveHistory.push({
-        from, to, promo, san,
-        boardBefore:    board.slice(),
-        turnBefore:     turn,
-        castlingBefore: { ...castlingRights },
-        epBefore:       enPassant,
-        newDbKey:       newDbKey || null
-    });
-    applyMoveRaw(from, to);
-    if (promo) {
-        board[to] = turn === 'w' ? promo.toUpperCase() : promo.toLowerCase();
-    } else if (board[to] && board[to].toUpperCase() === 'P') {
-        const r2 = Math.floor(to / 8);
-        if (r2 === 7) board[to] = 'Q';
-        if (r2 === 0) board[to] = 'q';
-    }
-    lastFrom = from; lastTo = to;
-    turn = turn === 'w' ? 'b' : 'w';
-    renderMoves();
-}
-
 // ─── API SANS ÉTAT PARTAGÉ (Chess) ────────────────────────────────────────────
 // L'état global ci-dessus (board, turn…) est celui de la partie AFFICHÉE. Tout calcul sur une autre position
 // passe par Chess : ses fonctions prennent une position { board, turn, castling, ep } et n'en modifient aucune,
@@ -460,3 +438,32 @@ const Chess = (function () {
 
     return { snapshot, load, isolated, parseUci, playRaw, fromFen, start, play, san, key, legalMoves, legalHere, replay, fen };
 })();
+
+const _parseUci = u => Chess.parseUci(u);
+
+// Joue un coup UCI sur l'état brut du moteur (sans historique) et renvoie son SAN.
+function _applyUciRaw(uci) {
+    const { from, to, promo } = _parseUci(uci);
+    const san = toAlgebraic(from, to, promo);
+    Chess.playRaw(uci);
+    return san;
+}
+
+const _withEngineSnapshot = fn => Chess.isolated(fn);       // calcul sur une autre position que celle affichée
+
+function _pathToSans(path) {
+    let pos = Chess.start();
+    return path.map(u => { const san = Chess.san(pos, u); pos = Chess.play(pos, u); return san; });
+}
+
+// html : figurines du jeu actif (HTML déjà échappé, à ne pas repasser dans escapeHtml) ; sinon texte simple.
+function formatLinePrefix(sans, html) {
+    if (!sans.length) return '(position de départ)';
+    const fmt = html ? formatSan : formatSanText;
+    let out = '';
+    sans.forEach((san, i) => {
+        if (i % 2 === 0) out += (Math.floor(i / 2) + 1) + '. ';
+        out += fmt(san, i % 2 ? 'b' : 'w') + ' ';
+    });
+    return out.trim();
+}

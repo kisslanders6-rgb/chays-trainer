@@ -216,7 +216,7 @@ const I18n = (function () {
     async function use(id) {
         if (id !== 'fr') dataStore.set(PACK_KEY, JSON.stringify({ id, dict: await readPack(id) }));
         else dataStore.remove(PACK_KEY);
-        if (typeof setPref === 'function') setPref('lang', id);
+        Bus.emit('i18n:lang', id);
         location.reload();
     }
 

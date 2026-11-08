@@ -27,12 +27,6 @@ function dropdownHTML(o) {
     </div>`;
 }
 
-// Choix du répertoire (onglets Statistiques et Entraînement), avec le nombre de positions de chacun.
-// La puce de RepPicker (repPicker.js) : liste avec recherche, fenêtre flottante ou panneau du bas.
-function repertoireDropdownHTML(action) {
-    return RepPicker.html(action);
-}
-
 function _ddClose(dd, focusBtn) {
     if (!dd) return;
     const menu = dd.querySelector('.dd-menu'), btn = dd.querySelector('.dd-btn');

@@ -160,5 +160,7 @@ const Dock = (function () {
         if (mq.addEventListener) mq.addEventListener('change', refresh);
     }
 
+    Bus.on('ui:refresh', refresh);
+
     return { refresh, runHome, runGame, exit, moreItems, homeCenter, gameCenter };
 })();

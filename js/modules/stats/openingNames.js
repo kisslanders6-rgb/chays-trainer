@@ -402,3 +402,54 @@ function openingNameOf(path) {
     }
     return null;
 }
+
+// Libellé « 1. e4 c5 2. Cf3 » d'un chemin ; html : figurines du jeu actif. Le cache dépend de l'écriture
+// des coups et du jeu de pièces (sinon un changement de réglage gardait les anciens libellés).
+const _lineLabels = {};
+
+function _movesLabel(path, html) {
+    const key = [html ? 'h' : 't', appSettings.notation, appSettings.pieceSet, path.join(' ')].join('|');
+    if (!(key in _lineLabels)) {
+        try { _lineLabels[key] = formatLinePrefix(_pathToSans(path), html); } catch (err) { _lineLabels[key] = html ? escapeHtml(path.join(' ')) : path.join(' '); }
+    }
+    return _lineLabels[key];
+}
+
+// Ouverture de chaque position : l'entrée nommée la plus précise de son chemin. Une position dont toutes les
+// suites enregistrées (même couleur) relèvent d'une seule ouverture plus précise rejoint cette ouverture :
+// les coups communs d'une ligne restent avec elle, et seuls les vrais troncs communs forment leur propre groupe.
+function _assignOpenings(rows) {
+    rows.forEach(r => {
+        r.op  = r.path ? openingNameOf(r.path) : null;
+        r.pre = r.path ? r.path.join(' ') + ' ' : null;
+    });
+    rows.forEach(r => {
+        if (!r.path) return;
+        const deeper = new Map();
+        rows.forEach(q => {
+            if (q !== r && q.side === r.side && q.op && q.path && q.path.length > r.path.length && q.pre.startsWith(r.pre))
+                deeper.set(q.op.name, q.op);
+        });
+        if (deeper.size !== 1) return;
+        const only = deeper.values().next().value;
+        if (!r.op || only.path.length > r.op.path.length) r.op = only;
+    });
+    rows.forEach(r => {
+        if (r.op) { r.gName = r.op.name; r.gPath = r.op.path; r.gHtml = escapeHtml(r.gName); }
+        else if (r.path) { r.gPath = r.path.slice(0, 4); r.gName = _movesLabel(r.gPath); r.gHtml = _movesLabel(r.gPath, true); }
+        else { r.gName = 'Autres positions'; r.gPath = []; r.gHtml = r.gName; }
+        r.gKey = r.side + '|' + r.gName;
+    });
+}
+
+// Regroupe des lignes { side, k, e, path } par ouverture : { side, name, path, html, n, named } ; named : ouverture du catalogue.
+function groupByOpening(rows) {
+    _assignOpenings(rows);
+    const groups = new Map();
+    rows.forEach(r => {
+        const g = groups.get(r.gKey) || { side: r.side, name: r.gName, path: r.gPath, html: r.gHtml, n: 0, named: !!r.op };
+        g.n++;
+        groups.set(r.gKey, g);
+    });
+    return [...groups.values()];
+}

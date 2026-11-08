@@ -521,3 +521,5 @@ function showSettings(section, pref) {
 }
 function closeSettings() { SettingsPanel.close(); }
 PanelKit.jump({ id: 'settings-overlay', label: 'Paramètres', icon: 'settings', order: 1, open: () => showSettings() });
+
+Bus.on('i18n:lang', id => setPref('lang', id));

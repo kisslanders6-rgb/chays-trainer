@@ -745,6 +745,7 @@ const AccountUI = (function () {
         if (!Auth.configured() || overlay) return;
         build();
         updateButton();
+        Bus.on('sync:status', s => setSyncStatus(s.level, s.text));
         Auth.onChange((ev, data) => {
             if (ev === 'signed-in') {
                 switched = !!(data && data.switched);

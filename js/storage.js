@@ -63,14 +63,6 @@ function setRepertoireNote(name, text) {
     dataStore.setJSON(REP_NOTES_KEY, all);
 }
 
-function createRepertoirePrompt() {
-    askText({ title: 'Nouveau répertoire', placeholder: 'ex : Défense Sicilienne', ok: 'Créer',
-              validate: n => loadRepertoireList().includes(n) ? 'Ce répertoire existe déjà.' : '' }, name => {
-        const clean = addRepertoire(name);
-        if (clean) selectRepertoire(clean);
-    });
-}
-
 // Renomme un répertoire : ses bases (Blancs / Noirs), ses réponses adverses connues et les éléments
 // de la corbeille qui s'y rattachent. « Général » est protégé (comme pour la suppression).
 // Renvoie le nouveau nom, ou null si le renommage est impossible.
@@ -97,15 +89,6 @@ function renameRepertoire(oldName, newName) {
     }
     if (currentRepertoire === oldName) currentRepertoire = clean;
     return clean;
-}
-
-function renameRepertoirePrompt(name) {
-    if (name === DEFAULT_REPERTOIRE) { alert('Le répertoire par défaut ne peut pas être renommé.'); return; }
-    askText({ title: 'Renommer le répertoire', value: name, ok: 'Renommer',
-              validate: n => n === name ? 'Choisissez un nom différent.' : loadRepertoireList().includes(n) ? 'Ce nom est déjà utilisé.' : '' }, n => {
-        const clean = renameRepertoire(name, n);
-        if (clean) selectRepertoire(clean);
-    });
 }
 
 // ─── BASE DE DONNÉES (ouvertures) ─────────────────────────────────────────────
@@ -478,11 +461,13 @@ function noteChange(n) {
     _writeBackupState(s);
     // Avec un compte synchronisé, aucune incitation à télécharger un fichier (la sauvegarde locale reste facultative).
     if (remind && typeof showBackupToast === 'function' && !(typeof isCloudBackedUp === 'function' && isCloudBackedUp())) showBackupToast();
+    Bus.emit('backup:changed');
 }
 
 function markExported() {
     _writeBackupState({ changes: 0, remindedAt: 0, lastExport: Date.now() });
     if (typeof hideBackupToast === 'function') hideBackupToast();
+    Bus.emit('backup:changed');
 }
 
 const _legacyChecked = new Set();
@@ -629,11 +614,45 @@ function importDBFromFile(event) {
                 }
                 // Recharger la base active et l'UI
                 loadDB();
-                renderRepertoireList();
-                if (typeof refreshTree === 'function') refreshTree();
+                Bus.emit('data:imported');
                 alert(`✓ Import réussi : ${count} entrée(s) importée(s) ou mise(s) à jour.`);
             }
         );
     };
     reader.readAsText(file);
+}
+
+// Migration : retrouve le chemin des anciennes entrées (sans `path`) en parcourant
+// les lignes connues. Borné à 16 demi-coups comme l'ancien panneau ; les entrées
+// non retrouvées se complètent d'elles-mêmes dès qu'on rejoue la ligne dans « Jouer ».
+function migrateLegacyPaths() {
+    if (!_engineReady()) return;
+    const missing = new Set(Object.keys(openingDB).filter(k => !openingDB[k].path));
+    if (!missing.size) return;
+    const seen = new Set();
+
+    function step(path, uci) {
+        const sb = board.slice(), st = turn, sc = { ...castlingRights }, se = enPassant;
+        _applyUciRaw(uci);
+        explore(path.concat(uci));
+        board = sb; turn = st; castlingRights = sc; enPassant = se;
+    }
+    function explore(path) {
+        if (!missing.size || path.length > 16) return;
+        const key = positionKey();
+        if (turn === playerColor) {
+            const e = openingDB[key];
+            if (!e) return;
+            if (missing.has(key)) { e.path = path.concat(e.move); e.ply = e.path.length; missing.delete(key); }
+            if (squareToIdx(e.move.slice(0, 2)) >= 0 && board[squareToIdx(e.move.slice(0, 2))]) step(path, e.move);
+        } else {
+            if (seen.has(key)) return;
+            seen.add(key);
+            for (const uci of Chess.legalHere()) {
+                if (!missing.size) return;
+                step(path, uci);
+            }
+        }
+    }
+    _withEngineSnapshot(() => { parseFEN(INIT_FEN); explore([]); });
 }

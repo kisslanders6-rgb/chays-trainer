@@ -125,3 +125,9 @@ const RepPicker = (function () {
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { RepPicker };
+
+// Choix du répertoire (onglets Statistiques et Entraînement), avec le nombre de positions de chacun.
+// La puce de RepPicker (repPicker.js) : liste avec recherche, fenêtre flottante ou panneau du bas.
+function repertoireDropdownHTML(action) {
+    return RepPicker.html(action);
+}

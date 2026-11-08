@@ -504,3 +504,10 @@ const ENDGAME_VERDICTS = {
 // ─── FIN DES VERDICTS ───
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { ENDGAME_EXERCISES, ENDGAME_CATEGORIES, ENDGAME_VERDICTS, endgameSelfTest };
+
+const _egUci = m => _egSqName(EG.mFrom(m)) + _egSqName(EG.mTo(m)) + (EG.mPromo(m) ? EG.LETTER[EG.mPromo(m)].toLowerCase() : '');
+
+const _egRules = ex => _EG_RULES[ex.rules || 'philidor'];
+
+// Coups « utiles » d'une finale de pions : promotions en Dame seulement (les sous-promotions n'apportent rien ici).
+const _egPawnMoves = st => EG.legalMoves(st).filter(m => !EG.mPromo(m) || EG.mPromo(m) === EG.Q);

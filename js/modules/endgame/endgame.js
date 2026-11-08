@@ -289,7 +289,6 @@ function jumpEndgameCategory(id) {
 
 // ─── Outils des finales de tours ──────────────────────────────────────────────
 const _egSqName = s => 'abcdefgh'[s & 7] + ((s >> 3) + 1);
-const _egUci = m => _egSqName(EG.mFrom(m)) + _egSqName(EG.mTo(m)) + (EG.mPromo(m) ? EG.LETTER[EG.mPromo(m)].toLowerCase() : '');
 function _egParseUci(u) {
     const sq = n => 'abcdefgh'.indexOf(n[0]) + 8 * (Number(n[1]) - 1);
     return EG.mk(sq(u.slice(0, 2)), sq(u.slice(2, 4)), u[4] ? { q: 5, r: 4, b: 3, n: 2 }[u[4]] : 0);
@@ -402,7 +401,6 @@ const _EG_RULES = {
     philidor: { check: (st, m) => _egPhilidorCheck(st, m), name: 'la défense de Philidor' },
     vancura:  { check: (st, m) => _egVancuraCheck(st, m),  name: 'la défense de Vancura' }
 };
-const _egRules = ex => _EG_RULES[ex.rules || 'philidor'];
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  5. SÉANCE D'EXERCICE
@@ -638,9 +636,6 @@ function _egJudgePawns(ex, st, m, n) {
     if (n >= endgameState.budget) return { state: 'success', msg: `Nulle assurée : vous avez tenu ${endgameState.budget} coups sans céder.` };
     return { state: 'continue' };
 }
-
-// Coups « utiles » d'une finale de pions : promotions en Dame seulement (les sous-promotions n'apportent rien ici).
-const _egPawnMoves = st => EG.legalMoves(st).filter(m => !EG.mPromo(m) || EG.mPromo(m) === EG.Q);
 
 // Réponse de l'ordinateur en finale de pions.
 //   Le joueur doit gagner : défense la plus tenace (nulle si elle existe, sinon la perte la plus lointaine).

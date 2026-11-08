@@ -18,7 +18,7 @@
  * écriture locale (aucun instantané périodique ne peut ré-écraser la fusion) · un seul onglet synchronise
  * à la fois (Web Locks) · échec réseau : nouvel essai espacé (15 s → 5 min), rien n'est perdu.
  *
- * Prérequis : storageAdapter, syncModel, cloudClient, cloudAdapter, auth ; accountUI (statut) facultatif.
+ * Prérequis : storageAdapter, syncModel, cloudClient, cloudAdapter, auth, bus. L'affichage suit par le bus (data:changed, sync:status).
  */
 
 'use strict';
@@ -42,7 +42,7 @@ const SyncEngine = (function () {
 
     function setStatus(level, text) {
         status = { level, text };
-        if (typeof AccountUI !== 'undefined') { try { AccountUI.setSyncStatus(level, text); } catch (e) { reportError('synchro : affichage de l\'état', e); } }
+        Bus.emit('sync:status', status);
         statusListeners.forEach(fn => { try { fn(status); } catch (e) { reportError('synchro : écouteur d\'état', e); } });
     }
 
@@ -74,25 +74,6 @@ const SyncEngine = (function () {
             if (typeof loadDB !== 'function' || typeof getDBKey !== 'function') return;
             if (key === getDBKey() || (typeof oppKeyFor === 'function' && key === oppKeyFor(currentRepertoire, playerColor))) loadDB();
         } catch (e) { reportError('synchro : rechargement de ' + key, e); }
-    }
-
-    function refreshViews(keys) {
-        if (!keys.length) return;
-        const hidden = id => { const el = document.getElementById(id); return !el || el.classList.contains('hidden'); };
-        const attempt = fn => { try { fn(); } catch (e) { reportError('synchro : rafraîchissement de l\'affichage', e); } };
-        if ((keys.includes('chessTrainer_repertoires') || keys.includes('chessTrainer_repNotes')) && typeof loadRepertoireList === 'function') attempt(() => {
-            if (!loadRepertoireList().includes(currentRepertoire)) currentRepertoire = DEFAULT_REPERTOIRE;
-            if (typeof renderRepertoireList === 'function') renderRepertoireList();
-        });
-        if (typeof initStats === 'function')    attempt(initStats);
-        if (typeof initTraining === 'function') attempt(initTraining);
-        if (keys.includes('chessTrainer_endgames') && typeof initEndgame === 'function' && !hidden('home-tab-endgame')) attempt(initEndgame);
-        if (keys.includes('chessTrainer_trash') && typeof updateTrashBadges === 'function') attempt(() => {
-            updateTrashBadges(); if (!hidden('trash-overlay') && typeof renderTrash === 'function') renderTrash();
-        });
-        if (!hidden('data-overlay') && typeof renderDataPanel === 'function') attempt(renderDataPanel);
-        if (typeof refreshTree === 'function') attempt(refreshTree);
-        if (keys.includes('chessTrainer_prefs') && typeof applySyncedPrefs === 'function') attempt(applySyncedPrefs);
     }
 
     // ─── Un document ──────────────────────────────────────────────────────────
@@ -197,7 +178,7 @@ const SyncEngine = (function () {
             if (r.wroteLocal) out.pulled.push(key);
         }
         if (!it.done && !out.raced.length) SyncIntent.set(Object.assign({}, it, { done: true, doneAt: Date.now() }));
-        refreshViews(out.pulled);
+        Bus.emit('data:changed', out.pulled);
         return out;
     }
 

@@ -208,15 +208,7 @@ function renderTrash() {
 function onTrashRestore(id) {
     const r = restoreTrashItem(id);
     _trashMsg(r.message, r.ok ? 'ok' : 'err');
-    if (r.ok) {
-        if (r.type === 'repertoire') {
-            renderRepertoireList(); initStats(); initTraining();
-        } else {
-            if (r.rep === currentRepertoire && r.color === playerColor && document.getElementById('game-screen').style.display !== 'none') loadDB();
-            if (typeof refreshTree === 'function') refreshTree();
-            initStats(); initTraining();
-        }
-    }
+    if (r.ok) Bus.emit('trash:restored', r);
     renderTrash();
 }
 

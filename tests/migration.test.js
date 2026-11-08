@@ -14,7 +14,6 @@ vm.createContext(ctx);
 for (const f of [scriptPath('chessEngine.js'), scriptPath('storage.js'), scriptPath('openingsLogic.js')])
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
-run("var playerColor = 'w';");
 
 // Clés (ancien et nouveau format) des positions d'un chemin UCI : avant chaque coup, puis à la fin.
 const keysOf = path => run(`(p => _withEngineSnapshot(() => { parseFEN(INIT_FEN); const out = [positionKey()];

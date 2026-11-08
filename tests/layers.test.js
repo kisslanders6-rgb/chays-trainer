@@ -7,10 +7,10 @@ let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const LAYERS = {
-    core: ['icons', 'utils', 'network', 'storageAdapter', 'i18n', 'cloudConfig', 'pieces', 'rings', 'colorScope', 'dropdown', 'panelKit', 'themeColor'],
-    domain: ['chessEngine', 'engine', 'syncModel', 'cloudClient', 'cloudAdapter', 'auth', 'syncEngine', 'storage', 'backup', 'trash', 'settings', 'sound', 'openingNames', 'egCore', 'egJudge', 'egExercises', 'egOpponent', 'pgn'],
-    board: ['openingsLogic', 'openingsUI', 'annotations', 'captures', 'moveStats', 'treeView', 'dataPanel'],
-    shell: ['app', 'dock', 'mobile', 'shortcuts', 'palette', 'suite', 'meSheet', 'splash', 'introTimeline', 'onboarding']
+    core: ['icons', 'utils', 'bus', 'dialogs', 'network', 'storageAdapter', 'i18n', 'cloudConfig', 'rings', 'colorScope', 'dropdown', 'panelKit', 'themeColor'],
+    domain: ['chessEngine', 'pieces', 'levels', 'engine', 'syncModel', 'cloudClient', 'cloudAdapter', 'auth', 'syncEngine', 'storage', 'backup', 'trash', 'settings', 'sound', 'openingNames', 'egCore', 'egJudge', 'egExercises', 'egOpponent'],
+    board: ['openingsLogic', 'openingsUI', 'annotations', 'captures', 'moveStats', 'treeView'],
+    shell: ['app', 'dock', 'mobile', 'shortcuts', 'palette', 'suite', 'meSheet', 'splash', 'introTimeline', 'onboarding', 'repPicker', 'viewRefresh']
 };
 const ORDER = ['core', 'domain', 'board', 'screens', 'shell'];
 const short = f => path.basename(f, '.js');
