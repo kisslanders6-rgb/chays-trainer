@@ -88,7 +88,8 @@ const SYNCED_PREFS = {
     avatarGlyph: { ok: _oneOf(AVATAR_GLYPHS), def: 'initial' },
     avatarColor: { ok: _oneOf(AVATAR_COLORS), def: 'sapin' },
     avatarPhoto: { ok: v => v === '' || /^[0-9a-f-]{36}\/avatar-\d{10,15}\.webp$/.test(v), def: '' },   // chemin dans le seau « avatars » (avatarPhoto.js)
-    elo:         { ok: v => v === '' || (/^\d{3,4}$/.test(v)), def: '' },
+    eloSite:     { ok: _oneOf(['', 'chesscom', 'lichess']), def: '' },                  // Elo montré (Statistiques, Compte) ; vide : choix automatique
+    eloSpeed:    { ok: _oneOf(['', 'bullet', 'blitz', 'rapid', 'classical', 'daily']), def: '' },
     lichessUser: { ok: _text(40), def: '' },
     chesscomUser:{ ok: _text(40), def: '' },
     // Synchroniser aussi le mode clair / sombre et les sons

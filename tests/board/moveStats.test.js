@@ -60,11 +60,18 @@ t('seuls les coups ADVERSES sont comptés, et seulement pour la couleur jouée',
 t('part d\'une réponse : utilisée par le tirage de l\'Entraînement', () => {
     const k = run('Chess.key(Chess.play(Chess.start(), "e2e4"))');
     assert.strictEqual(run('freqShare')('w', k, 'c7c5'), 0.25);                 // c5, e5, e6, c6 : une fois chacun
-    run('appSettings = { freqWeight: true, elo: "" };');
+    run('appSettings = { freqWeight: true };');
     const e = { move: 'g1f3', path: ['e2e4', 'c7c5', 'g1f3'], attempts: 0, failures: 0 };
     assert.strictEqual(run('freqFactor')(e, 'w'), 0.6 + 1.4 * 0.25);
     run('appSettings.freqWeight = false;');
     assert.strictEqual(run('freqFactor')(e, 'w'), 1);
+});
+
+t('explorateur : tranches autour de l\'Elo réel, 1800 sans partie', () => {
+    run('var GameArchive = { level: () => null };');
+    assert.match(run('_explorerRatings()'), /1600,1800,2000/);
+    run('GameArchive.level = () => ({ r: 1200 });');
+    assert.deepStrictEqual(run('_explorerRatings()').split(',').map(Number).filter(b => b > 1400), []);
 });
 
 console.log(`\n${n} tests réussis.`);

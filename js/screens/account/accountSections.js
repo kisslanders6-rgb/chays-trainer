@@ -66,14 +66,24 @@ const AccountSections = ctx => {
             <div class="acct-studio-body${tab === 'photo' ? ' is-photo' : ''}" role="tabpanel">${tab === 'photo' ? photoTab : motif}</div></div>`;
     }
 
+    // Niveau réel, tiré des parties ; site et cadence sont ceux de Statistiques › Parties.
+    function _eloRows() {
+        const lv = typeof GameArchive !== 'undefined' ? GameArchive.level() : null;
+        if (!lv) return [PanelKit.row('Classement Elo', 'Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.', '')];
+        const speedName = lv.speeds.find(([s]) => s === lv.speed)[1];
+        const rows = [PanelKit.row('Classement Elo', `<span>${GameArchive.SITE_NAME[lv.site]}</span> · <span>${speedName}</span>`, `<b class="acct-elo">${lv.r}</b>`)];
+        if (lv.sites.length > 1) rows.push(PanelKit.row('Site', '', PanelKit.seg('eloSite', lv.sites.map(s => [s, GameArchive.SITE_NAME[s]]), lv.site, 'Site')));
+        if (lv.speeds.length > 1) rows.push(PanelKit.row('Cadence', '', PanelKit.seg('eloSpeed', lv.speeds, lv.speed, 'Cadence')));
+        return rows;
+    }
+
     function sectionProfil() {
         return _idCard() + _avatarStudio()
             + PanelKit.group('Identité', [
                 PanelKit.row('Pseudo', 'Affiché sur l’accueil (« Bonsoir, … ») et dans la barre du haut.',
                     `<input class="pn-input" type="text" maxlength="24" autocomplete="nickname" placeholder="Votre pseudo" value="${esc(appSettings.pseudo)}" data-pn="text" data-key="pseudo" aria-label="Pseudo">`)])
             + PanelKit.group('Classement et objectif', [
-                PanelKit.row('Classement Elo', 'Facultatif, visible de vous seul.',
-                    `<input class="pn-input is-short" type="text" inputmode="numeric" maxlength="4" placeholder="ex. 1650" value="${esc(appSettings.elo)}" data-pn="text" data-key="elo" aria-label="Classement Elo">`),
+                ..._eloRows(),
                 PanelKit.row('Objectif quotidien', 'Aussi réglable dans Paramètres › Jeu et entraînement.',
                     PanelKit.range('dailyGoal', appSettings.dailyGoal, 5, 50, 5, `${appSettings.dailyGoal} positions`, 'Objectif quotidien'))])
             + PanelKit.group('Comptes d’échecs en ligne', [

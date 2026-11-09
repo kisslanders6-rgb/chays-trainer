@@ -336,8 +336,6 @@ const AccountUI = (function () {
     // Réglages du profil : enregistrés comme préférences synchronisées (settings.js).
     function onControl(kind, key, value, el) {
         if (kind === 'text' || kind === 'text-commit') {
-            if (key === 'elo') value = value.replace(/\D/g, '').slice(0, 4);
-            if (key === 'elo' && value && value.length < 3 && kind === 'text') return;    // attend 3 chiffres
             value = String(value).trim() === '' ? '' : (kind === 'text-commit' ? value.trim() : value);
             if (!SYNCED_PREFS[key].ok(value)) return;
             appSettings[key] = value; saveSettings();
@@ -364,6 +362,7 @@ const AccountUI = (function () {
             if (p) welcomeName = p.value;
             appSettings[key] = value; saveSettings();
             updateButton(); render();
+            if (key === 'eloSite' || key === 'eloSpeed') Bus.emit('elo:choice');
         }
     }
 

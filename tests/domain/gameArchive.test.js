@@ -4,7 +4,10 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
 
-const ctx = { console, Date, Math, JSON, Number, Set, Map, Promise, encodeURIComponent };
+const mem = {};
+const dataStore = { get: k => (k in mem ? mem[k] : null), getJSON: (k, d) => (k in mem ? JSON.parse(mem[k]) : d), setJSON: (k, v) => { mem[k] = JSON.stringify(v); } };
+const appSettings = { chesscomUser: 'Moi', lichessUser: '', eloSite: '', eloSpeed: '' };
+const ctx = { console, Date, Math, JSON, Number, Set, Map, Promise, encodeURIComponent, dataStore, appSettings };
 vm.createContext(ctx);
 vm.runInContext(readVars(scriptPath('gameArchive.js')), ctx);
 const A = ctx.GameArchive;
@@ -55,6 +58,30 @@ const LI = { id: 'abc', variant: 'standard', status: 'mate', speed: 'ultraBullet
         assert.strictEqual((await A.all()).length, 1);
         await assert.rejects(A.sync('chesscom', 'nobody'), /user/);
         assert(calls >= 5);
+    });
+    const G = (site, speed, at, me, rated = true) => ({ site, speed, at, me, rated });
+    await t('niveau : dernier Elo par site et cadence, parties non classées et cadences inconnues écartées', () => {
+        const l = JSON.parse(JSON.stringify(A.eloLevels([G('chesscom', 'blitz', 2, 1510), G('chesscom', 'blitz', 1, 1500), G('chesscom', 'blitz', 3, 1700, false), G('lichess', 'rapid', 1, 1800), G('lichess', 'x', 1, 9)])));
+        assert.deepStrictEqual(l, { chesscom: { blitz: { r: 1510, n: 2 } }, lichess: { rapid: { r: 1800, n: 1 } } });
+    });
+    await t('niveau : le choix mémorisé gagne, sinon Chess.com et la cadence la plus jouée', () => {
+        const lv = { chesscom: { blitz: { r: 1500, n: 2 }, bullet: { r: 1400, n: 9 } }, lichess: { rapid: { r: 1800, n: 1 }, blitz: { r: 1600, n: 1 } } }, both = ['chesscom', 'lichess'];
+        const p = (...a) => { const r = A.pickElo(lv, ...a); return r && `${r.site} ${r.speed} ${r.r}`; };
+        assert.strictEqual(p(both, '', ''), 'chesscom bullet 1400');
+        assert.strictEqual(p(both, 'chesscom', 'blitz'), 'chesscom blitz 1500');
+        assert.strictEqual(p(both, 'lichess', 'blitz'), 'lichess blitz 1600', 'la cadence suit au changement de site');
+        assert.strictEqual(p(both, 'lichess', 'bullet'), 'lichess rapid 1800', 'cadence absente du site : repli sans erreur');
+        assert.strictEqual(p(['lichess'], 'chesscom', 'blitz'), 'lichess blitz 1600', 'site délié : ignoré');
+        assert.strictEqual(p([], '', ''), null);
+    });
+    await t('niveau : résumé écrit par all(), relu sans IndexedDB, nul sans compte relié', async () => {
+        await A.all();
+        assert.deepStrictEqual(JSON.parse(JSON.stringify(JSON.parse(mem.chessTrainer_eloLevels))), { chesscom: { blitz: { r: 1500, n: 1 } } });
+        appSettings.eloSpeed = 'bullet';
+        assert.strictEqual(A.level().speed, 'blitz');
+        assert.strictEqual(A.level().r, 1500);
+        appSettings.chesscomUser = ' ';
+        assert.strictEqual(A.level(), null);
     });
     console.log(`\n${n} tests réussis.`);
 })().catch(e => { console.error(e); process.exit(1); });

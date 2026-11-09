@@ -17,7 +17,7 @@ async function boot(backend) {
     w.eval(`window.askConfirm = (m, ok) => ok(); window.exportDB = () => { window.__exports++; }; window.ico = n => '<svg class="ico" data-i="' + n + '"></svg>';`);
     w.matchMedia = () => ({ matches: false, addEventListener() {} });
     const add = code => { const s = w.document.createElement('script'); s.textContent = code; w.document.body.appendChild(s); };
-    [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
+    [scriptPath('utils.js'), scriptPath('bus.js'), scriptPath('storageAdapter.js'), scriptPath('syncModel.js'), scriptPath('settings.js'), scriptPath('panelKit.js'), scriptPath('gameArchive.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     add("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };");
     [scriptPath('cloudClient.js'), scriptPath('cloudAdapter.js'), scriptPath('auth.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].forEach(f => add(fs.readFileSync(f, 'utf8')));
     await tick(20);
@@ -117,7 +117,7 @@ const section = (w, id) => click(w, `[data-pn="section"][data-key="${id}"]`);
         assert.strictEqual($$(w, '#account-overlay .btn-primary').length, 1);
     });
     await t('Profil : carte d\'identité (avatar, pseudo, e-mail) sans le classement, puis l\'atelier', async () => {
-        w.eval("appSettings.pseudo = 'Ana'; appSettings.elo = '1650';");
+        w.eval("appSettings.pseudo = 'Ana';");
         section(w, 'profil');
         const card = $(w, '.pn-content > .acct-id');
         assert(card && card === $(w, '.pn-content > .account-msg').nextElementSibling, 'carte en tête');
@@ -126,6 +126,22 @@ const section = (w, id) => click(w, `[data-pn="section"][data-key="${id}"]`);
         assert(!/Elo|1650/.test(card.textContent));
         assert($(w, '.acct-id + .pn-h + .acct-studio'));
         assert($(w, '[data-key="dailyGoal"]')); assert($(w, '[data-key="lichessUser"]')); assert($(w, '[data-key="chesscomUser"]'));
+    });
+    await t('Profil : Elo réel en lecture seule, cadence commune avec les Statistiques', async () => {
+        const seen = []; w.eval('Bus').on('elo:choice', () => seen.push(1));
+        assert(!$(w, '[data-key="elo"]'), 'plus de saisie manuelle');
+        assert(!$(w, '.acct-elo') && /Reliez un compte/.test($(w, '.pn-content').textContent), 'sans partie : invitation');
+        w.eval(`appSettings.chesscomUser = 'Ana'; dataStore.setJSON('chessTrainer_eloLevels', { chesscom: { blitz: { r: 1650, n: 40 }, rapid: { r: 1720, n: 5 } } });`);
+        section(w, 'synchronisation'); section(w, 'profil');
+        assert.strictEqual(text(w, '.acct-elo'), '1650');
+        assert.match($(w, '.acct-elo').parentElement.textContent, /Chess\.com · Blitz/);
+        click(w, '[data-key="eloSpeed"][data-v="rapid"]');
+        assert.strictEqual(text(w, '.acct-elo'), '1720');
+        assert.strictEqual(w.eval('appSettings.eloSpeed'), 'rapid');
+        assert.strictEqual(w.eval(`dataStore.getJSON('chessTrainer_prefs').eloSpeed.v`), 'rapid');
+        assert.strictEqual(seen.length, 1);
+        w.eval(`appSettings.chesscomUser = ''; dataStore.remove('chessTrainer_eloLevels');`);
+        section(w, 'synchronisation'); section(w, 'profil');
     });
     await t('AvatarStudio : 18 motifs, 7 couleurs avec « Échiquier » en tête ; choisir un motif écrit la préférence existante', async () => {
         assert.strictEqual($$(w, '.acct-tiles .acct-tile').length, 18);

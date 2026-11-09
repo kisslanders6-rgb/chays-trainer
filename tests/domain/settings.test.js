@@ -111,6 +111,16 @@ t('mode libre : anciennes options de l\'appareil reprises en préférences, anci
     assert.strictEqual(d.run('appSettings.freeSeqLen'), 5);                // choix du compte conservé
 });
 
+t('choix de l\'Elo : préférences synchronisées validées, l\'ancien champ manuel a disparu', () => {
+    const c = boot({ chessTrainer_prefs: JSON.stringify({ elo: { v: '1650', at: 3 }, eloSpeed: { v: 'blitz', at: 3 }, eloSite: { v: 'autre', at: 3 } }) });
+    assert.strictEqual(c.run('appSettings.eloSpeed'), 'blitz');
+    assert.strictEqual(c.run('appSettings.eloSite'), '');                  // valeur inconnue : défaut
+    assert.strictEqual(c.run('"elo" in SYNCED_PREFS'), false);
+    assert.strictEqual(c.run('appSettings.elo'), undefined);
+    c.run(`appSettings.eloSpeed = 'rapid'; saveSettings()`);
+    assert.strictEqual(c.prefs().eloSpeed.v, 'rapid');
+});
+
 t('chaque préférence a son réglage dans l\'interface (Paramètres ou Compte)', () => {
     const ui = [scriptPath('settingsUI.js'), scriptPath('accountSections.js'), scriptPath('accountUI.js')].map(f => fs.readFileSync(f, 'utf8')).join('\n');
     const c = boot();

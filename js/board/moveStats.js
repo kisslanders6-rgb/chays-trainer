@@ -91,7 +91,7 @@ const _freqTable = color => (_freqMemo || (_freqMemo = _readFreq()))[color] || {
 const explorerToken = () => (dataStore.get(EXPLORER_TOKEN_KEY) || '').trim();
 
 function _explorerRatings() {
-    const elo = Number(typeof appSettings !== 'undefined' ? appSettings.elo : '') || 1800;
+    const real = typeof GameArchive !== 'undefined' ? GameArchive.level() : null, elo = real ? real.r : 1800;
     const out = EXPLORER_BANDS.filter(b => b >= elo - 300 && b <= elo + 200);
     return (out.length ? out : [1600, 1800, 2000]).join(',');
 }

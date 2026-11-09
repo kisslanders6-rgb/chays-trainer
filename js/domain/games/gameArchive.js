@@ -6,6 +6,8 @@
  *   speed : 'bullet' | 'blitz' | 'rapid' | 'classical' | 'daily' ; me / opp : Elo après la partie ; sans : 60 demi-coups au plus.
  * Stockage IndexedDB (« chays-games ») : trop volumineux pour localStorage, recalculable, donc ni sauvegardé ni synchronisé.
  * Requêtes l'une après l'autre, comme le demandent les deux sites. Sans IndexedDB : mémoire de la session.
+ * Niveau réel : dernier Elo par site et par cadence, gardé en résumé (chessTrainer_eloLevels, local) pour être lu sans attendre IndexedDB.
+ *   level() applique le choix mémorisé (préférences eloSite, eloSpeed) ; Statistiques, Compte et l'explorateur Lichess le partagent.
  */
 
 'use strict';
@@ -14,6 +16,10 @@ const GameArchive = (function () {
     const MAX_PER_SITE = 2000, MONTHS = 12, KEEP_PLIES = 60, STORE = 'games';
     const CC_DRAWS = ['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient'];
     const LI_SPEEDS = { ultraBullet: 'bullet', bullet: 'bullet', blitz: 'blitz', rapid: 'rapid', classical: 'classical', correspondence: 'daily' };
+    const SPEEDS = [['bullet', 'Bullet'], ['blitz', 'Blitz'], ['rapid', 'Rapide'], ['classical', 'Classique'], ['daily', 'Par correspondance']];
+    const SITE_NAME = { chesscom: 'Chess.com', lichess: 'Lichess' };
+    const USER_PREF = { chesscom: 'chesscomUser', lichess: 'lichessUser' };
+    const LEVELS_KEY = 'chessTrainer_eloLevels';
 
     // ─── NORMALISATION (pure) ────────────────────────────────────────────────
     function sansFromPgn(pgn) {
@@ -60,6 +66,29 @@ const GameArchive = (function () {
     // Elo après chaque partie classée d'une cadence, de la plus ancienne à la plus récente.
     const eloSeries = (list, speed) => list.filter(g => g.rated && g.speed === speed && Number.isFinite(g.me)).sort((a, b) => a.at - b.at).map(g => ({ at: g.at, r: g.me }));
 
+    // Dernier Elo et nombre de parties classées : { site: { cadence: { r, n } } }.
+    function eloLevels(list) {
+        const out = {};
+        list.filter(g => g.rated && Number.isFinite(g.me) && SPEEDS.some(([s]) => s === g.speed)).sort((a, b) => a.at - b.at).forEach(g => {
+            const bySite = out[g.site] = out[g.site] || {}, cell = bySite[g.speed] = bySite[g.speed] || { r: 0, n: 0 };
+            cell.r = g.me; cell.n++;
+        });
+        return out;
+    }
+    // Site et cadence à montrer : le choix mémorisé s'il existe encore, sinon Chess.com et la cadence la plus jouée.
+    function pickElo(levels, linked, site, speed) {
+        const sites = linked.filter(s => levels[s] && Object.keys(levels[s]).length);
+        if (!sites.length) return null;
+        const at = sites.includes(site) ? site : sites.includes('chesscom') ? 'chesscom' : sites[0], own = levels[at];
+        const sp = own[speed] ? speed : Object.keys(own).sort((a, b) => own[b].n - own[a].n)[0];
+        return { r: own[sp].r, site: at, speed: sp, sites, speeds: SPEEDS.filter(([s]) => own[s]) };
+    }
+    // Niveau réel du joueur, ou null sans partie classée d'un compte relié.
+    function level() {
+        const linked = Object.keys(SITE_NAME).filter(s => appSettings[USER_PREF[s]].trim());
+        return pickElo(dataStore.getJSON(LEVELS_KEY, null) || {}, linked, appSettings.eloSite, appSettings.eloSpeed);
+    }
+
     // ─── STOCKAGE ────────────────────────────────────────────────────────────
     let dbp = null, memory = new Map();
     function db() {
@@ -76,6 +105,11 @@ const GameArchive = (function () {
         return dbp;
     }
     async function all() {
+        const list = await read(), levels = eloLevels(list);
+        if (JSON.stringify(levels) !== JSON.stringify(dataStore.getJSON(LEVELS_KEY, null))) dataStore.setJSON(LEVELS_KEY, levels);
+        return list;
+    }
+    async function read() {
         const d = await db();
         if (!d) return [...memory.values()].sort((a, b) => a.at - b.at);
         return new Promise(resolve => {
@@ -144,5 +178,8 @@ const GameArchive = (function () {
         return fresh.length;
     }
 
-    return { sansFromPgn, fromChesscom, fromLichess, tally, eloSeries, all, sync };
+    // Archive antérieure au résumé : il est calculé une fois, sans attendre l'ouverture des Statistiques.
+    if (typeof window !== 'undefined' && dataStore.get(LEVELS_KEY) === null) window.addEventListener('load', () => all().catch(() => {}));
+
+    return { SITE_NAME, sansFromPgn, fromChesscom, fromLichess, tally, eloSeries, eloLevels, pickElo, level, all, sync };
 })();
