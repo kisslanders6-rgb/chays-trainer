@@ -69,7 +69,7 @@ const StatsOpenings = (function () {
 
     // ─── PETITS ÉLÉMENTS ─────────────────────────────────────────────────────
     const delta = (d, unit) => d === null ? '<span class="so-delta">–</span>'
-        : `<span class="so-delta ${d >= 0 ? 'up' : 'down'}"><i aria-hidden="true">${d >= 0 ? '▲' : '▼'}</i>${d >= 0 ? '+' : '−'}${num1(d)}${unit || ''}</span>`;
+        : `<span class="so-delta ${d >= 0 ? 'up' : 'down'}"><i aria-hidden="true">${d >= 0 ? '▲' : '▼'}</i>${I18n.mark(`${d >= 0 ? '+' : '−'}${num1(d)}${unit || ''}`)}</span>`;
     const wdlBar = t => t.n ? `<span class="so-wdl" role="img" aria-label="${I18n.mark(`${t.w} / ${t.d} / ${t.l}`)}">${[['w', t.w], ['d', t.d], ['l', t.l]].filter(([, n]) => n).map(([k, n]) => `<i class="sg-${k}" style="flex:${n}"></i>`).join('')}</span>` : '';
     const sideDot = s => `<span class="so-dot ${s}" aria-hidden="true"></span>`;
     const metaOf = g => g.all.length ? `${_plural(g.stats.n, 'partie')} · maîtrise ${g.mastery} / 100` : `${_plural(g.stats.n, 'partie')} · hors répertoire`;
@@ -153,7 +153,8 @@ const StatsOpenings = (function () {
                 ${fact('Score en le suivant', r.kept.n ? pct(r.kept.score) : '–')}
                 ${fact('Score en le quittant', r.left.n ? pct(r.left.score) : '–')}
                 ${fact('Réponses couvertes', pct(r.coverage))}
-                ${fact('Sortie moyenne', `coup ${r.exitMove}`)}</div>
+                ${fact('Sortie moyenne', `coup ${r.exitMove}`)}
+                ${r.exitClock === null ? '' : fact('Avance à l\'horloge', `${r.exitClock >= 0 ? '+' : '−'}${Math.abs(Math.round(r.exitClock))} %`)}</div>
             ${hist ? `<div class="so-card so-c6"><h5>Où le répertoire s'arrête</h5><p class="st-sub">Numéro du coup, hors fins de ligne préparées</p>
                 <div class="so-leg"><span><i class="so-bar-gap"></i>Réponse manquante</span><span><i class="so-bar-me"></i>Sortie de votre fait</span></div>${hist}</div>` : ''}
             ${replies.length ? `<div class="so-card so-c6"><h5>Réponses adverses</h5><p class="st-sub">Les plus jouées après cette ligne</p>

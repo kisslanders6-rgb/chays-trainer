@@ -2,7 +2,8 @@
  * screens/stats/statsGames.js
  * ──────────────────────────────────────────────────────────────────────────
  * Statistiques › Parties : ce que disent vos parties Chess.com et Lichess (GameArchive), rapportées à votre répertoire.
- *   Elo : une courbe par site et par cadence (sélecteur discret, choix mémorisé, Chess.com par défaut) ; les résultats, eux, réunissent les deux sites.
+ *   Une barre de filtres et trois vues (Bilan, Temps, Répertoire) : statsInsights.js.
+ *   Elo : une courbe par site et par cadence (choix mémorisé, Chess.com par défaut).
  *   Répertoire : score selon que vous l'avez suivi ou quitté (detectDeviation) ; lignes qui coûtent le plus de points.
  * Analyse de toute l'archive par petits lots, pour ne pas figer l'écran. Une archive d'une version antérieure est retéléchargée à l'ouverture.
  */
@@ -122,21 +123,20 @@ const StatsGames = (function () {
     function eloHTML() {
         const level = GameArchive.level();
         if (!level) return '';
-        const { site, speed, sites, speeds } = level, mine = st.games.filter(g => g.site === site);
+        const { site, speed, speeds } = level, mine = st.games.filter(g => g.site === site);
         const series = GameArchive.eloSeries(mine, speed), last = series[series.length - 1], month = Date.now() - 30 * 864e5;
         if (!last) return '';
         const before = series.filter(p => p.at < month).pop() || series[0], delta = last.r - before.r;
         const inSpeed = GameArchive.tally(mine.filter(g => g.speed === speed));
         const acc = mine.filter(g => g.speed === speed && Number.isFinite(g.accuracy));
-        return `<div class="sg-head"><h4>Elo</h4>${sites.length > 1 ? `<div class="sg-site" role="radiogroup" aria-label="Site">${sites.map(s => `<button type="button" role="radio" aria-checked="${s === site}" data-action="statsGamesSite" data-arg="${s}">${SITE_NAME[s]}</button>`).join('')}</div>` : `<span class="st-sub">${SITE_NAME[sites[0]]}</span>`}</div>
-            ${speeds.length > 1 ? `<div class="stats-filters" role="group" aria-label="Cadence">${speeds.map(([s, l]) => `<button type="button" class="stats-chip all ${speed === s ? 'active' : ''}" aria-pressed="${speed === s}" data-action="statsGamesSpeed" data-arg="${s}">${l}</button>`).join('')}</div>` : ''}
+        return `<div class="sg-head"><h4>Elo</h4><span class="st-sub">${SITE_NAME[site]} · ${(speeds.find(([s]) => s === speed) || ['', speed])[1]}</span></div>
             <div class="st-reg-kpis"><div><b>${last.r}</b><span>${delta >= 0 ? '+' : '−'}${Math.abs(delta)} en 30 j</span></div><div><b>${pct(inSpeed.score)}</b><span>${_plural(inSpeed.n, 'partie')}</span></div></div>
             ${chart(series)}
             ${acc.length >= 5 ? `<p class="st-sub">Précision moyenne ${pct(Math.round(acc.reduce((a, g) => a + g.accuracy, 0) / acc.length))} sur ${_plural(acc.length, 'partie analysée', 'parties analysées')}</p>` : ''}`;
     }
 
     function repertoireHTML() {
-        const rows = st.games.map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
+        const rows = st.games.map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a && StatsInsights.keep(r.g));
         if (!rows.length) return st.analysing ? '<p class="st-sub">Comparaison avec votre répertoire…</p>' : '';
         const kept = GameArchive.tally(rows.filter(r => !r.a.dev || r.a.dev.by !== 'me').map(r => r.g)), left = GameArchive.tally(rows.filter(r => r.a.dev && r.a.dev.by === 'me').map(r => r.g));
         const fam = {};
@@ -164,7 +164,9 @@ const StatsGames = (function () {
         if (st.busy) return head + `<p class="st-sub" role="status">Récupération des parties… ${st.got}</p>`;
         if (!st.games.length || st.form || !linked().length) return `${head}<p class="st-sub">Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.</p>${formHTML()}`;
         const other = Object.keys(SITE_NAME).find(s => !users()[s]);
-        return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${eloHTML()}${repertoireHTML()}
+        const view = StatsInsights.view(), done = analysed();
+        return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${StatsInsights.barHTML(st.games)}
+            ${view === 'bilan' ? eloHTML() : ''}${view === 'repertoire' ? repertoireHTML() : StatsInsights.viewHTML(st.games, done)}
             ${st.note ? `<p class="st-sub" role="status">${escapeHtml(st.note)}</p>` : ''}
             <button type="button" class="st-link sg-add" data-action="statsGamesBackfill">Charger tout l'historique</button>
             ${other ? `<button type="button" class="st-link sg-add" data-action="statsGamesForm" data-arg="${other}">${SITE_NAME[other]} : ajouter un compte</button>` : ''}`;
@@ -196,8 +198,6 @@ const StatsGames = (function () {
         statsGamesSave: save,
         statsGamesSync: sync,
         statsGamesBackfill: backfill,
-        statsGamesSite: s => { setPref('eloSite', s); paint(); },
-        statsGamesSpeed: s => { setPref('eloSpeed', s); paint(); },
         statsGameLine: i => { const c = st.costs && st.costs[Number(i)]; if (c) statsOpenLine(c.color, c.path); }
     });
     document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'sg-user') save(); });
@@ -222,5 +222,5 @@ const StatsGames = (function () {
     }
     const pending = () => st.games === null || st.analysing || st.busy;
 
-    return { content, mount, analysed, pending };
+    return { content, mount, analysed, pending, repaint: paint };
 })();

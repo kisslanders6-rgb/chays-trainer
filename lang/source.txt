@@ -2055,6 +2055,98 @@ Récupération des parties… {0}
 Charger tout l'historique
 Saisissez un pseudo.
 {0}px
+{0}{1} pt
+dd-sm {0}
+Période
+3 mois
+6 mois
+12 mois
+Tout
+Tous les sites
+Toutes les cadences
+Bilan
+Temps
+Vue
+Pas encore assez de mois joués.
+Performance
+Score par tranche
+background:color-mix(in oklab, {0} {1}%, var(--bg-inset))
+Meilleur créneau : {0} ({1}). Le moins bon : {2} ({3}).
+Il faut plus de parties par créneau pour comparer.
+Quand jouez-vous le mieux ?
+Score par jour et par tranche horaire
+Sous 50 % <i></i> Au-dessus
+Sortie du répertoire
+Vous
+Temps restant par coup
+Parties par mois
+Variation d'Elo par mois
+Variation d'Elo
+Trop peu de parties avec ces filtres.
+Votre plus gros manque : écart {0}, {1} au lieu de {2} attendus.
+Vous tenez ce que votre Elo prédit, quel que soit l'adversaire.
+1re partie
+2e partie
+3e partie
+4e partie
+5e et plus
+Après 1 défaite
+Après 2 défaites
+Après 3 et plus
+Votre score passe de {0} à la première partie à {1} à partir de la cinquième.
+Sessions sur la période : {0}.
+Abandon
+Forfait
+Autre
+Vos mois les plus joués rapportent {0} Elo en moyenne, les autres {1}.
+Il faut quatre mois joués au moins pour comparer.
+Elo inconnu
+Attendu : {0}
+Votre niveau mois par mois
+Performance de chaque mois d'après vos résultats
+Contre qui perdez-vous des points ?
+Score réel
+Score attendu
+Elo de l'adversaire moins le vôtre
+Savez-vous vous arrêter ?
+Juste après des défaites
+Comment finissent vos parties ?
+Le temps décide {0} de vos défaites et {1} de vos gains.
+Gains
+Défaites
+Jouer plus vous fait-il monter ?
+Score
+Face à l'attendu
+Elo équivalent
+Meilleur Elo
+Plus longue série
+gains d'affilée
+Plus forte baisse
+depuis un sommet
+Pas assez de parties avec horloge pour ces filtres. Les parties par correspondance n'en ont pas.
+Où dépensez-vous votre temps ?
+Au coup {0}, il vous reste {1} de votre temps, contre {2} à vos adversaires.
+Temps restant en % du temps initial, par numéro de coup
+Votre préparation vous fait-elle gagner du temps ?
+À la sortie du répertoire, votre horloge a {0} points de temps face à l'adversaire.
+Avance moyenne
+du temps initial
+Score en avance
+Score en retard
+Tombez-vous en zeitnot ?
+{0} de vos coups sont joués sous 10 % du temps, {1} chez vos adversaires.
+Score avec zeitnot
+Score sans zeitnot
+Le temps au coup 20 compte-t-il ?
+En retard d'au moins 20 points : {0}. En avance d'autant : {1}.
+Score selon votre avance à l'horloge au coup 20
+Votre temps moins celui de l'adversaire, en points
+Réfléchissez-vous quand la préparation s'arrête ?
+Premier coup hors répertoire : {0} s, contre {1} s ensuite.
+Premier coup
+Coups suivants
+Score en réfléchissant
+Score en jouant vite
 À apprendre
 Maîtrise de {0} sur 100, et {1} points de moins que prévu. Apprendre ses positions fragiles est le gain le plus direct.
 Sue mais perdante
@@ -2072,12 +2164,6 @@ Aucune de vos parties récentes ne passe par cette ouverture.
 Trop peu de parties pour juger ({0}).
 Réviser cette ouverture {1}
 {0} à réviser sur {1}
-Elo inconnu
-Attendu : {0}
-Score
-Face à l'attendu
-Performance
-Elo équivalent
 Comparaison avec vos parties…
 Reliez un compte dans l'onglet Parties pour voir vos résultats réels.
 Aucune partie sur cette période.
@@ -2089,6 +2175,7 @@ Score en le quittant
 Réponses couvertes
 Sortie moyenne
 coup {0}
+Avance à l'horloge
 Où le répertoire s'arrête
 Numéro du coup, hors fins de ligne préparées
 </i>Réponse manquante
@@ -2119,7 +2206,6 @@ Aucune position à ce niveau.
 {3} mois
 Précédente à travailler
 Suivante à travailler
-Période
 Il faut au moins {0} parties dans une ouverture travaillée pour la placer sur la carte.
 Maîtrise à l'entraînement
 Points face à l'attendu

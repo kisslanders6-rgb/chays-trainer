@@ -778,9 +778,6 @@
 .sg-err { margin: 0; font-size: 13px; color: var(--err); }
 .sg-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
 .sg-head h4 { margin: 0; font-size: 14px; font-weight: 700; }
-.sg-site { display: flex; gap: 2px; }
-.sg-site button { min-height: 28px; padding: 0 6px; border: 0; background: none; color: var(--text-dim); font: inherit; font-size: 12px; cursor: pointer; }
-.sg-site button[aria-checked="true"] { color: var(--text); font-weight: 700; }
 .sg-chart { position: relative; touch-action: pan-y; }
 .sg-cross { stroke: var(--text-dim); stroke-dasharray: 3 3; }
 .sg-cross[hidden] { display: none; }
@@ -973,3 +970,35 @@
     #so-picker { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 82vh; max-height: none; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
     .so-grab { display: block; }
 }
+
+/* ─── PARTIES : FILTRES, BILAN ET TEMPS (statsInsights.js) ─── */
+.si-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+.si-views { width: 100%; }
+.si-views .tr-seg-btn { flex: 1; }
+.si-wrap { container: so / inline-size; display: grid; gap: 12px; }
+.si-rec { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.si-cap-w .so-chart { max-width: 520px; }
+.si-cap { margin: 6px 0 2px; font-size: 11.5px; color: var(--text-dim); }
+.si-hbar { display: grid; grid-template-columns: 112px minmax(0, 1fr) 40px 28px; align-items: center; gap: 8px; padding: 3px 0; font-size: 12.5px; }
+.si-hbar > span:first-child { color: var(--text-muted); }
+.si-track { display: block; height: 7px; border-radius: 4px; background: var(--bg-inset); overflow: hidden; }
+.si-track i { display: block; height: 100%; border-radius: 4px; background: var(--new); }
+.si-hbar b { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
+.si-hbar small { font-size: 11px; color: var(--text-dim); text-align: right; font-variant-numeric: tabular-nums; }
+.si-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+.si-two h6 { margin: 0 0 4px; font-size: 12px; font-weight: 650; color: var(--text-dim); }
+.si-two .si-hbar { grid-template-columns: 64px minmax(0, 1fr) 40px; }
+.si-heat { display: grid; grid-template-columns: 34px repeat(6, minmax(0, 1fr)); gap: 2px; font-size: 11px; color: var(--text-dim); }
+.si-heat span { align-self: center; text-align: center; font-variant-numeric: tabular-nums; }
+.si-heat span.d { text-align: left; }
+.si-heat i { display: block; aspect-ratio: 1.55; border-radius: 4px; background: var(--bg-inset); }
+.si-ramp { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: var(--text-dim); }
+.si-ramp i { flex: 0 1 120px; height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--lv-fragile), var(--bg-inset) 50%, var(--new)); }
+.so-chart text.v { fill: var(--text); font-weight: 600; }
+.so-chart .si-line { fill: none; stroke-width: 2; }
+.so-chart .si-line.me { stroke: var(--new); } .so-chart .si-line.opp { stroke: var(--lv-fragile); }
+.so-chart .si-dot { stroke: var(--surface); stroke-width: 2; }
+.so-chart .si-dot.me { fill: var(--new); } .so-chart .si-dot.opp { fill: var(--lv-fragile); }
+.so-leg .si-key { height: 2px; width: 14px; border-radius: 1px; vertical-align: 3px; }
+.so-leg .si-key.me { background: var(--new); } .so-leg .si-key.opp { background: var(--lv-fragile); }
+@media (max-width: 599px) { .si-rec { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
