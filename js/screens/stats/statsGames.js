@@ -166,7 +166,7 @@ const StatsGames = (function () {
         const other = Object.keys(SITE_NAME).find(s => !users()[s]);
         const view = StatsInsights.view(), done = analysed();
         return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${StatsInsights.barHTML(st.games)}
-            ${view === 'bilan' ? eloHTML() : ''}${view === 'repertoire' ? repertoireHTML() : StatsInsights.viewHTML(st.games, done)}
+            ${view === 'bilan' ? eloHTML() : ''}${view === 'repertoire' ? repertoireHTML() : `<div id="si-view">${StatsInsights.viewHTML(st.games, done)}</div>`}
             ${st.note ? `<p class="st-sub" role="status">${escapeHtml(st.note)}</p>` : ''}
             <button type="button" class="st-link sg-add" data-action="statsGamesBackfill">Charger tout l'historique</button>
             ${other ? `<button type="button" class="st-link sg-add" data-action="statsGamesForm" data-arg="${other}">${SITE_NAME[other]} : ajouter un compte</button>` : ''}`;
@@ -182,6 +182,7 @@ const StatsGames = (function () {
             if ((!st.games.length || GameArchive.outdated(st.games)) && linked().length && !(typeof Net !== 'undefined' && !Net.online())) sync();
         }
         analyse();
+        StatsInsights.pump();
     }
 
     // ─── ACTIONS ─────────────────────────────────────────────────────────────
@@ -222,5 +223,5 @@ const StatsGames = (function () {
     }
     const pending = () => st.games === null || st.analysing || st.busy;
 
-    return { content, mount, analysed, pending, repaint: paint };
+    return { content, mount, analysed, pending, repaint: paint, games: () => st.games };
 })();

@@ -2066,6 +2066,7 @@ Tous les sites
 Toutes les cadences
 Bilan
 Temps
+Qualité
 Vue
 Pas encore assez de mois joués.
 Performance
@@ -2147,8 +2148,56 @@ Premier coup
 Coups suivants
 Score en réfléchissant
 Score en jouant vite
+Toutes vos parties sont analysées (Stockfish, profondeur {0}).
+Mettre en pause
+Tourne tant que cette vue reste ouverte. Chess.com d'abord, les parties récentes en premier ; les résultats sont gardés.
+En pause.
+<b>Analyse Stockfish</b>
+Pas encore assez de mois analysés.
+Précision par mois
+Milieu de partie
+Finale
+Précision par phase
+Évaluation moyenne par coup
+Les résultats apparaissent dès {1} parties analysées avec ces filtres.
+l'ouverture
+le milieu de partie
+la finale
+Votre précision progresse-t-elle ?
+Sur {0}. Précision du site quand elle existe, sinon calcul Chays.
+Où perdez-vous en qualité ?
+Votre plus grand écart est dans {0} : {1} points sous vos adversaires.
+Vous jouez au moins aussi précisément que vos adversaires dans chaque phase.
+Transformez-vous vos avantages ?
+Dès que la partie atteint +2 ou −2 après le coup 5
+Avantages convertis
+Positions sauvées
+Voyez-vous les fautes adverses ?
+Après une erreur ou une gaffe, le coup suivant en profite-t-il ?
+Fautes adverses punies
+Vos fautes non punies
+À quel moment la partie vous échappe-t-elle ?
+Évaluation moyenne, de votre point de vue
+Numéro du coup
+Votre sortie d'ouverture décide-t-elle du résultat ?
+Après une sortie à +1 ou mieux : {0}. À −1 ou moins : {1}.
+Score selon l'évaluation à la sortie du répertoire
+Évaluation à la sortie, en pions
+Précision
+Adversaires : {2}
+Gaffes pour 40 coups
+Adversaires : {4}
+Erreurs pour 40 coups
+Adversaires : {6}
+Imprécisions pour 40 coups
+Adversaires : {8}
+Le moteur ne répond pas. Réessayez plus tard.
 À apprendre
 Maîtrise de {0} sur 100, et {1} points de moins que prévu. Apprendre ses positions fragiles est le gain le plus direct.
+À remplacer ?
+Vous la connaissez ({0} sur 100), mais vous sortez de l'ouverture à {1} et perdez {2} points. La ligne elle-même mérite un examen.
+À jouer en entier
+L'ouverture se passe bien ({0} à la sortie), puis {1} points partent. Le travail est dans le milieu de partie typique.
 Sue mais perdante
 Vous la connaissez ({0} sur 100), mais elle rapporte {1} points de moins que prévu. Regardez où les parties tournent après l'ouverture.
 À consolider
@@ -2175,6 +2224,9 @@ Score en le quittant
 Réponses couvertes
 Sortie moyenne
 coup {0}
+Évaluation à la sortie
+Score après une bonne sortie
+Score après une mauvaise sortie
 Avance à l'horloge
 Où le répertoire s'arrête
 Numéro du coup, hors fins de ligne préparées
@@ -2510,7 +2562,6 @@ Position initiale
 Ouvrir dans l’Analyse
 Question fréquente
 Changer de répertoire
-Finale
 Rien sur « {0} »
 palette de recherche
 Rechercher

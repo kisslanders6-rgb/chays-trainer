@@ -6,7 +6,8 @@
  *   months(parties, n, now)    score et attendu de chacun des n derniers mois civils.
  *   detail(lignes, minPly)     répertoire suivi ou quitté, couverture, profondeur, réponses adverses, coups joués à la place.
  *   clockLead(partie, demi-coups)  avance à l'horloge après ces demi-coups, en points de temps initial.
- *   diagnose(n, écart, maîtrise)   'learn' | 'losing' | 'consolidate' | 'keep', ou null sans assez d'éléments.
+ *   exitEval(partie, demi-coups)   évaluation de mon point de vue après ces demi-coups (centipions, bornée), ou null.
+ *   diagnose(n, écart, maîtrise, évaluation?)   'learn' | 'replace' | 'through' | 'losing' | 'consolidate' | 'keep', ou null sans assez d'éléments.
  * Une partie : celle de GameArchive. Une ligne : { g: partie, a: { dev, path, played } } (StatsGames.analysed).
  *   dev : déviation retenue (detectDeviation) ou null ; path : coups UCI joués dans le répertoire ; played : mon coup à la place du coup prévu.
  */
@@ -14,7 +15,7 @@
 'use strict';
 
 const OpeningReport = (function () {
-    const MIN_DIAGNOSIS = 5, MIN_PERF = 3, LOSING = -3, KNOWN = 60;
+    const MIN_DIAGNOSIS = 5, MIN_PERF = 3, MIN_EVAL = 3, LOSING = -3, KNOWN = 60, EVAL_LIMIT = 1000, EVEN = 30;
 
     const expected = (me, opp) => 1 / (1 + Math.pow(10, (opp - me) / 400));
     const meOf = g => Number.isFinite(g.me0) ? g.me0 : g.me, oppOf = g => Number.isFinite(g.opp0) ? g.opp0 : g.opp;     // Elo d'avant la partie quand il est connu
@@ -61,8 +62,13 @@ const OpeningReport = (function () {
         return Number.isFinite(g.clk[mine]) && Number.isFinite(g.clk[theirs]) ? (g.clk[mine] - g.clk[theirs]) / base : null;
     }
 
+    function exitEval(g, plies) {
+        if (!Array.isArray(g.ev) || plies < 1 || !Number.isFinite(g.ev[plies - 1])) return null;
+        return Math.max(-EVAL_LIMIT, Math.min(EVAL_LIMIT, g.ev[plies - 1] * (g.color === 'w' ? 1 : -1)));
+    }
+
     function detail(rows, minPly = 0) {
-        const kept = [], left = [], hist = {}, seen = new Map(), swaps = new Map(), parents = new Map(), leads = [];
+        const kept = [], left = [], hist = {}, seen = new Map(), swaps = new Map(), parents = new Map(), leads = [], evals = [], good = [], bad = [];
         let gaps = 0, depth = 0;
         rows.forEach(({ g, a }) => {
             const dev = a.dev, byMe = !!dev && dev.by === 'me', gap = !!dev && dev.by === 'opp' && !dev.endOfLine;
@@ -71,6 +77,8 @@ const OpeningReport = (function () {
             depth += dev ? dev.ply : a.path.length;
             const lead = clockLead(g, a.path.length);
             if (lead !== null) leads.push(lead);
+            const ev = exitEval(g, a.path.length);
+            if (ev !== null) { evals.push(ev); if (ev >= EVEN) good.push(g); else if (ev <= -EVEN) bad.push(g); }
             if (byMe || gap) { const m = hist[Math.ceil((dev.ply + 1) / 2)] = hist[Math.ceil((dev.ply + 1) / 2)] || { me: 0, gap: 0 }; m[byMe ? 'me' : 'gap']++; }
             for (let i = minPly; i < a.path.length; i++) {
                 if (!oppPly(i, g.color)) continue;
@@ -94,17 +102,20 @@ const OpeningReport = (function () {
             coverage: n ? 100 * (n - gaps) / n : null,
             exitMove: n ? Math.max(1, Math.ceil(depth / n / 2)) : null,
             exitClock: leads.length ? leads.reduce((a, b) => a + b, 0) / leads.length : null,
+            exitEval: evals.length >= MIN_EVAL ? evals.reduce((a, b) => a + b, 0) / evals.length : null,
+            exitGood: summarize(good), exitBad: summarize(bad),
             hist,
             replies: [...seen.values()].map(r => ({ ...r, n: r.games.length, share: 100 * r.games.length / parents.get(r.before), t: summarize(r.games) })).sort((a, b) => b.n - a.n || a.ply - b.ply),
             swaps: [...swaps.values()].map(s => ({ ...s, n: s.games.length, t: summarize(s.games) })).sort((a, b) => b.n - a.n || a.ply - b.ply)
         };
     }
 
-    function diagnose(n, delta, mastery) {
+    function diagnose(n, delta, mastery, exit = null) {
         if (n < MIN_DIAGNOSIS || delta === null || mastery === null) return null;
         if (mastery < KNOWN) return delta < 0 ? 'learn' : 'consolidate';
-        return delta < LOSING ? 'losing' : 'keep';
+        if (delta >= LOSING) return 'keep';
+        return exit === null ? 'losing' : exit < 0 ? 'replace' : 'through';
     }
 
-    return { KNOWN, expected, meOf, oppOf, clockBase, clockLead, summarize, months, detail, diagnose };
+    return { KNOWN, expected, meOf, oppOf, clockBase, clockLead, exitEval, summarize, months, detail, diagnose };
 })();

@@ -7,6 +7,7 @@
  *   at / start : fin et début (ms) ; speed : 'bullet' | 'blitz' | 'rapid' | 'classical' | 'daily' ; tc : [base, incrément] en secondes ; sans : tous les demi-coups.
  *   me / opp : Elo après la partie ; me0 / opp0 : Elo avant. Lichess donne l'Elo d'avant et ratingDiff ; Chess.com celui d'après : withPreGame le déduit à la lecture.
  *   end : 'mate' | 'resign' | 'time' | 'abandon' | 'stalemate' | 'draw' | 'other' ; clk : temps restant après chaque demi-coup, en centièmes de seconde (absent par correspondance).
+ *   Sans évaluations du site (Chess.com, Lichess non analysé) : ev, div et evBy viennent de GameEval ; evFail : partie illisible.
  *   Lichess, parties analysées : err / oppErr [imprécisions, erreurs, gaffes, ACPL], phases { opening, middlegame, endgame }, ev (centipions du point de vue des Blancs, mat : ±(MATE − n)), div [milieu, finale].
  * Stockage IndexedDB (« chays-games ») : trop volumineux pour localStorage, recalculable, donc ni sauvegardé ni synchronisé. Une partie d'une version antérieure est retéléchargée.
  * 12 mois par défaut ; backfill remonte tout l'historique, MAX_PER_SITE parties au plus.
@@ -264,5 +265,7 @@ const GameArchive = (function () {
     // Archive antérieure au résumé : il est calculé une fois, sans attendre l'ouverture des Statistiques.
     if (typeof window !== 'undefined' && dataStore.get(LEVELS_KEY) === null) window.addEventListener('load', () => all().catch(() => {}));
 
-    return { SITE_NAME, SCHEMA, sansFromPgn, clocksFromPgn, fromChesscom, fromLichess, tally, withPreGame, outdated, eloSeries, eloLevels, pickElo, level, all, sync, backfill };
+    const saveEvals = list => write(list, []);
+
+    return { SITE_NAME, SCHEMA, MATE, saveEvals, sansFromPgn, clocksFromPgn, fromChesscom, fromLichess, tally, withPreGame, outdated, eloSeries, eloLevels, pickElo, level, all, sync, backfill };
 })();

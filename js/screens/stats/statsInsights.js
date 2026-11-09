@@ -1,7 +1,8 @@
 /**
  * screens/stats/statsInsights.js
  * ──────────────────────────────────────────────────────────────────────────
- * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan et Temps.
+ * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan, Temps et Qualité.
+ * Qualité : Stockfish évalue les parties pendant que la vue est ouverte et visible (GameEval), Chess.com d'abord ; les résultats sont gardés.
  * Choisir un site ou une cadence règle aussi la courbe d'Elo (préférences eloSite, eloSpeed). Calculs : GameInsights, OpeningReport.
  * Chaque carte répond à une question et le dit en une phrase ; une phrase n'apparaît qu'avec assez de parties (GameInsights.MIN).
  */
@@ -10,7 +11,7 @@
 
 const StatsInsights = (function () {
     const MIN = GameInsights.MIN, SPEEDS = { bullet: 'Bullet', blitz: 'Blitz', rapid: 'Rapide', classical: 'Classique', daily: 'Par correspondance' };
-    const st = { period: 12, site: 'all', speed: 'all', view: 'bilan' };
+    const st = { period: 12, site: 'all', speed: 'all', view: 'bilan', paused: false, evalError: '', shown: 0 };
     const pct = v => `${Math.round(v)} %`;
     const signed = v => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))}`;
     const num1 = v => v.toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -38,7 +39,7 @@ const StatsInsights = (function () {
             ${sites.length > 1 ? dd(st.site, 'statsInSite', 'Site', [['all', 'Tous les sites'], ...sites.map(s => [s, GameArchive.SITE_NAME[s]])]) : ''}
             ${speeds.length > 1 ? dd(st.speed, 'statsInSpeed', 'Cadence', [['all', 'Toutes les cadences'], ...speeds.map(s => [s, SPEEDS[s]])], 'dd-end') : ''}
         </div>
-        <div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
+        <div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['qualite', 'Qualité'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
     }
 
     // ─── GRAPHIQUES ──────────────────────────────────────────────────────────
@@ -167,9 +168,100 @@ const StatsInsights = (function () {
         </div>`;
     }
 
+    // ─── QUALITÉ ─────────────────────────────────────────────────────────────
+    const fmt1 = v => v === null ? '–' : num1(v);
+    const pawn = cp => I18n.mark(`${cp >= 0 ? '+' : '−'}${num1(Math.abs(cp) / 100)}`);
+
+    function evalBarHTML(games) {
+        const left = GameEval.pending(games).length, total = games.filter(g => g.ev || g.sans.length >= 8).length, done = total - left;
+        if (!left) return `<p class="st-sub si-eval" id="si-eval">Toutes vos parties sont analysées (Stockfish, profondeur ${GameEval.DEPTH}).</p>`;
+        const running = GameEval.running() && !st.paused;
+        return `<div class="so-card si-eval" id="si-eval"><div class="si-eval-h"><b>Analyse Stockfish</b><span>${done} / ${total}</span>
+                <button type="button" class="st-link" data-action="statsInEval">${st.paused ? 'Reprendre' : 'Mettre en pause'}</button></div>
+            <span class="si-track"><i style="width:${total ? Math.round(100 * done / total) : 0}%"></i></span>
+            <p class="st-sub">${st.evalError ? escapeHtml(st.evalError) : running || !st.paused ? 'Tourne tant que cette vue reste ouverte. Chess.com d\'abord, les parties récentes en premier ; les résultats sont gardés.' : 'En pause.'}</p></div>`;
+    }
+
+    function accuracyChart(months) {
+        const pts = months.filter(m => m.accuracy !== null);
+        if (pts.length < 2) return '<p class="st-sub">Pas encore assez de mois analysés.</p>';
+        const W = 300, H = 118, L = 4, R = 36, T = 10, B = 18, vals = pts.map(p => p.accuracy), lo = Math.floor(Math.min(...vals) / 5) * 5, hi = Math.max(lo + 5, Math.ceil(Math.max(...vals) / 5) * 5);
+        const x = m => L + months.indexOf(m) * (W - L - R) / Math.max(1, months.length - 1), y = v => T + (hi - v) * (H - T - B) / (hi - lo), end = pts[pts.length - 1];
+        const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.accuracy).toFixed(1)}`).join('');
+        return `<div class="st-trend"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Précision par mois">
+            ${[lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - R + 4}" y="${y(v) + 3}">${Math.round(v)} %</text>`).join('')}
+            <path class="ln" d="${line}"/>${pts.map(p => `<circle class="pt${p === end ? ' end' : ''}" cx="${x(p)}" cy="${y(p.accuracy)}" r="${p === end ? 3.5 : 2.5}"><title>${I18n.mark(`${monthName(p.at)} · ${Math.round(p.accuracy)} % · ${p.n}`)}</title></circle>`).join('')}
+            <text class="ax" x="${L}" y="${H - 4}">${monthName(months[0].at)}</text><text class="ax" x="${W - R}" y="${H - 4}" text-anchor="end">${monthName(months[months.length - 1].at)}</text></svg></div>`;
+    }
+
+    function phaseChart(q) {
+        const names = ['Ouverture', 'Milieu de partie', 'Finale'], W = 360, H = 118, L = 104, R = 16, T = 8, B = 22, x = v => L + Math.max(0, v - 40) * (W - L - R) / 60, row = (H - T - B) / 3;
+        let g = [40, 70, 100].map(v => `<line class="g" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H - B}"/><text x="${x(v)}" y="${H - 6}" text-anchor="middle">${v} %</text>`).join('');
+        names.forEach((n, i) => {
+            const a = q.me.phases[i], b = q.opp.phases[i], y = T + row * (i + .5);
+            g += `<text x="0" y="${y + 3.5}">${n}</text>`;
+            if (a === null || b === null) return;
+            g += `<g><title>${I18n.mark(`${Math.round(a)} % / ${Math.round(b)} %`)}</title><line class="b" x1="${x(a)}" x2="${x(b)}" y1="${y}" y2="${y}"/><circle class="si-dot opp" cx="${x(b)}" cy="${y}" r="5"/><circle class="si-dot me" cx="${x(a)}" cy="${y}" r="5"/></g>`;
+        });
+        return `<svg class="so-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Précision par phase">${g}</svg>`;
+    }
+
+    function evalCurve(pts) {
+        const W = 360, H = 150, L = 4, R = 40, T = 8, B = 22, last = pts[pts.length - 1].move, lim = Math.max(50, ...pts.map(p => Math.ceil(Math.abs(p.cp) / 50) * 50));
+        const x = m => L + (m - 1) * (W - L - R) / Math.max(1, last - 1), y = v => T + (lim - v) * (H - T - B) / (2 * lim), line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.move).toFixed(1)},${y(p.cp).toFixed(1)}`).join('');
+        let g = [lim, 0, -lim].map(v => `<line class="${v ? 'g' : 'b'}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${W - R + 5}" y="${y(v) + 3}">${pawn(v)}</text>`).join('');
+        g += `<path class="si-line me" d="${line}"/>`;
+        for (let m = 10; m <= last; m += 10) g += `<text x="${x(m)}" y="${H - 6}" text-anchor="middle">${m}</text>`;
+        pts.forEach(p => { g += `<rect x="${x(p.move) - 4}" y="${T}" width="8" height="${H - T - B}" fill="transparent"><title>${I18n.mark(`${p.move} · ${pawn(p.cp)}`)}</title></rect>`; });
+        return `<svg class="so-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évaluation moyenne par coup">${g}</svg>`;
+    }
+
+    function qualiteHTML(games, list, rows) {
+        const bar = evalBarHTML(games), q = GameQuality.quality(list);
+        if (q.games < MIN) return `${bar}<p class="st-sub">Les résultats apparaissent dès ${MIN} parties analysées avec ces filtres.</p>`;
+        const worst = [0, 1, 2].filter(i => q.me.phases[i] !== null && q.opp.phases[i] !== null).sort((a, b) => (q.me.phases[a] - q.opp.phases[a]) - (q.me.phases[b] - q.opp.phases[b]))[0];
+        const phase = I18n.t(['l\'ouverture', 'le milieu de partie', 'la finale'][worst]), gapPhase = q.me.phases[worst] - q.opp.phases[worst];
+        const months = GameQuality.months(list, st.period || 12, Date.now()), buckets = GameQuality.exitBuckets(rows), LABEL = ['−1', '−1/−0,3', '±0,3', '+0,3/+1', '+1'], bars = buckets.map((t, i) => ({ label: LABEL[i], t: { ...t, expected: null } }));
+        const best = buckets[4], low = buckets[0], c = q.conversion, r = q.resistance;
+        return `${bar}<div class="so-kpis">
+                <div class="so-card so-kpi"><span>Précision</span><b>${pct(q.me.accuracy)}</b><small>Adversaires : ${pct(q.opp.accuracy)}</small></div>
+                <div class="so-card so-kpi"><span>Gaffes pour 40 coups</span><b>${fmt1(q.me.blunder)}</b><small>Adversaires : ${fmt1(q.opp.blunder)}</small></div>
+                <div class="so-card so-kpi"><span>Erreurs pour 40 coups</span><b>${fmt1(q.me.mistake)}</b><small>Adversaires : ${fmt1(q.opp.mistake)}</small></div>
+                <div class="so-card so-kpi"><span>Imprécisions pour 40 coups</span><b>${fmt1(q.me.inaccuracy)}</b><small>Adversaires : ${fmt1(q.opp.inaccuracy)}</small></div>
+            </div>
+            <div class="so-grid">
+                ${card('so-c6', 'Votre précision progresse-t-elle ?', `Sur ${I18n.t(_plural(q.games, 'partie analysée', 'parties analysées'))}. Précision du site quand elle existe, sinon calcul Chays.`, accuracyChart(months))}
+                ${card('so-c6', 'Où perdez-vous en qualité ?', gapPhase < 0 ? `Votre plus grand écart est dans ${phase} : ${num1(Math.abs(gapPhase))} points sous vos adversaires.` : 'Vous jouez au moins aussi précisément que vos adversaires dans chaque phase.', `${legend([['si-key me', 'Vous'], ['si-key opp', 'Adversaire']])}${phaseChart(q)}`)}
+                ${card('so-c6', 'Transformez-vous vos avantages ?', 'Dès que la partie atteint +2 ou −2 après le coup 5', `<div class="sg-tiles">${c.n ? tile('Avantages convertis', pct(c.score), _plural(c.n, 'partie')) : ''}${r.n ? tile('Positions sauvées', pct(r.score), _plural(r.n, 'partie')) : ''}</div>`)}
+                ${card('so-c6', 'Voyez-vous les fautes adverses ?', 'Après une erreur ou une gaffe, le coup suivant en profite-t-il ?', `<div class="sg-tiles">${q.chances ? tile('Fautes adverses punies', pct(q.punished), _plural(q.chances, 'occasion')) : ''}${q.errors ? tile('Vos fautes non punies', pct(q.unpunished), _plural(q.errors, 'faute')) : ''}</div>`)}
+                ${q.curve.length >= 5 ? card('so-c6', 'À quel moment la partie vous échappe-t-elle ?', 'Évaluation moyenne, de votre point de vue', `${evalCurve(q.curve)}<p class="si-cap">Numéro du coup</p>`) : ''}
+                ${buckets.some(fair) ? card('so-c6', 'Votre sortie d\'ouverture décide-t-elle du résultat ?', fair(best) && fair(low) ? `Après une sortie à +1 ou mieux : ${pct(best.score)}. À −1 ou moins : ${pct(low.score)}.` : 'Score selon l\'évaluation à la sortie du répertoire', `${scoreBars(bars)}<p class="si-cap">Évaluation à la sortie, en pions</p>`) : ''}
+            </div>`;
+    }
+
+    // Lance ou poursuit l'analyse quand la vue Qualité est à l'écran.
+    const viewVisible = () => { const el = document.getElementById('si-view'); return !!el && el.offsetParent !== null && !document.hidden; };
+    const shouldRun = () => st.view === 'qualite' && !st.paused && viewVisible();
+    function refreshView() {
+        const el = document.getElementById('si-view'), games = StatsGames.games();
+        if (el && games && st.view !== 'repertoire') el.innerHTML = viewHTML(games, StatsGames.analysed());
+    }
+    function pump() {
+        const games = StatsGames.games();
+        if (!games || !shouldRun() || GameEval.running() || !GameEval.pending(games).length) return;
+        st.evalError = '';
+        st.shown = 0;
+        GameEval.run(games, {
+            shouldRun,
+            onGame: () => { const box = document.getElementById('si-eval'); if (box && viewVisible()) { const fresh = document.createElement('div'); fresh.innerHTML = evalBarHTML(games); box.replaceWith(fresh.firstElementChild); } },
+            onSaved: done => { if (done - st.shown >= 20) { st.shown = done; refreshView(); Bus.emit('games:evaluated'); } }
+        }).catch(() => { st.evalError = 'Le moteur ne répond pas. Réessayez plus tard.'; }).then(() => { refreshView(); Bus.emit('games:evaluated'); });
+    }
+
     // Contenu de la vue active, hors Répertoire (rendu par StatsGames).
     function viewHTML(games, rows) {
         const list = games.filter(keeper());
+        if (st.view === 'qualite') return `<div class="si-wrap">${qualiteHTML(games, list, rows.filter(r => keep(r.g)))}</div>`;
         if (st.view === 'temps') return `<div class="si-wrap">${tempsHTML(list, rows.filter(r => keep(r.g)))}</div>`;
         return `${recordsHTML(games)}<div class="si-wrap">${bilanHTML(games, list)}</div>`;
     }
@@ -179,8 +271,9 @@ const StatsInsights = (function () {
         statsInPeriod: p => { st.period = Number(p); repaint(); },
         statsInSite: s => { st.site = s; if (s !== 'all') setPref('eloSite', s); repaint(); },
         statsInSpeed: s => { st.speed = s; if (s !== 'all') setPref('eloSpeed', s); repaint(); },
-        statsInView: v => { st.view = v; repaint(); }
+        statsInView: v => { st.view = v; repaint(); pump(); },
+        statsInEval: () => { st.paused = !st.paused; refreshView(); pump(); }
     });
 
-    return { barHTML, viewHTML, keep, view: () => st.view };
+    return { barHTML, viewHTML, keep, pump, view: () => st.view };
 })();

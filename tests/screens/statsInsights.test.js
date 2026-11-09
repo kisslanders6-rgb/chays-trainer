@@ -73,6 +73,18 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
         assert(!$('#stats-games .so-kpi'), 'pas de chiffres du Bilan ici');
     });
 
+    await t('Qualité : progression de l\'analyse, Chess.com à évaluer, résultats à partir de 5 parties analysées', () => {
+        view('qualite');
+        assert(/Analyse Stockfish/.test($('#stats-games #si-eval').textContent));
+        assert(/0 \/ 24/.test($('#stats-games #si-eval').textContent));
+        assert(/dès 5 parties analysées/.test($('#stats-games').textContent));
+        w.eval(`StatsGames.games().forEach((g, i) => { g.ev = g.sans.map((_, k) => 20 + (k % 2 ? 0 : -300 * (i % 2))); g.div = [0, 0]; }); StatsGames.repaint()`);
+        assert(/Toutes vos parties sont analysées/.test($('#stats-games #si-eval').textContent));
+        const list = titles();
+        ['Votre précision progresse-t-elle ?', 'Où perdez-vous en qualité ?', 'Transformez-vous vos avantages ?', 'Voyez-vous les fautes adverses ?'].forEach(x => assert(list.includes(x), x));
+        assert.strictEqual($$('#stats-games .so-kpi').length, 4);
+    });
+
     await t('Répertoire : l\'ancienne vue, soumise aux mêmes filtres', () => {
         view('repertoire');
         assert(/Répertoire suivi/.test($('#stats-games').textContent));

@@ -21,12 +21,15 @@ const StatsOpenings = (function () {
     const num1 = v => Math.abs(v).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     const slot = () => document.getElementById('stats-lines');
+    const evalText = cp => I18n.mark(`${cp >= 0 ? '+' : '−'}${(Math.abs(cp) / 100).toLocaleString(I18n.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     const share = (g, l) => g.all.length ? g.counts[l] / g.all.length : 0;
     const lostOf = g => g.stats.n >= MIN_MAP && g.stats.lost > 0 ? g.stats.lost : 0;
     const fairDelta = t => t.n >= MIN_MAP ? t.delta : null;                      // sur une ou deux parties, l'écart ne veut rien dire
 
     const DIAG = {
         learn: ['À apprendre', (m, lost) => `Maîtrise de ${m} sur 100, et ${lost} points de moins que prévu. Apprendre ses positions fragiles est le gain le plus direct.`],
+        replace: ['À remplacer ?', (m, lost, ev) => `Vous la connaissez (${m} sur 100), mais vous sortez de l'ouverture à ${ev} et perdez ${lost} points. La ligne elle-même mérite un examen.`],
+        through: ['À jouer en entier', (m, lost, ev) => `L'ouverture se passe bien (${ev} à la sortie), puis ${lost} points partent. Le travail est dans le milieu de partie typique.`],
         losing: ['Sue mais perdante', (m, lost) => `Vous la connaissez (${m} sur 100), mais elle rapporte ${lost} points de moins que prévu. Regardez où les parties tournent après l'ouverture.`],
         consolidate: ['À consolider', m => `Elle rapporte plus que prévu sans être bien sue (${m} sur 100). Ces points restent fragiles face à de meilleurs joueurs.`],
         keep: ['À garder', () => 'Bien sue et rentable. Une révision régulière suffit.']
@@ -108,10 +111,10 @@ const StatsOpenings = (function () {
 
     // ─── FICHE ───────────────────────────────────────────────────────────────
     function headHTML(g) {
-        const s = g.stats, id = OpeningReport.diagnose(s.n, s.delta, g.mastery), d = id && DIAG[id];
+        const s = g.stats, exit = s.n ? OpeningReport.detail(g.recent, g.path.length).exitEval : null, id = OpeningReport.diagnose(s.n, s.delta, g.mastery, exit), d = id && DIAG[id];
         const text = !g.all.length ? 'Hors de votre répertoire : aucune position travaillée pour cette ouverture.'
             : !s.n ? 'Aucune de vos parties récentes ne passe par cette ouverture.'
-            : !d ? `Trop peu de parties pour juger (${s.n}).` : d[1](g.mastery, num1(s.lost));
+            : !d ? `Trop peu de parties pour juger (${s.n}).` : d[1](g.mastery, num1(s.lost), exit === null ? '' : evalText(exit));
         return `<div class="so-head vel-card vel-dark">
             ${g.path.length ? `<div class="so-board">${_miniBoardHTML({ side: g.side, path: g.path }, true)}</div>` : ''}
             <div class="so-head-txt">
@@ -154,6 +157,9 @@ const StatsOpenings = (function () {
                 ${fact('Score en le quittant', r.left.n ? pct(r.left.score) : '–')}
                 ${fact('Réponses couvertes', pct(r.coverage))}
                 ${fact('Sortie moyenne', `coup ${r.exitMove}`)}
+                ${r.exitEval === null ? '' : fact('Évaluation à la sortie', evalText(r.exitEval))}
+                ${r.exitGood.n >= 3 ? fact('Score après une bonne sortie', pct(r.exitGood.score)) : ''}
+                ${r.exitBad.n >= 3 ? fact('Score après une mauvaise sortie', pct(r.exitBad.score)) : ''}
                 ${r.exitClock === null ? '' : fact('Avance à l\'horloge', `${r.exitClock >= 0 ? '+' : '−'}${Math.abs(Math.round(r.exitClock))} %`)}</div>
             ${hist ? `<div class="so-card so-c6"><h5>Où le répertoire s'arrête</h5><p class="st-sub">Numéro du coup, hors fins de ligne préparées</p>
                 <div class="so-leg"><span><i class="so-bar-gap"></i>Réponse manquante</span><span><i class="so-bar-me"></i>Sortie de votre fait</span></div>${hist}</div>` : ''}
@@ -346,6 +352,7 @@ const StatsOpenings = (function () {
         statsOpMore: k => { st.all.add(k); paint(); }
     });
     Bus.on('games:analysed', paint);
+    Bus.on('games:evaluated', paint);
 
     return { sectionHTML, reset: () => { st.cur = null; st.picked = false; }, close };
 })();

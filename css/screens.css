@@ -1002,3 +1002,12 @@
 .so-leg .si-key { height: 2px; width: 14px; border-radius: 1px; vertical-align: 3px; }
 .so-leg .si-key.me { background: var(--new); } .so-leg .si-key.opp { background: var(--lv-fragile); }
 @media (max-width: 599px) { .si-rec { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ─── PARTIES : QUALITÉ (statsInsights.js) ─── */
+.si-eval { margin: 0; }
+.si-eval-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 8px; font-size: 13.5px; }
+.si-eval-h span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.si-eval-h .st-link { margin-left: auto; min-height: 32px; }
+.si-eval .st-sub { margin: 8px 0 0; }
+.so-chart .si-dot.me, .so-chart .si-dot.opp { stroke: var(--surface); }
+.so-kpi > span { min-height: 1.3em; }
