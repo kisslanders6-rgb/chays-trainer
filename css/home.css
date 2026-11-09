@@ -49,6 +49,7 @@
 }
 
 /* ─── Barre du haut ─────────────────────────────────────────────────────────
+   ≥ 1 100 px  barre latérale (section « BARRE LATÉRALE », fin de fichier).
    ≥ 900 px  une ligne : logo, onglets centrés séparés par des filets, actions.
    < 900 px  les onglets deviennent une barre fixe en bas (icône + libellé, à portée de pouce) ;
              la barre du haut garde le logo complet et les actions. En partie, la barre du bas
@@ -556,4 +557,81 @@ button.suite-chip:active { transform: scale(.97); }
     .suite-chip .ring { --ring-size: 30px; }
     .suite-chip .ring-txt { display: grid; }
     .suite-chip .ring-txt b { font-size: 12px; }
+}
+
+/* ─── BARRE LATÉRALE (à partir de 1 100 px) ────────────────────────────────────
+   La même #topnav passe en colonne, sans doubler le DOM : logo, capsule Suite, onglets, actions en pied.
+   Rail de 64 px par défaut ; étendue à 240 px dès 1 440 px, sauf en partie (`.in-game`, _gameTabs).
+   --topnav-h à 0 : les barres collantes et la taille de l'échiquier récupèrent la hauteur de l'ancienne barre.
+   Puce du répertoire et couleur (`.topnav-meta`) : déplacées en tête du panneau de jeu par sidebar.js. */
+.game-meta-slot { display: none; }
+@media (min-width: 1100px) {
+    :root { --topnav-h: 0px; --side-w: 64px; }
+    .app { margin-left: var(--side-w); width: calc(100% - var(--side-w)); }
+    .setup-screen { min-height: 100vh; min-height: 100dvh; }
+
+    .topnav {
+        position: fixed; inset: 0 auto 0 0; width: var(--side-w); height: auto;
+        border-bottom: 0; border-right: 1px solid var(--border); box-shadow: 1px 0 12px rgba(40, 60, 20, .08);
+        overflow: hidden auto; scrollbar-width: none;
+    }
+    .topnav-inner { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; height: max-content; min-height: 100%; padding: 12px 10px; }
+    .topnav-brand { justify-content: center; min-height: 44px; }
+    .topnav-brand svg:first-child { height: 40px; }
+    #topnav-tabs-game { display: none !important; }       /* attribut style conservé : les règles « en partie » le lisent */
+    .topnav-right { display: contents; }
+
+    #topnav-tabs-setup, #topnav-tabs-setup.in-game { order: 2; flex: none; flex-direction: column; align-items: stretch; justify-content: flex-start; align-self: center; gap: 2px; width: 44px; }
+    #topnav-tabs-setup .topnav-tab { justify-content: center; min-height: 44px; padding: 0; border-radius: 10px; font-size: 14px; }
+    #topnav-tabs-setup .topnav-tab .ico { display: block; }
+    #topnav-tabs-setup .topnav-tab > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .topnav-tab + .topnav-tab::before { display: none; }
+    #topnav-tabs-setup .topnav-tab.active { background: var(--bg-inset); }
+    .topnav-tab.active::after { left: -10px; right: auto; top: 11px; bottom: 11px; width: 3px; height: auto; border-radius: 0 3px 3px 0; }
+    @media (hover: hover) { #topnav-tabs-setup .topnav-tab:hover { background: var(--bg-inset); } }
+
+    /* Capsule Suite : l'anneau seul, avec le nombre */
+    .suite-slot { order: 1; justify-content: center; }
+    .suite-chip { justify-content: center; width: 44px; height: 44px; max-width: none; padding: 0; border-radius: 50%; }
+    .suite-chip .ring { --ring-size: 36px; }
+    .suite-chip .ring-txt { display: grid; }
+    .suite-chip .ring-txt b { font-size: 11px; }
+    .suite-k, .suite-l, .suite-s, .suite-combo, .suite-chip > .ico { display: none; }
+
+    /* Actions : la pilule debout, en pied */
+    .topnav-pill { order: 3; align-self: center; flex-direction: column; width: 44px; height: auto; margin-top: auto; border-radius: 22px; }
+    .topnav-pill > .theme-toggle { width: 38px; height: 38px; }
+    .topnav-pill > .theme-toggle + .theme-toggle::before { display: none; }
+
+    /* Fiche Moi : à côté du bouton, en bas à gauche */
+    .me-sheet { left: calc(var(--side-w) + 8px); right: auto; top: auto; bottom: 12px; max-height: calc(100dvh - 24px); }
+
+    /* Puce du répertoire et couleur : en tête du panneau de jeu */
+    .game-meta-slot:not(:empty) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+}
+@media (min-width: 1100px) and (max-width: 1439px) { .topnav-wm { display: none; } }
+@media (min-width: 1440px) {
+    .topnav:has(.in-game) .topnav-wm { display: none; }
+    :root:not(:has(.topnav .in-game)) { --side-w: 240px; }
+
+    .topnav:not(:has(.in-game)) .topnav-inner { padding: 14px 12px; }
+    .topnav:not(:has(.in-game)) .topnav-brand { justify-content: flex-start; padding-left: 8px; }
+
+    .topnav:not(:has(.in-game)) #topnav-tabs-setup { align-self: stretch; width: auto; }
+    .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab { justify-content: flex-start; gap: 11px; padding: 0 10px; }
+    .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab > span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+    .topnav:not(:has(.in-game)) .topnav-tab.active::after { left: -12px; }
+
+    .topnav:not(:has(.in-game)) .suite-slot { justify-content: stretch; }
+    .topnav:not(:has(.in-game)) .suite-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; justify-content: stretch; column-gap: 10px; width: 100%; height: auto; min-height: 52px; padding: 8px 10px; border-radius: 12px; white-space: normal; text-align: left; }
+    .topnav:not(:has(.in-game)) .suite-chip .ring { grid-row: 1 / span 2; --ring-size: 28px; }
+    .topnav:not(:has(.in-game)) .suite-chip .ring-txt { display: none; }
+    .topnav:not(:has(.in-game)) .suite-k { display: block; grid-column: 2; font-size: 11px; font-weight: 500; }
+    .topnav:not(:has(.in-game)) .suite-k::after { content: none; }
+    .topnav:not(:has(.in-game)) .suite-l { display: block; grid-column: 2; line-height: 1.25; }
+    .topnav:not(:has(.in-game)) .suite-chip > .ico { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+
+    .topnav:not(:has(.in-game)) .topnav-pill { flex-direction: row; width: auto; height: 42px; border-radius: 999px; }
+    .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle { height: auto; }
+    .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle + .theme-toggle::before { display: block; }
 }

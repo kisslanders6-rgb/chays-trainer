@@ -216,12 +216,12 @@
                  (css/home.css). Les séparateurs sont dessinés en CSS entre deux onglets ; l'icône ne
                  s'affiche que dans la barre du bas. -->
             <div class="topnav-tabs" id="topnav-tabs-setup">
-                <div class="topnav-tab active" id="nav-tab-play"     onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Jouer</span></div>
-                <div class="topnav-tab"        id="nav-tab-stats"    onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
+                <div class="topnav-tab active" id="nav-tab-play"     title="Jouer" onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Jouer</span></div>
+                <div class="topnav-tab"        id="nav-tab-stats"    title="Statistiques" onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
                 <!-- Téléphone : centre du dock, la prochaine action (Dock, js/core/dock.js) -->
                 <button type="button" class="topnav-tab nav-center" id="nav-center" onclick="Dock.runHome()"></button>
-                <div class="topnav-tab"        id="nav-tab-training" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
-                <div class="topnav-tab"        id="nav-tab-endgame"  onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-finish-flag"/></svg><span>Finales</span></div>
+                <div class="topnav-tab"        id="nav-tab-training" title="Entraînement" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
+                <div class="topnav-tab"        id="nav-tab-endgame"  title="Finales" onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-finish-flag"/></svg><span>Finales</span></div>
             </div>
 
             <!-- Meta dans l'écran de jeu -->
@@ -475,6 +475,8 @@
                 </div>
 
                 <div class="side-panel" id="side-panel">
+                    <!-- Barre latérale (≥ 1 100 px) : puce du répertoire et couleur, déplacées ici par sidebar.js -->
+                    <div class="game-meta-slot" id="game-meta-slot"></div>
                     <!-- Mobile : poignée du tiroir (toucher = ouvrir / fermer, glisser vers le haut / le bas) -->
                     <button class="sheet-handle" id="sheet-handle" onclick="toggleSheet()" aria-label="Agrandir le panneau" aria-expanded="false"><span></span></button>
                     <!-- Carte de contexte du téléphone (gameCard.js) ; sans effet (display: contents) sur les autres largeurs -->
@@ -727,6 +729,7 @@
 <script src="js/shell/suite.js"></script>
 <script src="js/shell/dock.js"></script>
 <script src="js/shell/gameCard.js"></script>
+<script src="js/shell/sidebar.js"></script>
 <script src="js/domain/endgames/egCore.js"></script>
 <script src="js/domain/endgames/egExercises.js"></script>
 <script src="js/domain/endgames/egJudge.js"></script>
