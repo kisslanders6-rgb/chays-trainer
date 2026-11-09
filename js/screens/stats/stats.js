@@ -409,6 +409,7 @@ registerActions({
     statsPane: p => { statsPane = p; initStats(); window.scrollTo({ top: 0 }); },
     statsAddLine: () => startGame(statsColor === 'b' ? 'b' : 'w'),    // répertoire vide : Jouer, où mon coup s'enregistre
     statsGoTraining: arg => statsGoTraining(arg),
+    statsGoEndgame: cat => { switchHomeTab('endgame'); requestAnimationFrame(() => jumpEndgameCategory(cat)); },
     statsTrain: arg => { const { side, key } = _parseStatsArg(arg); startReviewQueue([{ color: side, key }], 'stats'); },
     statsPreview: (arg, el) => { const { side, key } = _parseStatsArg(arg); openStatsPreview(side, key, el && el.dataset.origin); }
 });

@@ -89,7 +89,7 @@ const GameEval = (function () {
         running = true;
         const queue = pending(games);
         let batch = [], done = 0;
-        const flush = async () => { if (!batch.length) return; const out = batch; batch = []; await GameArchive.saveEvals(out); onSaved(done); };
+        const flush = async () => { if (!batch.length) return; const out = batch; batch = []; await GameArchive.saveDerived(out); onSaved(done); };
         try {
             for (const g of queue) {
                 if (!shouldRun()) break;

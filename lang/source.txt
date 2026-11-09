@@ -433,6 +433,12 @@ Par correspondance
 UTCDate
 UTCTime
 max={0}{1}{2}
+iqp+
+hang+
+exch+
+minors+
+piece+
+pawn+
 assets/pieces
 KQRBNP
 Maestro
@@ -2067,6 +2073,7 @@ Toutes les cadences
 Bilan
 Temps
 Qualité
+Positions
 Vue
 Pas encore assez de mois joués.
 Performance
@@ -2191,6 +2198,46 @@ Erreurs pour 40 coups
 Adversaires : {6}
 Imprécisions pour 40 coups
 Adversaires : {8}
+Votre pion isolé en d
+Pion isolé adverse en d
+Vos pions pendants
+Pions pendants adverses
+Structure de Carlsbad
+Étau de Maroczy
+Chaîne française
+Chaîne est-indienne
+Centre ouvert
+Un échange de plus
+Un échange de moins
+Deux pièces contre une tour
+Une tour contre deux pièces
+Une pièce de plus
+Une pièce de moins
+Un pion de plus
+Un pion de moins
+Égalité matérielle
+Écart
+Lecture des positions de vos parties…
+Mêmes côtés
+Côtés opposés
+Vous sans roque
+Adversaire sans roque
+Préférez-vous jouer avec ou sans dames ?
+Dames échangées : {0}. Dames sur l'échiquier : {1}.
+Sans dames
+Avec dames
+Où êtes-vous à l'aise pour roquer ?
+Côtés opposés : {0}. Mêmes côtés : {1}.
+Score selon les roques des deux camps
+Quelles structures vous réussissent ?
+La plus rentable : {0}. La moins rentable : {1}.
+Structure de pions au coup 15
+Quelles finales vous coûtent des points ?
+La plus coûteuse : {0} ({1} pt).
+Vous tenez ce qu'on attend de vous dans chaque type de finale.
+S'entraîner
+Comment jouez-vous les déséquilibres ?
+Premier déséquilibre matériel tenu au moins trois coups
 Le moteur ne répond pas. Réessayez plus tard.
 À apprendre
 Maîtrise de {0} sur 100, et {1} points de moins que prévu. Apprendre ses positions fragiles est le gain le plus direct.
@@ -2249,7 +2296,6 @@ S'entraîner sur {2}
 Voir la position
 Voir {6}
 Afficher les {1} autres positions
-Positions
 {0}, les plus fragiles d'abord
 Coup
 Filtrer par niveau
@@ -2480,7 +2526,6 @@ Au hasard
 Une finale au hasard
 Commencer la finale à suivre
 Ajouter
-S'entraîner
 Ajouter ({0})
 Brouillon
 Toutes les branches du brouillon

@@ -1,7 +1,7 @@
 /**
  * screens/stats/statsInsights.js
  * ──────────────────────────────────────────────────────────────────────────
- * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan, Temps et Qualité.
+ * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan, Temps, Qualité et Positions.
  * Qualité : Stockfish évalue les parties pendant que la vue est ouverte et visible (GameEval), Chess.com d'abord ; les résultats sont gardés.
  * Choisir un site ou une cadence règle aussi la courbe d'Elo (préférences eloSite, eloSpeed). Calculs : GameInsights, OpeningReport.
  * Chaque carte répond à une question et le dit en une phrase ; une phrase n'apparaît qu'avec assez de parties (GameInsights.MIN).
@@ -39,7 +39,7 @@ const StatsInsights = (function () {
             ${sites.length > 1 ? dd(st.site, 'statsInSite', 'Site', [['all', 'Tous les sites'], ...sites.map(s => [s, GameArchive.SITE_NAME[s]])]) : ''}
             ${speeds.length > 1 ? dd(st.speed, 'statsInSpeed', 'Cadence', [['all', 'Toutes les cadences'], ...speeds.map(s => [s, SPEEDS[s]])], 'dd-end') : ''}
         </div>
-        <div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['qualite', 'Qualité'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
+        <div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['qualite', 'Qualité'], ['positions', 'Positions'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
     }
 
     // ─── GRAPHIQUES ──────────────────────────────────────────────────────────
@@ -239,6 +239,30 @@ const StatsInsights = (function () {
             </div>`;
     }
 
+    // ─── POSITIONS ───────────────────────────────────────────────────────────
+    const STRUCTURES = { 'iqp+': 'Votre pion isolé en d', 'iqp-': 'Pion isolé adverse en d', 'hang+': 'Vos pions pendants', 'hang-': 'Pions pendants adverses', carlsbad: 'Structure de Carlsbad', maroczy: 'Étau de Maroczy', french: 'Chaîne française', kid: 'Chaîne est-indienne', open: 'Centre ouvert' };
+    const ENDGAMES = { pawn: ['Finales de pions', 'pions'], rook: ['Finales de tours', 'tours'], queen: ['Finales de Dame', 'dame'], minor: ['Pièces mineures', 'mineures'], rookMinor: ['Tour + pièce', 'tour-piece'] };
+    const IMBALANCES = [['exch+', 'Un échange de plus'], ['exch-', 'Un échange de moins'], ['minors+', 'Deux pièces contre une tour'], ['minors-', 'Une tour contre deux pièces'], ['piece+', 'Une pièce de plus'], ['piece-', 'Une pièce de moins'], ['pawn+', 'Un pion de plus'], ['pawn-', 'Un pion de moins'], ['even', 'Égalité matérielle']];
+    const shortDelta = d => d === null ? '–' : I18n.mark(`${d >= 0 ? '+' : '−'}${num1(Math.abs(d))}`);
+    const posRow = (label, t, extra) => `<div class="si-pos"><span>${label}</span><span class="si-track"><i style="width:${Math.max(1, Math.round(t.score))}%"></i></span><b>${pct(t.score)}</b><span class="so-delta ${t.delta === null ? '' : t.delta >= 0 ? 'up' : 'down'}">${t.delta === null ? '' : `<i aria-hidden="true">${t.delta >= 0 ? '▲' : '▼'}</i>`}${shortDelta(t.delta)}</span><small>${t.n}</small>${extra || ''}</div>`;
+    const head = '<div class="si-pos si-pos-h" aria-hidden="true"><span></span><span>Score</span><span></span><span>Écart</span><span>Parties</span></div>';
+
+    function positionsHTML(list) {
+        const r = GamePositions.report(list);
+        if (r.games < MIN) return `<p class="st-sub">${GamePositions.running() ? 'Lecture des positions de vos parties…' : 'Trop peu de parties avec ces filtres.'}</p>`;
+        const q = r.queens, c = r.castling, known = l => l.filter(x => fair(x.t)).sort((a, b) => (b.t.delta ?? 0) - (a.t.delta ?? 0));
+        const st = known(r.structures.filter(x => STRUCTURES[x.key])), eg = known(r.endgames.filter(x => ENDGAMES[x.key])), im = IMBALANCES.map(([k, l]) => ({ l, x: r.imbalances.find(y => y.key === k) })).filter(y => y.x && fair(y.x.t));
+        const castleRows = [['Mêmes côtés', c.same], ['Côtés opposés', c.opposite], ['Vous sans roque', c.meNone], ['Adversaire sans roque', c.oppNone]].filter(([, t]) => fair(t));
+        const worstEg = eg[eg.length - 1], top = st[0], low = st[st.length - 1];
+        return `<div class="so-grid">
+            ${fair(q.off) && fair(q.on) ? card('so-c6', 'Préférez-vous jouer avec ou sans dames ?', `Dames échangées : ${pct(q.off.score)}. Dames sur l'échiquier : ${pct(q.on.score)}.`, `${head}${posRow('Sans dames', q.off)}${posRow('Avec dames', q.on)}`) : ''}
+            ${castleRows.length ? card('so-c6', 'Où êtes-vous à l\'aise pour roquer ?', fair(c.same) && fair(c.opposite) ? `Côtés opposés : ${pct(c.opposite.score)}. Mêmes côtés : ${pct(c.same.score)}.` : 'Score selon les roques des deux camps', `${head}${castleRows.map(([l, t]) => posRow(l, t)).join('')}`) : ''}
+            ${st.length ? card('so-c6', 'Quelles structures vous réussissent ?', st.length > 1 && top.t.delta !== null ? `La plus rentable : ${STRUCTURES[top.key]}. La moins rentable : ${STRUCTURES[low.key]}.` : 'Structure de pions au coup 15', `${head}${st.map(x => posRow(STRUCTURES[x.key], x.t)).join('')}`) : ''}
+            ${eg.length ? card('so-c6', 'Quelles finales vous coûtent des points ?', worstEg.t.delta !== null && worstEg.t.delta < 0 ? `La plus coûteuse : ${ENDGAMES[worstEg.key][0]} (${shortDelta(worstEg.t.delta)} pt).` : 'Vous tenez ce qu\'on attend de vous dans chaque type de finale.', `${head}${eg.map(x => posRow(ENDGAMES[x.key][0], x.t, `<button type="button" class="st-link si-go" data-action="statsGoEndgame" data-arg="${ENDGAMES[x.key][1]}">S'entraîner</button>`)).join('')}`) : ''}
+            ${im.length ? card('so-c12', 'Comment jouez-vous les déséquilibres ?', 'Premier déséquilibre matériel tenu au moins trois coups', `${head}${im.map(y => posRow(y.l, y.x.t)).join('')}`) : ''}
+        </div>`;
+    }
+
     // Lance ou poursuit l'analyse quand la vue Qualité est à l'écran.
     const viewVisible = () => { const el = document.getElementById('si-view'); return !!el && el.offsetParent !== null && !document.hidden; };
     const shouldRun = () => st.view === 'qualite' && !st.paused && viewVisible();
@@ -248,6 +272,7 @@ const StatsInsights = (function () {
     }
     function pump() {
         const games = StatsGames.games();
+        if (games) GamePositions.run(games, () => { if (st.view === 'positions') refreshView(); });
         if (!games || !shouldRun() || GameEval.running() || !GameEval.pending(games).length) return;
         st.evalError = '';
         st.shown = 0;
@@ -261,6 +286,7 @@ const StatsInsights = (function () {
     // Contenu de la vue active, hors Répertoire (rendu par StatsGames).
     function viewHTML(games, rows) {
         const list = games.filter(keeper());
+        if (st.view === 'positions') return `<div class="si-wrap">${positionsHTML(list)}</div>`;
         if (st.view === 'qualite') return `<div class="si-wrap">${qualiteHTML(games, list, rows.filter(r => keep(r.g)))}</div>`;
         if (st.view === 'temps') return `<div class="si-wrap">${tempsHTML(list, rows.filter(r => keep(r.g)))}</div>`;
         return `${recordsHTML(games)}<div class="si-wrap">${bilanHTML(games, list)}</div>`;

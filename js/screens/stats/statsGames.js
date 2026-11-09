@@ -80,6 +80,7 @@ const StatsGames = (function () {
         st.busy = false; st.form = false;
         paint();
         analyse();
+        StatsInsights.pump();
         return added;
     }
     const sync = () => run(GameArchive.sync);

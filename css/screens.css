@@ -1011,3 +1011,14 @@
 .si-eval .st-sub { margin: 8px 0 0; }
 .so-chart .si-dot.me, .so-chart .si-dot.opp { stroke: var(--surface); }
 .so-kpi > span { min-height: 1.3em; }
+
+/* ─── PARTIES : POSITIONS (statsInsights.js) ─── */
+.si-pos { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(36px, 1fr) 44px 54px 30px; align-items: center; gap: 2px 8px; padding: 6px 0; border-top: 1px solid var(--border); font-size: 12.5px; }
+.si-pos > span:first-child { color: var(--text-muted); }
+.si-pos > b { white-space: nowrap; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
+.si-pos .so-delta { justify-content: flex-end; font-variant-numeric: tabular-nums; }
+.si-pos > small { font-size: 11px; color: var(--text-dim); text-align: right; font-variant-numeric: tabular-nums; }
+.si-pos-h { border-top: 0; padding: 0 0 2px; font-size: 11px; color: var(--text-dim); }
+.si-pos-h > span:nth-child(4), .si-pos-h > span:nth-child(5) { text-align: right; }
+.si-go { grid-column: 1 / -1; justify-self: start; min-height: 32px; font-size: 12.5px; }
+@media (max-width: 599px) { .si-views .tr-seg-btn { padding-inline: 2px; font-size: 12px; } }

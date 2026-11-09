@@ -23,7 +23,7 @@ ctx.Chess = {
     play: (p, u) => ({ ply: p.ply + 1, sans: p.sans }),
     fen: p => `${p.ply < 3 ? 'nbrqNBRQnbrqNBRQ' : 'nN'}/x w - - 0 1 ${p.ply}`
 };
-ctx.GameArchive = { MATE, saved: [], saveEvals: async list => { ctx.GameArchive.saved.push(list.length); } };
+ctx.GameArchive = { MATE, saved: [], saveDerived: async list => { ctx.GameArchive.saved.push(list.length); } };
 let asked = [], cancelAt = -1;
 ctx.Engine = { analyse: (fen, o) => { asked.push({ fen, o }); const i = asked.length - 1; return { stop() {}, done: Promise.resolve(i === cancelAt ? { best: null, lines: [], cancelled: true } : { best: 'x', cancelled: false, lines: [{ score: i === 2 ? { mate: 3 } : { cp: 10 * i } }] }) }; } };
 const reset = () => { asked = []; cancelAt = -1; ctx.GameArchive.saved = []; };
