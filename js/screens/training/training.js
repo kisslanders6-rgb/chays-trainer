@@ -481,7 +481,7 @@ function _startDrill(key, seqLen, opts) {
         } : null);
         ctx.forEach((u, i) => _later(() => {
             const m = _parseUci(u);
-            playMoveSound(m.from, m.to, m.promo);
+            playBoardMoveSound(m.from, m.to, m.promo);
             animateNextMove(m.from, m.to);
             applyMove(m.from, m.to, m.promo);            // applyMove appelle renderMoves()
             renderBoard();
@@ -641,7 +641,7 @@ function _playOpponentReply(opp) {
     _later(() => {
         const m   = _parseUci(opp);
         const san = formatSanText(toAlgebraic(m.from, m.to, m.promo), turn);
-        playMoveSound(m.from, m.to, m.promo);
+        playBoardMoveSound(m.from, m.to, m.promo);
         animateNextMove(m.from, m.to);
         applyMove(m.from, m.to, m.promo);
         selected = null; legalMoves = []; hintPiece = null;

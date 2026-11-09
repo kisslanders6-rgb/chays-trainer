@@ -141,11 +141,17 @@ function _syncEngineToNavCursor() {
 
 // ─── APPLICATION CENTRALISÉE D'UN COUP (état + rendu) ────────────────────────
 
+// Son d'un coup de la position affichée : une pièce du camp adverse sonne plus grave. Avant applyMove.
+function playBoardMoveSound(from, to, promo) {
+    const p = board[from] || '', side = p === p.toUpperCase() ? 'w' : 'b';
+    playMoveSound(from, to, promo, p !== '' && side !== playerColor);
+}
+
 // badge : verdict « ok » sur la case d'arrivée (aussi posé par un statut 'ok').
 function _commitMove(from, to, promo, newDbKey, statusMsg, statusType, statusDetail, badge) {
     _resetHint();
     _suggestHintKey = null;
-    playMoveSound(from, to, promo);         // avant applyMove : détecte la capture
+    playBoardMoveSound(from, to, promo);    // avant applyMove : détecte la capture
     animateNextMove(from, to);
     applyMove(from, to, promo, newDbKey);   // met à jour board/turn/moveHistory + renderMoves()
     setSquareBadge((badge || statusType === 'ok') ? to : -1, 'ok');

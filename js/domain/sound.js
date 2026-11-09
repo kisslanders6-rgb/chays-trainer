@@ -2,10 +2,12 @@
  * domain/sound.js
  * ──────────────────────────────────────────────────────────────────────────
  * Effets sonores synthétisés avec la Web Audio API (aucun fichier externe) :
- *   'move'    toc de bois feutré   'capture' toc plus plein (pas plus fort)   'success' deux notes rondes
- *   'error'   deux notes sourdes descendantes (plus de buzz en dent de scie)
- *   'check' le coup et une note claire   'castle' deux tocs   'promote' trois notes montantes   'mate' prise et accord   'end' fin de séance
- * Douceur : attaque de 8 ms (plus de clic), aigus coupés au-dessus de 3,2 kHz, limiteur en sortie (jamais d'écrêtage).
+ * Ambiance « Noyer » : une pièce posée sur un plateau de bois, dans une pièce calme.
+ *   'move'    mon coup   'opp' coup adverse (plus grave, plus discret)   'capture' deux contacts, pas plus fort
+ *   'check' le coup et une note   'castle' deux frappes   'promote' trois notes montantes   'mate' prise et accord
+ *   'success' deux notes rondes   'error' deux frappes sourdes   'end' fin de séance
+ * Timbre : résonances fixes (pas de note qui glisse), contact bref, hauteur et force qui varient à chaque coup.
+ * Douceur : attaque de 5 ms au moins (plus de clic), aigus coupés au-dessus de 2,2 kHz, limiteur en sortie (jamais d'écrêtage).
  * Respecte appSettings.sound / appSettings.volume (cf. settings.js).
  * Annonce des coups (spokenMove, announceMove, Voice) : lecteurs d'écran ou synthèse vocale, réglage announce.
  */
@@ -64,64 +66,101 @@ function _tone(ctx, out, t0, { wave = 'sine', from, to, peak, dur, lowpass, atta
     o.start(t0); o.stop(t0 + dur + 0.02);
 }
 
-// Niveaux choisis pour qu'aucun son ne dépasse ~0,5 en crête avant le limiteur (tests/domain/sound.test.js).
+// ─── TIMBRE NOYER ─────────────────────────────────────────────────────────────
+const _NOYER = {
+    ratios: [1, 2.45, 3.9], amps: [0.27, 0.08, 0.025], decays: [0.12, 0.06, 0.03], base: 280,   // résonances du bois
+    contact: { freq: 1300, q: 0.8, peak: 0.08, dur: 0.018, attack: 0.005 },
+    noteScale: 0.75, overtone: 4, overtoneAmp: 0.16
+};
+const _jitter = range => 1 + (Math.random() * 2 - 1) * range;
+
+// Une frappe de pièce. pitch : plus bas, plus grave ; level : force relative.
+function _hit(ctx, out, t, { pitch = 1, level = 1 } = {}) {
+    const p = _jitter(0.02), g = _jitter(0.07), n = _NOYER;
+    n.ratios.forEach((r, i) => {
+        const f = n.base * pitch * r * p;
+        _tone(ctx, out, t, { from: f, to: f, peak: n.amps[i] * level * g, dur: n.decays[i], attack: 0.006 });
+    });
+    _burst(ctx, out, t, { ...n.contact, freq: n.contact.freq * pitch, peak: n.contact.peak * level * g });
+}
+
+// Une note ronde : le fondamental et un harmonique qui s'éteint vite.
+function _note(ctx, out, t, freq, peak, dur) {
+    const f = freq * _NOYER.noteScale, over = f * _NOYER.overtone;
+    _tone(ctx, out, t, { from: f, to: f, peak, dur, attack: 0.012 });
+    _tone(ctx, out, t, { from: over, to: over, peak: peak * _NOYER.overtoneAmp, dur: dur * 0.35, attack: 0.012 });
+}
+
+// Somme des crêtes de chaque son sous 0,6 avant le limiteur (tests/domain/sound.test.js).
 const _SOUNDS = {
-    move(ctx, out, t) {                          // toc de bois feutré
-        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.14, dur: 0.04 });
-        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.26, dur: 0.09 });
+    move(ctx, out, t) { _hit(ctx, out, t); },
+    opp(ctx, out, t) { _hit(ctx, out, t, { pitch: 0.89, level: 0.76 }); },
+    capture(ctx, out, t) {                       // la pièce prise, puis celle qui se pose : plus plein, pas plus fort
+        _hit(ctx, out, t, { pitch: 1.04, level: 0.3 });
+        _hit(ctx, out, t + 0.017, { pitch: 0.8, level: 0.56 });
     },
-    capture(ctx, out, t) {                       // même bois, plus plein et plus grave, pas plus fort
-        _burst(ctx, out, t,         { freq: 800, q: 1.1, peak: 0.18, dur: 0.06 });
-        _burst(ctx, out, t + 0.018, { freq: 520, q: 1.2, peak: 0.10, dur: 0.06 });
-        _tone(ctx, out, t,          { from: 165, to: 110, peak: 0.30, dur: 0.13 });
+    check(ctx, out, t) {
+        _hit(ctx, out, t, { level: 0.72 });
+        _note(ctx, out, t + 0.06, 740, 0.062, 0.24);
     },
-    success(ctx, out, t) {                       // deux notes rondes, montantes (ré, la)
-        _tone(ctx, out, t,        { from: 587, to: 587, peak: 0.10, dur: 0.20, attack: 0.012 });
-        _tone(ctx, out, t + 0.10, { from: 880, to: 880, peak: 0.08, dur: 0.28, attack: 0.012 });
+    castle(ctx, out, t) {                        // le Roi, puis la Tour
+        _hit(ctx, out, t, { level: 0.5 });
+        _hit(ctx, out, t + 0.115, { pitch: 0.9, level: 0.36 });
     },
-    error(ctx, out, t) {                         // deux notes sourdes, descendantes
-        _tone(ctx, out, t,        { wave: 'triangle', from: 210, to: 180, peak: 0.09, dur: 0.12, lowpass: 700 });
-        _tone(ctx, out, t + 0.13, { wave: 'triangle', from: 175, to: 150, peak: 0.085, dur: 0.16, lowpass: 600 });
+    promote(ctx, out, t) {                       // le coup, puis trois notes montantes
+        _hit(ctx, out, t, { level: 0.62 });
+        [523, 659, 784].forEach((f, i) => _note(ctx, out, t + 0.07 + i * 0.075, f, 0.05, 0.3));
     },
-    check(ctx, out, t) {                         // le coup, puis une note claire
-        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.14, dur: 0.04 });
-        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.20, dur: 0.09 });
-        _tone(ctx, out, t + 0.05, { from: 740, to: 740, peak: 0.07, dur: 0.16, attack: 0.01 });
+    mate(ctx, out, t) {                          // une frappe grave, puis un accord posé
+        _hit(ctx, out, t, { pitch: 0.8, level: 0.66 });
+        _note(ctx, out, t + 0.1, 392, 0.075, 0.5);
+        _note(ctx, out, t + 0.1, 587, 0.05, 0.56);
     },
-    castle(ctx, out, t) {                        // deux tocs rapprochés : le Roi, puis la Tour
-        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.10, dur: 0.04 });
-        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.16, dur: 0.09 });
-        _burst(ctx, out, t + 0.11, { freq: 900, q: 1.3, peak: 0.10, dur: 0.04 });
-        _tone(ctx, out, t + 0.11,  { from: 180, to: 130, peak: 0.16, dur: 0.09 });
+    success(ctx, out, t) {
+        _note(ctx, out, t, 587, 0.085, 0.26);
+        _note(ctx, out, t + 0.11, 880, 0.07, 0.34);
     },
-    promote(ctx, out, t) {                       // le coup, puis trois notes montantes (do, mi, sol)
-        _burst(ctx, out, t, { freq: 1000, q: 1.3, peak: 0.10, dur: 0.04 });
-        _tone(ctx, out, t,  { from: 200, to: 140, peak: 0.18, dur: 0.09 });
-        [523, 659, 784].forEach((f, i) => _tone(ctx, out, t + 0.06 + i * 0.07, { from: f, to: f, peak: 0.07, dur: 0.20, attack: 0.01 }));
+    error(ctx, out, t) {                         // deux frappes sourdes : pas de reproche
+        _hit(ctx, out, t, { pitch: 0.64, level: 0.3 });
+        _hit(ctx, out, t + 0.125, { pitch: 0.58, level: 0.26 });
     },
-    mate(ctx, out, t) {                          // la prise, puis un accord posé (sol, ré)
-        _burst(ctx, out, t, { freq: 800, q: 1.1, peak: 0.14, dur: 0.06 });
-        _tone(ctx, out, t,  { from: 165, to: 110, peak: 0.20, dur: 0.13 });
-        _tone(ctx, out, t + 0.10, { from: 392, to: 392, peak: 0.09, dur: 0.40, attack: 0.012 });
-        _tone(ctx, out, t + 0.10, { from: 587, to: 587, peak: 0.06, dur: 0.50, attack: 0.012 });
-    },
-    end(ctx, out, t) {                           // fin de séance : trois notes rondes (ré, fa dièse, la)
-        [587, 740, 880].forEach((f, i) => _tone(ctx, out, t + i * 0.12, { from: f, to: f, peak: 0.08, dur: 0.34, attack: 0.012 }));
+    end(ctx, out, t) {
+        [587, 740, 880].forEach((f, i) => _note(ctx, out, t + i * 0.12, f, 0.07, 0.4));
     }
 };
 
-// Sortie commune : volume (courbe douce), aigus coupés, limiteur. Renvoie le nœud où brancher un son.
+// Petite pièce autour du son : bruit filtré qui s'éteint en un tiers de seconde.
+function _roomImpulse(ctx) {
+    const n = Math.floor(ctx.sampleRate * 0.34), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < n; i++) {
+        last += 0.28 * ((Math.random() * 2 - 1) - last);
+        d[i] = last * Math.exp(-i / (ctx.sampleRate * 0.055));
+    }
+    return buf;
+}
+
+// Sortie commune, construite une fois par contexte : volume (courbe douce), aigus coupés, pièce, limiteur.
+// Renvoie le nœud où brancher un son.
+const _OUT_LEVEL = 0.66, _ROOM_LEVEL = 0.13;
+let _bus = null;
 function _soundOut(ctx, volume) {
-    const master = ctx.createGain(), soft = ctx.createBiquadFilter(), lim = ctx.createDynamicsCompressor();
-    master.gain.value = Math.pow(volume, 1.6) * 1.7;
-    soft.type = 'lowpass'; soft.frequency.value = 3200; soft.Q.value = 0.5;
-    lim.threshold.value = -12; lim.knee.value = 10; lim.ratio.value = 8; lim.attack.value = 0.002; lim.release.value = 0.12;
-    master.connect(soft); soft.connect(lim); lim.connect(ctx.destination);
-    return master;
+    if (!_bus || _bus.ctx !== ctx) {
+        const master = ctx.createGain(), soft = ctx.createBiquadFilter(), lim = ctx.createDynamicsCompressor();
+        const room = ctx.createConvolver(), wet = ctx.createGain();
+        soft.type = 'lowpass'; soft.frequency.value = 2200; soft.Q.value = 0.5;
+        lim.threshold.value = -12; lim.knee.value = 10; lim.ratio.value = 8; lim.attack.value = 0.002; lim.release.value = 0.12;
+        room.buffer = _roomImpulse(ctx); wet.gain.value = _ROOM_LEVEL;
+        master.connect(soft); soft.connect(lim); lim.connect(ctx.destination);
+        soft.connect(room); room.connect(wet); wet.connect(lim);
+        _bus = { ctx, master };
+    }
+    _bus.master.gain.value = Math.pow(volume, 1.6) * 1.7 * _OUT_LEVEL;
+    return _bus.master;
 }
 
 // Chaque son peut être coupé séparément (Paramètres › Sons et vibrations).
-const _SOUND_PREF = { move: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess', check: 'sMove', castle: 'sMove', promote: 'sMove', mate: 'sMove', end: 'sSuccess' };
+const _SOUND_PREF = { move: 'sMove', opp: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess', check: 'sMove', castle: 'sMove', promote: 'sMove', mate: 'sMove', end: 'sSuccess' };
 
 // Vibration (téléphones compatibles) : coup refusé, exercice réussi. Indépendante du son.
 function buzz(kind) {
@@ -141,10 +180,11 @@ function playSound(kind) {
 }
 
 // À appeler AVANT d'appliquer le coup (détecte la capture, prise en passant comprise).
-function playMoveSound(from, to, promo) {
+// opponent : le coup vient du camp adverse (voir playBoardMoveSound).
+function playMoveSound(from, to, promo, opponent) {
     const p = board[from];
     const capture = !!board[to] || (!!p && p.toUpperCase() === 'P' && (from % 8) !== (to % 8));
-    playSound(moveSoundKind(_moveSan(from, to, promo), capture));
+    playSound(moveSoundKind(_moveSan(from, to, promo), capture, opponent));
     announceMove(from, to, capture, promo);
 }
 
@@ -155,12 +195,13 @@ function _moveSan(from, to, promo) {
 }
 
 // Le son d'un coup, du plus marquant au plus ordinaire.
-function moveSoundKind(san, capture) {
+function moveSoundKind(san, capture, opponent) {
     if (/#/.test(san)) return 'mate';
     if (/\+/.test(san)) return 'check';
     if (/=/.test(san)) return 'promote';
     if (/^O-O/.test(san)) return 'castle';
-    return capture ? 'capture' : 'move';
+    if (capture) return 'capture';
+    return opponent ? 'opp' : 'move';
 }
 
 // ─── ANNONCE DES COUPS (Paramètres › Accessibilité) ──────────────────────────
