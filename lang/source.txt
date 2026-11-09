@@ -430,6 +430,9 @@ Blitz
 Rapide
 Classique
 Par correspondance
+UTCDate
+UTCTime
+max={0}{1}{2}
 assets/pieces
 KQRBNP
 Maestro
@@ -2019,6 +2022,9 @@ Retour aux Statistiques{0}
 Pseudo introuvable sur ce site.
 Le site demande de patienter une minute. Réessayez ensuite.
 Connexion impossible. Réessayez.
+partie ajoutée
+parties ajoutées
+Tout l'historique est déjà chargé.
 Pas encore assez de parties classées pour tracer une courbe.
 Pseudo {3}
 Pseudo {4}
@@ -2046,6 +2052,7 @@ Mettre à jour
 Chargement…
 Récupération des parties… {0}
 {1} : ajouter un compte
+Charger tout l'historique
 Saisissez un pseudo.
 {0}px
 À apprendre

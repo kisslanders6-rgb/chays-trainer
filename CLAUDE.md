@@ -62,5 +62,5 @@ Skills du projet (`.claude/skills/`) : `cloture-lot` (vérifications et commit d
 L'historique des lots est dans Git. Décidé pour plus tard (bilan du code, novembre 2026) : migrations éparses, CSP, appels réseau en double, geste de glissement, gardes `typeof`, écritures croisées de l'état de partie, noms en `_` partagés, découpe d'`accountUI.js`, découpe de `style.css`, fenêtres natives.
 
 - Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Restes à proposer : registre unique des réglages et `chessTrainer_schema` (migrations ordonnées), bouton « Ce coup n'était pas encore dans mon répertoire » (bouton dans `setStatus`), variantes implicites d'un PGN collé proposées comme réponses.
-- Analyses de parties : artefact « Atlas des parties » (novembre 2026), 42 statistiques retenues. Lot 1 fait (sélecteur et fiche d'ouverture) ; restent l'archive version 2, Bilan et Temps, Qualité de jeu, Types de positions.
+- Analyses de parties : artefact « Atlas des parties » (novembre 2026), 42 statistiques retenues. Lots 1 et 2 faits (sélecteur et fiche d'ouverture, archive version 2) ; restent Bilan et Temps, Qualité de jeu, Types de positions.
 - Icône et logo de marque : dessin actuel gardé, recoloré Noyer. Icônes de l'interface (`js/core/icons.js`) : choix clos le 27 octobre 2026, ne plus proposer d'alternatives.

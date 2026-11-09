@@ -23,6 +23,10 @@ t('résumé : score, écart à l\'attendu et points perdus', () => {
     near(s.score, 37.5); near(s.expected, 50); near(s.delta, -12.5); near(s.lost, .5);
 });
 
+t('attendu : l\'Elo d\'avant la partie prime quand il est connu', () => {
+    near(R.summarize([game('w', { me: 1508, opp: 1492, me0: 1500, opp0: 1500 })]).expected, 50);
+});
+
 t('performance : Elo moyen des adversaires à 50 %, bornée à 95 %, absente sous 3 parties', () => {
     assert.strictEqual(R.summarize([game('w'), game('l'), game('d'), game('d')]).perf, 1500);
     assert.strictEqual(R.summarize([game('w'), game('w'), game('w')]).perf, Math.round(1500 + 400 * Math.log10(19)));

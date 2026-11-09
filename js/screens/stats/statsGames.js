@@ -4,17 +4,17 @@
  * Statistiques › Parties : ce que disent vos parties Chess.com et Lichess (GameArchive), rapportées à votre répertoire.
  *   Elo : une courbe par site et par cadence (sélecteur discret, choix mémorisé, Chess.com par défaut) ; les résultats, eux, réunissent les deux sites.
  *   Répertoire : score selon que vous l'avez suivi ou quitté (detectDeviation) ; lignes qui coûtent le plus de points.
- * Analyse par petits lots pour ne pas figer l'écran ; seules les GAMES_ANALYZED dernières parties sont croisées avec le répertoire.
+ * Analyse de toute l'archive par petits lots, pour ne pas figer l'écran. Une archive d'une version antérieure est retéléchargée à l'ouverture.
  */
 
 'use strict';
 
 const StatsGames = (function () {
-    const GAMES_ANALYZED = 400, CHUNK = 40, ANALYZED_PLIES = 40, OPENINGS_SHOWN = 6, COSTS_SHOWN = 3;
+    const CHUNK = 40, ANALYZED_PLIES = 40, OPENINGS_SHOWN = 6, COSTS_SHOWN = 3;
     const SITE_NAME = GameArchive.SITE_NAME;
     const ERRORS = { user: 'Pseudo introuvable sur ce site.', limit: 'Le site demande de patienter une minute. Réessayez ensuite.', http: 'Connexion impossible. Réessayez.' };
 
-    const st = { games: null, busy: false, got: 0, error: '', form: false, formSite: 'chesscom', scope: '', seen: new Map(), analysing: false, series: [] };
+    const st = { games: null, busy: false, got: 0, error: '', note: '', again: false, form: false, formSite: 'chesscom', scope: '', seen: new Map(), analysing: false, series: [] };
     const users = () => ({ chesscom: appSettings.chesscomUser.trim(), lichess: appSettings.lichessUser.trim() });
     const slot = () => document.getElementById('stats-games');
     const linked = () => Object.entries(users()).filter(([, u]) => u);
@@ -37,10 +37,11 @@ const StatsGames = (function () {
     }
 
     async function analyse() {
-        if (st.analysing || !st.games || !st.games.length) return;
+        if (st.analysing) { st.again = true; return; }
+        if (!st.games || !st.games.length) return;
         const scope = scopeNow();
         if (scope !== st.scope) { st.scope = scope; st.seen = new Map(); }
-        const todo = st.games.slice(-GAMES_ANALYZED).filter(g => !st.seen.has(g.id));
+        const todo = st.games.filter(g => !st.seen.has(g.id));
         if (!todo.length) return;
         st.analysing = true;
         paint();
@@ -57,21 +58,35 @@ const StatsGames = (function () {
         st.analysing = false;
         paint();
         Bus.emit('games:analysed');
+        if (st.again) { st.again = false; analyse(); }
     }
 
     // ─── RÉCUPÉRATION ────────────────────────────────────────────────────────
-    async function sync() {
-        if (st.busy) return;
+    // Lance une récupération sur chaque compte relié ; pull : GameArchive.sync ou backfill. Renvoie le nombre de parties écrites.
+    async function run(pull) {
+        if (st.busy) return 0;
         const list = linked();
-        if (!list.length) return;
-        st.busy = true; st.got = 0; st.error = ''; paint();
+        if (!list.length) return 0;
+        st.busy = true; st.got = 0; st.error = ''; st.note = ''; paint();
+        let added = 0, before = 0;
         try {
-            for (const [site, user] of list) await GameArchive.sync(site, user, n => { st.got = n; paint(); });
+            for (const [site, user] of list) {
+                added += await pull(site, user, n => { st.got = before + n; paint(); });
+                before = st.got;
+            }
         } catch (e) { st.error = ERRORS[e.message] || ERRORS.http; }
         st.games = await GameArchive.all();
         st.busy = false; st.form = false;
         paint();
         analyse();
+        return added;
+    }
+    const sync = () => run(GameArchive.sync);
+    async function backfill() {
+        const added = await run(GameArchive.backfill);
+        if (st.error) return;
+        st.note = added ? _plural(added, 'partie ajoutée', 'parties ajoutées') : "Tout l'historique est déjà chargé.";
+        paint();
     }
 
     // ─── RENDU ───────────────────────────────────────────────────────────────
@@ -121,7 +136,7 @@ const StatsGames = (function () {
     }
 
     function repertoireHTML() {
-        const rows = st.games.slice(-GAMES_ANALYZED).map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
+        const rows = st.games.map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
         if (!rows.length) return st.analysing ? '<p class="st-sub">Comparaison avec votre répertoire…</p>' : '';
         const kept = GameArchive.tally(rows.filter(r => !r.a.dev || r.a.dev.by !== 'me').map(r => r.g)), left = GameArchive.tally(rows.filter(r => r.a.dev && r.a.dev.by === 'me').map(r => r.g));
         const fam = {};
@@ -131,7 +146,7 @@ const StatsGames = (function () {
         rows.filter(r => r.a.dev).forEach(r => { const k = r.g.color + '|' + r.a.path.join(' '); (groups[k] = groups[k] || { color: r.g.color, path: r.a.path, by: r.a.dev.by, family: r.a.family, list: [] }).list.push(r.g); });
         st.costs = Object.values(groups).filter(c => c.list.length >= 2).map(c => ({ ...c, t: GameArchive.tally(c.list) })).filter(c => c.t.score < 50).sort((a, b) => (b.t.n * (100 - b.t.score)) - (a.t.n * (100 - a.t.score))).slice(0, COSTS_SHOWN);
         const color = c => GameArchive.tally(rows.filter(r => r.g.color === c).map(r => r.g));
-        const gap = f => GameArchive.tally(rows.filter(r => Number.isFinite(r.g.opp) && f(r.g.opp - r.g.me)).map(r => r.g));
+        const gap = f => GameArchive.tally(rows.filter(r => Number.isFinite(r.g.opp) && f((r.g.opp0 ?? r.g.opp) - (r.g.me0 ?? r.g.me))).map(r => r.g));
         const tile = (l, t) => t.n ? `<div><small>${l}</small><b>${pct(t.score)}</b><span>${_plural(t.n, 'partie')}</span></div>` : '';
         return `<div class="sg-head"><h4>Votre répertoire</h4></div>
             <div class="sg-tiles">${tile('Répertoire suivi', kept)}${tile('Quitté de votre fait', left)}</div>
@@ -150,6 +165,8 @@ const StatsGames = (function () {
         if (!st.games.length || st.form || !linked().length) return `${head}<p class="st-sub">Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.</p>${formHTML()}`;
         const other = Object.keys(SITE_NAME).find(s => !users()[s]);
         return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${eloHTML()}${repertoireHTML()}
+            ${st.note ? `<p class="st-sub" role="status">${escapeHtml(st.note)}</p>` : ''}
+            <button type="button" class="st-link sg-add" data-action="statsGamesBackfill">Charger tout l'historique</button>
             ${other ? `<button type="button" class="st-link sg-add" data-action="statsGamesForm" data-arg="${other}">${SITE_NAME[other]} : ajouter un compte</button>` : ''}`;
     }
 
@@ -160,7 +177,7 @@ const StatsGames = (function () {
         if (st.games === null) {
             st.games = await GameArchive.all();
             paint();
-            if (!st.games.length && linked().length && !(typeof Net !== 'undefined' && !Net.online())) sync();
+            if ((!st.games.length || GameArchive.outdated(st.games)) && linked().length && !(typeof Net !== 'undefined' && !Net.online())) sync();
         }
         analyse();
     }
@@ -178,6 +195,7 @@ const StatsGames = (function () {
         statsGamesForm: s => { st.formSite = s; st.form = true; st.error = ''; paint(); },
         statsGamesSave: save,
         statsGamesSync: sync,
+        statsGamesBackfill: backfill,
         statsGamesSite: s => { setPref('eloSite', s); paint(); },
         statsGamesSpeed: s => { setPref('eloSpeed', s); paint(); },
         statsGameLine: i => { const c = st.costs && st.costs[Number(i)]; if (c) statsOpenLine(c.color, c.path); }
@@ -200,7 +218,7 @@ const StatsGames = (function () {
     // Parties déjà croisées avec le répertoire actif ; vide tant que l'analyse de ce répertoire n'a pas commencé.
     function analysed() {
         if (!st.games || st.scope !== scopeNow()) return [];
-        return st.games.slice(-GAMES_ANALYZED).map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
+        return st.games.map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
     }
     const pending = () => st.games === null || st.analysing || st.busy;
 

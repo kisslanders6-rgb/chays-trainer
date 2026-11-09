@@ -16,7 +16,8 @@ const OpeningReport = (function () {
     const MIN_DIAGNOSIS = 5, MIN_PERF = 3, LOSING = -3, KNOWN = 60;
 
     const expected = (me, opp) => 1 / (1 + Math.pow(10, (opp - me) / 400));
-    const hasElo = g => Number.isFinite(g.me) && Number.isFinite(g.opp);
+    const meOf = g => Number.isFinite(g.me0) ? g.me0 : g.me, oppOf = g => Number.isFinite(g.opp0) ? g.opp0 : g.opp;     // Elo d'avant la partie quand il est connu
+    const hasElo = g => Number.isFinite(meOf(g)) && Number.isFinite(oppOf(g));
     const points = g => g.result === 'w' ? 1 : g.result === 'd' ? .5 : 0;
 
     function summarize(list) {
@@ -25,7 +26,7 @@ const OpeningReport = (function () {
         list.forEach(g => {
             t[g.result]++;
             pts += points(g);
-            if (hasElo(g)) { withElo++; ptsElo += points(g); exp += expected(g.me, g.opp); opp += g.opp; }
+            if (hasElo(g)) { withElo++; ptsElo += points(g); exp += expected(meOf(g), oppOf(g)); opp += oppOf(g); }
         });
         if (!t.n) return t;
         t.score = 100 * pts / t.n;
