@@ -561,7 +561,7 @@ button.suite-chip:active { transform: scale(.97); }
 
 /* ─── BARRE LATÉRALE (à partir de 1 100 px) ────────────────────────────────────
    La même #topnav passe en colonne, sans doubler le DOM : logo, capsule Suite, onglets, actions en pied.
-   Rail de 64 px par défaut ; étendue à 240 px dès 1 440 px, sauf en partie (`.in-game`, _gameTabs).
+   Rail de 64 px, ou étendue à 240 px (data-side, préférence sideBar : automatique = dès 1 440 px), jamais en partie (`.in-game`, _gameTabs).
    --topnav-h à 0 : les barres collantes et la taille de l'échiquier récupèrent la hauteur de l'ancienne barre.
    Puce du répertoire et couleur (`.topnav-meta`) : déplacées en tête du panneau de jeu par sidebar.js. */
 .game-meta-slot { display: none; }
@@ -608,30 +608,82 @@ button.suite-chip:active { transform: scale(.97); }
 
     /* Puce du répertoire et couleur : en tête du panneau de jeu */
     .game-meta-slot:not(:empty) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+
+    /* Replier ou étendre (préférence sideBar) ; jamais en partie, où le rail est imposé */
+    .side-toggle { display: grid; place-items: center; align-self: center; width: 32px; height: 28px; border: 0; border-radius: 8px; background: none; color: var(--text-dim); cursor: pointer; }
+    .side-toggle .ico { width: 16px; height: 16px; }
+    .topnav:has(.in-game) .side-toggle { display: none; }
+    @media (hover: hover) { .side-toggle:hover { background: var(--bg-inset); color: var(--text); } }
+
+    /* Séance guidée : rien qui la fasse quitter par mégarde (comme la palette et les touches 1 à 4) */
+    html[data-session] #topnav-tabs-setup { display: none; }
+    html[data-session] .topnav-brand { pointer-events: none; }
+
+    /* Menus déroulants (sidebar.js). Rail : volet à droite de l'icône */
+    #topnav-tabs-setup .topnav-tab .sb-chev { display: none; }
+    .sb-menu { display: none; }
+    .sb-menu.open {
+        display: block; position: fixed; left: calc(var(--side-w) + 6px); top: var(--sb-top, 12px); width: 244px;
+        max-height: calc(100dvh - 24px); overflow-y: auto; padding: 8px; border: 1px solid var(--border-strong); border-radius: 12px;
+        background: var(--bg-elevated); box-shadow: var(--shadow);
+    }
+    .sb-title { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 7px; background: none; color: var(--text); font: 600 15px/1.2 var(--font-display); text-align: left; cursor: pointer; }
+    .sb-title .ico { width: 15px; height: 15px; color: var(--text-dim); }
+    .sb-it { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 7px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-sans); text-align: left; cursor: pointer; }
+    .sb-it[hidden] { display: none; }
+    .sb-it > span { flex: 1; min-width: 0; }
+    .sb-it em { color: var(--text-dim); font: 500 11.5px/1 var(--font-mono); font-style: normal; }
+    .sb-it.on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+    .sb-kid-chev { width: 14px; height: 14px; flex: none; transition: transform .18s; }
+    .sb-it[aria-expanded="true"] .sb-kid-chev { transform: rotate(180deg); }
+    .sb-kids { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .18s, visibility .18s; }
+    .sb-kids.open { grid-template-rows: 1fr; visibility: visible; }
+    .sb-kids-in { min-height: 0; overflow: hidden; }
+    .sb-kids .sb-it { padding-left: 24px; font-size: 12.5px; }
+    @media (hover: hover) { .sb-it:hover, .sb-title:hover { background: var(--bg-inset); color: var(--text); } .sb-it.on:hover { background: var(--accent-soft); } }
+    @media (pointer: coarse) { .sb-it, .sb-title { min-height: 44px; } }
+    @media (prefers-reduced-motion: reduce) { .sb-kids, .sb-menu, .sb-chev, .sb-kid-chev { transition: none !important; } }
 }
-@media (min-width: 1100px) and (max-width: 1439px) { .topnav-wm { display: none; } }
-@media (min-width: 1440px) {
-    .topnav:has(.in-game) .topnav-wm { display: none; }
-    :root:not(:has(.topnav .in-game)) { --side-w: 240px; }
+@media (min-width: 1100px) {
+    html:not([data-side="wide"]) .topnav-wm, .topnav:has(.in-game) .topnav-wm { display: none; }
+    html[data-side="wide"]:not(:has(.topnav .in-game)) { --side-w: 240px; }
 
-    .topnav:not(:has(.in-game)) .topnav-inner { padding: 14px 12px; }
-    .topnav:not(:has(.in-game)) .topnav-brand { justify-content: flex-start; padding-left: 8px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .side-toggle { position: absolute; top: 24px; right: 10px; }
 
-    .topnav:not(:has(.in-game)) #topnav-tabs-setup { align-self: stretch; width: auto; }
-    .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab { justify-content: flex-start; gap: 11px; padding: 0 10px; }
-    .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab > span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
-    .topnav:not(:has(.in-game)) .topnav-tab.active::after { left: -12px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-inner { padding: 14px 12px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-brand { justify-content: flex-start; padding-left: 8px; }
 
-    .topnav:not(:has(.in-game)) .suite-slot { justify-content: stretch; }
-    .topnav:not(:has(.in-game)) .suite-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; justify-content: stretch; column-gap: 10px; width: 100%; height: auto; min-height: 52px; padding: 8px 10px; border-radius: 12px; white-space: normal; text-align: left; }
-    .topnav:not(:has(.in-game)) .suite-chip .ring { grid-row: 1 / span 2; --ring-size: 28px; }
-    .topnav:not(:has(.in-game)) .suite-chip .ring-txt { display: none; }
-    .topnav:not(:has(.in-game)) .suite-k { display: block; grid-column: 2; font-size: 11px; font-weight: 500; }
-    .topnav:not(:has(.in-game)) .suite-k::after { content: none; }
-    .topnav:not(:has(.in-game)) .suite-l { display: block; grid-column: 2; line-height: 1.25; }
-    .topnav:not(:has(.in-game)) .suite-chip > .ico { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup { align-self: stretch; width: auto; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab { justify-content: flex-start; gap: 11px; padding: 0 10px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab > span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-tab.active::after { left: -12px; }
 
-    .topnav:not(:has(.in-game)) .topnav-pill { flex-direction: row; width: auto; height: 42px; border-radius: 999px; }
-    .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle { height: auto; }
-    .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle + .theme-toggle::before { display: block; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-slot { justify-content: stretch; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; justify-content: stretch; column-gap: 10px; width: 100%; height: auto; min-height: 52px; padding: 8px 10px; border-radius: 12px; white-space: normal; text-align: left; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-chip .ring { grid-row: 1 / span 2; --ring-size: 28px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-chip .ring-txt { display: none; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-k { display: block; grid-column: 2; font-size: 11px; font-weight: 500; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-k::after { content: none; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-l { display: block; grid-column: 2; line-height: 1.25; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .suite-chip > .ico { display: block; grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill { flex-direction: row; width: auto; height: 42px; border-radius: 999px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle { height: auto; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle + .theme-toggle::before { display: block; }
+
+    /* Menus déroulants : accordéon, une rubrique ouverte */
+    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab .sb-chev { display: block; width: 15px; height: 15px; margin-left: auto; fill: none; color: var(--text-dim); transition: transform .18s; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-tab[aria-expanded="true"] .sb-chev { transform: rotate(180deg); }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu, html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu.open {
+        display: grid; position: static; width: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+        grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .18s, visibility .18s;
+    }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu.open { grid-template-rows: 1fr; visibility: visible; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-in { min-height: 0; overflow: hidden; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-title { display: none; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it { position: relative; min-height: 32px; padding-left: 41px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it.on::before { width: 2px; background: var(--accent); }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-kids .sb-it { min-height: 30px; padding-left: 55px; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-kids .sb-it::before { left: 35px; }
 }

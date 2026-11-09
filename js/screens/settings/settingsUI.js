@@ -11,7 +11,7 @@
 
 // Raccourcis clavier (aussi affichés dans l'Aide, helpUI.js).
 const KEYBOARD_SHORTCUTS = [
-    ['Partout', [['Rechercher partout', ['⌘F · Ctrl F']], ['Onglets Jouer, Statistiques, Entraînement, Finales', ['1 · 2 · 3 · 4']], ['Mode clair ou sombre', ['D']], ['Couper ou remettre les sons', ['M']]]],
+    ['Partout', [['Rechercher partout', ['⌘F · Ctrl F']], ['Onglets Jouer, Statistiques, Entraînement, Finales', ['1 · 2 · 3 · 4']], ['Replier ou étendre la barre latérale (hors partie)', ['B']], ['Mode clair ou sombre', ['D']], ['Couper ou remettre les sons', ['M']]]],
     ['Échiquier', [['Retourner l’échiquier', ['F']], ['Indice, puis solution', ['Espace']], ['Coup précédent / suivant', ['←', '→']], ['Début de la ligne / position actuelle', ['↑', '↓']],
                    ['Copier la partie en PGN', ['C']], ['Effacer les annotations', ['X']], ['Déplacer le curseur sur l’échiquier', ['Tab', 'puis ← ↑ → ↓']], ['Jouer la case sous le curseur', ['Entrée']]]],
     ['Jouer', [['Flèches du répertoire', ['R']], ['Annuler le coup enregistré, sinon Corriger', ['Z']], ['Rétablir', ['Maj', 'Z']], ['Recommencer', ['N']], ['Changer de camp', ['V']]]],
@@ -126,6 +126,8 @@ function _settingRows() {
             { group: null, kind: 'seg', key: 'textSize', label: 'Taille du texte', opts: [['s', 'Petite'], ['m', 'Normale'], ['l', 'Grande']] },
             { group: null, kind: 'seg', key: 'thumbHand', label: 'Main du pouce', search: 'gaucher droitier téléphone dock plus',
               tip: 'Téléphone : « Plus » passe du côté de ce pouce, Retourner de l’autre.', opts: [['right', 'Droite'], ['left', 'Gauche']] },
+            { group: null, kind: 'seg', key: 'sideBar', label: 'Barre latérale', search: 'navigation menu replier étendre rail ordinateur',
+              tip: 'À partir de 1 100 px de large. Automatique : étendue dès 1 440 px. Toujours repliée pendant une partie.', opts: [['auto', 'Automatique'], ['rail', 'Repliée'], ['wide', 'Étendue']] },
             { group: null, kind: 'toggle', key: 'contrast', label: 'Contraste renforcé', search: 'bordures lisibilité', tip: 'Bordures et textes secondaires plus marqués.' },
             { group: null, kind: 'seg', key: 'announce', label: 'Annoncer les coups', search: 'voix lecteur d’écran son',
               tip: voice ? 'Lecteur d’écran : lu par VoiceOver ou TalkBack. Voix : la synthèse vocale de l’appareil' + (Voice.hasFrench() ? '.' : ' (aucune voix française trouvée : accent étranger possible).')
@@ -428,7 +430,7 @@ function setPref(key, value) {
             if (typeof initEndgame === 'function') initEndgame();
             break;
         case 'arrowStyle': case 'knightArrows': if (typeof renderAnnotations === 'function') renderAnnotations(); break;
-        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg': case 'legalStyle': case 'lastStyle': case 'thumbHand':
+        case 'coords': case 'coordPos': case 'legalDots': case 'textSize': case 'contrast': case 'motion': case 'darkBg': case 'legalStyle': case 'lastStyle': case 'thumbHand': case 'sideBar':
             applyDisplayPrefs(); break;
         case 'captures': applyDisplayPrefs(); _redrawBoardViews(); break;
         case 'lastMove': _redrawBoardViews(); break;

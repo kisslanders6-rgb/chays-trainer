@@ -114,6 +114,7 @@ const LOCAL_PREFS = {
     contrast: { ok: _bool, def: false },
     announce: { ok: _oneOf(['off', 'sr', 'voice']), def: 'off' },                    // annonce des coups (sound.js)
     thumbHand: { ok: _oneOf(['right', 'left']), def: 'right' },                       // main du pouce : côté de « Plus » dans le dock (téléphone)
+    sideBar: { ok: _oneOf(['auto', 'rail', 'wide']), def: 'auto' },                   // barre latérale, à partir de 1 100 px (sideBarMode)
     engineNet:     { ok: _oneOf(['lite', 'full']), def: 'lite' },                       // réseau du moteur (complet : téléchargé sur l'appareil)
     engineThreads: { ok: v => Number.isInteger(v) && v >= 0 && v <= 64, def: 0 },       // 0 : automatique (moitié des cœurs)
     engineHash:    { ok: _oneOf([16, 32, 64, 128, 256, 512]), def: 64 }                 // Mo
@@ -302,6 +303,14 @@ function applyDisplayPrefs() {
     d.setAttribute('data-last', s.lastStyle);
     d.setAttribute('data-motion', s.motion);
     d.setAttribute('data-hand', s.thumbHand);
+    d.setAttribute('data-side', sideBarMode());
+}
+
+// Barre latérale : 'rail' ou 'wide'. Automatique : étendue à partir de 1 440 px (même règle dans le script de tête d'index.html).
+function sideBarMode() {
+    const v = appSettings.sideBar;
+    if (v !== 'auto') return v;
+    return typeof matchMedia === 'function' && matchMedia('(min-width: 1440px)').matches ? 'wide' : 'rail';
 }
 
 // Animations réduites : réglage de l'appli, sinon celui de l'appareil.

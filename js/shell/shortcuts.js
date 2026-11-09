@@ -92,6 +92,7 @@ const Shortcuts = (function () {
 
     function atHome(e, k) {
         if (e.repeat) return false;
+        if (k === 'b') return SideBar.toggle();
         if (k === 'l') {
             if (!reviewPlan(currentRepertoire).forecast(null, 1)[0]) return false;
             startDailyReview();

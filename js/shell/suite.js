@@ -60,6 +60,7 @@ const Suite = (function () {
         try { st = state(); } catch (e) { reportError('capsule Suite', e); }
         const tabs = document.getElementById('topnav-tabs-setup');
         host.classList.toggle('in-game', !!(tabs && tabs.classList.contains('in-game')));
+        document.documentElement.toggleAttribute('data-session', !!trainingState.session && gameMode === 'training');   // barre latérale : rien qui fasse quitter la séance
         const out = st ? html(st) : '';
         if (host.innerHTML !== out) host.innerHTML = out;
         host.hidden = !st;

@@ -37,6 +37,8 @@
                 if (typeof b === 'string' && /^[a-z]+$/.test(b)) d.setAttribute('data-board', b);
                 var g = p.darkBg && p.darkBg.v;       // ambiance (teinte de l'échiquier si aucun choix)
                 d.setAttribute('data-dark', typeof g === 'string' && /^[a-z]+$/.test(g) ? g : 'board');
+                var sb = s.sideBar;                   // barre latérale, même règle que sideBarMode (settings.js)
+                d.setAttribute('data-side', sb === 'rail' || sb === 'wide' ? sb : (window.matchMedia && matchMedia('(min-width: 1440px)').matches ? 'wide' : 'rail'));
                 // Barre système dès le lancement en sombre : le fond choisi (mêmes valeurs que --bg dans style.css,
                 // vérifié par tests/app/theme.test.js ; « Échiquier », calculé, prend le gris neutre jusqu'à themeColor.js).
                 // En clair, themeColor.js la calcule à partir de l'accent.
@@ -729,7 +731,6 @@
 <script src="js/shell/suite.js"></script>
 <script src="js/shell/dock.js"></script>
 <script src="js/shell/gameCard.js"></script>
-<script src="js/shell/sidebar.js"></script>
 <script src="js/domain/endgames/egCore.js"></script>
 <script src="js/domain/endgames/egExercises.js"></script>
 <script src="js/domain/endgames/egJudge.js"></script>
@@ -747,6 +748,7 @@
 <script src="js/screens/account/accountUI.js"></script>
 <script src="js/shell/meSheet.js"></script>
 <script src="js/shell/viewRefresh.js"></script>
+<script src="js/shell/sidebar.js"></script>
 <script src="js/domain/sync/syncEngine.js"></script>
 <script src="js/shell/mobile.js"></script>
 <script src="js/shell/introTimeline.js"></script>
