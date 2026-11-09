@@ -59,6 +59,25 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
         assert(/24 parties/.test($('#stats-games .so-kpi small').textContent));
     });
 
+    await t('période, site et cadence : retrouvés au prochain lancement, sans enfermer sur une page vide', async () => {
+        pick('statsInPeriod', '6'); pick('statsInSpeed', 'rapid');
+        const saved = w.eval(`dataStore.getJSON('chessTrainer_gameFilters')`);
+        assert.strictEqual(saved.period, 6); assert.strictEqual(saved.speed, 'rapid'); assert.strictEqual(saved.site, 'all');
+        pick('statsInPeriod', '12'); pick('statsInSpeed', 'all');
+        const again = await bootApp({ storage: { chessTrainer_gameFilters: JSON.stringify({ period: 3, site: 'lichess', speed: 'blitz' }) }, before(x) { x.scrollTo = () => {}; } });
+        const x = again.dom.window, game = (ago, speed) => `StatsInsights.keep({ at: Date.now() - ${ago} * 864e5, site: 'chesscom', speed: '${speed}', color: 'w' })`;
+        x.eval(`statsColor = 'all'; StatsInsights.barHTML([{ site: 'chesscom', speed: 'blitz' }, { site: 'chesscom', speed: 'rapid' }])`);
+        assert(x.eval(game(1, 'blitz')), 'site sans partie : retour à tous les sites');
+        assert(!x.eval(game(1, 'rapid')), 'cadence retrouvée');
+        assert(!x.eval(game(150, 'blitz')), 'période retrouvée');
+        x.close();
+    });
+
+    await t('courbe d\'Elo : l\'année figure sur l\'axe', () => {
+        const axis = $$('#stats-games .sg-chart text.ax').slice(-2).map(e => e.textContent);
+        axis.forEach(l => assert(/\b20\d\d\b/.test(l), l));
+    });
+
     await t('couleur de l\'onglet : aucune partie aux Noirs, message clair', () => {
         w.eval(`statsColor = 'b'; StatsGames.repaint()`);
         assert(/Trop peu de parties avec ces filtres/.test($('#stats-games').textContent));

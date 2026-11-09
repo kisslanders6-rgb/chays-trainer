@@ -921,7 +921,9 @@
 .so-swap > .ico { width: 15px; height: 15px; fill: none; color: var(--text-dim); }
 .so-pos .lv-bar { margin-bottom: 8px; }
 #stats-lines .so-pos .st-rows { border-top: 0; }
-#stats-lines .so-pos .st-row { grid-template-columns: 92px 118px minmax(0, 1fr) 112px 84px auto; padding-inline: 0; }
+#stats-lines .so-pos .st-row { grid-template-columns: minmax(0, 1.5fr) 118px minmax(0, 1fr) 112px 84px auto; padding-inline: 0; }
+.so-pos .st-move { min-width: 0; }
+.so-after { display: block; overflow: hidden; margin-top: 1px; font-size: 11px; font-weight: 400; color: var(--text-dim); text-overflow: ellipsis; white-space: nowrap; }
 #stats-lines .so-pos .st-more { padding-inline: 0; }
 .so-games { font-size: 12px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
@@ -932,7 +934,7 @@
 }
 @container so (max-width: 639px) {
     #stats-lines .so-pos .st-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "m a" "l a" "e a" "g a"; gap: 4px 12px; padding-block: 10px; }
-    .so-pos .st-row-hd, .so-pos .st-when { display: none; }
+    .so-pos .st-row-hd, .so-pos .st-when, .so-pos .so-games:has(.so-none) { display: none; }
     .so-pos .st-move { grid-area: m; } .so-pos .st-lvl { grid-area: l; } .so-pos .st-errs { grid-area: e; } .so-pos .so-games { grid-area: g; } .so-pos .st-acts { grid-area: a; }
 }
 @container stats (max-width: 599px) {

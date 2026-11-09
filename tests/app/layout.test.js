@@ -150,8 +150,9 @@ t('lecture de l\'écran de jeu selon la hauteur, zoom stable', () => {
     assert(/min-height: 761px\) \{[^}]*\}\s+\.side-panel:not\(\.open\) \.game-card \{ flex: 1 1 auto; min-height: 0; \}/.test(css), 'grand écran : la carte de contexte occupe la place libre');
     assert(/^html \{ touch-action: manipulation; \}/m.test(css), 'pas de zoom au double-toucher');
     assert(/@media \(pointer: coarse\) \{ input:not\(\[type="range"\], \[type="checkbox"\], \[type="radio"\]\), textarea, select \{ font-size: 16px !important; \} \}/.test(css), 'pas de zoom à la saisie sur iOS');
-    assert(!/user-scalable|maximum-scale/.test(fs.readFileSync('index.html', 'utf8')), 'le zoom reste permis hors partie');
-    assert(/addEventListener\('gesturestart'[\s\S]{0,160}game-screen[\s\S]{0,120}preventDefault/.test(mob), 'pincement bloqué en partie');
+    assert(/name="viewport"[^>]*maximum-scale=1, user-scalable=no/.test(fs.readFileSync('index.html', 'utf8')), 'zoom coupé par le viewport');
+    assert(/@media \(pointer: coarse\) \{ html, body \{ touch-action: pan-x pan-y; \} \}/.test(css), 'pas de pincement sur écran tactile');
+    assert(/\['gesturestart', 'gesturechange'\][\s\S]{0,200}pointer: coarse[\s\S]{0,120}preventDefault/.test(mob), 'pincement bloqué sur Safari tactile');
 });
 
 t('pages et ordinateur (Ergonomie, lot 5)', () => {

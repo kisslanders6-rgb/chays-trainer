@@ -696,8 +696,9 @@ html[data-board="wood"]  .sq.hl-selected { background: rgba(205, 140, 40, .65) !
 .toast-x { border: none; background: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 4px; }
 
 /* ─── TACTILE ────────────────────────────────────────────────────────────── */
-/* Zoom : jamais d'involontaire (double-toucher, champ de moins de 16 px sur iOS). Le pincement reste libre, sauf en partie (mobile.js pour Safari). */
+/* Zoom : aucun sur écran tactile (viewport, pincement, double-toucher, champ de moins de 16 px sur iOS ; mobile.js pour Safari, qui ignore le viewport et touch-action sur ce geste). */
 html { touch-action: manipulation; }
+@media (pointer: coarse) { html, body { touch-action: pan-x pan-y; } }
 body:has(#game-screen:not(.hidden)) { touch-action: pan-x pan-y; }
 @media (pointer: coarse) { input:not([type="range"], [type="checkbox"], [type="radio"]), textarea, select { font-size: 16px !important; } }
 button, .btn, .tree-row, .topnav-tab { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }

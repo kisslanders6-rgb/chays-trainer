@@ -92,6 +92,8 @@ const StatsGames = (function () {
     }
 
     // ─── RENDU ───────────────────────────────────────────────────────────────
+    const dayLabel = t => I18n.mark(new Date(t).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short', year: 'numeric' }));
+
     function chart(series) {
         st.series = series;
         if (series.length < 2) return '<p class="st-sub">Pas encore assez de parties classées pour tracer une courbe.</p>';
@@ -99,7 +101,7 @@ const StatsGames = (function () {
         const lo = Math.floor(Math.min(...vals) / 50) * 50, hi = Math.max(lo + 50, Math.ceil(Math.max(...vals) / 50) * 50);
         const x = i => L + i * (W - L - R) / (series.length - 1), y = v => T + (hi - v) * (H - T - B) / (hi - lo);
         const line = series.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.r).toFixed(1)}`).join('');
-        const end = series.length - 1, dateOf = t => I18n.mark(new Date(t).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' }));
+        const end = series.length - 1, dateOf = dayLabel;
         return `<div class="st-trend sg-chart" data-sg-chart><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${I18n.pair(I18n.t('Elo'), `${series[0].r} → ${series[end].r}`)}">
             ${[lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - R + 4}" y="${y(v) + 3}">${Math.round(v)}</text>`).join('')}
             <path class="ar" d="${line}L${x(end)},${H - B}L${x(0)},${H - B}Z"/><path class="ln" d="${line}"/><circle class="pt end" cx="${x(end)}" cy="${y(series[end].r)}" r="3.5"/>
@@ -211,8 +213,8 @@ const StatsGames = (function () {
         const px = L + i * (W - L - R) / (st.series.length - 1), line = box.querySelector('.sg-cross'), tip = box.querySelector('.sg-tip');
         line.removeAttribute('hidden'); line.setAttribute('x1', px); line.setAttribute('x2', px);
         tip.hidden = false;
-        tip.textContent = I18n.mark(`${new Date(st.series[i].at).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' })} · ${st.series[i].r}`);
-        tip.style.left = `${Math.min(r.width - 90, Math.max(0, px / W * r.width - 40))}px`;
+        tip.textContent = I18n.mark(`${dayLabel(st.series[i].at)} · ${st.series[i].r}`);
+        tip.style.left = `${Math.max(0, Math.min(r.width - tip.offsetWidth, px / W * r.width - tip.offsetWidth / 2))}px`;
     });
 
     Bus.on('elo:choice', paint);          // choix changé depuis Compte

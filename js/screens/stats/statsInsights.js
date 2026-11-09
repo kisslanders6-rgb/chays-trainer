@@ -4,6 +4,7 @@
  * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan, Temps, Qualité et Positions.
  * Qualité : Stockfish évalue les parties pendant que la vue est ouverte et visible (GameEval), Chess.com d'abord ; les résultats sont gardés.
  * Choisir un site ou une cadence règle aussi la courbe d'Elo (préférences eloSite, eloSpeed). Calculs : GameInsights, OpeningReport.
+ * Période, site et cadence sont retrouvés au prochain lancement (chessTrainer_gameFilters, propre à l'appareil).
  * Chaque carte répond à une question et le dit en une phrase ; une phrase n'apparaît qu'avec assez de parties (GameInsights.MIN).
  */
 
@@ -11,7 +12,13 @@
 
 const StatsInsights = (function () {
     const MIN = GameInsights.MIN, SPEEDS = { bullet: 'Bullet', blitz: 'Blitz', rapid: 'Rapide', classical: 'Classique', daily: 'Par correspondance' };
-    const st = { period: 12, site: 'all', speed: 'all', view: 'bilan', paused: false, evalError: '', shown: 0 };
+    const FILTERS_KEY = 'chessTrainer_gameFilters';
+    function readFilters() {
+        const s = dataStore.getJSON(FILTERS_KEY, null) || {};
+        return { period: [0, 3, 6, 12].includes(s.period) ? s.period : 12, site: GameArchive.SITE_NAME[s.site] ? s.site : 'all', speed: SPEEDS[s.speed] ? s.speed : 'all' };
+    }
+    const st = { ...readFilters(), view: 'bilan', paused: false, evalError: '', shown: 0 };
+    const saveFilters = () => dataStore.setJSON(FILTERS_KEY, { period: st.period, site: st.site, speed: st.speed });
     const pct = v => `${Math.round(v)} %`;
     const signed = v => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))}`;
     const num1 = v => v.toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -33,6 +40,9 @@ const StatsInsights = (function () {
 
     function barHTML(games) {
         const sites = [...new Set(games.map(g => g.site))], speeds = Object.keys(SPEEDS).filter(s => games.some(g => g.speed === s));
+        // Un choix gardé sans partie correspondante (compte retiré) n'enferme pas sur une page vide, et reste écrit pour le jour où il revient.
+        if (!sites.includes(st.site)) st.site = 'all';
+        if (!speeds.includes(st.speed)) st.speed = 'all';
         const dd = (value, action, aria, options, cls) => dropdownHTML({ value, action, aria, options, cls: `dd-sm ${cls || ''}` });
         return `<div class="si-bar">
             ${dd(String(st.period), 'statsInPeriod', 'Période', [['3', '3 mois'], ['6', '6 mois'], ['12', '12 mois'], ['0', 'Tout']])}
@@ -294,9 +304,9 @@ const StatsInsights = (function () {
 
     const repaint = () => StatsGames.repaint();
     registerActions({
-        statsInPeriod: p => { st.period = Number(p); repaint(); },
-        statsInSite: s => { st.site = s; if (s !== 'all') setPref('eloSite', s); repaint(); },
-        statsInSpeed: s => { st.speed = s; if (s !== 'all') setPref('eloSpeed', s); repaint(); },
+        statsInPeriod: p => { st.period = Number(p); saveFilters(); repaint(); },
+        statsInSite: s => { st.site = s; saveFilters(); if (s !== 'all') setPref('eloSite', s); repaint(); },
+        statsInSpeed: s => { st.speed = s; saveFilters(); if (s !== 'all') setPref('eloSpeed', s); repaint(); },
         statsInView: v => { st.view = v; repaint(); pump(); },
         statsInEval: () => { st.paused = !st.paused; refreshView(); pump(); }
     });

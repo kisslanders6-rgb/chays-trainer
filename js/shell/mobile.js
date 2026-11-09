@@ -110,11 +110,11 @@ document.getElementById('status-bar').addEventListener('click', e => {
     if (!e.target.closest('.status-act') && e.currentTarget.querySelector('.status-detail')) e.currentTarget.classList.toggle('is-open');
 });
 
-// Pendant une partie, pas de zoom au pincement : Safari ne suit pas touch-action pour ce geste (style.css).
-document.addEventListener('gesturestart', e => {
+// Pas de zoom au pincement sur écran tactile, ni pendant une partie : Safari ignore le viewport et touch-action pour ce geste (layout.css).
+['gesturestart', 'gesturechange'].forEach(type => document.addEventListener(type, e => {
     const game = document.getElementById('game-screen');
-    if (game && !game.classList.contains('hidden')) e.preventDefault();
-}, { passive: false });
+    if (matchMedia('(pointer: coarse)').matches || (game && !game.classList.contains('hidden'))) e.preventDefault();
+}, { passive: false }));
 
 // ─── BARRE DE COUPS : GLISSER POUR PARCOURIR LES COUPS ─────────────────────────
 // Le doigt vers la gauche avance (la ligne défile avec lui), vers la droite recule : un coup tous les 26 px.

@@ -140,6 +140,30 @@ const seedGames = async (w, games) => {
         w.eval(`statsFilter = 'all'; initStats()`);
     });
 
+    await t('coups de la fiche : cinq lignes situées par les coups précédents, le reste replié', () => {
+        w.eval(`(() => {
+            const p = 'e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3 g8f6 d2d3 d7d6 e1g1 e8g8 f1e1 a7a6 h2h3 h7h6 b1d2 b7b6 d2f1 c8b7 f1g3 d8d7 a2a4'.split(' '), db = {};
+            for (let k = 0; k < p.length; k += 2) { const path = p.slice(0, k + 1), pos = Chess.replay(path.slice(0, -1));
+                db[Chess.key(pos)] = { move: path[k], san: Chess.san(pos, path[k]), attempts: 6, failures: 4 - k / 8, path, ply: path.length, due: Date.now() + 864e5, interval: 3, created: 1 }; }
+            dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db)); statsColor = 'all'; statsFilter = 'all'; initStats();
+        })()`);
+        $('#so-trigger').click();
+        typed('pianissimo');
+        key($('#so-picker .so-p-search'), 'ArrowDown');
+        key($('#so-picker .so-p-search'), 'Enter');
+        const rows = () => $$('#stats-lines .so-pos .st-row:not(.st-row-hd)'), more =() => $('#stats-lines .so-pos .st-more');
+        assert.strictEqual(rows().length, 5);
+        const total = Number(/^(\d+) coups/.exec($('#stats-lines .so-pos .st-sub').textContent)[1]);
+        assert(total > 5);
+        assert.strictEqual(more().textContent, `Afficher les ${total - 5} autres coups`);
+        assert(rows().some(r => /^Après … \d+/.test(r.querySelector('.so-after').textContent)), 'quatre demi-coups au plus, marqués coupés');
+        more().click();
+        assert.strictEqual(rows().length, total);
+        assert.strictEqual(more().textContent, 'Réduire');
+        more().click();
+        assert.strictEqual(rows().length, 5);
+    });
+
     await t('partie hors répertoire : fiche sans maîtrise, classée à part', async () => {
         seedRep(w);
         await seedGames(w, Array(3).fill({ id: 'hors', pgn: '1. d4 d5 2. c4', r: 'w' }));

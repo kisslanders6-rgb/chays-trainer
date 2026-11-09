@@ -844,6 +844,7 @@ Pinceau
 Courbe
 Laser
 (prefers-color-scheme: dark)
+(min-width: 1440px)
 (prefers-reduced-motion: reduce)
 Android
 Mac
@@ -1653,6 +1654,7 @@ Partout
 Rechercher partout
 ⌘F · Ctrl F
 Onglets Jouer, Statistiques, Entraînement, Finales
+Replier ou étendre la barre latérale (hors partie)
 Mode clair ou sombre
 Couper ou remettre les sons
 Retourner l’échiquier
@@ -1867,6 +1869,12 @@ gaucher droitier téléphone dock plus
 Téléphone : « Plus » passe du côté de ce pouce, Retourner de l’autre.
 Droite
 Gauche
+Barre latérale
+navigation menu replier étendre rail ordinateur
+À partir de 1 100 px de large. Automatique : étendue dès 1 440 px. Toujours repliée pendant une partie.
+Automatique
+Repliée
+Étendue
 Contraste renforcé
 bordures lisibilité
 Bordures et textes secondaires plus marqués.
@@ -2290,13 +2298,17 @@ Score par mois
 </i>Score attendu
 Votre préparation
 Dans vos parties réelles
-{4} err. / {5}
+Premier coup de la partie
+Après
+{5} err. / {6}
 S'entraîner sur cette position (compte comme un essai)
-S'entraîner sur {2}
+S'entraîner sur {3}
 Voir la position
-Voir {6}
-Afficher les {1} autres positions
-{0}, les plus fragiles d'abord
+Voir {7}
+Réduire
+Afficher les {0} autres coups
+Vos coups à connaître
+{0} de votre répertoire dans cette ouverture, du moins su au mieux su.
 Coup
 Filtrer par niveau
 Par ouverture
@@ -2630,6 +2642,13 @@ Choisir un répertoire
 Rechercher un répertoire
 Sons activés
 Sons coupés
+(min-width: 1100px)
+Avec les Blancs
+Avec les Noirs
+(hover: hover)
+Étendre la barre
+Replier la barre
+stats.games.
 Revoir {0} erreurs
 {0} · {1} min
 nouveauté à traiter

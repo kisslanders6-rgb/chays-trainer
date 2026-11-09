@@ -4,7 +4,7 @@
  * Statistiques › Par ouverture : un sélecteur et une seule fiche, quelle que soit la taille du répertoire.
  *   Sélecteur : recherche par nom ou par coups, « À travailler d'abord », familles, carte maîtrise × résultats.
  *     Fenêtre posée sous <body> : dans l'onglet, une requête de conteneur capterait le position: fixed du tiroir de téléphone.
- *   Fiche : diagnostic, score, écart à l'attendu, performance, maîtrise, évolution, sorties du répertoire, réponses adverses, positions.
+ *   Fiche : diagnostic, score, écart à l'attendu, performance, maîtrise, évolution, sorties du répertoire, réponses adverses, coups à connaître (les 5 moins sus, le reste déplié à la demande).
  * Le rattachement d'une partie : la position la plus avancée de mon répertoire qu'elle a atteinte (les transpositions comptent).
  * Sans position enregistrée, la partie rejoint son ouverture nommée (« Hors répertoire »). Calculs : OpeningReport.
  * Seules les positions déjà travaillées forment les groupes, comme l'Entraînement (_assignOpenings).
@@ -13,7 +13,7 @@
 'use strict';
 
 const StatsOpenings = (function () {
-    const ROWS = 30, PRIORITY = 3, MIN_OUT = 2, MIN_MAP = 3, REPLIES = 6, SWAPS = 3;
+    const ROWS = 5, AFTER_PLIES = 4, PRIORITY = 3, MIN_OUT = 2, MIN_MAP = 3, REPLIES = 6, SWAPS = 3;
     const OTHER = 'Autres positions';
     const st = { ctx: null, scope: '', cur: null, picked: false, period: 12, mode: 'list', q: '', active: -1, all: new Set(), list: [], reached: new Map() };
 
@@ -170,14 +170,27 @@ const StatsOpenings = (function () {
         </div>`;
     }
 
+    // Derniers coups avant ma réponse : sans eux, « 4… e6 » ne dit pas de quelle position il s'agit.
+    function afterHTML(path) {
+        if (!path || path.length < 2) return 'Premier coup de la partie';
+        try {
+            const sans = _pathToSans(path.slice(0, -1)), from = Math.max(0, sans.length - AFTER_PLIES);
+            const line = sans.slice(from).map((s, k) => {
+                const i = from + k, n = Math.floor(i / 2) + 1, w = i % 2 === 0;
+                return `${w ? `${n}. ` : k ? '' : `${n}… `}${formatSan(s, w ? 'w' : 'b')}`;
+            }).join(' ');
+            return `Après <span class="so-line">${from ? '… ' : ''}${line}</span>`;
+        } catch (e) { return ''; }
+    }
+
     function positionsHTML(g) {
         if (!g.all.length) return '';
         const now = Date.now(), items = g.items.slice().sort(_byWorst), shown = st.all.has(g.key) ? items : items.slice(0, ROWS);
-        const games = r => { const list = st.reached.get(r.side + '|' + r.k) || []; if (!list.length) return '–'; return `${_plural(list.length, 'partie')} · ${pct(OpeningReport.summarize(list).score)}`; };
+        const games = r => { const list = st.reached.get(r.side + '|' + r.k) || []; if (!list.length) return '<i class="so-none">–</i>'; return `${_plural(list.length, 'partie')} · ${pct(OpeningReport.summarize(list).score)}`; };
         const rows = shown.map(r => {
             const d = isDue(r.e, now), m = Math.round(masteryOf(r.e));
             return `<div class="st-row">
-                <span class="st-move">${_moveLabel(r.e, false, true)}</span>
+                <span class="st-move">${_moveLabel(r.e, false, true)}<small class="so-after">${afterHTML(r.e.path)}</small></span>
                 <span class="st-lvl">${_lvMark(r.lv)}${STATS_LEVELS[r.lv].one}</span>
                 <span class="st-errs lv-${r.lv}" title="${r.e.failures} err. / ${r.e.attempts}"><span class="st-rate" aria-hidden="true"><i style="width:${Math.max(3, m)}%"></i></span><span class="st-n">${m} / 100</span></span>
                 <span class="so-games">${games(r)}</span>
@@ -187,9 +200,10 @@ const StatsOpenings = (function () {
                     <button type="button" class="st-ibtn" data-action="statsPreview" data-arg="${_statsArg(r)}" data-origin="${escapeHtml(g.name)}" title="Voir la position" aria-label="Voir ${escapeHtml(_moveLabel(r.e))}">${ico('eye')}</button>
                 </span></div>`;
         }).join('');
-        return `<div class="so-card so-pos"><h5>Positions</h5><p class="st-sub">${_plural(items.length, 'position')}, les plus fragiles d'abord</p>
+        const more = items.length > ROWS ? `<button type="button" class="st-more" data-action="statsOpMore" data-arg="${escapeHtml(g.key)}" aria-expanded="${items.length === shown.length}">${items.length === shown.length ? 'Réduire' : `Afficher les ${items.length - shown.length} autres coups`}</button>` : '';
+        return `<div class="so-card so-pos"><h5>Vos coups à connaître</h5><p class="st-sub">${_plural(items.length, 'coup')} de votre répertoire dans cette ouverture, du moins su au mieux su.</p>
             ${levelBarHTML(g.counts)}
-            <div class="st-rows"><div class="st-row st-row-hd" aria-hidden="true"><span>Coup</span><span>Niveau</span><span>Maîtrise</span><span>Parties</span><span>Révision</span><span></span></div>${rows}${items.length > shown.length ? `<button type="button" class="st-more" data-action="statsOpMore" data-arg="${escapeHtml(g.key)}">Afficher les ${items.length - shown.length} autres positions</button>` : ''}</div></div>`;
+            <div class="st-rows"><div class="st-row st-row-hd" aria-hidden="true"><span>Coup</span><span>Niveau</span><span>Maîtrise</span><span>Parties</span><span>Révision</span><span></span></div>${rows}${more}</div></div>`;
     }
 
     function chipsHTML() {
@@ -349,7 +363,13 @@ const StatsOpenings = (function () {
         statsOpMode: m => { st.mode = m; renderPicker(); },
         statsOpStep: d => step(Number(d)),
         statsOpPeriod: p => { st.period = Number(p); st.picked = true; paint(); },
-        statsOpMore: k => { st.all.add(k); paint(); }
+        statsOpMore: k => {
+            const closing = st.all.delete(k);
+            if (!closing) st.all.add(k);
+            paint();
+            const card = closing && slot().querySelector('.so-pos');          // replié : la carte reste à l'écran
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest' });
+        }
     });
     Bus.on('games:analysed', paint);
     Bus.on('games:evaluated', paint);
