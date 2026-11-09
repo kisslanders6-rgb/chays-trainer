@@ -21,10 +21,24 @@ const StatsGames = (function () {
     const pct = v => `${v} %`;
 
     // ─── ANALYSE AVEC LE RÉPERTOIRE ──────────────────────────────────────────
+    const count = c => Object.keys(readDBFor(currentRepertoire, c)).length;
+    const scopeNow = () => `${currentRepertoire}|${count('w')}|${count('b')}`;
+
+    // Mes positions du répertoire atteintes par une partie, de la première à la plus avancée (la position du coup quitté comprise).
+    function reachedKeys(path, color, db, dev) {
+        const out = [];
+        let pos = Chess.start();
+        path.forEach((u, i) => {
+            if ((i % 2 === 0) === (color === 'w')) { const k = Chess.key(pos); if (db[k]) out.push(k); }
+            pos = Chess.play(pos, u);
+        });
+        if (dev && dev.by === 'me' && db[dev.key]) out.push(dev.key);
+        return out;
+    }
+
     async function analyse() {
         if (st.analysing || !st.games || !st.games.length) return;
-        const count = c => Object.keys(readDBFor(currentRepertoire, c)).length;
-        const scope = `${currentRepertoire}|${count('w')}|${count('b')}`;
+        const scope = scopeNow();
         if (scope !== st.scope) { st.scope = scope; st.seen = new Map(); }
         const todo = st.games.slice(-GAMES_ANALYZED).filter(g => !st.seen.has(g.id));
         if (!todo.length) return;
@@ -34,13 +48,15 @@ const StatsGames = (function () {
         for (let i = 0; i < todo.length; i += CHUNK) {
             todo.slice(i, i + CHUNK).forEach(g => {
                 const r = detectDeviation(g.sans.slice(0, ANALYZED_PLIES), g.color, base[g.color].db, base[g.color].opp, g.at);
-                const path = r.moves.map(m => m.uci), d = r.deviation, name = openingNameOf(path);
-                st.seen.set(g.id, { family: name ? name.name.split(' · ')[0] : '', dev: d && !d.treated ? d : null, path: d ? path.slice(0, d.by === 'opp' ? d.ply + 1 : d.ply) : path });
+                const path = r.moves.map(m => m.uci), d = r.deviation, name = openingNameOf(path), kept = d ? path.slice(0, d.by === 'opp' ? d.ply + 1 : d.ply) : path;
+                st.seen.set(g.id, { family: name ? name.name.split(' · ')[0] : '', op: name ? { name: name.name, path: name.path } : null, dev: d && !d.treated ? d : null, path: kept,
+                                    mine: reachedKeys(kept, g.color, base[g.color].db, d), played: d && d.by === 'me' ? r.moves[d.ply] : null });
             });
             await new Promise(r => setTimeout(r));
         }
         st.analysing = false;
         paint();
+        Bus.emit('games:analysed');
     }
 
     // ─── RÉCUPÉRATION ────────────────────────────────────────────────────────
@@ -119,7 +135,7 @@ const StatsGames = (function () {
         const tile = (l, t) => t.n ? `<div><small>${l}</small><b>${pct(t.score)}</b><span>${_plural(t.n, 'partie')}</span></div>` : '';
         return `<div class="sg-head"><h4>Votre répertoire</h4></div>
             <div class="sg-tiles">${tile('Répertoire suivi', kept)}${tile('Quitté de votre fait', left)}</div>
-            <div class="sg-head"><h4>Par ouverture</h4><span class="sg-leg"><i class="sg-w"></i>Gains <i class="sg-d"></i>Nulles <i class="sg-l"></i>Pertes</span></div>
+            <div class="sg-head"><h4>Par famille d'ouverture</h4><span class="sg-leg"><i class="sg-w"></i>Gains <i class="sg-d"></i>Nulles <i class="sg-l"></i>Pertes</span></div>
             ${openings.map(([k, list]) => wdl(k, GameArchive.tally(list))).join('')}
             ${st.costs.length ? `<div class="sg-head"><h4>Ce qui vous coûte le plus</h4></div>${st.costs.map((c, i) => `<button type="button" class="sg-cost" data-action="statsGameLine" data-arg="${i}"><span><b>${c.family ? escapeHtml(c.family) : 'Autres positions'}</b><small>${_movesLabel(c.path.slice(-6), true) || ''}</small><small>${c.by === 'me' ? 'Votre coup sort du répertoire' : 'Réponse manquante'} · ${_plural(c.t.n, 'partie')} · ${pct(c.t.score)}</small></span>${ico('chevron-right')}</button>`).join('')}` : ''}
             <div class="sg-head"><h4>Selon la couleur et l'adversaire</h4></div>
@@ -181,5 +197,12 @@ const StatsGames = (function () {
 
     Bus.on('elo:choice', paint);          // choix changé depuis Compte
 
-    return { content, mount };
+    // Parties déjà croisées avec le répertoire actif ; vide tant que l'analyse de ce répertoire n'a pas commencé.
+    function analysed() {
+        if (!st.games || st.scope !== scopeNow()) return [];
+        return st.games.slice(-GAMES_ANALYZED).map(g => ({ g, a: st.seen.get(g.id) })).filter(r => r.a);
+    }
+    const pending = () => st.games === null || st.analysing || st.busy;
+
+    return { content, mount, analysed, pending };
 })();

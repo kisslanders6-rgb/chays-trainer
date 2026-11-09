@@ -33,7 +33,7 @@
 }
 
 /* Lignes et menus : un voile plutôt qu'un rétrécissement (pleine largeur) */
-:is(.st-row, .st-line-head, .st-more, .tree-row, .menu-item, .online-row, .move-token, .sheet-handle):not(:disabled):active {
+:is(.st-row, .st-more, .so-opt, .so-swap, .tree-row, .menu-item, .online-row, .move-token, .sheet-handle):not(:disabled):active {
     transform: none;
     background-color: var(--press-veil);
     transition-duration: .05s;

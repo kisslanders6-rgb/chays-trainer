@@ -102,7 +102,7 @@ jeton personnel
 (aucune autorisation à cocher), gardé sur cet appareil.
 Activer
 Ajouter mes parties
-Jouer {1} pour l’adversaire · {2}
+Jouer {2} pour l’adversaire · {3}
 Suites adverses
 Lichess a refusé le jeton : vérifiez-le, ou retirez-le.
 Hors ligne : statistiques Lichess indisponibles.
@@ -425,6 +425,11 @@ fichier reçu altéré (empreinte différente) : rien n’a été gardé
 depth {0}
 movetime {0}
 le moteur ne répond plus
+Bullet
+Blitz
+Rapide
+Classique
+Par correspondance
 assets/pieces
 KQRBNP
 Maestro
@@ -885,85 +890,6 @@ Synchronisation…
 En attente de votre choix de première synchronisation…
 À jour ·
 Clé non synchronisée :
-Hors ligne : connexion au compte impossible pour l'instant. Vos données restent utilisables sur cet appareil.
-Mot de passe : 8 caractères minimum.
-Longueur du mot de passe
-class="on"
-Échiquier
-Sapin
-Noyer
-Nuit
-Ardoise
-Prune
-Ivoire
-Initiale
-Deux initiales
-Couronne
-Étoile
-Flamme
-Feuille
-Lune
-Éclair
-Boussole
-Montagne
-Hibou
-Renard
-Compte — {0}
-Compte (non connecté)
-Mot de passe
-Oublié ?
-aria-describedby="acct-pwm"
-Afficher le mot de passe
-Afficher
-Continuer avec Google
-vous@exemple.fr
-Adresse e-mail
-Se connecter avec cette adresse
-Créer un compte avec cette adresse
-Recevoir un lien de connexion
-Se connecter
-Pas de mot de passe à retenir : le lien vous connecte (et crée le compte si besoin).
-Utiliser un mot de passe
-{0}Recevoir un lien par e-mail
-Retrouvez vos répertoires sur tous vos appareils. Sans compte, vos données restent uniquement sur cet appareil.
-Pas encore de compte ?
-Créer un compte
-Choisissez un mot de passe
-Vos répertoires, statistiques et finales sont sauvegardés en ligne et synchronisés entre vos appareils.
-Créer mon compte
-Déjà un compte ?
-Bienvenue !
-Votre compte est créé. Choisissez le nom affiché sur l'accueil (« Bonjour, … ») ; vous pourrez le changer dans Compte › Profil.
-Pseudo
-Commencer
-Plus tard
-Saisissez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.
-Envoyer le lien
-Nouveau mot de passe
-Choisissez votre nouveau mot de passe.
-Enregistrer
-Fusionner
-Réunit les deux : pour une position commune, les essais et erreurs sont additionnés. Rien n'est perdu.
-{0} + {1} · rien n'est perdu
-Envoyer cet appareil
-Le contenu en ligne est remplacé par celui de cet appareil.
-le compte reprend {0}
-Récupérer mon compte
-Cet appareil est remplacé par le contenu en ligne. Une sauvegarde locale (.json) vous sera proposée avant.
-cet appareil reprend {0}
-{0} Cet appareil contenait des données d'un autre compte.
-<em>recommandé</em>
-Première synchronisation
-Cet appareil et le compte <strong>{0}</strong> contiennent tous deux des données. Rien n'est envoyé avant votre choix.
-{3}Cet appareil
-{6}Compte
-Continuer
-Profil
-Pseudo, avatar
-Synchronisation
-Appareils, exporter
-Sécurité
-Mot de passe, déconnexion
 Pièce
 <b>{5}</b>positions
 <b>{6} j</b>d'affilée
@@ -984,13 +910,15 @@ Choisir une photo
 Retirer
 Photo
 Avatar
+Classement Elo
+Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.
+Site
+Cadence
 Identité
+Pseudo
 Affiché sur l’accueil (« Bonsoir, … ») et dans la barre du haut.
 Votre pseudo
 Classement et objectif
-Classement Elo
-Facultatif, visible de vous seul.
-ex. 1650
 Objectif quotidien
 Aussi réglable dans Paramètres › Jeu et entraînement.
 {0} positions
@@ -1036,9 +964,11 @@ Fichier .json : répertoires, statistiques, planning de révision, finales.
 Connexion
 Nouvelle adresse e-mail
 Envoyer le lien de confirmation
+Adresse e-mail
 Connexion par {0}
 Adresse e-mail du compte
 Modifier
+Mot de passe
 Choisissez-en un nouveau, ou recevez un lien par e-mail pour le réinitialiser.
 Changer
 Recevoir un lien
@@ -1056,6 +986,82 @@ Supprimer…
 SUPPRIMER
 Tapez SUPPRIMER pour confirmer
 {0}Supprimer définitivement
+Hors ligne : connexion au compte impossible pour l'instant. Vos données restent utilisables sur cet appareil.
+Mot de passe : 8 caractères minimum.
+Longueur du mot de passe
+class="on"
+Échiquier
+Sapin
+Noyer
+Nuit
+Ardoise
+Prune
+Ivoire
+Initiale
+Deux initiales
+Couronne
+Étoile
+Flamme
+Feuille
+Lune
+Éclair
+Boussole
+Montagne
+Hibou
+Renard
+Compte — {0}
+Compte (non connecté)
+Oublié ?
+aria-describedby="acct-pwm"
+Afficher le mot de passe
+Afficher
+Continuer avec Google
+vous@exemple.fr
+Se connecter avec cette adresse
+Créer un compte avec cette adresse
+Recevoir un lien de connexion
+Se connecter
+Pas de mot de passe à retenir : le lien vous connecte (et crée le compte si besoin).
+Utiliser un mot de passe
+{0}Recevoir un lien par e-mail
+Retrouvez vos répertoires sur tous vos appareils. Sans compte, vos données restent uniquement sur cet appareil.
+Pas encore de compte ?
+Créer un compte
+Choisissez un mot de passe
+Vos répertoires, statistiques et finales sont sauvegardés en ligne et synchronisés entre vos appareils.
+Créer mon compte
+Déjà un compte ?
+Bienvenue !
+Votre compte est créé. Choisissez le nom affiché sur l'accueil (« Bonjour, … ») ; vous pourrez le changer dans Compte › Profil.
+Commencer
+Plus tard
+Saisissez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.
+Envoyer le lien
+Nouveau mot de passe
+Choisissez votre nouveau mot de passe.
+Enregistrer
+Fusionner
+Réunit les deux : pour une position commune, les essais et erreurs sont additionnés. Rien n'est perdu.
+{0} + {1} · rien n'est perdu
+Envoyer cet appareil
+Le contenu en ligne est remplacé par celui de cet appareil.
+le compte reprend {0}
+Récupérer mon compte
+Cet appareil est remplacé par le contenu en ligne. Une sauvegarde locale (.json) vous sera proposée avant.
+cet appareil reprend {0}
+{0} Cet appareil contenait des données d'un autre compte.
+<em>recommandé</em>
+Première synchronisation
+Cet appareil et le compte <strong>{0}</strong> contiennent tous deux des données. Rien n'est envoyé avant votre choix.
+{3}Cet appareil
+{6}Compte
+Continuer
+Profil
+Pseudo, avatar
+Synchronisation
+Appareils, exporter
+Sécurité
+Mot de passe, déconnexion
 Bienvenue
 Mot de passe oublié
 input[name=pseudo]
@@ -1725,7 +1731,6 @@ Points sur les cases accessibles à la pièce choisie.
 Repère des coups possibles
 Animation des pièces
 Aucune
-Rapide
 Normale
 Pièces et flèches
 Pièces
@@ -2001,50 +2006,23 @@ Maîtrise · {0}
 Réussite : {5} % sur {6}
 Tout voir
 {4}Entraînement › Points faibles {5}
-Trier
-Trier les ouvertures
-Plus fragiles
-Plus à réviser
-Ordre des coups
-Plus de positions
-Aujourd’hui
-{4} err. / {5}
-S'entraîner sur cette position (compte comme un essai)
-S'entraîner sur {1}
-Voir la position
-Voir {5}
-Afficher les {1} autres positions
-Réviser cette ouverture {1}
-{0} à réviser sur {1}
-à jour
-Coup
-Niveau
-Révision
-{7} % · {8} pos.
-Aucune position à ce niveau.
-Tout voir : {0}
-Filtrer par niveau
-Par ouverture
 Aperçu · {0}
 {0} · maîtrise {1} / 100 ({2} err. / {3})
 Cette position
 À revoir
+Aujourd’hui
 {3} err. / {4}
+Niveau
 Maîtrise
+Révision
 Retour aux Statistiques{0}
-Bullet
-Blitz
-Classique
-Par correspondance
 Pseudo introuvable sur ce site.
 Le site demande de patienter une minute. Réessayez ensuite.
 Connexion impossible. Réessayez.
 Pas encore assez de parties classées pour tracer une courbe.
-Site
 Pseudo {3}
 Pseudo {4}
 {6}Charger mes parties
-Cadence
 partie analysée
 parties analysées
 Précision moyenne {0} sur {1}
@@ -2059,6 +2037,7 @@ Ce qui vous coûte le plus
 Contre plus fort
 Contre plus faible
 Votre répertoire
+Par famille d'ouverture
 </i>Gains
 </i>Nulles
 </i>Pertes
@@ -2066,10 +2045,87 @@ Selon la couleur et l'adversaire
 Mettre à jour
 Chargement…
 Récupération des parties… {0}
-Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.
 {1} : ajouter un compte
 Saisissez un pseudo.
 {0}px
+À apprendre
+Maîtrise de {0} sur 100, et {1} points de moins que prévu. Apprendre ses positions fragiles est le gain le plus direct.
+Sue mais perdante
+Vous la connaissez ({0} sur 100), mais elle rapporte {1} points de moins que prévu. Regardez où les parties tournent après l'ouverture.
+À consolider
+Elle rapporte plus que prévu sans être bien sue ({0} sur 100). Ces points restent fragiles face à de meilleurs joueurs.
+À garder
+Bien sue et rentable. Une révision régulière suffit.
+{0} · maîtrise {1} / 100
+{0} · hors répertoire
+Score par mois et score attendu
+Sorties du répertoire par numéro de coup
+Hors de votre répertoire : aucune position travaillée pour cette ouverture.
+Aucune de vos parties récentes ne passe par cette ouverture.
+Trop peu de parties pour juger ({0}).
+Réviser cette ouverture {1}
+{0} à réviser sur {1}
+Elo inconnu
+Attendu : {0}
+Score
+Face à l'attendu
+Performance
+Elo équivalent
+Comparaison avec vos parties…
+Reliez un compte dans l'onglet Parties pour voir vos résultats réels.
+Aucune partie sur cette période.
+Couvert
+Manquant
+Fin de préparation
+Score en le suivant
+Score en le quittant
+Réponses couvertes
+Sortie moyenne
+coup {0}
+Où le répertoire s'arrête
+Numéro du coup, hors fins de ligne préparées
+</i>Réponse manquante
+</i>Sortie de votre fait
+Réponses adverses
+Les plus jouées après cette ligne
+au lieu de
+Coups joués à la place
+Votre réflexe, à la place du coup prévu
+Score par mois
+{0} mois sur {1} au-dessus de l'attendu
+</i>Score réel
+</i>Score attendu
+Votre préparation
+Dans vos parties réelles
+{4} err. / {5}
+S'entraîner sur cette position (compte comme un essai)
+S'entraîner sur {2}
+Voir la position
+Voir {6}
+Afficher les {1} autres positions
+Positions
+{0}, les plus fragiles d'abord
+Coup
+Filtrer par niveau
+Par ouverture
+Aucune position à ce niveau.
+{3} mois
+Précédente à travailler
+Suivante à travailler
+Période
+Il faut au moins {0} parties dans une ouverture travaillée pour la placer sur la carte.
+Maîtrise à l'entraînement
+Points face à l'attendu
+{0} · {1} / 100 · {2}{3} pt
+Carte des ouvertures, maîtrise et résultats
+Point plus gros : plus de parties. Touchez un point pour ouvrir sa fiche.
+Aucune ouverture ne correspond. Essayez un nom ou un coup.
+À travailler d'abord
+Choisir une ouverture
+Nom ou coups : Najdorf, Cf3…
+Chercher une ouverture
+Liste
+Carte
 Aucune position {0} à réviser dans ce répertoire.
 Aucune ligne enregistrée pour cette ouverture.
 Temps écoulé · {0} bon{1} coup{2}
@@ -2186,7 +2242,6 @@ disabled title="{0}"
 aria-expanded="{0}"
 {4} pos.
 Aucune ouverture reconnue dans ce répertoire.
-Choisir une ouverture
 Moins
 Jusqu’où
 Coups à enchaîner
@@ -2221,6 +2276,7 @@ Objectif du jour : {0} sur {1} positions
 Révisions prévues sur les 7 prochains jours
 7 prochains jours
 {0} à réviser
+à jour
 Bonsoir, {0}
 Bonjour, {0}
 Bonsoir
@@ -2286,6 +2342,17 @@ Toutes les branches du brouillon
 Indice
 Arbre
 Arbre du répertoire
+Position {0} sur {1}
+Justes
+Série
+maîtrise
+Maîtrise {0} sur 100
+Essais
+Échecs
+Auj.
+Adverse
+Connue
+Nouvelle
 cubic-bezier(.72, 0, .18, 1)
 cubic-bezier(.4, 0, .2, 1)
 cubic-bezier(.16, 1, .3, 1)
@@ -2307,7 +2374,6 @@ Agrandir le panneau
 Récents
 Suggestions
 Actions
-Positions
 Répertoires
 Autres ouvertures
 Ctrl F

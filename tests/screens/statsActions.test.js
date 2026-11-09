@@ -27,7 +27,7 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
     }
     dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db));
     dataStore.set(dbKeyFor(currentRepertoire, 'b'), JSON.stringify({}));
-    statsColor = 'all'; statsFilter = 'all'; statsOpen = null;
+    statsColor = 'all'; statsFilter = 'all';
     switchHomeTab('stats');
     initStats();
 })()`);
@@ -84,13 +84,13 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
     await t('clic sur un segment de la barre de maîtrise = même filtre que la puce de légende', () => {
         seed(w, [-1, 2, 0, 5]);
         $('.st-legend .st-lg[data-arg="weak"]').click();
-        const byLegend = { filter: w.eval('statsFilter'), lines: $('#stats-lines .st-lines').innerHTML };
+        const byLegend = { filter: w.eval('statsFilter'), lines: $('#stats-lines .so-fiche').innerHTML };
         seed(w, [-1, 2, 0, 5]);
         const seg = $('.st-mbar button[data-arg="weak"]');
         assert.strictEqual(seg.dataset.action, 'statsLegend');
         seg.click();
         assert.strictEqual(w.eval('statsFilter'), 'weak');
-        assert.deepStrictEqual({ filter: w.eval('statsFilter'), lines: $('#stats-lines .st-lines').innerHTML }, byLegend);
+        assert.deepStrictEqual({ filter: w.eval('statsFilter'), lines: $('#stats-lines .so-fiche').innerHTML }, byLegend);
         assert.strictEqual($('.st-mbar button[data-arg="weak"]').getAttribute('aria-pressed'), 'true');
         assert($('.st-mbar').classList.contains('has-on'));
         assert.strictEqual($('.st-legend .st-lg[data-arg="weak"]').getAttribute('aria-pressed'), 'true');
@@ -182,7 +182,7 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
             db[Chess.key(pos)] = { move: path[k], san: Chess.san(pos, path[k]), attempts: 10, failures: k % 4 ? 5 : 8, path, ply: path.length, due: now + 864e5, interval: 3, created: now };
         }
         dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db));
-        statsColor = 'all'; statsFilter = 'all'; statsOpen = null; statsPane = 'overview'; statsWeak = null;
+        statsColor = 'all'; statsFilter = 'all'; statsPane = 'overview'; statsWeak = null;
         switchHomeTab('stats'); initStats();
     })()`);
 
