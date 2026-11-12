@@ -19,7 +19,9 @@ const SideBar = (() => {
     //   to     fait défiler jusqu'à cette section ;  act / arg  action enregistrée (registerActions) ;
     //   press  touche ce bouton de la page, avec ses propres gardes ;  run  appelle la fonction ;  when  masque l'entrée si faux.
     const RESUME = '[data-action="resumeLastPlay"]';
-    const view = (id, label) => ({ id, label, act: 'statsInView', arg: id, to: '#stats-games' });
+    // Statistiques : chaque entrée ouvre son onglet (statsPane) ; une vue de Parties passe aussi par statsInView.
+    const pane = p => () => UI_ACTIONS.statsPane(p);
+    const view = (id, label) => ({ id, label, act: 'statsInView', arg: id, run: pane('games'), to: '#stats-games' });
     const MENUS = {
         play: [
             { id: 'today', label: 'Aujourd’hui', to: '#hp-today' },
@@ -31,12 +33,12 @@ const SideBar = (() => {
             { id: 'pgn', label: 'Importer un PGN', act: 'homeImportPgn' }
         ],
         stats: [
-            { id: 'overview', label: 'Aperçu', to: '.st-now' },
-            { id: 'weak', label: 'Points faibles', to: '.st-weak-wrap' },
-            { id: 'openings', label: 'Par ouverture', to: '#stats-lines' },
-            { id: 'regularity', label: 'Régularité', to: '.st-side' },
-            { id: 'games', label: 'Parties', to: '#stats-games',
-              kids: [view('bilan', 'Bilan'), view('temps', 'Temps'), view('qualite', 'Qualité'), view('positions', 'Positions'), view('repertoire', 'Répertoire')] }
+            { id: 'overview', label: 'Maîtrise', run: pane('overview') },
+            { id: 'weak', label: 'Points faibles', run: pane('overview'), to: '.st-weak-wrap' },
+            { id: 'openings', label: 'Ouvertures', run: pane('openings') },
+            { id: 'games', label: 'Parties', run: pane('games'),
+              kids: [view('bilan', 'Bilan'), view('temps', 'Temps'), view('qualite', 'Qualité'), view('positions', 'Positions'), view('repertoire', 'Répertoire')] },
+            { id: 'regularity', label: 'Régularité', run: pane('regularity') }
         ],
         training: [
             { id: 'due', label: 'Révision du jour', run: () => startDailyReview() },

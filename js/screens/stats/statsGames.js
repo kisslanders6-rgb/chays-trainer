@@ -2,7 +2,7 @@
  * screens/stats/statsGames.js
  * ──────────────────────────────────────────────────────────────────────────
  * Statistiques › Parties : ce que disent vos parties Chess.com et Lichess (GameArchive), rapportées à votre répertoire.
- *   Une barre de filtres et trois vues (Bilan, Temps, Répertoire) : statsInsights.js.
+ *   Vues Bilan, Temps, Qualité, Positions (statsInsights.js) et Répertoire ; les filtres sont dans la barre de contexte.
  *   Elo : une courbe par site et par cadence (choix mémorisé, Chess.com par défaut).
  *   Répertoire : score selon que vous l'avez suivi ou quitté (detectDeviation) ; lignes qui coûtent le plus de points.
  * Analyse de toute l'archive par petits lots, pour ne pas figer l'écran. Une archive d'une version antérieure est retéléchargée à l'ouverture.
@@ -168,14 +168,15 @@ const StatsGames = (function () {
         if (!st.games.length || st.form || !linked().length) return `${head}<p class="st-sub">Reliez un compte pour suivre votre Elo et vos résultats face à votre répertoire.</p>${formHTML()}`;
         const other = Object.keys(SITE_NAME).find(s => !users()[s]);
         const view = StatsInsights.view(), done = analysed();
-        return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${StatsInsights.barHTML(st.games)}
+        return `${head}${st.error ? `<p class="sg-err" role="alert">${escapeHtml(st.error)}</p>` : ''}${StatsInsights.viewsHTML()}
             ${view === 'bilan' ? eloHTML() : ''}${view === 'repertoire' ? repertoireHTML() : `<div id="si-view">${StatsInsights.viewHTML(st.games, done)}</div>`}
             ${st.note ? `<p class="st-sub" role="status">${escapeHtml(st.note)}</p>` : ''}
             <button type="button" class="st-link sg-add" data-action="statsGamesBackfill">Charger tout l'historique</button>
             ${other ? `<button type="button" class="st-link sg-add" data-action="statsGamesForm" data-arg="${other}">${SITE_NAME[other]} : ajouter un compte</button>` : ''}`;
     }
 
-    function paint() { const s = slot(); if (s) s.innerHTML = content(); }
+    // Repeint la section, puis ce qui autour dépend des parties : filtres de la barre, constats, compteurs d'onglets.
+    function paint() { const s = slot(); if (s) { s.innerHTML = content(); statsSyncChrome(); } }
 
     // Appelé après chaque rendu des Statistiques.
     async function mount() {

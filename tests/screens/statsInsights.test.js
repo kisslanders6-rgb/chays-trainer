@@ -26,7 +26,7 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
             ? { status: 200, ok: true, json: async () => ({ archives: ['https://api.chess.com/pub/player/moi/games/2026/11'] }) }
             : { status: 200, ok: true, json: async () => ({ games: Array.from({ length: 24 }, (_, i) => game(i)) }) };
         appSettings.chesscomUser = 'Moi';
-        statsColor = 'all'; statsFilter = 'all'; statsPane = 'overview';
+        statsColor = 'all'; statsFilter = 'all'; statsPane = 'games';
         switchHomeTab('stats'); initStats();
         document.querySelector('#stats-games [data-action="statsGamesSync"]').click();
     })()`);
@@ -35,10 +35,19 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
     const view = v => $(`#stats-games [data-action="statsInView"][data-arg="${v}"]`).click();
     const pick = (action, value) => w.eval('UI_ACTIONS')[action](value);
 
-    await t('une seule barre de filtres, la courbe d\'Elo ne porte plus ses propres sélecteurs', () => {
-        assert.strictEqual($$('#stats-games .si-bar').length, 1);
-        assert.strictEqual($$('#stats-games .si-bar .dd').length, 2, 'période et cadence ; un seul site relié');
+    await t('une seule barre de filtres, dans la barre de contexte ; la courbe d\'Elo ne porte plus ses propres sélecteurs', () => {
+        assert.strictEqual($$('#home-tab-stats .si-bar').length, 1);
+        assert.strictEqual($$('#stats-filters .si-bar .dd').length, 2, 'période et cadence ; un seul site relié');
         assert(!$('#stats-games .sg-site'));
+        assert(!$('#stats-filters').hidden);
+    });
+
+    await t('filtres : cachés sur Maîtrise, présents sur Ouvertures', () => {
+        w.eval(`UI_ACTIONS.statsPane('overview')`);
+        assert($('#stats-filters').hidden && !$('#stats-filters .si-bar'));
+        w.eval(`UI_ACTIONS.statsPane('openings')`);
+        assert(!$('#stats-filters').hidden && $('#stats-filters .si-bar'));
+        w.eval(`UI_ACTIONS.statsPane('games')`);
     });
 
     await t('Bilan : chiffres, records et cartes attendues', () => {
@@ -66,7 +75,7 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
         pick('statsInPeriod', '12'); pick('statsInSpeed', 'all');
         const again = await bootApp({ storage: { chessTrainer_gameFilters: JSON.stringify({ period: 3, site: 'lichess', speed: 'blitz' }) }, before(x) { x.scrollTo = () => {}; } });
         const x = again.dom.window, game = (ago, speed) => `StatsInsights.keep({ at: Date.now() - ${ago} * 864e5, site: 'chesscom', speed: '${speed}', color: 'w' })`;
-        x.eval(`statsColor = 'all'; StatsInsights.barHTML([{ site: 'chesscom', speed: 'blitz' }, { site: 'chesscom', speed: 'rapid' }])`);
+        x.eval(`statsColor = 'all'; StatsInsights.filtersHTML([{ site: 'chesscom', speed: 'blitz' }, { site: 'chesscom', speed: 'rapid' }])`);
         assert(x.eval(game(1, 'blitz')), 'site sans partie : retour à tous les sites');
         assert(!x.eval(game(1, 'rapid')), 'cadence retrouvée');
         assert(!x.eval(game(150, 'blitz')), 'période retrouvée');

@@ -1,19 +1,21 @@
 /**
  * screens/stats/stats.js
  * ──────────────────────────────────────────────────────────────────────────
- * Module Statistiques, organisé autour de la prochaine action :
+ * Module Statistiques : agir d'abord, comprendre ensuite (refonte de novembre 2026).
  * Les Statistiques observent, l'Entraînement agit : les boutons d'action ouvrent l'exercice d'Entraînement
  * correspondant, déjà filtré (openTrainingFrom, trainingUI.js), sans lancer de séance.
- *   1. « Aujourd'hui » : révisions dues de la portée choisie et prévision sur 7 jours ; seule action pleine
- *      de la page : Révision du jour (Points faibles quand tout est à jour).
- *   2. « Maîtrise » : part des positions maîtrisées et répartition par niveau ; la barre et la légende filtrent
- *      la liste. « À confirmer » (trop peu d'essais) est un état à part, hors des barres de niveaux.
- *   3. « Points faibles » : positions au plus fort taux d'erreur, en miniature ; la ligne ouvre l'aperçu.
- *   4. « Par ouverture » : un sélecteur et une seule fiche (statsOpenings.js) ; chaque position s'affiche en aperçu
- *      ou se travaille seule (▶, seule action qui lance une révision) ;
- *      « Réviser cette ouverture » ouvre la Révision du jour filtrée sur elle.
- *   5. « Régularité, tous répertoires » : série, calendrier (12 semaines, grille fluide), réussite par semaine.
- * Portée : répertoire actif, Blancs, Noirs ou les deux (barre collante en tête de l'onglet).
+ *   « À faire » : trois constats au plus. Aujourd'hui (révisions dues ; seule action pleine de la page : Révision
+ *      du jour, Points faibles quand tout est à jour), l'ouverture qui coûte le plus de points, ce que disent les parties.
+ *   Puis quatre onglets, à toutes les largeurs (statsPane) :
+ *   1. Maîtrise : part des positions maîtrisées et répartition par niveau (la barre et la légende filtrent la liste
+ *      des ouvertures), prévision sur 7 jours, points faibles en miniature (la ligne ouvre l'aperçu).
+ *      « À confirmer » (trop peu d'essais) est un état à part, hors des barres de niveaux.
+ *   2. Ouvertures : liste « miroir » (préparation à gauche, écart à l'attendu à droite) et une seule fiche
+ *      (statsOpenings.js) ; chaque position s'affiche en aperçu ou se travaille seule (▶, seule action qui lance
+ *      une révision) ; « Réviser cette ouverture » ouvre la Révision du jour filtrée sur elle.
+ *   3. Parties : Elo, Bilan, Temps, Qualité, Positions, Répertoire (statsGames.js, statsInsights.js).
+ *   4. Régularité, tous répertoires : série, calendrier (12 semaines, grille fluide), réussite par semaine.
+ * Une seule barre de filtres, collante : répertoire et couleur ; période, site et cadence sur Ouvertures et Parties.
  *
  * Six niveaux, utilisés partout (Statistiques, Entraînement, arbre du répertoire) ; m = score de maîtrise (masteryOf, storage.js) :
  *   à retravailler  m < 50
@@ -41,7 +43,7 @@ const STATS_MASTERY_LEVELS = STATS_LEVEL_ORDER.filter(l => l !== STATS_STATE);
 
 let statsColor  = 'all';     // 'w' | 'b' | 'all' ; « Les deux » à chaque lancement
 let statsFilter = 'all';     // 'all' ou un niveau
-let statsPane   = 'overview'; // téléphone : onglet affiché ('overview' | 'openings' | 'regularity')
+let statsPane   = 'overview'; // onglet affiché : 'overview' (Maîtrise) | 'openings' | 'games' | 'regularity'
 let statsWeak   = null;      // vue complète « Points faibles » : { shown, y } (y : défilement de la page quittée), sinon null
 
 // Repère de niveau : couleur ET forme (lisible sans distinguer les couleurs), cf. .lv-mark.
@@ -198,24 +200,47 @@ function _regularityHTML() {
         return `<div class="st-cmp"><span>${c === 'w' ? 'Blancs' : 'Noirs'}</span><span class="st-cmp-bar"><i style="width:${pct}%"></i></span><b>${pct} %</b></div>`;
     }).join('');
 
-    return `
+    // Deux groupes : l'assiduité (série, calendrier), puis la qualité (réussite, maîtrise par couleur) ; côte à côte sur ordinateur.
+    return `<div class="st-reg-a">
         <div class="st-reg-kpis"><div><b>${_plural(streak, 'jour')}</b><span>d'affilée</span></div><div><b>${active} / ${STATS_DAYS}</b><span>jours actifs</span></div></div>
         <div class="st-heat" style="--weeks:${STATS_HEAT_WEEKS}" role="img" aria-label="Essais par jour sur ${STATS_HEAT_WEEKS} semaines">${heat}</div>
-        <div class="st-heat-leg">Peu <i></i><i class="h1"></i><i class="h2"></i><i class="h3"></i> Beaucoup</div>
-        ${chart}
-        ${bySide ? `<div class="st-cmps"><span class="st-sub">Maîtrise par couleur · ${escapeHtml(currentRepertoire)}</span>${bySide}</div>` : ''}`;
+        <div class="st-heat-leg">Peu <i></i><i class="h1"></i><i class="h2"></i><i class="h3"></i> Beaucoup</div></div>
+        <div class="st-reg-b">${chart}
+        ${bySide ? `<div class="st-cmps"><span class="st-sub">Maîtrise par couleur · ${escapeHtml(currentRepertoire)}</span>${bySide}</div>` : ''}</div>`;
 }
 
 // ─── RENDU ────────────────────────────────────────────────────────────────────
 
+// Barre de contexte : répertoire et couleur ; période, site et cadence s'y ajoutent sur les onglets qui lisent
+// des parties (Ouvertures, Parties). Une seule barre de filtres pour toute la page.
 function _renderStatsScope() {
     ColorScope.render(document.getElementById('stats-color'), { options: ['w', 'b', 'all'], value: statsColor, onChange: setStatsColor });
     const rep = document.getElementById('stats-rep');
     if (rep) rep.innerHTML = repertoireDropdownHTML('statsRep');
+    _renderStatsFilters();
+}
+
+let _statsBare = false;           // page sans essai : la section Parties est visible sans onglet
+
+function _renderStatsFilters() {
+    const box = document.getElementById('stats-filters');
+    if (!box) return;
+    const games = StatsGames.games();
+    const show = !statsWeak && !!(games && games.length) && (_statsBare || statsPane === 'openings' || statsPane === 'games');
+    box.innerHTML = show ? StatsInsights.filtersHTML(games) : '';
+    box.hidden = !show;
 }
 
 const _statsArg = r => escapeHtml(r.side + ':' + r.k);
 const _gamesSection = () => `<section class="st-sec st-card edge-card" id="stats-games" data-pane="games">${StatsGames.content()}</section>`;
+
+// Écart à l'attendu en barre divergente autour de zéro (±20 points pleine largeur) ; null : pas assez de parties.
+function statsDeltaBar(d) {
+    if (d === null || d === undefined) return '<span class="st-dbar is-none" aria-hidden="true"></span>';
+    const w = Math.max(3, Math.min(Math.abs(d), 20) / 20 * 50);
+    return `<span class="st-dbar ${d >= 0 ? 'up' : 'down'}" aria-hidden="true"><i style="${d >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></i></span>`;
+}
+const _signedPt = d => I18n.mark(`${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pt`);
 
 // Une position fragile : miniature, coup masqué, ouverture, maîtrise ; la ligne entière ouvre l'aperçu.
 function _weakRowHTML(r) {
@@ -229,37 +254,111 @@ function _weakRowHTML(r) {
 }
 
 // « Points faibles › Tout voir » : toutes les positions à retravailler ou fragiles, les plus fragiles d'abord.
-function _renderWeakList(body, rows, reg, weakN, relearnN) {
+function _renderWeakList(body, rows, weakN, relearnN) {
     const all = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort((a, b) => _rate(b) - _rate(a) || b.e.attempts - a.e.attempts);
     const shown = all.slice(0, statsWeak.shown), rest = all.length - shown.length;
-    body.className = 'st-body pane-overview';                   // téléphone : la colonne Régularité reste cachée
+    body.className = 'st-body';
     body.innerHTML = `<div class="st-main"><section class="st-sec st-card st-weak edge-card" id="stats-weak-all">
         <button type="button" class="st-link st-back" data-action="statsWeakBack">${ico('chevron-left')}Statistiques</button>
         <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span></div>
         <div class="st-wlist">${shown.map(_weakRowHTML).join('')}</div>
         ${rest ? `<button type="button" class="st-more" data-action="statsWeakMore">Afficher les ${rest} autres positions</button>` : ''}
         <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
-    </section></div>${reg}`;
+    </section></div>`;
+    _renderStatsFilters();
     Bus.emit('ui:refresh');
 }
+
+// ─── À FAIRE ──────────────────────────────────────────────────────────────────
+// Trois constats au plus, chacun avec son action : le programme du jour (seule action pleine de la page),
+// l'ouverture qui coûte le plus de points, ce que disent les parties. Une carte sans assez de parties n'existe pas.
+let _statsToday = '';              // carte du jour, posée par initStats ; les deux autres suivent les parties
+
+const _todoCard = (kind, claim, ev, go, label) => `<article class="st-card st-todo-card edge-card">
+        <span class="st-eyebrow">${kind}</span><p class="st-claim">${claim}</p>${ev}
+        <button type="button" class="btn btn-soft st-todo-go" data-action="statsTodoGo" data-arg="${escapeHtml(go)}">${label} ${ico('chevron-right')}</button></article>`;
+
+function _todoOpeningCard() {
+    const o = StatsOpenings.topLoss();
+    if (!o) return '';
+    return _todoCard('Ouverture', `${o.html} <em>${_signedPt(o.delta)}</em>`, statsDeltaBar(o.delta), 'openings|' + o.key, 'Voir la fiche');
+}
+
+function _todoGamesCard() {
+    const games = StatsGames.games(), MIN = GameInsights.MIN;
+    if (!games || !games.length) return '';
+    const list = games.filter(g => StatsInsights.keep(g));
+    if (list.length < MIN) return '';
+    const en = GameInsights.ends(list);
+    if (en.losses.n >= MIN && en.losses.time >= 20) {
+        const v = Math.round(en.losses.time);
+        return _todoCard('Parties', `Le temps décide <em>${v} %</em> de vos défaites`,
+            `<span class="st-dbar is-share" aria-hidden="true"><i style="width:${v}%"></i></span>`, 'games|temps', 'Voir le temps');
+    }
+    const s = OpeningReport.summarize(list);
+    if (s.delta !== null && s.delta <= -3) return _todoCard('Parties', `Score sous l'attendu <em>${_signedPt(s.delta)}</em>`, statsDeltaBar(s.delta), 'games|bilan', 'Voir le bilan');
+    return '';
+}
+
+function _paintTodo() {
+    const box = document.getElementById('stats-todo');
+    if (!box) return;
+    const cards = [_statsToday, _todoOpeningCard(), _todoGamesCard()].filter(Boolean);
+    box.className = `st-todo n-${cards.length}`;
+    box.innerHTML = cards.join('');
+}
+
+// ─── ONGLETS ──────────────────────────────────────────────────────────────────
+// Maîtrise, Ouvertures, Parties, Régularité, à toutes les largeurs : chaque chiffre garde sa place.
+// Le compteur d'un onglet dit la taille de ce qu'il contient ; ceux qui dépendent des parties suivent leur arrivée.
+function _activeDays() {
+    const act = readActivity(), today = _dayStart(Date.now());
+    let n = 0;
+    for (let i = 0; i < STATS_DAYS; i++) if ((act[dayStamp(_dayStart(today, -i))] || {}).a) n++;
+    return n;
+}
+
+function _tabCounts(rows) {
+    const games = StatsGames.games();
+    return { overview: rows.length, openings: StatsOpenings.count(), games: games && games.length ? games.length : '', regularity: `${_activeDays()}/${STATS_DAYS}` };
+}
+
+function _tabsHTML(tabs, counts) {
+    return `<div class="st-tabs" id="stats-tabs" role="tablist" aria-label="Vues">${tabs.map(([p, l]) =>
+        `<button type="button" role="tab" class="st-tab" aria-selected="${statsPane === p}" data-action="statsPane" data-arg="${p}">${l}<span class="st-tab-n" id="st-tab-n-${p}">${counts[p]}</span></button>`).join('')}</div>`;
+}
+
+// Appelé quand les parties arrivent ou sont croisées avec le répertoire : filtres, constats et compteurs.
+function statsSyncChrome() {
+    if (!document.getElementById('stats-body')) return;
+    _renderStatsFilters();
+    _paintTodo();
+    const games = StatsGames.games(), set = (p, v) => { const el = document.getElementById('st-tab-n-' + p); if (el) el.textContent = v; };
+    set('games', games && games.length ? games.length : '');
+    set('openings', StatsOpenings.count());
+}
+Bus.on('games:analysed', statsSyncChrome);
 
 function initStats() {
     const body = document.getElementById('stats-body');
     if (!body) return;
-    _renderStatsScope();
 
     const rows = _statsRows();
-    const reg  = Object.keys(readActivity()).length ? `<aside class="st-side" data-pane="regularity"><section class="st-sec st-card edge-card"><div class="st-h"><h3>Régularité</h3><span class="st-sub">tous répertoires</span></div><div class="st-reg">${_regularityHTML()}</div></section></aside>` : '';
+    const hasAct = Object.keys(readActivity()).length > 0;
+    const reg = hasAct ? `<section class="st-sec st-card edge-card st-regcard" data-pane="regularity"><div class="st-h"><h3>Régularité</h3><span class="st-sub">tous répertoires</span></div><div class="st-reg">${_regularityHTML()}</div></section>` : '';
 
     // États vides : aucun essai dans la portée (l'Entraînement les fera apparaître ; Jouer ne compte rien),
-    // ou aucune position enregistrée (Ajouter une ligne, vers Jouer).
+    // ou aucune position enregistrée (Ajouter une ligne, vers Jouer). Sans onglet : tout ce qui existe s'affiche.
     if (!rows.length) {
+        _statsBare = true;
+        _statsToday = '';
+        _renderStatsScope();
         const sides = statsColor === 'all' ? ['w', 'b'] : [statsColor];
         const stored = sides.reduce((n, side) => n + Object.keys(readDBFor(currentRepertoire, side)).length, 0);
         const side = statsColor === 'all' ? '' : ` avec les ${_sideName(statsColor)}`;
         const empty = stored ? {
             icon: 'bar-chart', title: `Aucun essai pour « ${escapeHtml(currentRepertoire)} »`,
-            sub: `${_plural(stored, 'position enregistrée', 'positions enregistrées')}${side}, aucune encore révisée. Les chiffres viennent de l'Entraînement.`,
+            sub: `${_plural(stored, 'position enregistrée', 'positions enregistrées')}${side}, aucune encore révisée.`,
             btn: `<button type="button" class="btn btn-primary" data-action="statsGoTraining" data-arg="due">Ouvrir l'Entraînement ${ico('chevron-right')}</button>`
         } : {
             icon: 'plus', title: 'Répertoire vide',
@@ -268,10 +367,11 @@ function initStats() {
         };
         body.className = 'st-body';
         body.innerHTML = `<div class="st-main"><section class="st-card st-empty edge-card"><span class="st-empty-i">${ico(empty.icon)}</span>
-            <b>${empty.title}</b><span>${empty.sub}</span>${empty.btn}</section>${_gamesSection()}</div>` + reg;
+            <b>${empty.title}</b><span>${empty.sub}</span>${empty.btn}</section>${_gamesSection()}${reg}</div>`;
         StatsGames.mount();
         return;
     }
+    _statsBare = false;
 
     const now = Date.now();
     const counts = _countLevels(rows);
@@ -286,36 +386,29 @@ function initStats() {
     const fresh = dueAll - due.length;
     const next = dueAll ? 0 : rp.next(inScope);
     const minutes = Math.max(1, Math.round(dueAll * STATS_SECONDS_PER_POSITION / 60));
-    // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
-    const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
-    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'long' }) : I18n.t('aujourd\'hui');
-    const forecast = `<div class="st-fc-h"><span>${STATS_FORECAST_DAYS} prochains jours</span><b>${_plural(fcSum, 'position')}</b></div>
-            <div class="st-fc" role="img" aria-label="${I18n.pair(I18n.t('Révisions prévues'), fc.map((n, i) => `${fcDay(i)} ${n}`).join(', '))}">${fc.map((n, i) =>
-                `<div title="${I18n.pair(fcDay(i), I18n.t(_plural(n, 'position')))}"><i style="height:${n ? 4 + Math.round(26 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>`;
     // Seule action pleine de la page : Révision du jour, ou Points faibles quand tout est à jour.
-    const today = `
-        <div class="vel-card vel-dark st-today edge-card">
+    _statsToday = `
+        <article class="vel-card vel-dark st-today edge-card">
             <span class="st-eyebrow">Aujourd'hui · ${_sideName(statsColor)}</span>
             ${dueAll ? `
             <div class="st-big"><b>${dueAll}</b><span>${dueAll > 1 ? 'positions à réviser' : 'position à réviser'}</span></div>
             <div class="st-today-sub">Environ ${minutes} min${dueWeak ? ` · <b>dont ${dueWeak} à retravailler</b>` : ''}${fresh ? ` · ${_plural(fresh, 'nouvelle', 'nouvelles')}` : ''}</div>
-            ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="due">Révision du jour ${ico('chevron-right')}</button>` : `
             <div class="st-big st-big-text"><b>À jour</b></div>
             <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${dueInLabel(next)}.` : 'Aucune révision prévue.'}</div>
-            ${forecast}
             <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Points faibles ${ico('chevron-right')}</button>`}
-        </div>`;
+        </article>`;
 
-    // ── Téléphone : trois chiffres et onglets collants (css/screens.css, requête de conteneur) ──
-    const tabs = [['overview', 'Aperçu'], ['openings', 'Ouvertures'], ['regularity', 'Régularité'], ['games', 'Parties']].filter(([p]) => p !== 'regularity' || reg);
-    if (!tabs.some(([p]) => p === statsPane)) statsPane = 'overview';
-    const phoneHead = `<div class="st-phone st-kpis" role="group" aria-label="En bref">
-            <div><b>${dueAll}</b><span>à réviser</span></div>
-            <div><b>${Math.round(100 * counts.mastered / rows.length)} %</b><span>maîtrisées</span></div>
-            <div><b>${_streak(readActivity())} j</b><span>d'affilée</span></div></div>
-        <div class="st-phone st-tabs" role="tablist" aria-label="Sections">${tabs.map(([p, l]) =>
-            `<button type="button" role="tab" class="st-tab" aria-selected="${statsPane === p}" data-action="statsPane" data-arg="${p}">${l}</button>`).join('')}</div>`;
+    // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
+    const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);
+    const fcDay = i => i ? new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'long' }) : I18n.t('aujourd\'hui');
+    const forecastCard = `
+        <div class="st-card st-fcard edge-card">
+            <div class="st-h"><h3>Révisions à venir</h3></div>
+            <div class="st-fc-h"><span>${STATS_FORECAST_DAYS} prochains jours</span><b>${_plural(fcSum, 'position')}</b></div>
+            <div class="st-fc" role="img" aria-label="${I18n.pair(I18n.t('Révisions prévues'), fc.map((n, i) => `${fcDay(i)} ${n}`).join(', '))}">${fc.map((n, i) =>
+                `<div title="${I18n.pair(fcDay(i), I18n.t(_plural(n, 'position')))}"><b>${n || ''}</b><i style="height:${n ? 4 + Math.round(56 * n / fcMax) : 2}px"${n ? '' : ' class="zero"'}></i><span>${new Date(_dayStart(now, i)).toLocaleDateString(I18n.locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>
+        </div>`;
 
     // ── Maîtrise ── la barre filtre comme la légende ; la règle de chaque niveau est dans son title.
     const totA = rows.reduce((s, r) => s + r.e.attempts, 0), totF = rows.reduce((s, r) => s + r.e.failures, 0);
@@ -323,14 +416,13 @@ function initStats() {
     const lg = (l, cls) => `<button type="button" class="st-lg ${cls || ''} ${statsFilter === l ? 'active' : ''}" aria-pressed="${statsFilter === l}" data-action="statsLegend" data-arg="${l}" title="${I18n.pair(I18n.t(STATS_LEVELS[l].one), I18n.t(STATS_LEVELS[l].rule))}" ${counts[l] ? '' : 'disabled'}>
             ${_lvMark(l)}<span>${STATS_LEVELS[l].label}</span><b>${counts[l]}</b></button>`;
     const legend = STATS_MASTERY_LEVELS.map(l => lg(l)).join('');
-    const state = `<div class="st-state">${lg(STATS_STATE, 'st-lg-state')}<small>pas encore de niveau</small></div>`;
     const masteryCard = `
         <div class="vel-card vel-light st-mastery edge-card">
             <span class="st-eyebrow">Maîtrise · ${_plural(rows.length, 'position')}</span>
             <div class="st-big"><b>${mastery} %</b><span>maîtrisées</span></div>
             ${levelBarHTML(counts, 'st-mbar', { buttons: true, active: statsFilter })}
             <div class="st-legend" role="group" aria-label="Filtrer la liste par niveau">${legend}</div>
-            ${state}
+            <div class="st-state">${lg(STATS_STATE, 'st-lg-state')}</div>
             <span class="st-foot">Réussite : ${Math.round(100 * (totA - totF) / totA)} % sur ${_plural(totA, 'essai')}</span>
         </div>`;
 
@@ -339,7 +431,7 @@ function initStats() {
     _assignOpenings(rows);
     const weakN = counts.weak + counts.fragile, relearnN = rows.filter(r => Number.isInteger(r.e.relearn)).length;
     if (statsWeak) {
-        if (weakN) { _renderWeakList(body, rows, reg, weakN, relearnN); return; }
+        if (weakN) { _renderStatsScope(); _renderWeakList(body, rows, weakN, relearnN); return; }
         statsWeak = null;                                       // plus rien à montrer : retour à la page
     }
     const weakHTML = !weakest.length ? '' : `
@@ -349,18 +441,25 @@ function initStats() {
             <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
         </section>`;
 
-    // ── Par ouverture ── un sélecteur et une seule fiche (statsOpenings.js).
+    // ── Par ouverture ── la liste « miroir » et une seule fiche (statsOpenings.js).
     const openings = StatsOpenings.sectionHTML({ rows, counts, rp });
 
+    const tabs = [['overview', 'Maîtrise'], ['openings', 'Ouvertures'], ['games', 'Parties'], ['regularity', 'Régularité']].filter(([p]) => p !== 'regularity' || reg);
+    if (!tabs.some(([p]) => p === statsPane)) statsPane = 'overview';
+    _renderStatsScope();
+
+    body.className = 'st-body pane-' + statsPane;
     body.innerHTML = `
+        <section class="st-todo" id="stats-todo" aria-label="À faire"></section>
+        ${_tabsHTML(tabs, _tabCounts(rows))}
         <div class="st-main">
-            <section class="st-now" data-pane="overview">${today}${masteryCard}</section>
+            <section class="st-now" data-pane="overview">${masteryCard}${forecastCard}</section>
             <div class="st-weak-wrap" data-pane="overview">${weakHTML}</div>
             ${openings}
             ${_gamesSection()}
-        </div>${reg}`;
-    body.className = 'st-body pane-' + statsPane;
-    body.insertAdjacentHTML('afterbegin', phoneHead);
+            ${reg}
+        </div>`;
+    _paintTodo();
     StatsGames.mount();
     Bus.emit('ui:refresh');             // téléphone : le centre du dock porte l'action de la page
 }
@@ -407,6 +506,15 @@ registerActions({
     statsWeakMore: () => { statsWeak.shown += STATS_WEAK_PAGE; initStats(); },
     statsWeakBack: () => { const y = statsWeak ? statsWeak.y : 0; statsWeak = null; initStats(); window.scrollTo({ top: y }); },
     statsPane: p => { statsPane = p; initStats(); window.scrollTo({ top: 0 }); },
+    // Action d'un constat « À faire » : 'openings|<clé de l'ouverture>' ou 'games|<vue>'.
+    statsTodoGo: arg => {
+        const i = arg.indexOf('|'), pane = arg.slice(0, i), what = arg.slice(i + 1);
+        if (pane === 'openings') StatsOpenings.show(what);
+        else StatsInsights.show(what);
+        statsPane = pane;
+        initStats();
+        window.scrollTo({ top: 0 });
+    },
     statsAddLine: () => startGame(statsColor === 'b' ? 'b' : 'w'),    // répertoire vide : Jouer, où mon coup s'enregistre
     statsGoTraining: arg => statsGoTraining(arg),
     statsGoEndgame: cat => { switchHomeTab('endgame'); requestAnimationFrame(() => jumpEndgameCategory(cat)); },

@@ -1980,6 +1980,7 @@ d'affilée
 jours actifs
 Peu <i></i>
 </i> Beaucoup
+{0}{1} pt
 Coup à retrouver
 Blancs ·
 Noirs ·
@@ -1989,40 +1990,48 @@ Afficher les {0} autres positions
 {0}Statistiques
 Points faibles
 {5}Entraînement › Points faibles {6}
+openings|
+Voir la fiche
+Le temps décide <em>{0} %</em> de vos défaites
+games|temps
+Voir le temps
+Score sous l'attendu <em>{0}</em>
+games|bilan
+Voir le bilan
+st-todo n-{0}
+Vues
 Régularité
 tous répertoires
 avec les {0}
 Aucun essai pour « {0} »
 positions enregistrées
-{0}{1}, aucune encore révisée. Les chiffres viennent de l'Entraînement.
+{0}{1}, aucune encore révisée.
 Ouvrir l'Entraînement {0}
 Répertoire vide
 Les Blancs et les Noirs n'ont
 Les {0} n'ont
 {0} aucune position dans « {1} ».
 {0}Ajouter une ligne
-Révisions prévues
-class="zero"
-{0} prochains jours
 positions à réviser
 · <b>dont {0} à retravailler</b>
 Environ {2} min{3}{4}
-Révision du jour {6}
+Révision du jour {5}
 Prochaine révision {0}.
 Aucune révision prévue.
 <b>À jour</b>
-{2}Points faibles {3}
+{1}Points faibles {2}
 Aujourd'hui · {0}
-Ouvertures
-En bref
-Sections
-à réviser
-maîtrisées
-pas encore de niveau
+Révisions prévues
+class="zero"
+Révisions à venir
+{0} prochains jours
 Maîtrise · {0}
+maîtrisées
 Réussite : {5} % sur {6}
 Tout voir
 {4}Entraînement › Points faibles {5}
+Maîtrise
+Ouvertures
 Aperçu · {0}
 {0} · maîtrise {1} / 100 ({2} err. / {3})
 Cette position
@@ -2030,7 +2039,6 @@ Cette position
 Aujourd’hui
 {3} err. / {4}
 Niveau
-Maîtrise
 Révision
 Retour aux Statistiques{0}
 Pseudo introuvable sur ce site.
@@ -2069,7 +2077,6 @@ Récupération des parties… {0}
 Charger tout l'historique
 Saisissez un pseudo.
 {0}px
-{0}{1} pt
 dd-sm {0}
 Période
 3 mois
@@ -2119,7 +2126,6 @@ Il faut quatre mois joués au moins pour comparer.
 Elo inconnu
 Attendu : {0}
 Votre niveau mois par mois
-Performance de chaque mois d'après vos résultats
 Contre qui perdez-vous des points ?
 Score réel
 Score attendu
@@ -2155,7 +2161,6 @@ Score avec zeitnot
 Score sans zeitnot
 Le temps au coup 20 compte-t-il ?
 En retard d'au moins 20 points : {0}. En avance d'autant : {1}.
-Score selon votre avance à l'horloge au coup 20
 Votre temps moins celui de l'adversaire, en points
 Réfléchissez-vous quand la préparation s'arrête ?
 Premier coup hors répertoire : {0} s, contre {1} s ensuite.
@@ -2165,7 +2170,6 @@ Score en réfléchissant
 Score en jouant vite
 Toutes vos parties sont analysées (Stockfish, profondeur {0}).
 Mettre en pause
-Tourne tant que cette vue reste ouverte. Chess.com d'abord, les parties récentes en premier ; les résultats sont gardés.
 En pause.
 <b>Analyse Stockfish</b>
 Pas encore assez de mois analysés.
@@ -2184,19 +2188,15 @@ Où perdez-vous en qualité ?
 Votre plus grand écart est dans {0} : {1} points sous vos adversaires.
 Vous jouez au moins aussi précisément que vos adversaires dans chaque phase.
 Transformez-vous vos avantages ?
-Dès que la partie atteint +2 ou −2 après le coup 5
 Avantages convertis
 Positions sauvées
 Voyez-vous les fautes adverses ?
-Après une erreur ou une gaffe, le coup suivant en profite-t-il ?
 Fautes adverses punies
 Vos fautes non punies
 À quel moment la partie vous échappe-t-elle ?
-Évaluation moyenne, de votre point de vue
 Numéro du coup
 Votre sortie d'ouverture décide-t-elle du résultat ?
 Après une sortie à +1 ou mieux : {0}. À −1 ou moins : {1}.
-Score selon l'évaluation à la sortie du répertoire
 Évaluation à la sortie, en pions
 Précision
 Adversaires : {2}
@@ -2236,7 +2236,6 @@ Sans dames
 Avec dames
 Où êtes-vous à l'aise pour roquer ?
 Côtés opposés : {0}. Mêmes côtés : {1}.
-Score selon les roques des deux camps
 Quelles structures vous réussissent ?
 La plus rentable : {0}. La moins rentable : {1}.
 Structure de pions au coup 15
@@ -2284,20 +2283,16 @@ Score après une bonne sortie
 Score après une mauvaise sortie
 Avance à l'horloge
 Où le répertoire s'arrête
-Numéro du coup, hors fins de ligne préparées
 </i>Réponse manquante
 </i>Sortie de votre fait
 Réponses adverses
-Les plus jouées après cette ligne
 au lieu de
 Coups joués à la place
-Votre réflexe, à la place du coup prévu
 Score par mois
 {0} mois sur {1} au-dessus de l'attendu
 </i>Score réel
 </i>Score attendu
 Votre préparation
-Dans vos parties réelles
 Premier coup de la partie
 Après
 {5} err. / {6}
@@ -2308,20 +2303,21 @@ Voir {7}
 Réduire
 Afficher les {0} autres coups
 Vos coups à connaître
-{0} de votre répertoire dans cette ouverture, du moins su au mieux su.
 Coup
 Filtrer par niveau
 Par ouverture
 Aucune position à ce niveau.
-{3} mois
 Précédente à travailler
 Suivante à travailler
+maîtrise {0} / 100
+Hors rép.
+Toutes les ouvertures · {0}
+Préparation
 Il faut au moins {0} parties dans une ouverture travaillée pour la placer sur la carte.
 Maîtrise à l'entraînement
 Points face à l'attendu
 {0} · {1} / 100 · {2}{3} pt
 Carte des ouvertures, maîtrise et résultats
-Point plus gros : plus de parties. Touchez un point pour ouvrir sa fiche.
 Aucune ouverture ne correspond. Essayez un nom ou un coup.
 À travailler d'abord
 Choisir une ouverture
@@ -2491,6 +2487,7 @@ Commencer avec les Blancs
 {4}Importer un PGN
 {5}Partir de mes parties
 Autres exercices {0}
+à réviser
 <b>Environ {0} min</b> · {1}
 · dont {0}
 · encore {0} pour l'objectif

@@ -17,7 +17,7 @@ const seedRep = w => w.eval(`(() => {
         } });
     dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db));
     dataStore.set(dbKeyFor(currentRepertoire, 'b'), '{}');
-    statsColor = 'all'; statsFilter = 'all'; statsPane = 'overview';
+    statsColor = 'all'; statsFilter = 'all'; statsPane = 'openings';
 })()`);
 const PGN = {
     ita: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6',
@@ -124,12 +124,36 @@ const seedGames = async (w, games) => {
         key($('#so-picker .so-p-search'), 'Escape');
     });
 
-    await t('période : le filtre recalcule sans changer d\'ouverture', () => {
+    await t('période : celle de la barre de contexte, recalcule sans changer d\'ouverture', () => {
         const a = $('#so-trigger b').textContent;
-        $('#stats-lines [data-action="statsOpPeriod"][data-arg="3"]').click();
-        assert.strictEqual($('#stats-lines [data-action="statsOpPeriod"][data-arg="3"]').getAttribute('aria-pressed'), 'true');
+        assert(!$('#stats-lines [data-action="statsOpPeriod"]'), 'plus de période propre à la fiche');
+        assert($('#stats-filters [data-dd-action="statsInPeriod"]'), 'période dans la barre de contexte');
+        w.eval(`UI_ACTIONS.statsInPeriod('3')`);
         assert.strictEqual($('#so-trigger b').textContent, a);
-        $('#stats-lines [data-action="statsOpPeriod"][data-arg="12"]').click();
+        w.eval(`UI_ACTIONS.statsInPeriod('12')`);
+    });
+
+    await t('miroir : une ligne par ouverture, préparation et écart ; toucher une ligne ouvre sa fiche', () => {
+        const rows = $$('#stats-lines .so-mirror .so-mr:not(.so-mr-h)');
+        assert(rows.length >= 2);
+        assert(rows[0].classList.contains('on') && /italienne/i.test(rows[0].textContent), 'la plus coûteuse en tête, ouverte');
+        assert(rows[0].querySelector('.lv-bar') && rows[0].querySelector('.st-dbar.down'));
+        const sic = rows.find(r => /sicilienne/i.test(r.textContent));
+        sic.click();
+        assert(/sicilienne/i.test($('#so-trigger b').textContent));
+        assert($('#stats-lines .so-mr.on') && /sicilienne/i.test($('#stats-lines .so-mr.on').textContent));
+        rows[0].dataset.arg && w.eval(`UI_ACTIONS.statsOpPick(${JSON.stringify(rows[0].dataset.arg)})`);
+    });
+
+    await t('« À faire » : l\'ouverture qui coûte le plus mène à sa fiche, onglet Ouvertures', () => {
+        w.eval(`statsPane = 'overview'; initStats()`);
+        const go = $('#stats-todo [data-action="statsTodoGo"][data-arg^="openings|"]');
+        assert(go, 'constat d\'ouverture présent');
+        assert(/italienne/i.test(go.closest('.st-todo-card').textContent));
+        go.click();
+        assert.strictEqual(w.eval('statsPane'), 'openings');
+        assert(/italienne/i.test($('#so-trigger b').textContent));
+        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 1, 'une seule action pleine');
     });
 
     await t('filtre de niveau : seules les ouvertures qui en ont restent, ouverture concernée ouverte', () => {

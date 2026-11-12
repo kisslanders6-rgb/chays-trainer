@@ -43,8 +43,9 @@
 }
 
 /* ─── Statistiques ───
-   Barre de contexte collante sous la barre du haut, puis deux colonnes ≥ 900 px (contenu | régularité),
-   une seule en dessous (régularité en bas). Cartes « Velours » : mêmes jetons que l'accueil (css/home.css). */
+   Barre de contexte collante sous la barre du haut (répertoire, couleur ; période, site, cadence sur Ouvertures et Parties),
+   « À faire » (trois constats au plus), puis quatre onglets à toutes les largeurs : une seule colonne.
+   Cartes « Velours » : mêmes jetons que l'accueil (css/home.css). */
 .setup-screen:has(#home-tab-stats:not(.hidden)) { padding-top: 0; }
 .home-content:has(#home-tab-stats:not(.hidden)) { max-width: 1120px; justify-content: flex-start; text-align: left; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
 #home-tab-stats { gap: 0; align-items: stretch; }
@@ -56,13 +57,64 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 .st-rep { min-width: 0; }
+.st-filters { display: flex; margin-left: auto; min-width: 0; }
+.st-filters[hidden] { display: none; }
+.st-filters .si-bar { flex-wrap: nowrap; }
 
-.st-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; padding-top: 22px; }
-.st-main, .st-side { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
-@media (min-width: 900px) {
-    .st-body { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
-    .st-side { position: sticky; top: calc(var(--topnav-h) + 68px); }
-}
+.st-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; padding-top: 22px; }
+.st-main { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* À faire : la carte du jour (Velours, seule action pleine) puis un ou deux constats, chacun avec son action. */
+.st-todo { display: grid; gap: 14px; }
+.st-todo.n-0 { display: none; }
+.st-todo.n-2 { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.st-todo.n-3 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); }
+.st-todo-card { display: flex; flex-direction: column; gap: 10px; }
+.st-todo-card .st-eyebrow { color: var(--text-dim); opacity: 1; }
+.st-claim { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 20px; line-height: 1.2; text-wrap: balance; }
+.st-claim em { font-style: normal; white-space: nowrap; color: var(--lv-fragile-ink); }   /* un constat dit toujours une perte */
+.st-todo-go { align-self: flex-start; margin-top: auto; }
+.st-today .st-big b { font-size: 46px; }
+
+/* Écart à l'attendu, autour de zéro ; part d'un total (is-share), depuis la gauche. */
+.st-dbar { position: relative; display: block; height: 8px; border-radius: 4px; background: var(--bg-inset); }
+.st-dbar:not(.is-share)::before { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--border-strong); }
+.st-dbar i { position: absolute; top: 0; height: 100%; border-radius: 4px; }
+.st-dbar.up i { background: var(--new); }
+.st-dbar.down i, .st-dbar.is-share i { background: var(--lv-fragile); }
+.st-dbar.is-share i { left: 0; }
+.st-dbar.is-none { opacity: .5; }
+
+/* Onglets : soulignés, avec le compteur de ce qu'ils contiennent. */
+.st-tabs { display: flex; gap: 4px; margin-bottom: -8px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.st-tabs::-webkit-scrollbar { display: none; }
+.st-tab { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+          background: none; color: var(--text-muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: color .15s, border-color .15s; }
+.st-tab:hover { color: var(--text); }
+.st-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.st-tab:focus-visible { outline: 2px solid var(--board-accent); outline-offset: -2px; border-radius: 8px 8px 0 0; }
+.st-tab-n { padding: 3px 6px; border-radius: 6px; background: var(--bg-inset); color: var(--text-dim); font-family: var(--font-note); font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+.st-tab-n:empty { display: none; }
+.st-tab[aria-selected="true"] .st-tab-n { background: var(--accent-soft); color: var(--accent); }
+.st-body.pane-overview [data-pane]:not([data-pane="overview"]),
+.st-body.pane-openings [data-pane]:not([data-pane="openings"]),
+.st-body.pane-regularity [data-pane]:not([data-pane="regularity"]),
+.st-body.pane-games [data-pane]:not([data-pane="games"]) { display: none !important; }   /* l'emporte sur #stats-games { display: flex } */
+
+/* Maîtrise : prévision sur 7 jours dans sa propre carte, nombre au-dessus de chaque barre. */
+.st-fcard { display: flex; flex-direction: column; gap: 12px; }
+.st-fcard .st-fc { height: auto; min-height: 96px; margin-top: 4px; }
+.st-fcard .st-fc i { max-width: 30px; background: var(--border-strong); }
+.st-fcard .st-fc div:first-child i { background: var(--accent); }
+.st-fcard .st-fc i.zero { background: var(--bg-inset); }
+.st-fcard .st-fc b { font-family: var(--font-note); font-size: 10.5px; font-weight: 500; color: var(--text-dim); min-height: 12px; }
+
+/* Régularité : assiduité | qualité, côte à côte quand la place le permet. */
+.st-regcard .st-reg { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px 40px; align-items: start; }
+.st-reg-a, .st-reg-b { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.st-regcard .st-heat { margin-left: 0; max-width: 400px; }
+.st-regcard .st-trend { max-width: 520px; }
+.st-regcard .st-heat-leg { justify-content: flex-start; margin-top: 0; }
 .st-sec { display: flex; flex-direction: column; gap: 12px; }
 .st-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .st-h h3 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -.005em; }
@@ -670,28 +722,23 @@
 }
 
 /* ─── Statistiques sur téléphone (requête de conteneur sur l'onglet) ───
-   Trois chiffres en tête, onglets collants Aperçu / Ouvertures / Régularité, ouvertures limitées à 5. */
+   « À faire » en une colonne (constats en lignes compactes), onglets étirés sur toute la largeur. */
 #home-tab-stats { container: stats / inline-size; }
-.st-phone { display: none; }
 @container stats (max-width: 599px) {
-    .st-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .st-kpis div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
-    .st-kpis b { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .st-kpis span { font-size: 11.5px; color: var(--text-muted); }
-    .st-tabs { display: flex; position: sticky; top: calc(var(--topnav-h) + 104px); z-index: 40; gap: 2px; padding: 3px; margin-top: -14px;
-               border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--bg) 92%, transparent);
-               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-    .st-tab { flex: 1; padding: 8px 4px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .st-tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
-    .st-tab:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 1px; }
-    .st-more.st-phone { display: block; }
-    .st-body.pane-overview [data-pane]:not([data-pane="overview"]),
-    .st-body.pane-openings [data-pane]:not([data-pane="openings"]),
-    .st-body.pane-regularity [data-pane]:not([data-pane="regularity"]),
-    .st-body.pane-games [data-pane]:not([data-pane="games"]) { display: none; }
-    .st-body.pane-overview .st-main, .st-body.pane-openings .st-main, .st-body.pane-games .st-main { display: flex; }
-    .st-body.pane-regularity .st-main { display: none; }
-    .st-side { position: static; }
+    .st-todo.n-2, .st-todo.n-3 { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .st-todo-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; }
+    .st-todo-card .st-eyebrow, .st-todo-card .st-claim { grid-column: 1; }
+    .st-todo-card .st-claim { font-size: 16px; }
+    .st-todo-card .st-dbar { display: none; }
+    .st-todo-card .st-todo-go { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+    .st-tabs { margin-inline: 16px; gap: 0; }
+    .st-tab { flex: 1 0 auto; justify-content: center; padding: 0 6px; font-size: 13px; }
+    .st-tab-n { display: none; }
+    /* Barre de contexte : répertoire et couleur sur une ligne, période, site et cadence sur la suivante. */
+    #home-tab-stats > .st-scope { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; }
+    #home-tab-stats .st-filters { grid-column: 1 / -1; margin: 0; }
+    #home-tab-stats .st-filters .si-bar { width: 100%; }
+    #home-tab-stats .st-filters .dd { flex: 1 1 0; min-width: 0; }
 }
 
 /* ─── STATISTIQUES PUPITRE (LOT 7) ───
@@ -773,6 +820,7 @@
 
 /* Statistiques › Parties (statsGames.js) */
 #stats-games { display: flex; flex-direction: column; gap: 12px; }
+#stats-games .sg-chart { width: 100%; max-width: 720px; }   /* pleine largeur : la courbe garderait sinon une hauteur démesurée */
 #stats-games > .st-h .st-ibtn { margin-left: auto; }
 .sg-form { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
 .sg-err { margin: 0; font-size: 13px; color: var(--err); }
@@ -826,8 +874,8 @@
     #home-tab-stats .st-scope { margin: 0; padding: 10px 16px; }
     #home-tab-stats .st-seg .cs-opt { min-height: calc(var(--tap) - 9px); }   /* capsule de 44 px (3 px de marge et 1,5 px de bord de chaque côté) */
     .st-body { gap: 14px; padding-top: 16px; }
-    .st-main, .st-side { gap: 14px; }
-    .st-kpis, .st-tabs { margin-inline: 16px; }
+    .st-main { gap: 14px; }
+    .st-todo + .st-tabs { margin-top: 2px; }
     .st-tab { min-height: var(--tap); }
     .st-body .edge-card { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
     .st-body .edge-card + .edge-card { border-top: 0; }
@@ -850,6 +898,37 @@
 
 /* ─── PAR OUVERTURE : SÉLECTEUR ET FICHE (statsOpenings.js) ─── */
 .so-wrap { container: so / inline-size; padding: 12px 20px 20px; }
+/* Miroir : une ouverture par ligne, préparation (niveaux) | écart à l'attendu ; la fiche à côté dès 980 px de contenu. */
+.so-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.so-mirror { display: flex; flex-direction: column; gap: 2px; padding: 12px 12px 4px; }
+.so-mr { display: grid; grid-template-columns: minmax(0, 1fr) 58px 68px 30px; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 6px 8px;
+         border: 1px solid transparent; border-radius: 12px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background .15s, border-color .15s; }
+.so-mr-h { min-height: 0; padding-block: 0 4px; cursor: default; font-family: var(--font-note); font-size: 9.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--text-dim); }
+.so-mr-h span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.so-mr-h span:nth-child(2), .so-mr-h span:nth-child(3) { text-align: center; } .so-mr-h span:last-child { text-align: right; }
+@media (hover: hover) { .so-mr:not(.so-mr-h):hover { background: var(--bg-inset); } }
+.so-mr.on { background: var(--accent-soft); border-color: var(--accent-line); }
+.so-mr:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 1px; }
+.so-mr-n { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.so-mr-n .so-txt b { font-size: 14px; }
+.so-mr-n .so-txt small { font-size: 11px; }
+.so-mr-bar.lv-bar { height: 8px; }
+.so-mr-out { display: block; font-size: 11px; color: var(--text-dim); text-align: center; }
+.so-mr-r { display: flex; flex-direction: column; gap: 4px; }
+.so-mr-r small { font-size: 11px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+.so-mr-r small.up { color: var(--new); } .so-mr-r small.down { color: var(--lv-fragile-ink); }
+.so-mr-g { font-size: 12px; text-align: right; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.so-mr-all { margin-top: 4px; }
+@container stats (min-width: 980px) {
+    .so-layout { grid-template-columns: minmax(360px, 440px) minmax(0, 1fr); }
+    .so-mirror { position: sticky; top: calc(var(--topnav-h) + 76px); padding: 12px 4px 16px 12px; border-right: 1px solid var(--border); }
+}
+@container stats (max-width: 979px) { .so-layout > .so-wrap { border-top: 1px solid var(--border); } }
+@container stats (max-width: 599px) {
+    .so-mirror { padding: 8px 8px 4px; }
+    .so-mr { grid-template-columns: minmax(0, 1fr) 56px 64px; gap: 10px; }
+    .so-mr-g, .so-mr-h span:last-child { display: none; }
+}
 .so-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
 .so-trigger { flex: 1 1 260px; min-width: 0; min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 13px; background: var(--bg-elevated); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .so-trigger > .ico { flex: none; width: 16px; height: 16px; fill: none; color: var(--text-dim); }

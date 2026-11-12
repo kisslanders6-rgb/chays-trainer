@@ -1,21 +1,24 @@
 /**
  * screens/stats/statsOpenings.js
  * ──────────────────────────────────────────────────────────────────────────
- * Statistiques › Par ouverture : un sélecteur et une seule fiche, quelle que soit la taille du répertoire.
- *   Sélecteur : recherche par nom ou par coups, « À travailler d'abord », familles, carte maîtrise × résultats.
+ * Statistiques › Ouvertures : la liste « miroir » et une seule fiche, quelle que soit la taille du répertoire.
+ *   Miroir : les ouvertures les plus coûteuses, une ligne chacune, préparation (barre de niveaux) à gauche et
+ *     écart à l'attendu à droite ; toucher une ligne ouvre sa fiche (à côté sur ordinateur, en dessous sur téléphone).
+ *   Sélecteur (« Toutes les ouvertures ») : recherche par nom ou par coups, « À travailler d'abord », familles, carte maîtrise × résultats.
  *     Fenêtre posée sous <body> : dans l'onglet, une requête de conteneur capterait le position: fixed du tiroir de téléphone.
  *   Fiche : diagnostic, score, écart à l'attendu, performance, maîtrise, évolution, sorties du répertoire, réponses adverses, coups à connaître (les 5 moins sus, le reste déplié à la demande).
  * Le rattachement d'une partie : la position la plus avancée de mon répertoire qu'elle a atteinte (les transpositions comptent).
  * Sans position enregistrée, la partie rejoint son ouverture nommée (« Hors répertoire »). Calculs : OpeningReport.
  * Seules les positions déjà travaillées forment les groupes, comme l'Entraînement (_assignOpenings).
+ * Période, site et cadence : ceux de la barre de contexte (StatsInsights).
  */
 
 'use strict';
 
 const StatsOpenings = (function () {
-    const ROWS = 5, AFTER_PLIES = 4, PRIORITY = 3, MIN_OUT = 2, MIN_MAP = 3, REPLIES = 6, SWAPS = 3;
+    const ROWS = 5, AFTER_PLIES = 4, PRIORITY = 3, MIN_OUT = 2, MIN_MAP = 3, REPLIES = 6, SWAPS = 3, MIRROR = 8;
     const OTHER = 'Autres positions';
-    const st = { ctx: null, scope: '', cur: null, picked: false, period: 12, mode: 'list', q: '', active: -1, all: new Set(), list: [], reached: new Map() };
+    const st = { ctx: null, scope: '', cur: null, picked: false, mode: 'list', q: '', active: -1, all: new Set(), list: [], reached: new Map() };
 
     const pct = v => `${Math.round(v)} %`;
     const num1 = v => Math.abs(v).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -36,7 +39,8 @@ const StatsOpenings = (function () {
     };
 
     // ─── DONNÉES ─────────────────────────────────────────────────────────────
-    function since() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - st.period + 1, 1).getTime(); }
+    const monthSpan = () => StatsInsights.period() || 12;          // « Tout » : l'évolution garde douze mois
+    function since() { const p = StatsInsights.period(); if (!p) return 0; const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - p + 1, 1).getTime(); }
 
     function build() {
         const { rows, rp } = st.ctx, map = new Map(), owner = new Map(rows.map(r => [r.side + '|' + r.k, r])), from = since();
@@ -46,7 +50,7 @@ const StatsOpenings = (function () {
         };
         rows.forEach(r => group(r.gKey, r.side, r.gName, r.gHtml, r.gPath).all.push(r));
         st.reached = new Map();
-        StatsGames.analysed().filter(x => statsColor === 'all' || x.g.color === statsColor).forEach(x => {
+        StatsGames.analysed().filter(x => StatsInsights.keep(x.g, true)).forEach(x => {
             const leftAtOnce = x.a.dev && x.a.dev.by === 'me' && x.a.mine.length === 1;     // quitté dès mon premier coup : une autre ouverture
             const home = leftAtOnce ? null : x.a.mine.slice().reverse().map(k => owner.get(x.g.color + '|' + k)).find(Boolean);
             const name = x.a.op ? x.a.op.name : OTHER;
@@ -143,7 +147,7 @@ const StatsOpenings = (function () {
             const none = !StatsGames.analysed().length;
             return `<p class="st-sub so-empty">${none ? (StatsGames.pending() ? 'Comparaison avec vos parties…' : "Reliez un compte dans l'onglet Parties pour voir vos résultats réels.") : 'Aucune partie sur cette période.'}</p>`;
         }
-        const r = OpeningReport.detail(g.recent, g.path.length), months = OpeningReport.months(g.recent.map(x => x.g), st.period, Date.now());
+        const r = OpeningReport.detail(g.recent, g.path.length), months = OpeningReport.months(g.recent.map(x => x.g), monthSpan(), Date.now());
         const above = months.filter(m => m.n && m.expected !== null && m.score >= m.expected).length, played = months.filter(m => m.n).length;
         const hist = histChart(r.hist), replies = r.replies.filter(x => x.n >= 2).slice(0, REPLIES), swaps = r.swaps.slice(0, SWAPS);
         const STATE = { covered: 'Couvert', missing: 'Manquant', end: 'Fin de préparation' };
@@ -151,7 +155,7 @@ const StatsOpenings = (function () {
         return `<div class="so-grid">
             <div class="so-card so-c7"><h5>Score par mois</h5><p class="st-sub">${above} mois sur ${played} au-dessus de l'attendu</p>
                 <div class="so-leg"><span><i class="so-bar-real"></i>Score réel</span><span><i class="so-exp"></i>Score attendu</span></div>${monthsChart(months)}</div>
-            <div class="so-card so-c5"><h5>Votre préparation</h5><p class="st-sub">Dans vos parties réelles</p>
+            <div class="so-card so-c5"><h5>Votre préparation</h5>
                 ${fact('Répertoire suivi', pct(r.followed))}
                 ${fact('Score en le suivant', r.kept.n ? pct(r.kept.score) : '–')}
                 ${fact('Score en le quittant', r.left.n ? pct(r.left.score) : '–')}
@@ -161,11 +165,11 @@ const StatsOpenings = (function () {
                 ${r.exitGood.n >= 3 ? fact('Score après une bonne sortie', pct(r.exitGood.score)) : ''}
                 ${r.exitBad.n >= 3 ? fact('Score après une mauvaise sortie', pct(r.exitBad.score)) : ''}
                 ${r.exitClock === null ? '' : fact('Avance à l\'horloge', `${r.exitClock >= 0 ? '+' : '−'}${Math.abs(Math.round(r.exitClock))} %`)}</div>
-            ${hist ? `<div class="so-card so-c6"><h5>Où le répertoire s'arrête</h5><p class="st-sub">Numéro du coup, hors fins de ligne préparées</p>
+            ${hist ? `<div class="so-card so-c6"><h5>Où le répertoire s'arrête</h5>
                 <div class="so-leg"><span><i class="so-bar-gap"></i>Réponse manquante</span><span><i class="so-bar-me"></i>Sortie de votre fait</span></div>${hist}</div>` : ''}
-            ${replies.length ? `<div class="so-card so-c6"><h5>Réponses adverses</h5><p class="st-sub">Les plus jouées après cette ligne</p>
+            ${replies.length ? `<div class="so-card so-c6"><h5>Réponses adverses</h5>
                 <div class="so-table">${replies.map(x => `<div class="so-tr"><span class="so-mv">${_moveLabel(x, false, true)}</span><span class="so-share"><i style="width:${Math.max(4, x.share * .6)}%"></i>${pct(x.share)}</span><span class="so-num">${pct(x.t.score)}</span><span class="so-state ${x.state}">${STATE[x.state]}</span></div>`).join('')}</div></div>` : ''}
-            ${swaps.length ? `<div class="so-card so-c12"><h5>Coups joués à la place</h5><p class="st-sub">Votre réflexe, à la place du coup prévu</p>
+            ${swaps.length ? `<div class="so-card so-c12"><h5>Coups joués à la place</h5>
                 ${swaps.map(x => `<button type="button" class="so-swap" data-action="statsPreview" data-arg="${escapeHtml(g.side + ':' + x.key)}" data-origin="${escapeHtml(g.name)}"><span class="so-mv">${_moveLabel({ ply: x.ply, san: x.played }, false, true)}</span><span class="so-instead">au lieu de <span class="so-mv">${_moveLabel({ ply: x.ply, san: x.expected }, false, true)}</span></span><small>${_plural(x.n, 'partie')} · ${pct(x.t.score)}</small>${ico('chevron-right')}</button>`).join('')}</div>` : ''}
         </div>`;
     }
@@ -201,7 +205,7 @@ const StatsOpenings = (function () {
                 </span></div>`;
         }).join('');
         const more = items.length > ROWS ? `<button type="button" class="st-more" data-action="statsOpMore" data-arg="${escapeHtml(g.key)}" aria-expanded="${items.length === shown.length}">${items.length === shown.length ? 'Réduire' : `Afficher les ${items.length - shown.length} autres coups`}</button>` : '';
-        return `<div class="so-card so-pos"><h5>Vos coups à connaître</h5><p class="st-sub">${_plural(items.length, 'coup')} de votre répertoire dans cette ouverture, du moins su au mieux su.</p>
+        return `<div class="so-card so-pos"><h5>Vos coups à connaître</h5><p class="st-sub">${_plural(items.length, 'coup')}</p>
             ${levelBarHTML(g.counts)}
             <div class="st-rows"><div class="st-row st-row-hd" aria-hidden="true"><span>Coup</span><span>Niveau</span><span>Maîtrise</span><span>Parties</span><span>Révision</span><span></span></div>${rows}${more}</div></div>`;
     }
@@ -218,14 +222,33 @@ const StatsOpenings = (function () {
             <div class="stats-filters" role="group" aria-label="Filtrer par niveau">${chipsHTML()}</div>`;
         if (!g) return `${title}<div class="st-lines"><div class="empty-tab">Aucune position à ce niveau.</div></div>`;
         const meta = `${g.side === 'w' ? 'Blancs' : 'Noirs'} · ${metaOf(g)}`;
-        return `${title}<div class="so-wrap">
+        return `${title}<div class="so-layout">${mirrorHTML()}<div class="so-wrap">
             <div class="so-bar">
                 <button type="button" class="so-trigger" id="so-trigger" data-action="statsOpOpen" aria-haspopup="dialog" aria-expanded="false">${sideDot(g.side)}<span class="so-txt"><b>${g.html}</b><small>${meta}</small></span>${ico('chevron-down')}</button>
                 <button type="button" class="so-step" data-action="statsOpStep" data-arg="-1" title="Précédente à travailler" aria-label="Précédente à travailler">${ico('chevron-left')}</button>
                 <button type="button" class="so-step" data-action="statsOpStep" data-arg="1" title="Suivante à travailler" aria-label="Suivante à travailler">${ico('chevron-right')}</button>
-                <div class="tr-seg so-period" role="group" aria-label="Période">${[3, 6, 12].map(p => `<button type="button" class="tr-seg-btn${st.period === p ? ' active' : ''}" aria-pressed="${st.period === p}" data-action="statsOpPeriod" data-arg="${p}">${p} mois</button>`).join('')}</div>
             </div>
             <div class="so-fiche">${headHTML(g)}${kpisHTML(g)}${gamesHTML(g)}${positionsHTML(g)}</div>
+        </div></div>`;
+    }
+
+    // ─── MIROIR ──────────────────────────────────────────────────────────────
+    // Les ouvertures dans l'ordre du classement (points perdus, puis fragilité) : préparation | résultats.
+    function mirrorHTML() {
+        const shown = st.list.slice(0, MIRROR);
+        const row = g => {
+            const d = fairDelta(g.stats), moves = g.path.length && g.name !== _movesLabel(g.path) ? _movesLabel(g.path, true) : '';
+            const label = `${g.name} · ${g.all.length ? `maîtrise ${g.mastery} / 100` : 'hors répertoire'} · ${d === null ? _plural(g.stats.n, 'partie') : `${d >= 0 ? '+' : '−'}${num1(d)} pt`}`;
+            return `<button type="button" class="so-mr${g.key === st.cur ? ' on' : ''}" data-action="statsOpPick" data-arg="${escapeHtml(g.key)}" aria-pressed="${g.key === st.cur}" aria-label="${escapeHtml(label)}">
+                <span class="so-mr-n">${sideDot(g.side)}<span class="so-txt"><b>${g.html}</b>${moves ? `<small>${moves}</small>` : ''}</span></span>
+                <span class="so-mr-p">${g.all.length ? levelBarHTML(g.counts, 'so-mr-bar') : '<span class="so-mr-out">Hors rép.</span>'}</span>
+                <span class="so-mr-r">${statsDeltaBar(d)}<small class="${d === null ? '' : d >= 0 ? 'up' : 'down'}">${d === null ? '–' : I18n.mark(`${d >= 0 ? '+' : '−'}${num1(d)}`)}</small></span>
+                <span class="so-mr-g">${g.stats.n || '–'}</span></button>`;
+        };
+        return `<div class="so-mirror">
+            <div class="so-mr so-mr-h" aria-hidden="true"><span>Ouverture</span><span>Préparation</span><span>Résultats</span><span>Parties</span></div>
+            ${shown.map(row).join('')}
+            ${st.list.length > shown.length ? `<button type="button" class="st-more so-mr-all" data-action="statsOpOpen">Toutes les ouvertures · ${st.list.length}</button>` : ''}
         </div>`;
     }
 
@@ -264,7 +287,7 @@ const StatsOpenings = (function () {
             const label = `${o.name} · ${o.mastery} / 100 · ${o.stats.delta >= 0 ? '+' : '−'}${num1(o.stats.delta)} pt`;
             g += `<g class="so-point${o.key === st.cur ? ' sel' : ''}" tabindex="0" role="button" data-action="statsOpPick" data-arg="${escapeHtml(o.key)}" aria-label="${escapeHtml(label)}"><title>${escapeHtml(label)}</title><circle cx="${cx}" cy="${cy}" r="${Math.max(r, 12)}" fill="transparent"/><circle class="m ${o.stats.delta >= 0 ? 'up' : 'down'}" cx="${cx}" cy="${cy}" r="${r}"/></g>`;
         });
-        return `<svg class="so-chart so-map" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carte des ouvertures, maîtrise et résultats">${g}</svg><p class="so-note">Point plus gros : plus de parties. Touchez un point pour ouvrir sa fiche.</p>`;
+        return `<svg class="so-chart so-map" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carte des ouvertures, maîtrise et résultats">${g}</svg>`;
     }
 
     function listHTML(list) {
@@ -348,7 +371,21 @@ const StatsOpenings = (function () {
         opts[st.active].scrollIntoView({ block: 'nearest' });
     }
 
-    function pick(key) { st.cur = key; st.picked = true; paint(); close(); }
+    function pick(key) {
+        const fromList = !pickerEl();
+        st.cur = key; st.picked = true; paint(); close();
+        // Depuis le miroir, sur une seule colonne : la fiche est en dessous, on l'amène à l'écran.
+        const fiche = fromList && slot() && slot().querySelector('.so-wrap'), lay = slot() && slot().querySelector('.so-layout');
+        if (fiche && lay && fiche.scrollIntoView && getComputedStyle(lay).gridTemplateColumns.split(' ').length < 2) fiche.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+
+    // Ouverture qui coûte le plus de points sur la période (constat « À faire ») : écart à l'attendu d'au moins 3 points.
+    function topLoss() {
+        if (!st.ctx) return null;
+        build();
+        const g = st.list.filter(x => x.stats.n >= MIN_MAP && x.stats.delta !== null && x.stats.delta <= -3).sort((a, b) => lostOf(b) - lostOf(a))[0];
+        return g ? { key: g.key, html: g.html, delta: g.stats.delta } : null;
+    }
     function step(dir) {
         const i = st.list.findIndex(g => g.key === st.cur);
         if (i < 0) return;
@@ -362,7 +399,6 @@ const StatsOpenings = (function () {
         statsOpPick: pick,
         statsOpMode: m => { st.mode = m; renderPicker(); },
         statsOpStep: d => step(Number(d)),
-        statsOpPeriod: p => { st.period = Number(p); st.picked = true; paint(); },
         statsOpMore: k => {
             const closing = st.all.delete(k);
             if (!closing) st.all.add(k);
@@ -374,5 +410,6 @@ const StatsOpenings = (function () {
     Bus.on('games:analysed', paint);
     Bus.on('games:evaluated', paint);
 
-    return { sectionHTML, reset: () => { st.cur = null; st.picked = false; }, close };
+    return { sectionHTML, reset: () => { st.cur = null; st.picked = false; }, close, topLoss, count: () => st.list.length,
+             show: key => { st.cur = key; st.picked = true; } };
 })();

@@ -1,7 +1,8 @@
 /**
  * screens/stats/statsInsights.js
  * ──────────────────────────────────────────────────────────────────────────
- * Statistiques › Parties : barre de filtres commune (période, site, cadence ; la couleur vient de la barre de l'onglet) et vues Bilan, Temps, Qualité et Positions.
+ * Statistiques › Parties : filtres communs (période, site, cadence), posés dans la barre de contexte de l'onglet à côté de la
+ * couleur, et lus aussi par Ouvertures et par « À faire » ; vues Bilan, Temps, Qualité et Positions.
  * Qualité : Stockfish évalue les parties pendant que la vue est ouverte et visible (GameEval), Chess.com d'abord ; les résultats sont gardés.
  * Choisir un site ou une cadence règle aussi la courbe d'Elo (préférences eloSite, eloSpeed). Calculs : GameInsights, OpeningReport.
  * Période, site et cadence sont retrouvés au prochain lancement (chessTrainer_gameFilters, propre à l'appareil).
@@ -35,10 +36,12 @@ const StatsInsights = (function () {
         const d = new Date();
         return new Date(d.getFullYear(), d.getMonth() - st.period + 1, 1).getTime();
     }
-    const keeper = () => { const from = since(); return g => g.at >= from && (st.site === 'all' || g.site === st.site) && (st.speed === 'all' || g.speed === st.speed) && (statsColor === 'all' || g.color === statsColor); };
-    const keep = g => keeper()(g);
+    // anyTime : sans la période (la fiche d'ouverture garde toutes les parties pour les rattacher, et date elle-même).
+    const keeper = anyTime => { const from = anyTime ? 0 : since(); return g => g.at >= from && (st.site === 'all' || g.site === st.site) && (st.speed === 'all' || g.speed === st.speed) && (statsColor === 'all' || g.color === statsColor); };
+    const keep = (g, anyTime) => keeper(anyTime)(g);
 
-    function barHTML(games) {
+    // Période, site et cadence : dans la barre de contexte des Statistiques (#stats-filters).
+    function filtersHTML(games) {
         const sites = [...new Set(games.map(g => g.site))], speeds = Object.keys(SPEEDS).filter(s => games.some(g => g.speed === s));
         // Un choix gardé sans partie correspondante (compte retiré) n'enferme pas sur une page vide, et reste écrit pour le jour où il revient.
         if (!sites.includes(st.site)) st.site = 'all';
@@ -48,8 +51,11 @@ const StatsInsights = (function () {
             ${dd(String(st.period), 'statsInPeriod', 'Période', [['3', '3 mois'], ['6', '6 mois'], ['12', '12 mois'], ['0', 'Tout']])}
             ${sites.length > 1 ? dd(st.site, 'statsInSite', 'Site', [['all', 'Tous les sites'], ...sites.map(s => [s, GameArchive.SITE_NAME[s]])]) : ''}
             ${speeds.length > 1 ? dd(st.speed, 'statsInSpeed', 'Cadence', [['all', 'Toutes les cadences'], ...speeds.map(s => [s, SPEEDS[s]])], 'dd-end') : ''}
-        </div>
-        <div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['qualite', 'Qualité'], ['positions', 'Positions'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
+        </div>`;
+    }
+
+    function viewsHTML() {
+        return `<div class="tr-seg si-views" role="group" aria-label="Vue">${[['bilan', 'Bilan'], ['temps', 'Temps'], ['qualite', 'Qualité'], ['positions', 'Positions'], ['repertoire', 'Répertoire']].map(([v, l]) => `<button type="button" class="tr-seg-btn${st.view === v ? ' active' : ''}" aria-pressed="${st.view === v}" data-action="statsInView" data-arg="${v}">${l}</button>`).join('')}</div>`;
     }
 
     // ─── GRAPHIQUES ──────────────────────────────────────────────────────────
@@ -136,7 +142,7 @@ const StatsInsights = (function () {
                 <div class="so-card so-kpi"><span>Gains</span><b>${s.w}</b><small>${_plural(s.d, 'nulle')} · ${_plural(s.l, 'perte')}</small></div>
             </div>
             <div class="so-grid">
-                ${card('so-c6', 'Votre niveau mois par mois', 'Performance de chaque mois d\'après vos résultats', perfChart(months))}
+                ${card('so-c6', 'Votre niveau mois par mois', '', perfChart(months))}
                 ${card('so-c6', 'Contre qui perdez-vous des points ?', gapTake, `${legend([['so-bar-real', 'Score réel'], ['so-exp', 'Score attendu']])}${scoreBars(gaps)}<p class="si-cap">Elo de l'adversaire moins le vôtre</p>`)}
                 ${heatHTML(GameInsights.heat(list))}
                 ${card('so-c6', 'Savez-vous vous arrêter ?', sessionTake, `${bars(rankNames, se.ranks)}${se.after.some(fair) ? `<p class="si-cap">Juste après des défaites</p>${bars(afterNames, se.after)}` : ''}`)}
@@ -173,7 +179,7 @@ const StatsInsights = (function () {
             ${card(exit.n >= MIN ? 'so-c7' : 'so-c12 si-cap-w', 'Où dépensez-vous votre temps ?', at20 ? `Au coup ${at20.move}, il vous reste ${pct(at20.me)} de votre temps, contre ${pct(at20.opp)} à vos adversaires.` : '', `${legend([['si-key me', 'Vous'], ['si-key opp', 'Adversaire']])}${clockChart(curve, exitMove)}<p class="si-cap">Temps restant en % du temps initial, par numéro de coup</p>`)}
             ${exit.n >= MIN ? card('so-c5', 'Votre préparation vous fait-elle gagner du temps ?', `À la sortie du répertoire, votre horloge a ${signed(exit.lead)} points de temps face à l'adversaire.`, `<div class="sg-tiles">${tile('Avance moyenne', `${signed(exit.lead)} %`, 'du temps initial')}${fair(exit.ahead) ? tile('Score en avance', pct(exit.ahead.score), _plural(exit.ahead.n, 'partie')) : ''}${fair(exit.behind) ? tile('Score en retard', pct(exit.behind.score), _plural(exit.behind.n, 'partie')) : ''}</div>`) : ''}
             ${card('so-c6', 'Tombez-vous en zeitnot ?', z.share === null ? '' : `${pct(z.share)} de vos coups sont joués sous 10 % du temps, ${pct(z.oppShare)} chez vos adversaires.`, `<div class="sg-tiles">${fair(z.withIt) ? tile('Score avec zeitnot', pct(z.withIt.score), _plural(z.withIt.n, 'partie')) : ''}${fair(z.without) ? tile('Score sans zeitnot', pct(z.without.score), _plural(z.without.n, 'partie')) : ''}</div>`)}
-            ${card('so-c6', 'Le temps au coup 20 compte-t-il ?', fair(behind) && fair(ahead) ? `En retard d'au moins 20 points : ${pct(behind.score)}. En avance d'autant : ${pct(ahead.score)}.` : 'Score selon votre avance à l\'horloge au coup 20', `${scoreBars(bars)}<p class="si-cap">Votre temps moins celui de l'adversaire, en points</p>`)}
+            ${card('so-c6', 'Le temps au coup 20 compte-t-il ?', fair(behind) && fair(ahead) ? `En retard d'au moins 20 points : ${pct(behind.score)}. En avance d'autant : ${pct(ahead.score)}.` : '', `${scoreBars(bars)}<p class="si-cap">Votre temps moins celui de l'adversaire, en points</p>`)}
             ${th.n >= MIN ? card('so-c12', 'Réfléchissez-vous quand la préparation s\'arrête ?', `Premier coup hors répertoire : ${num1(th.first)} s, contre ${num1(th.usual)} s ensuite.`, `<div class="sg-tiles">${tile('Premier coup', `${num1(th.first)} s`)}${tile('Coups suivants', `${num1(th.usual)} s`)}${fair(th.thought) ? tile('Score en réfléchissant', pct(th.thought.score), _plural(th.thought.n, 'partie')) : ''}${fair(th.quick) ? tile('Score en jouant vite', pct(th.quick.score), _plural(th.quick.n, 'partie')) : ''}</div>`) : ''}
         </div>`;
     }
@@ -185,11 +191,10 @@ const StatsInsights = (function () {
     function evalBarHTML(games) {
         const left = GameEval.pending(games).length, total = games.filter(g => g.ev || g.sans.length >= 8).length, done = total - left;
         if (!left) return `<p class="st-sub si-eval" id="si-eval">Toutes vos parties sont analysées (Stockfish, profondeur ${GameEval.DEPTH}).</p>`;
-        const running = GameEval.running() && !st.paused;
         return `<div class="so-card si-eval" id="si-eval"><div class="si-eval-h"><b>Analyse Stockfish</b><span>${done} / ${total}</span>
                 <button type="button" class="st-link" data-action="statsInEval">${st.paused ? 'Reprendre' : 'Mettre en pause'}</button></div>
             <span class="si-track"><i style="width:${total ? Math.round(100 * done / total) : 0}%"></i></span>
-            <p class="st-sub">${st.evalError ? escapeHtml(st.evalError) : running || !st.paused ? 'Tourne tant que cette vue reste ouverte. Chess.com d\'abord, les parties récentes en premier ; les résultats sont gardés.' : 'En pause.'}</p></div>`;
+            ${st.evalError || st.paused ? `<p class="st-sub">${st.evalError ? escapeHtml(st.evalError) : 'En pause.'}</p>` : ''}</div>`;
     }
 
     function accuracyChart(months) {
@@ -242,10 +247,10 @@ const StatsInsights = (function () {
             <div class="so-grid">
                 ${card('so-c6', 'Votre précision progresse-t-elle ?', `Sur ${I18n.t(_plural(q.games, 'partie analysée', 'parties analysées'))}. Précision du site quand elle existe, sinon calcul Chays.`, accuracyChart(months))}
                 ${card('so-c6', 'Où perdez-vous en qualité ?', gapPhase < 0 ? `Votre plus grand écart est dans ${phase} : ${num1(Math.abs(gapPhase))} points sous vos adversaires.` : 'Vous jouez au moins aussi précisément que vos adversaires dans chaque phase.', `${legend([['si-key me', 'Vous'], ['si-key opp', 'Adversaire']])}${phaseChart(q)}`)}
-                ${card('so-c6', 'Transformez-vous vos avantages ?', 'Dès que la partie atteint +2 ou −2 après le coup 5', `<div class="sg-tiles">${c.n ? tile('Avantages convertis', pct(c.score), _plural(c.n, 'partie')) : ''}${r.n ? tile('Positions sauvées', pct(r.score), _plural(r.n, 'partie')) : ''}</div>`)}
-                ${card('so-c6', 'Voyez-vous les fautes adverses ?', 'Après une erreur ou une gaffe, le coup suivant en profite-t-il ?', `<div class="sg-tiles">${q.chances ? tile('Fautes adverses punies', pct(q.punished), _plural(q.chances, 'occasion')) : ''}${q.errors ? tile('Vos fautes non punies', pct(q.unpunished), _plural(q.errors, 'faute')) : ''}</div>`)}
-                ${q.curve.length >= 5 ? card('so-c6', 'À quel moment la partie vous échappe-t-elle ?', 'Évaluation moyenne, de votre point de vue', `${evalCurve(q.curve)}<p class="si-cap">Numéro du coup</p>`) : ''}
-                ${buckets.some(fair) ? card('so-c6', 'Votre sortie d\'ouverture décide-t-elle du résultat ?', fair(best) && fair(low) ? `Après une sortie à +1 ou mieux : ${pct(best.score)}. À −1 ou moins : ${pct(low.score)}.` : 'Score selon l\'évaluation à la sortie du répertoire', `${scoreBars(bars)}<p class="si-cap">Évaluation à la sortie, en pions</p>`) : ''}
+                ${card('so-c6', 'Transformez-vous vos avantages ?', '', `<div class="sg-tiles">${c.n ? tile('Avantages convertis', pct(c.score), _plural(c.n, 'partie')) : ''}${r.n ? tile('Positions sauvées', pct(r.score), _plural(r.n, 'partie')) : ''}</div>`)}
+                ${card('so-c6', 'Voyez-vous les fautes adverses ?', '', `<div class="sg-tiles">${q.chances ? tile('Fautes adverses punies', pct(q.punished), _plural(q.chances, 'occasion')) : ''}${q.errors ? tile('Vos fautes non punies', pct(q.unpunished), _plural(q.errors, 'faute')) : ''}</div>`)}
+                ${q.curve.length >= 5 ? card('so-c6', 'À quel moment la partie vous échappe-t-elle ?', '', `${evalCurve(q.curve)}<p class="si-cap">Numéro du coup</p>`) : ''}
+                ${buckets.some(fair) ? card('so-c6', 'Votre sortie d\'ouverture décide-t-elle du résultat ?', fair(best) && fair(low) ? `Après une sortie à +1 ou mieux : ${pct(best.score)}. À −1 ou moins : ${pct(low.score)}.` : '', `${scoreBars(bars)}<p class="si-cap">Évaluation à la sortie, en pions</p>`) : ''}
             </div>`;
     }
 
@@ -266,7 +271,7 @@ const StatsInsights = (function () {
         const worstEg = eg[eg.length - 1], top = st[0], low = st[st.length - 1];
         return `<div class="so-grid">
             ${fair(q.off) && fair(q.on) ? card('so-c6', 'Préférez-vous jouer avec ou sans dames ?', `Dames échangées : ${pct(q.off.score)}. Dames sur l'échiquier : ${pct(q.on.score)}.`, `${head}${posRow('Sans dames', q.off)}${posRow('Avec dames', q.on)}`) : ''}
-            ${castleRows.length ? card('so-c6', 'Où êtes-vous à l\'aise pour roquer ?', fair(c.same) && fair(c.opposite) ? `Côtés opposés : ${pct(c.opposite.score)}. Mêmes côtés : ${pct(c.same.score)}.` : 'Score selon les roques des deux camps', `${head}${castleRows.map(([l, t]) => posRow(l, t)).join('')}`) : ''}
+            ${castleRows.length ? card('so-c6', 'Où êtes-vous à l\'aise pour roquer ?', fair(c.same) && fair(c.opposite) ? `Côtés opposés : ${pct(c.opposite.score)}. Mêmes côtés : ${pct(c.same.score)}.` : '', `${head}${castleRows.map(([l, t]) => posRow(l, t)).join('')}`) : ''}
             ${st.length ? card('so-c6', 'Quelles structures vous réussissent ?', st.length > 1 && top.t.delta !== null ? `La plus rentable : ${STRUCTURES[top.key]}. La moins rentable : ${STRUCTURES[low.key]}.` : 'Structure de pions au coup 15', `${head}${st.map(x => posRow(STRUCTURES[x.key], x.t)).join('')}`) : ''}
             ${eg.length ? card('so-c6', 'Quelles finales vous coûtent des points ?', worstEg.t.delta !== null && worstEg.t.delta < 0 ? `La plus coûteuse : ${ENDGAMES[worstEg.key][0]} (${shortDelta(worstEg.t.delta)} pt).` : 'Vous tenez ce qu\'on attend de vous dans chaque type de finale.', `${head}${eg.map(x => posRow(ENDGAMES[x.key][0], x.t, `<button type="button" class="st-link si-go" data-action="statsGoEndgame" data-arg="${ENDGAMES[x.key][1]}">S'entraîner</button>`)).join('')}`) : ''}
             ${im.length ? card('so-c12', 'Comment jouez-vous les déséquilibres ?', 'Premier déséquilibre matériel tenu au moins trois coups', `${head}${im.map(y => posRow(y.l, y.x.t)).join('')}`) : ''}
@@ -304,12 +309,13 @@ const StatsInsights = (function () {
 
     const repaint = () => StatsGames.repaint();
     registerActions({
-        statsInPeriod: p => { st.period = Number(p); saveFilters(); repaint(); },
-        statsInSite: s => { st.site = s; saveFilters(); if (s !== 'all') setPref('eloSite', s); repaint(); },
-        statsInSpeed: s => { st.speed = s; saveFilters(); if (s !== 'all') setPref('eloSpeed', s); repaint(); },
+        statsInPeriod: p => { st.period = Number(p); saveFilters(); initStats(); },
+        statsInSite: s => { st.site = s; saveFilters(); if (s !== 'all') setPref('eloSite', s); initStats(); },
+        statsInSpeed: s => { st.speed = s; saveFilters(); if (s !== 'all') setPref('eloSpeed', s); initStats(); },
         statsInView: v => { st.view = v; repaint(); pump(); },
         statsInEval: () => { st.paused = !st.paused; refreshView(); pump(); }
     });
 
-    return { barHTML, viewHTML, keep, pump, view: () => st.view };
+    // show : vue ouverte par un constat « À faire » ; period : mois retenus (0 = tout), lu par la fiche d'ouverture.
+    return { filtersHTML, viewsHTML, viewHTML, keep, pump, view: () => st.view, show: v => { st.view = v; }, period: () => st.period };
 })();

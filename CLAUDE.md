@@ -63,4 +63,5 @@ L'historique des lots est dans Git. Décidé pour plus tard (bilan du code, nove
 
 - Feuille de route et décisions validées (26 octobre 2026) : artefact « Feuille de route Chays Trainer ». Restes à proposer : registre unique des réglages et `chessTrainer_schema` (migrations ordonnées), bouton « Ce coup n'était pas encore dans mon répertoire » (bouton dans `setStatus`), variantes implicites d'un PGN collé proposées comme réponses.
 - Analyses de parties : artefact « Atlas des parties » (novembre 2026), 42 statistiques retenues. Les cinq lots sont faits (sélecteur et fiche d'ouverture, archive version 2, Bilan et Temps, Qualité de jeu, Types de positions).
+- Statistiques : artefact « Refonte des Statistiques » (novembre 2026), version retenue construite (barre de filtres unique, « À faire », quatre onglets, miroir des ouvertures) ; détail dans `js/screens/CLAUDE.md`.
 - Icône et logo de marque : dessin actuel gardé, recoloré Noyer. Icônes de l'interface (`js/core/icons.js`) : choix clos le 27 octobre 2026, ne plus proposer d'alternatives.
