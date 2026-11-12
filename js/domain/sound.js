@@ -6,6 +6,7 @@
  *   'move'    mon coup   'opp' coup adverse (plus grave, plus discret)   'capture' deux contacts, pas plus fort
  *   'check' le coup et une note   'castle' deux frappes   'promote' trois notes montantes   'mate' prise et accord
  *   'success' deux notes rondes   'error' deux frappes sourdes   'end' fin de séance
+ *   'master'  position devenue Maîtrisée : la pièce posée doucement, puis une cloche de laiton (identité « Noyer gravé »)
  * Timbre : résonances fixes (pas de note qui glisse), contact bref, hauteur et force qui varient à chaque coup.
  * Douceur : attaque de 5 ms au moins (plus de clic), aigus coupés au-dessus de 2,2 kHz, limiteur en sortie (jamais d'écrêtage).
  * Respecte appSettings.sound / appSettings.volume (cf. settings.js).
@@ -126,8 +127,19 @@ const _SOUNDS = {
     },
     end(ctx, out, t) {
         [587, 740, 880].forEach((f, i) => _note(ctx, out, t + i * 0.12, f, 0.07, 0.4));
+    },
+    master(ctx, out, t) {                        // la pièce posée, puis une cloche de laiton qui s'éteint lentement
+        _hit(ctx, out, t, { level: 0.4 });
+        _bell(ctx, out, t + 0.09, 1046, 0.07);
+        _bell(ctx, out, t + 0.25, 1568, 0.035);
     }
 };
+
+// Cloche : trois partiels inharmoniques (laiton), le plus aigu s'éteint le premier.
+function _bell(ctx, out, t, freq, peak) {
+    [[1, 1, 1.6], [2.76, 0.32, 0.8], [5.4, 0.12, 0.4]].forEach(([r, a, d]) =>
+        _tone(ctx, out, t, { from: freq * r, to: freq * r, peak: peak * a, dur: d, attack: 0.006 }));
+}
 
 // Petite pièce autour du son : bruit filtré qui s'éteint en un tiers de seconde.
 function _roomImpulse(ctx) {
@@ -160,7 +172,7 @@ function _soundOut(ctx, volume) {
 }
 
 // Chaque son peut être coupé séparément (Paramètres › Sons et vibrations).
-const _SOUND_PREF = { move: 'sMove', opp: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess', check: 'sMove', castle: 'sMove', promote: 'sMove', mate: 'sMove', end: 'sSuccess' };
+const _SOUND_PREF = { move: 'sMove', opp: 'sMove', capture: 'sCapture', error: 'sError', success: 'sSuccess', master: 'sSuccess', check: 'sMove', castle: 'sMove', promote: 'sMove', mate: 'sMove', end: 'sSuccess' };
 
 // Vibration (téléphones compatibles) : coup refusé, exercice réussi. Indépendante du son.
 function buzz(kind) {

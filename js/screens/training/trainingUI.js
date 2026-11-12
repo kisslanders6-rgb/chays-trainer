@@ -130,6 +130,7 @@ function _trSummaryHTML(s, primary, next) {
     const missed = s.rows.filter(r => !r.ok);
     const up = s.rows.filter(r => rank(r.lvAfter) > rank(r.lvBefore)).length;
     const down = s.rows.filter(r => rank(r.lvAfter) < rank(r.lvBefore)).length;
+    const engraved = s.rows.filter(r => r.lvAfter === 'mastered' && r.lvBefore !== 'mastered').length;
     const timed = s.kind === 'timed';
     const pct = s.total ? Math.round(100 * s.ok / s.total) : 0;
     const title = timed ? (s.newRecord ? 'Nouveau record !' : `${s.score} bon${s.score > 1 ? 's' : ''} coup${s.score > 1 ? 's' : ''}`)
@@ -141,6 +142,7 @@ function _trSummaryHTML(s, primary, next) {
     const badges = [
         goalHit ? `<span class="vbadge is-accent">${ico('check')}Objectif du jour atteint</span>` : '',
         missed.length ? `<span class="vbadge is-err">${missed.length} à revoir</span>` : '',
+        engraved ? `<span class="vbadge is-brass">${typeof Engrave !== 'undefined' ? Engrave.mark() : ''}${engraved} maîtrisée${engraved > 1 ? 's' : ''}</span>` : '',
         up ? `<span class="vbadge is-ok">${ico('chevron-up')}${up} niveau${up > 1 ? 'x' : ''} monté${up > 1 ? 's' : ''}</span>` : '',
         down ? `<span class="vbadge is-warn">${ico('chevron-down')}${down} descendu${down > 1 ? 's' : ''}</span>` : ''
     ].join('');

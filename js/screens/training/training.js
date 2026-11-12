@@ -720,26 +720,36 @@ function _answerDetail(entry, inFile, before) {
 
 // Appelé par executePlayerMove() en mode entraînement (le coup n'est pas encore appliqué).
 // Le premier coup du passage décide : ni les essais suivants ni la réussite finale ne comptent.
+// « Le trait gravé » : une position passe à Maîtrisée pendant la séance (réponse comptée, sans erreur).
+// Le trait de la marque se grave après le titre de la barre d'état, avec la cloche de laiton (son « master », réglage Exercice réussi).
+function _engraveMastered() {
+    if (typeof Engrave !== 'undefined') Engrave.play(document.querySelector('#status-text .status-title') || document.getElementById('status-bar'));
+    playSound('master');
+}
+
 function answerTrainingMove(entry, from, to, promo, movStr) {
     const key      = positionKey();
     const revealed = trainingState.solutionFor === key;
     const second   = _secondPass();
 
     if (entry && movStr === entry.move) {
-        let msg = '✓ Bien joué !', detail = 'Deuxième passage : rien de plus n’est compté.';
+        let msg = '✓ Bien joué !', detail = 'Deuxième passage : rien de plus n’est compté.', engraved = false;
         if (revealed) { msg = '✓ Solution jouée'; detail = 'Aucune réussite comptée.'; }
         else if (trainingState.keyErred) { msg = '✓ Bon coup'; detail = 'L’erreur est déjà comptée pour ce passage.'; }
         else if (!second) {
-            const before = masteryOf(entry), inFile = Number.isInteger(entry.relearn) ? { step: entry.relearn } : null;
+            const before = masteryOf(entry), lvBefore = _level(entry), inFile = Number.isInteger(entry.relearn) ? { step: entry.relearn } : null;
             entry.attempts++;
             recordReview(entry, true);
             saveDB();
             if (typeof Suite !== 'undefined') Suite.afterAnswer();
             detail = _answerDetail(entry, inFile, before);
+            engraved = lvBefore !== 'mastered' && _level(entry) === 'mastered';
+            if (engraved) msg = '✓ Maîtrisée';
         }
         _sessionRecord(key, !trainingState.keyErred && !revealed);
         trainingState.busy = true;
         _commitMove(from, to, promo, null, msg, revealed ? 'info' : 'ok', detail);
+        if (engraved) _engraveMastered();
         _renderSessionBar();
         trainingState.seq.done++;
         _continueSequence();

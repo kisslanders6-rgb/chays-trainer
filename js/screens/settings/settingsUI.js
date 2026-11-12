@@ -118,7 +118,7 @@ function _settingRows() {
             { group: 'Quels sons ?', kind: 'toggle', key: 'sMove', label: 'Coup joué', off: !s.sound },
             { group: 'Quels sons ?', kind: 'toggle', key: 'sCapture', label: 'Capture', off: !s.sound },
             { group: 'Quels sons ?', kind: 'toggle', key: 'sError', label: 'Coup refusé', off: !s.sound },
-            { group: 'Quels sons ?', kind: 'toggle', key: 'sSuccess', label: 'Exercice réussi', search: 'son', tip: 'Fin d’un exercice d’entraînement ou d’une finale.', off: !s.sound },
+            { group: 'Quels sons ?', kind: 'toggle', key: 'sSuccess', label: 'Exercice réussi', search: 'son', tip: 'Fin d’un exercice d’entraînement ou d’une finale, position devenue maîtrisée.', off: !s.sound },
             { group: 'Vibrations', kind: 'toggle', key: 'haptic', label: 'Vibration au toucher', search: 'téléphone', tip: 'Téléphones compatibles : coup refusé, exercice réussi.' }
         ],
         access: [

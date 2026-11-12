@@ -58,16 +58,26 @@ function switchHomeTab(tab) {
     if (gs && !gs.classList.contains('hidden')) { goHome(tab); return; }
     closeRepMenu();
     if (tab !== 'stats') closeStatsWeak();
+    const shown = document.querySelector('.home-tab:not(.hidden)');
     ['play', 'stats', 'training', 'endgame'].forEach(t => {
         const tabEl = document.getElementById('home-tab-' + t);
         const navEl = document.getElementById('nav-tab-' + t);
         if (tabEl) tabEl.classList.toggle('hidden', t !== tab);
         if (navEl) navEl.classList.toggle('active', t === tab);
     });
+    _enterHomeTab(document.getElementById('home-tab-' + tab), shown);
     if (tab === 'stats')    initStats();
     if (tab === 'training') initTraining();
     if (tab === 'endgame')  initEndgame();
     if (typeof Dock !== 'undefined') Dock.refresh();     // centre du dock : l'action de la page (téléphone)
+}
+
+// Changement d'onglet (identité « Noyer gravé ») : seul le contenu arrive, fondu et montée de 8 px en --dur-2 ;
+// les barres ne bougent pas. Rien au premier affichage, sur le même onglet ou en animations réduites.
+function _enterHomeTab(el, previous) {
+    if (!el || !previous || previous === el || typeof el.animate !== 'function' || prefersReducedMotion()) return;
+    el.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+               { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
 }
 
 // ─── RÉPERTOIRES : AFFICHAGE ET SÉLECTION ────────────────────────────────────

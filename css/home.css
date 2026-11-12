@@ -65,7 +65,8 @@
     content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 16px; margin-top: -8px; background: var(--border);
 }
 .topnav-tab.active { background: transparent; border-color: transparent; color: var(--text); font-weight: 600; }
-.topnav-tab.active > .ico { fill: currentColor; fill-opacity: .28; }          /* l'onglet actif se reconnaît aussi sans la couleur */
+.topnav-tab.active > .ico {                     /* l'onglet actif se reconnaît aussi sans la couleur : un fond sous l'icône */
+    box-sizing: content-box; padding: 3px 14px; border-radius: 999px; background: color-mix(in oklab, var(--accent) 16%, transparent); }
 .topnav-tab.active::after {
     content: ''; position: absolute; left: var(--tab-px); right: var(--tab-px); bottom: -1px;
     height: 2px; border-radius: 1px; background: var(--board-accent);
@@ -101,7 +102,7 @@
     .topnav-tab { flex: 1; flex-direction: column; justify-content: center; gap: 5px; padding: 0 4px; font-size: 11px; letter-spacing: .2px; }
     .topnav-tab .ico { display: block; }
     .topnav-tab + .topnav-tab::before { height: 24px; margin-top: -12px; }
-    .topnav-tab.active::after { top: -1px; bottom: auto; left: 30%; right: 30%; }
+    .topnav-tab.active::after { display: none; }      /* barre du bas : le fond de l'icône suffit */
     /* Le contenu et les toasts ne passent pas sous la barre du bas */
     .setup-screen { padding-bottom: calc(62px + 24px + env(safe-area-inset-bottom, 0px)); }
     body:has(#setup-screen:not(.hidden)) .toast { bottom: calc(62px + 12px + env(safe-area-inset-bottom, 0px)); }
@@ -584,6 +585,7 @@ button.suite-chip:active { transform: scale(.97); }
     #topnav-tabs-setup .topnav-tab > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .topnav-tab + .topnav-tab::before { display: none; }
     #topnav-tabs-setup .topnav-tab.active { background: var(--bg-inset); }
+    #topnav-tabs-setup .topnav-tab.active > .ico { padding: 0; background: none; }      /* la ligne entière a déjà son fond */
     .topnav-tab.active::after { left: -10px; right: auto; top: 11px; bottom: 11px; width: 3px; height: auto; border-radius: 0 3px 3px 0; }
     @media (hover: hover) { #topnav-tabs-setup .topnav-tab:hover { background: var(--bg-inset); } }
 

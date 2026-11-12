@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "Chays Trainer",
-  "short_name": "ChaysTrainer",
+  "short_name": "Chays",
   "description": "Entraîne ton répertoire d'ouvertures aux échecs par répétition espacée.",
   "lang": "fr",
   "start_url": "/",

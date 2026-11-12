@@ -43,32 +43,33 @@ t('la plume : encre sous les contours, qui monte de la base vers la croix ; le p
     frame(100);
     assert.strictEqual(+rect.getAttribute('y'), 354, 'encre pas encore montée à 0,1 s');
     assert.strictEqual(nib.style.opacity, '1', 'la plume trace le socle');
-    frame(1050);
+    frame(630);
     const y = +rect.getAttribute('y');
-    assert(y < 354 && y > 34, 'encre à mi-hauteur à 1,05 s');
-    frame(1500);
-    assert.strictEqual(+rect.getAttribute('y'), 34, 'encre en haut à 1,5 s');
-    frame(1700);
+    assert(y < 354 && y > 34, 'encre à mi-hauteur à 0,63 s');
+    frame(900);
+    assert.strictEqual(+rect.getAttribute('y'), 34, 'encre en haut à 0,9 s');
+    frame(1050);
     assert.strictEqual(nib.style.opacity, '1', 'la plume écrit la signature');
-    frame(2100);
+    frame(1300);
     assert.strictEqual(nib.style.opacity, '0', 'plume rangée après la signature');
 });
 
-t('ouvertures suivantes du jour : version courte, seule la gravure se réécrit en moins d\'une demi-seconde', () => {
+t('ouvertures suivantes du jour : version courte, seule la gravure se réécrit en 0,3 s', () => {
     const { d, anims } = open({ chessTrainer_splashDay: today() });
     assert(d.documentElement.classList.contains('splash-quick'));
     assert(!d.querySelector('.sp-ink'), 'pas de tracé complet');
     const grav = anims.filter(a => a.el.id === 'gravure-trait');
-    assert(grav.length && grav.every(a => (a.opt.delay || 0) + a.opt.duration <= 450));
+    assert(grav.length && grav.every(a => (a.opt.delay || 0) + a.opt.duration <= 300));
     assert.strictEqual(anims.filter(a => a.el.id !== 'gravure-trait').length, 0);
 });
 
-t('sortie : courte plus rapide, un toucher écourte la suspension, signature de la plume recalée', () => {
+t('sortie : première ouverture en 1,6 s (suspension 1,2 s + atterrissage × 0,5), courte plus rapide, un toucher écourte la suspension, signature de la plume recalée', () => {
     const splash = fs.readFileSync(scriptPath('splash.js'), 'utf8'), css = fs.readFileSync('css/splash.css', 'utf8');
-    assert(/const SPEED\s+= QUICK \? \.55 : 1;/.test(splash) && /IntroTimeline\.land\(splash, SPEED\)/.test(splash));
+    assert(/const SPEED\s+= QUICK \? \.4 : \.5;/.test(splash) && /IntroTimeline\.land\(splash, SPEED\)/.test(splash));
     assert(/\['pointerdown', 'keydown'\]/.test(splash) && /Promise\.race\(\[hold \?/.test(splash), 'toucher pour passer');
-    assert(/\.splashing\.splash-quick \.splash \{ animation-duration: \.45s; \}/.test(css), 'suspension courte');
-    assert(/\.ct-wm-1 \{ animation: spWrite \.42s linear 1\.56s both; \}/.test(css), 'signature au rythme de la plume (1,56 → 1,98 s)');
+    assert(/\.splashing\.splash-quick \.splash \{ animation-duration: \.3s; \}/.test(css), 'suspension courte');
+    assert(/\.ct-wm-1 \{ animation: spWrite \.25s linear \.94s both; \}/.test(css), 'signature au rythme de la plume (0,94 → 1,19 s)');
+    assert(/animation: spHold 1\.2s linear both;/.test(css), 'suspension de 1,2 s');
     assert(/function land\(splash, speed = 1\)/.test(fs.readFileSync(scriptPath('introTimeline.js'), 'utf8')));
 });
 

@@ -43,7 +43,7 @@ function loadSound() {
 }
 
 const app = loadSound();
-const KINDS = ['capture', 'castle', 'check', 'end', 'error', 'mate', 'move', 'opp', 'promote', 'success'];
+const KINDS = ['capture', 'castle', 'check', 'end', 'error', 'master', 'mate', 'move', 'opp', 'promote', 'success'];
 
 function played(kind) {
     const { ctx, log } = fakeAudio();
@@ -53,7 +53,7 @@ function played(kind) {
 // La variation de force est aléatoire : on garde le pire de plusieurs essais.
 const worstSum = kind => Math.max(...Array.from({ length: 40 }, () => played(kind).envelopes.reduce((a, e) => a + e.peak, 0)));
 
-t('les dix sons existent', () => {
+t('les onze sons existent', () => {
     assert.deepStrictEqual(Object.keys(app.SOUNDS).sort(), KINDS);
 });
 

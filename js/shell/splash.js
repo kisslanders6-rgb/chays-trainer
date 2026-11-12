@@ -4,13 +4,13 @@
  * Sortie de l'écran de lancement (#splash, index.html ; animation : css/splash.css).
  * L'animation démarre seule au premier affichage (classe « splashing » posée dans le <head>) ;
  * ce script décide seulement QUAND sortir :
- *   - pas avant la fin de la suspension (animation spHold de l'overlay, 2 s ; 0,45 s pour l'ouverture courte,
+ *   - pas avant la fin de la suspension (animation spHold de l'overlay, 1,2 s ; 0,3 s pour l'ouverture courte,
  *     html.splash-quick) : rien n'est coupé si l'application est prête instantanément ; un toucher, un clic ou
  *     une touche écourte la suspension (la sortie attend toujours que l'app soit prête) ;
  *   - pas avant que l'application soit prête : DOMContentLoaded (pièces, onglet ?tab=),
  *     puis chargement complet et polices (Inter, Fraunces, IBM Plex Mono), ces deux-là plafonnés à 2,6 s ;
  *   - quoi qu'il arrive au plus tard à 4,5 s : un réseau lent ne bloque jamais l'accès.
- * Sortie : atterrissage (js/core/introTimeline.js, ≈ 1,3 s ; × 0,55 pour l'ouverture courte) — la pièce et la signature volent jusqu'à
+ * Sortie : atterrissage (js/shell/introTimeline.js, ≈ 0,4 s : temps × 0,5 ; × 0,4 pour l'ouverture courte) — la pièce et la signature volent jusqu'à
  * la barre du haut et l'accueil monte en cascade. Mouvement réduit ou barre introuvable : fondu de 0,45 s.
  * Pendant la sortie, <html class="splash-out"> : la barre système reprend la couleur du thème
  * (themeColor.js). Onglet en arrière-plan (horloge des animations suspendue) : retrait par minuteur.
@@ -27,7 +27,7 @@
     const MAX_SHOWN = 4500;
     const EXIT_MS   = 450;
     const QUICK     = root.classList.contains('splash-quick');
-    const SPEED     = QUICK ? .55 : 1;               // ouverture courte : atterrissage accéléré
+    const SPEED     = QUICK ? .4 : .5;               // atterrissage resserré (novembre 2026), plus encore à l'ouverture courte
     const LAND_MS   = 1400 * SPEED;
     const until = ms => new Promise(r => setTimeout(r, Math.max(0, ms - performance.now())));
     const cssAnim = name => splash.getAnimations().find(a => a.animationName === name);

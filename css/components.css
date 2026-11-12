@@ -176,7 +176,7 @@
 .ico {
     width: 1.15em; height: 1.15em;
     fill: none; stroke: currentColor;
-    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;      /* identité « Noyer gravé » : trait 1,75 */
     flex-shrink: 0; display: inline-block; vertical-align: -0.2em;
     pointer-events: none;
 }
@@ -317,3 +317,15 @@
 .theme-toggle[data-backup-dot] { position: relative; }
 .theme-toggle[data-backup-dot].has-alert::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--err); box-shadow: 0 0 0 2px var(--bg-inset); pointer-events: none; }
 .theme-toggle[data-backup-dot][data-level="warn"].has-alert::after { background: #d9a21b; }
+
+/* ─── LE TRAIT GRAVÉ (js/core/engrave.js) ───────────────────────────────────
+   Gravure du roi de la marque, en laiton : couchée après le titre « Maîtrisée » (barre d'état), debout dans le décompte du bilan. */
+.engrave { display: block; overflow: visible; }
+.engrave path { fill: none; stroke: var(--brand-brass-deep); stroke-width: 7; stroke-linecap: round; stroke-dasharray: 1 1; }
+[data-theme="dark"] .engrave path { stroke: var(--brand-brass); }
+.engrave-fx { display: inline-block; height: .85em; width: auto; aspect-ratio: 160 / 72; margin-left: .35em; vertical-align: -.05em; pointer-events: none; }
+.engrave-fx path { stroke-width: 9; }
+.engrave-mark { display: inline-block; width: 8px; height: 16px; vertical-align: -3px; }
+.engrave-mark path { stroke-width: 12; }
+.vbadge.is-brass { --c: var(--brand-brass-deep); }
+[data-theme="dark"] .vbadge.is-brass { --c: var(--brand-brass); }

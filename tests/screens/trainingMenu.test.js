@@ -325,6 +325,35 @@ async function boot() {
         w.eval(`stopTraining(); trainingState.session = null; dataStore.setJSON(ACTIVITY_KEY, {}); goHome('training')`);
     });
 
+    await t('le trait gravé : une position qui devient Maîtrisée se grave dans la barre d\'état, avec la cloche ; une déjà maîtrisée, non', async () => {
+        const sounds = [], orig = w.playSound;
+        w.playSound = k => sounds.push(k);
+        const play = attempts => {
+            seed({ dueIn: -1, lastOnly: true });
+            w.eval(`(() => { const k = dbKeyFor(currentRepertoire, 'w'), db = JSON.parse(dataStore.get(k));
+                Object.values(db).forEach(e => { e.attempts = ${attempts}; e.failures = 0; }); dataStore.set(k, JSON.stringify(db)); })()`);
+            w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining(); startTrainingExercise('due')`);
+            $('#status-bar .status-act').click();
+            const e = w.eval('openingDB[positionKey()]');
+            sounds.length = 0;
+            w.eval(`answerTrainingMove(openingDB[positionKey()], squareToIdx('${e.move.slice(0, 2)}'), squareToIdx('${e.move.slice(2, 4)}'), null, '${e.move}')`);
+        };
+        play(2);                                                    // à confirmer → maîtrisée (3 essais sans erreur)
+        assert($('#status-text .status-title .engrave-fx path[pathLength="1"]'), 'trait gravé après le titre de la barre d\'état');
+        assert(/Maîtrisée/.test($('#status-text .status-title').textContent));
+        assert(sounds.includes('master'), 'cloche de laiton');
+        w.eval('quitTraining()');
+        w.eval(`switchHomeTab('training'); _trFocus = null; initTraining()`);
+        const badge = $('.trr-bilan .vbadge.is-brass');
+        assert(badge && /1 maîtrisée/.test(badge.textContent), 'décompte dans le bilan, avec le trait');
+        assert($('.trr-bilan .vbadge.is-brass .engrave-mark'));
+        $$('#status-bar .engrave-fx').forEach(el => el.parentNode.removeChild(el));
+        play(4);                                                    // déjà maîtrisée : rien de plus
+        assert(!$('#status-bar .engrave-fx') && !sounds.includes('master'));
+        w.eval('quitTraining()');
+        w.playSound = orig;
+    });
+
     assert.deepStrictEqual(errors, []);
     console.log(`\n${n} tests réussis.`);
     process.exit(0);
