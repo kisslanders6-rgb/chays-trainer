@@ -195,10 +195,10 @@ function executeOpponentMove(from, to, promo) {
 
 // ─── COUP DU JOUEUR ───────────────────────────────────────────────────────────
 
-function _rejectMove(toIdx, msg, detail) {
+function _rejectMove(toIdx, msg, detail, fromIdx) {
     selected = null; legalMoves = []; hintPiece = null;
     renderBoard();
-    flashWrong(toIdx);
+    flashWrong(toIdx, fromIdx);
     playSound('error');
     setStatus(msg, 'err', detail);
     _suggestHintKey = positionKey();        // l'Indice est mis en avant jusqu'au prochain coup
@@ -237,7 +237,7 @@ function executePlayerMove(from, to, promo) {
 
     } else if (_solutionKey === key) {
         if (movStr === entry.move) _commitMove(from, to, promo, null, '✓ Solution jouée', 'info');
-        else _rejectMove(to, "✗ Ce n'est pas le coup de la solution.");
+        else _rejectMove(to, "✗ Ce n'est pas le coup de la solution.", undefined, from);
 
     } else if (movStr === entry.move) {
         // Bon coup (sur une transposition : la progression continue, le path d'origine est conservé).
@@ -247,7 +247,7 @@ function executePlayerMove(from, to, promo) {
 
     } else {
         // Mauvais coup : refusé, la bonne réponse n'est pas dévoilée.
-        _rejectMove(to, '✗ Pas le bon coup', 'Réessayez, ou appuyez sur Indice.');
+        _rejectMove(to, '✗ Pas le bon coup', 'Réessayez, ou appuyez sur Indice.', from);
         noteMistake(key);
     }
 }

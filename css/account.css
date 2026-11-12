@@ -40,7 +40,7 @@
 .account-choice {
     display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; text-align: left; font-family: inherit; color: inherit; cursor: pointer;
     background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm);
-    transition: border-color .15s, box-shadow .15s, transform .15s;
+    transition: border-color var(--dur-1), box-shadow var(--dur-1), transform var(--dur-1);
 }
 @media (hover: hover) { .account-choice:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-1px); } }
 .account-choice.is-rec { border-color: var(--accent); }
@@ -141,7 +141,7 @@
 
 /* Jauge du mot de passe (PwMeter) : huit encoches, compteur en Plex Mono, vert à 8 */
 .acct-pwm { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)) auto; gap: 4px; align-items: center; }
-.acct-pwm i { height: 5px; border-radius: 3px; background: var(--border-strong); transition: background-color .15s; }
+.acct-pwm i { height: 5px; border-radius: 3px; background: var(--border-strong); transition: background-color var(--dur-1); }
 .acct-pwm i.on { background: var(--accent); }
 .acct-pwm.is-done i { background: var(--ok); }
 .acct-pwm b { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 40px; margin-left: 6px;
@@ -220,7 +220,7 @@
 }
 .acct-tiles { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 8px; }
 .acct-tile { position: relative; aspect-ratio: 1; min-height: var(--tap); display: grid; place-items: center; padding: 0; cursor: pointer;
-             border: 1.5px solid var(--border); border-radius: 14px; background: var(--bg-inset); transition: border-color .12s, transform .12s; }
+             border: 1.5px solid var(--border); border-radius: 14px; background: var(--bg-inset); transition: border-color var(--dur-1), transform var(--dur-1); }
 @media (hover: hover) { .acct-tile:hover { border-color: var(--accent-line); transform: translateY(-1px); } }
 .acct-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .acct-tile[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
@@ -252,10 +252,9 @@
                 background: color-mix(in oklab, var(--c) 14%, var(--surface)); color: var(--c); }
 .acct-sync-ic .ico { width: 24px; height: 24px; }
 .acct-sync[data-level="busy"] .acct-sync-ic { --c: var(--accent); }
-.acct-sync[data-level="busy"] .acct-sync-ic .ico { animation: acctSpin 1.2s linear infinite; }
+.acct-sync[data-level="busy"] .acct-sync-ic .ico { animation: spin 1s linear infinite reverse; }
 .acct-sync[data-level="offline"] .acct-sync-ic { --c: var(--text-muted); }
 .acct-sync[data-level="error"] .acct-sync-ic { --c: var(--err); }
-@keyframes acctSpin { to { transform: rotate(-360deg); } }
 @media (prefers-reduced-motion: reduce) { .acct-sync[data-level="busy"] .acct-sync-ic .ico { animation: none; } }
 .acct-sync-t { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .acct-sync-t b { font: 600 20px/1.2 var(--font-display); color: var(--text); }

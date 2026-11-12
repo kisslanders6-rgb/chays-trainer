@@ -5,7 +5,7 @@
 .trash-panel { max-width: 560px; }
 .trash-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .trash-info { flex: 1; min-width: 180px; }
-.trash-title { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
+.trash-title { font-family: var(--font-note); font-weight: 700; color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
 .trash-meta { margin-top: 3px; font-size: 12px; line-height: 1.5; color: var(--text-dim); }
 .trash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .trash-actions .btn { padding: 7px 12px; font-size: 12px; }
@@ -42,10 +42,6 @@
     --theme-dark-deep:     color-mix(in oklab, var(--board-dark) 55%, #120c08);
     --theme-light-refined: color-mix(in oklab, var(--board-light) 55%, #f3ecdc);
 
-    /* Couleur dominante du logo : la teinte de la case sombre, toujours profonde. Clarté fixe ; la saturation
-       est relevée pour les cases peu colorées (Glace → bleu sombre), les gris restent gris (Pierre, Hachuré).
-       Calibrée pour que l'échiquier Classique redonne le vert sapin d'origine (#2f4a26). */
-    --logo-deep: color-mix(in oklab, var(--board-dark) 62%, #120c08);
 
     /* 2. Accent de l'interface (boutons, liens, barre système), dérivé de la case sombre : aucun accent écrit
           à la main par échiquier. La teinte vient de --board-dark, fondue en oklab vers un brun profond ; la clarté
@@ -78,7 +74,6 @@
         --board-accent:   oklch(from var(--board-dark) min(l, .48) c h);
         --board-on-dark:  oklch(from var(--board-dark) clamp(.24, (.68 - l) * 1000, .97) calc(c * .35) h);
         --theme-dark-deep:     oklch(from var(--board-dark) .3 calc(min(c, .1) * .75) h);
-        --logo-deep: oklch(from var(--board-dark) .37 min(calc(c * 1.75), .07) h);
         --ui-accent:     oklch(from color-mix(in oklab, var(--board-dark) 88%, #1a1208) clamp(.34, l, .45) min(c, .13) h);
     }
     [data-theme="dark"] {
@@ -155,7 +150,7 @@
     display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 14px 0 6px;
     border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
     font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; touch-action: manipulation;
-    transition: border-color .15s, background-color .15s;
+    transition: border-color var(--dur-1), background-color var(--dur-1);
 }
 .ring-chip .ring-txt b { font-size: 9.5px; }
 .ring-chip-max { font-family: var(--font-note); font-size: 11.5px; font-weight: 500; color: var(--text-dim); }
@@ -248,7 +243,7 @@
 /* ─── STATISTIQUES ───────────────────────────────────────────────────────── */
 /* Filtres par niveau (onglet Statistiques) */
 .stats-filters { display: flex; gap: 6px; }
-.stats-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, box-shadow .15s, color .15s; }
+.stats-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color var(--dur-1), box-shadow var(--dur-1), color var(--dur-1); }
 .stats-chip b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
 @media (hover: hover) { .stats-chip:hover { border-color: var(--c); } }
 .stats-chip.all { --c: var(--accent); }
@@ -261,24 +256,23 @@
 .dd-btn {
     display: inline-flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px 0 14px;
     border: 1.5px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm);
-    color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s;
+    color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color var(--dur-1);
 }
 @media (hover: hover) { .dd-btn:hover { border-color: var(--border-strong); } }
 .dd.open .dd-btn { border-color: var(--board-accent); }
 .dd-btn:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
 .dd-label { font-family: var(--font-note); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
 .dd-value { min-width: 0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dd-btn > .ico { width: 14px; height: 14px; flex: none; color: var(--text-dim); transition: transform .2s; }
+.dd-btn > .ico { width: 14px; height: 14px; flex: none; color: var(--text-dim); transition: transform var(--dur-2); }
 .dd.open .dd-btn > .ico { transform: rotate(180deg); }
 .dd-menu {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 120; min-width: max(100%, 220px); max-width: min(320px, calc(100vw - 32px));
     max-height: 320px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px;
     background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow);
-    animation: dd-in .14s ease-out;
+    --in-y: -4px; animation: surfaceIn var(--dur-2) var(--ease-out);
 }
 .dd-menu[hidden] { display: none; }        /* display: flex ci-dessus l'emporterait sur l'attribut hidden */
 .dd-end .dd-menu { left: auto; right: 0; }
-@keyframes dd-in { from { opacity: 0; transform: translateY(-4px); } }
 .dd-opt {
     display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px;
     border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;

@@ -59,22 +59,26 @@ const varsOf = sel => {
 };
 const base = varsOf('[data-theme="dark"]');
 const DARK_BGS = { neutral: base };
-for (const id of ['night', 'oled', 'green']) DARK_BGS[id] = Object.assign({}, base, varsOf(`html[data-theme="dark"][data-dark="${id}"]`));
+for (const id of ['buis', 'night', 'oled', 'green']) DARK_BGS[id] = Object.assign({}, base, varsOf(`html[data-theme="dark"][data-dark="${id}"]`));
 
 // Jours des ambiances : le clair « Papier » (:root) et ses variantes data-dark (style.css, « AMBIANCES »).
 const lightBase = varsOf(':root, [data-theme="light"]');
 const LIGHTS = { green: lightBase };
-for (const id of ['neutral', 'night', 'oled']) LIGHTS[id] = Object.assign({}, lightBase, varsOf(`html:not([data-theme="dark"])[data-dark="${id}"]`));
+for (const id of ['buis', 'neutral', 'night', 'oled']) LIGHTS[id] = Object.assign({}, lightBase, varsOf(`html:not([data-theme="dark"])[data-dark="${id}"]`));
 
-t('ambiances : jour et nuit lus pour les quatre palettes fixes, « Échiquier » par défaut', () => {
+t('ambiances : jour et nuit lus pour les cinq palettes fixes ; Buis pour une nouvelle installation, Échiquier pour une antérieure', () => {
+    assert.strictEqual(LIGHTS.buis.bg, '#f2ebe0');
+    assert.strictEqual(DARK_BGS.buis.bg, '#1a130d');
     assert.strictEqual(base.bg, '#121314');
     assert.strictEqual(DARK_BGS.green.bg, '#0f1711');
     assert.strictEqual(LIGHTS.green.bg, '#f4f2eb');
     assert.strictEqual(LIGHTS.neutral.bg, '#f3f3f1');
     const settings = fs.readFileSync(scriptPath('settings.js'), 'utf8');
-    assert(/const DARK_BGS\s*=\s*\['board', 'neutral', 'green', 'night', 'oled'\]/.test(settings), 'liste des ambiances dans settings.js');
-    assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'board' \}/.test(settings));
-    assert(/data-dark', typeof g === 'string' && \/\^\[a-z\]\+\$\/\.test\(g\) \? g : 'board'\)/.test(fs.readFileSync('index.html', 'utf8')), 'script de tête : Échiquier par défaut');
+    assert(/const DARK_BGS\s*=\s*\['buis', 'board', 'neutral', 'green', 'night', 'oled'\]/.test(settings), 'liste des ambiances dans settings.js');
+    assert(/darkBg:\s*\{ ok: _oneOf\(DARK_BGS\),\s*def: 'buis' \}/.test(settings));
+    const head = fs.readFileSync('index.html', 'utf8');
+    assert(head.includes("ld === '2026-11' || (!ld && !(localStorage.getItem('chessTrainer_repertoires') || localStorage.getItem('chessTrainer_settings'))) ? 'buis' : 'board'"), 'script de tête : même règle que keepOldLookDefaults');
+    assert(/LOOKS_DEFAULTS_NOW = '2026-11'/.test(settings), 'palier recopié dans le script de tête');
 });
 
 t('ambiances : textes lisibles sur les jours (cartes, fenêtres, fond)', () => {

@@ -1,11 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
 :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --font-serif: 'Inter', 'Georgia', serif;
-    --font-mono: 'SF Mono', 'Consolas', 'Menlo', monospace;
+    --font-display: 'Fraunces', 'Georgia', serif;       /* nom, titres, chiffres héros */
+    --font-note: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;   /* notation, compteurs, étiquettes */
+
+    /* Mouvement (identité « Noyer gravé ») : trois durées, deux courbes. Ce qui arrive décélère (--ease-out),
+       ce qui se déplace d'un point à un autre accélère puis freine (--ease-move). Le lancement garde ses temps (splash.css). */
+    --dur-1: 120ms;                        /* retour d'un geste : survol, appui, coche */
+    --dur-2: 220ms;                        /* surface qui arrive, changement d'onglet */
+    --dur-3: 420ms;                        /* progression : anneau, case d'erreur */
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+    --ease-move: cubic-bezier(.4, 0, .2, 1);
     --topnav-h: 56px;                      /* hauteur de la barre du haut : repère des barres collantes */
     --tap: 44px;                           /* cible tactile minimale */
+
+    /* Couleurs de marque (identité « Noyer gravé ») : fixes, jamais tirées de l'échiquier. Logo, lancement,
+       moments de maîtrise. Les commandes (boutons, liens) gardent l'accent dérivé de l'échiquier (HARMONISATION). */
+    --brand-walnut: #2c1f16;               /* fond de l'icône, du lancement, manifest */
+    --brand-ink: #4a3426;                  /* roi sur fond clair */
+    --brand-cream: #f1e6d4;                /* roi sur fond sombre, gravure sur fond clair */
+    --brand-grave: #70503a;                /* gravure sur fond sombre */
+    --brand-brass: #c99a4b;                /* laiton sur fond sombre */
+    --brand-brass-deep: #87601f;           /* laiton sur fond clair : 4,5:1 comme texte */
 }
 
 /* ─── THÈME CLAIR « Papier » (data-theme="light") ────────────
@@ -115,12 +132,23 @@ html[data-theme="dark"][data-dark="green"] {
 
 /* ─── AMBIANCES (préférence darkBg, data-dark) ──────────────────────────────
    Chaque ambiance apparie un jour et une nuit, pour que le clair et le sombre se répondent :
-     board    Échiquier : papier et ardoise teintés par la case sombre (par défaut)
+     buis     Buis      : bois clair / noyer, les couleurs de la marque (défaut des nouvelles installations, novembre 2026)
+     board    Échiquier : papier et ardoise teintés par la case sombre (défaut des installations antérieures)
      neutral  Neutre    : blanc cassé / gris neutre
      green    Papier    : papier crème (le clair d'origine, :root ci-dessus) / vert « Nocturne »
      night    Brume     : brume bleutée / bleu nuit
      oled     Encre     : blanc / noir OLED
    Le clair « Papier » est le bloc :root : une valeur inconnue y retombe. */
+html:not([data-theme="dark"])[data-dark="buis"] {
+    --bg: #f2ebe0; --bg-elevated: #fffdf9; --bg-inset: #e8dfd1; --surface: #fbf7f0; --surface-hover: #f5efe5;
+    --border: #e2d6c5; --border-strong: #cdbda6;
+    --text: #2a1d14; --text-muted: #625142; --text-dim: #675646; --lv-unsure: #a89a88;
+}
+html[data-theme="dark"][data-dark="buis"] {
+    --bg: #1a130d; --bg-elevated: #2b2017; --bg-inset: #120d09; --surface: #221912; --surface-hover: #2a1f16;
+    --border: #362a1f; --border-strong: #4a3a2c; --overlay: rgba(10, 7, 4, .7);
+    --text: #f0e6d6; --text-muted: #bba78f; --text-dim: #a2907a; --lv-unsure: #7a6c5c;
+}
 html:not([data-theme="dark"])[data-dark="neutral"] {
     --bg: #f3f3f1; --bg-elevated: #ffffff; --bg-inset: #e8e8e5; --surface: #ffffff; --surface-hover: #f7f7f5;
     --border: #e1e1de; --border-strong: #c9c9c4;
@@ -184,8 +212,16 @@ html[data-theme="dark"][data-dark="board"] {
 [data-theme="dark"] #board { box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
 [data-theme="dark"] .btn-primary { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
 
+/* ─── ANIMATIONS COMMUNES (identité « Noyer gravé ») ─────────────────────────
+   Une surface qui arrive (menus, listes déroulantes, palette, panneaux) : fondu et légère montée, --dur-2.
+     --in-y : décalage de départ (négatif : la surface descend de son bouton), --in-s : échelle de départ.
+   Une feuille qui monte du bas de l'écran : sheetUp, --sheet-from. Une attente : spin, une seule toupie. */
+@keyframes surfaceIn { from { opacity: 0; transform: translateY(var(--in-y, 8px)) scale(var(--in-s, 1)); } }
+@keyframes sheetUp   { from { transform: translateY(var(--sheet-from, 100%)); } }
+@keyframes spin      { to { transform: rotate(360deg); } }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }    /* un display: flex / grid de classe l'emporterait sur l'attribut hidden */
-body { font-family: var(--font-sans); background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); min-height: 100vh; transition: background var(--dur-2), color var(--dur-2); }
 
 .app { display: flex; flex-direction: column; align-items: stretch; min-height: 100vh; width: 100%; padding-top: 0; }

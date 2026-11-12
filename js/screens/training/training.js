@@ -756,10 +756,10 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         trainingState.keyErred = true;
         const S = trainingState.session;
         const told = !first ? '' : S && S.kind === 'timed' ? '−10 s. ' : second ? '' : 'Elle passe dans la file À revoir. ';
-        _rejectMove(to, '✗ Pas le bon coup', `${told}Réessayez, ou appuyez sur Indice.`);
+        _rejectMove(to, '✗ Pas le bon coup', `${told}Réessayez, ou appuyez sur Indice.`, from);
         noteMistake(key);
     } else {
-        _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.');
+        _rejectMove(to, revealed ? "✗ Ce n'est pas le coup de la solution" : '✗ Pas le bon coup', 'Réessayez.', from);
     }
 }
 

@@ -9,9 +9,6 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-    --font-display: 'Fraunces', 'Georgia', serif;
-    --font-note: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
-    --ease-out: cubic-bezier(.16, 1, .3, 1);
 
     /* Cartes « Velours » : chaque carte écrit dans la teinte de l'autre (contraste fort sur tout échiquier) */
     --card-w-bg: var(--theme-light-refined);
@@ -136,12 +133,12 @@
 .topnav-pill { display: inline-flex; align-items: stretch; height: 36px; padding: 2px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-inset); }
 .topnav-pill > .theme-toggle {
     position: relative; width: 34px; height: auto; border: 0; border-radius: 999px; background: none;
-    color: var(--text-muted); transition: color .15s, background-color .15s, box-shadow .15s;
+    color: var(--text-muted); transition: color var(--dur-1), background-color var(--dur-1), box-shadow var(--dur-1);
 }
 .topnav-pill > .theme-toggle svg { width: 16px; height: 16px; }
 .topnav-pill > .theme-toggle + .theme-toggle::before {
     content: ''; position: absolute; left: -1px; top: 50%; width: 1px; height: 14px; margin-top: -7px;
-    background: var(--border); transition: opacity .15s;
+    background: var(--border); transition: opacity var(--dur-1);
 }
 @media (hover: hover) {
     .topnav-pill > .theme-toggle:hover { background: var(--surface); color: var(--text); border-color: transparent; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
@@ -154,7 +151,7 @@
 .topnav-pill > .theme-toggle[data-backup-dot].has-alert::after { top: 6px; right: 6px; }
 /* Thème : la lune en mode sombre, le soleil en mode clair (data-theme="dark") */
 .topnav-theme { overflow: hidden; }
-.topnav-theme svg { position: absolute; transition: transform .45s var(--ease-out), opacity .3s; }
+.topnav-theme svg { position: absolute; transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2); }
 [data-theme="dark"] .topnav-theme .tt-sun,
 [data-theme="light"] .topnav-theme .tt-moon { transform: rotate(-90deg) scale(.4); opacity: 0; }
 @media (min-width: 1200px) { .topnav-pill { height: 40px; } .topnav-pill > .theme-toggle { width: 38px; height: auto; } .topnav-pill > .theme-toggle svg { width: 17px; height: 17px; } }
@@ -206,7 +203,7 @@
 .hp-q:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
 .hp-tools { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .hp-tool { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 11px; border: 1px solid transparent; border-radius: 10px; background: none;
-           color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: color .15s, background-color .15s, border-color .15s; }
+           color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: color var(--dur-1), background-color var(--dur-1), border-color var(--dur-1); }
 .hp-tool .ico { width: 16px; height: 16px; fill: none; }
 @media (hover: hover) { .hp-tool:hover { color: var(--text); background: var(--surface); border-color: var(--border); } }
 .hp-tool:focus-visible { outline: 2px solid var(--board-accent); outline-offset: 2px; }
@@ -251,7 +248,7 @@
 .hp-cta {
     display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; padding: 0 22px;
     border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent); transition: transform .25s var(--ease-out), box-shadow .25s;
+    box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2);
 }
 .hp-cta .ico { width: 17px; height: 17px; fill: none; }
 @media (hover: hover) { .hp-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--accent) 95%, transparent); } }
@@ -282,7 +279,7 @@
 .hp-start .hp-title { margin: 0 0 4px; }
 .hp-picks { display: grid; gap: 10px; }
 .hp-pick { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 16px; align-items: center; padding: 12px; border: 1px solid var(--border-strong); border-radius: 18px;
-           background: var(--bg); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color .2s, transform .3s var(--ease-out); }
+           background: var(--bg); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color var(--dur-2), transform var(--dur-2) var(--ease-out); }
 .hp-pick .st-mini { width: 100%; }
 .hp-pick b { display: block; font-size: 18px; }
 .hp-pick small { display: block; margin: 2px 0 10px; font-family: var(--font-note); font-size: 12px; color: var(--text-dim); }
@@ -293,14 +290,14 @@
 .hp-play, .hp-inbox { padding: 14px 14px 10px; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); }
 .hp-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 10px; }
 .hp-side { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg);
-           color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background-color .2s, border-color .2s; }
+           color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-2), border-color var(--dur-2); }
 .hp-side-art .st-mini { width: 100%; border-radius: 6px; }
 .hp-side-txt { min-width: 0; }
 .hp-side-txt b { display: block; font-size: 16px; font-weight: 700; }
 .hp-side-txt small { display: block; margin: 1px 0 8px; font-size: 12px; color: var(--text-dim); }
 .hp-bar { height: 6px; }
 .hp-go { display: none; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border-strong); border-radius: 11px; color: var(--text-muted);
-         transition: background-color .25s, color .25s, border-color .25s, transform .3s var(--ease-out); }
+         transition: background-color var(--dur-2), color var(--dur-2), border-color var(--dur-2), transform var(--dur-2) var(--ease-out); }
 .hp-go .ico { width: 16px; height: 16px; fill: none; }
 @media (hover: hover) {
     .hp-side:hover { border-color: var(--border-strong); }
@@ -322,7 +319,7 @@
 .hp-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .hp-list { display: flex; flex-direction: column; margin: 8px -6px 0; }
 .hp-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 8px 6px; border: 0; border-radius: 12px;
-          background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
+          background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1); }
 .hp-row.is-static { cursor: default; }
 @media (hover: hover) { .hp-row:not(.is-static):hover { background: var(--surface-hover, var(--bg-inset)); } }
 .hp-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -425,7 +422,7 @@
 
 /* Répertoire vide : deux cartes, une choisie, l'action sous les cartes */
 .hp-start .hp-picks { margin-top: 14px; grid-template-columns: 1fr 1fr; }
-.hp-pick { grid-template-columns: 1fr; gap: 10px; padding: 12px; border: 0; border-radius: 16px; transition: transform .25s var(--ease-out); }
+.hp-pick { grid-template-columns: 1fr; gap: 10px; padding: 12px; border: 0; border-radius: 16px; transition: transform var(--dur-2) var(--ease-out); }
 .hp-pick.is-w { background: var(--card-w-bg); color: var(--card-w-ink); }
 .hp-pick.is-b { background: var(--card-b-bg); color: var(--card-b-ink); box-shadow: inset 0 0 0 1px var(--card-b-line); }
 .hp-pick b { font: 600 17px/1.1 var(--font-display); }
@@ -436,7 +433,7 @@
 
 /* Jouer : cartes Velours (on entre dans Jouer, qui ne compte rien) */
 .hp-side { position: relative; border: 0; border-radius: 16px; padding: 12px; gap: 10px; overflow: hidden;
-    transition: transform .25s var(--ease-out), box-shadow .25s; }
+    transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
 .hp-side:nth-child(1) { background: var(--card-w-sheen), var(--card-w-bg); color: var(--card-w-ink); box-shadow: var(--shadow-sm); }
 .hp-side:nth-child(2) { background: var(--card-b-sheen), var(--card-b-bg); color: var(--card-b-ink); box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--card-b-line); }
 .hp-sides { grid-template-columns: 1fr; }
@@ -528,7 +525,7 @@
 .suite-slot[hidden] { display: none; }
 .suite-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; max-width: 320px; padding: 0 10px 0 6px; border-radius: 999px;
     border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--text); font: 600 13px/1 var(--font-sans); white-space: nowrap;
-    cursor: pointer; transition: background-color .16s, border-color .16s, transform .16s; }
+    cursor: pointer; transition: background-color var(--dur-1), border-color var(--dur-1), transform var(--dur-1); }
 .suite-chip .ring { flex: none; }
 .suite-chip .ring-txt { display: none; }
 .suite-chip > .ico { width: 15px; height: 15px; flex: none; color: var(--text-muted); }
@@ -543,7 +540,7 @@
 @media (hover: hover) { button.suite-chip:hover { border-color: var(--accent); } }
 button.suite-chip:active { transform: scale(.97); }
 .suite-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.suite-chip.is-cheer { animation: suiteCheer .7s var(--ease-out, ease-out); }
+.suite-chip.is-cheer { animation: suiteCheer var(--dur-3) var(--ease-out); }
 @keyframes suiteCheer { 0% { transform: scale(1); } 35% { transform: scale(1.08); box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 25%, transparent); } 100% { transform: scale(1); } }
 @media (max-width: 1099px) { .suite-k, .suite-l { display: none; } .suite-s { display: inline; } }
 @media (max-width: 599px) {
@@ -632,11 +629,11 @@ button.suite-chip:active { transform: scale(.97); }
     .sb-it { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 7px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-sans); text-align: left; cursor: pointer; }
     .sb-it[hidden] { display: none; }
     .sb-it > span { flex: 1; min-width: 0; }
-    .sb-it em { color: var(--text-dim); font: 500 11.5px/1 var(--font-mono); font-style: normal; }
+    .sb-it em { color: var(--text-dim); font: 500 11.5px/1 var(--font-note); font-style: normal; }
     .sb-it.on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
-    .sb-kid-chev { width: 14px; height: 14px; flex: none; transition: transform .18s; }
+    .sb-kid-chev { width: 14px; height: 14px; flex: none; transition: transform var(--dur-1); }
     .sb-it[aria-expanded="true"] .sb-kid-chev { transform: rotate(180deg); }
-    .sb-kids { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .18s, visibility .18s; }
+    .sb-kids { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows var(--dur-1), visibility var(--dur-1); }
     .sb-kids.open { grid-template-rows: 1fr; visibility: visible; }
     .sb-kids-in { min-height: 0; overflow: hidden; }
     .sb-kids .sb-it { padding-left: 24px; font-size: 12.5px; }
@@ -672,11 +669,11 @@ button.suite-chip:active { transform: scale(.97); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle + .theme-toggle::before { display: block; }
 
     /* Menus déroulants : accordéon, une rubrique ouverte */
-    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab .sb-chev { display: block; width: 15px; height: 15px; margin-left: auto; fill: none; color: var(--text-dim); transition: transform .18s; }
+    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab .sb-chev { display: block; width: 15px; height: 15px; margin-left: auto; fill: none; color: var(--text-dim); transition: transform var(--dur-1); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-tab[aria-expanded="true"] .sb-chev { transform: rotate(180deg); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu, html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu.open {
         display: grid; position: static; width: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
-        grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .18s, visibility .18s;
+        grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows var(--dur-1), visibility var(--dur-1);
     }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu.open { grid-template-rows: 1fr; visibility: visible; }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-in { min-height: 0; overflow: hidden; }

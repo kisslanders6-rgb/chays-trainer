@@ -4,13 +4,12 @@
                  /* équilibre le bouton : les badges restent centrés */
 
 .menu-wrap { position: relative; flex: 0 0 auto; }
-.menu-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .14s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.menu-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--dur-1); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .menu-btn svg { width: 18px; height: 18px; pointer-events: none; }
 .menu-btn[aria-expanded="true"] { border-color: var(--border); background: var(--surface); color: var(--accent); }
 @media (hover: hover) { .menu-btn:hover { border-color: var(--border); background: var(--surface); color: var(--accent); } }
 .menu-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 240px; padding: 6px; background: var(--bg-elevated); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); text-align: left; animation: menuIn .12s ease-out; }
-@keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 240px; padding: 6px; background: var(--bg-elevated); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); text-align: left; --in-y: -4px; animation: surfaceIn var(--dur-2) var(--ease-out); }
 .menu-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: none; border-radius: 9px; background: transparent; color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation; }
 .menu-item .ico { width: 16px; height: 16px; color: var(--text-muted); }
 @media (hover: hover) { .menu-item:hover:not(:disabled) { background: var(--bg-inset); } }
@@ -33,7 +32,7 @@
 
 /* ─── Écran de jeu : carte d'objectif (détail : css/screens.css, « FINALES BIBLIOTHÈQUE (LOT 7) ») ── */
 .endgame-card { order: -1; display: grid; gap: 12px; width: 100%; max-width: 580px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface);
-                border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); transition: border-color .2s, box-shadow .2s; }
+                border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); transition: border-color var(--dur-2), box-shadow var(--dur-2); }
 .endgame-card.is-ok  { border-color: var(--ok); box-shadow: inset 0 3px 0 var(--ok), var(--shadow-sm); }
 .endgame-card.is-err { border-color: var(--err); box-shadow: inset 0 3px 0 var(--err), var(--shadow-sm); }
 .eg-card-top { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-note); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
@@ -98,24 +97,21 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .tr-seg-btn {
     padding: 7px 13px; border: none; border-radius: 11px; background: transparent; color: var(--text-muted);
     font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap; cursor: pointer;
-    transition: background .15s, color .15s, box-shadow .15s;
+    transition: background var(--dur-1), color var(--dur-1), box-shadow var(--dur-1);
 }
 @media (hover: hover) { .tr-seg-btn:hover { color: var(--text); } }
 .tr-seg-btn.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
 .tr-seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-@starting-style {
- }
 .tr-bar { display: flex; gap: 3px; height: 6px; border-radius: 4px; overflow: hidden; background: var(--bg-inset); }
-@keyframes trPulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
-.tr-arrow { display: inline-flex; transition: transform .18s; }
+.tr-arrow { display: inline-flex; transition: transform var(--dur-1); }
 .tr-arrow .ico { width: 18px; height: 18px; }
 
 @media (prefers-reduced-motion: reduce) { .tr-arrow { transition: none; } }
 
 /* ─── Échiquier : halo doré sur le coup attendu ───────────────────────────── */
 #board.show-solution .sq.hl-selected { background: rgba(232, 200, 74, .50) !important; }
-#board.show-solution .sq.hl-legal { animation: solutionPulse 1.1s ease-in-out infinite; }
+#board.show-solution .sq.hl-legal { animation: solutionPulse 1.1s ease-in-out 3; }   /* trois cycles, puis le point reste */
 #board.show-solution .sq.hl-legal::after {
     width: 34%; height: 34%;
     background: rgba(232, 200, 74, .95); box-shadow: 0 0 0 3px rgba(255, 255, 255, .5);
@@ -195,12 +191,11 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
     .side-panel.open {
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 310;
         max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
-        animation: sheetIn .22s ease-out;
+        --sheet-from: 40%; animation: sheetUp var(--dur-2) var(--ease-out);
     }
     .sheet-backdrop.open { display: block; position: fixed; inset: 0; z-index: 305; background: rgba(0, 0, 0, .35); }
     .side-panel.open .tree-view { max-height: none; }
 }
-@keyframes sheetIn { from { transform: translateY(40%); opacity: .6; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .side-panel.open { animation: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -216,7 +211,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 
 /* ─── Barre d'état teintée : tuile d'icône et teinte par type (setStatus, data-type) ───
    --st : couleur du type. Consigne (info), corbeille et chargement restent neutres ; les verdicts teintent la barre. */
-.status-bar { --st: var(--accent); transition: background-color .2s, border-color .2s; }
+.status-bar { --st: var(--accent); transition: background-color var(--dur-2), border-color var(--dur-2); }
 .status-bar[data-type="ok"]    { --st: var(--ok); }
 .status-bar[data-type="err"]   { --st: var(--err); }
 .status-bar[data-type="new"]   { --st: var(--new); }
@@ -228,12 +223,11 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .status-bar .status-dot { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px;
     background: color-mix(in oklab, var(--st) 18%, transparent); color: var(--st); }
 .status-bar .status-dot .ico { width: 17px; height: 17px; stroke-width: 2.4; }
-.status-bar .status-dot.dot-load .ico { animation: statusSpin 1s linear infinite; }
+.status-bar .status-dot.dot-load .ico { animation: spin 1s linear infinite reverse; }
 .status-bar .status-detail { color: var(--text-muted); }
-.status-bar[data-type="err"] .status-dot { animation: statusNudge .35s var(--ease-out); }
+.status-bar[data-type="err"] .status-dot { animation: statusNudge var(--dur-3) var(--ease-out); }
 .status-bar:is([data-type="ok"], [data-type="err"], [data-type="new"], [data-type="hint"]) .status-act {
     border-color: color-mix(in oklab, var(--st) 40%, var(--border)); background: color-mix(in oklab, var(--st) 14%, var(--surface)); color: var(--text); }
-@keyframes statusSpin { to { transform: rotate(-360deg); } }
 @keyframes statusNudge { 30% { transform: translateX(-3px); } 60% { transform: translateX(3px); } }
 @media (max-width: 919px) { .status-bar .status-dot { width: 30px; height: 30px; border-radius: 9px; } .status-bar .status-dot .ico { width: 15px; height: 15px; } }
 @media (prefers-reduced-motion: reduce) { .status-bar, .status-bar .status-dot, .status-bar .status-dot .ico { transition: none; animation: none !important; } }
@@ -241,7 +235,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 /* ─── Verdict sur la case jouée (setSquareBadge ; flashWrong pour l'erreur, éphémère) ─── */
 .sq-badge { position: absolute; top: 4%; right: 4%; z-index: 3; width: 30%; height: 30%; max-width: 22px; max-height: 22px; min-width: 14px; min-height: 14px;
     display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--ok); pointer-events: none;
-    box-shadow: 0 0 0 2px color-mix(in oklab, #000 35%, transparent), 0 2px 6px rgba(0, 0, 0, .35); animation: sqBadgeIn .28s var(--ease-out) .16s both; }
+    box-shadow: 0 0 0 2px color-mix(in oklab, #000 35%, transparent), 0 2px 6px rgba(0, 0, 0, .35); animation: sqBadgeIn var(--dur-2) var(--ease-out) var(--dur-1) both; }
 .sq-badge.is-err { background: var(--err); animation-delay: 0s; }
 .sq-badge .ico { width: 62%; height: 62%; stroke-width: 3.2; }
 @keyframes sqBadgeIn { from { opacity: 0; transform: scale(.4); } }
@@ -270,7 +264,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .opp-suite {
     display: inline-flex; align-items: center; gap: 7px; flex: none; min-height: 36px; padding: 0 12px;
     border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
-    font: 600 12.5px var(--font-mono); cursor: pointer; touch-action: manipulation; transition: background-color .15s, border-color .15s;
+    font: 600 12.5px var(--font-note); cursor: pointer; touch-action: manipulation; transition: background-color var(--dur-1), border-color var(--dur-1);
 }
 .opp-suite b { font-weight: 700; }
 .opp-pct { font: 500 11px var(--font-note); color: var(--text-dim); }
@@ -434,7 +428,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .ab-mk-btn { position: relative; display: inline-grid; place-items: center; width: 22px; height: 32px; margin-left: -6px; padding: 0; border: 0; border-radius: 7px; background: none; cursor: pointer; }
 .ab-mk-btn::before { content: ""; position: absolute; inset: -6px -8px; }
 .ab-mk-btn:hover { background: color-mix(in oklab, var(--lv-progress) 18%, transparent); }
-.ab-mv.is-fresh, .ab-mvw:has(.is-fresh) { animation: abFresh .32s ease-out; }
+.ab-mv.is-fresh, .ab-mvw:has(.is-fresh) { animation: abFresh var(--dur-3) ease-out; }
 @keyframes abFresh { from { opacity: 0; transform: translateY(3px); } }
 
 /* Les quatre marques : point (nouveau), cercle (connu), losange ambre (conflit), losange rouge (remplace) */
@@ -504,8 +498,8 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .ab-plan .vbadge { color: var(--text); }
 .ab-switch { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); font: 600 12.5px var(--font-sans); color: var(--text-muted); cursor: pointer; }
 .ab-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.ab-sw { position: relative; width: 38px; height: 22px; border-radius: 11px; background: var(--border-strong); flex: none; transition: background .15s; }
-.ab-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--text); transition: transform .15s ease-out; }
+.ab-sw { position: relative; width: 38px; height: 22px; border-radius: 11px; background: var(--border-strong); flex: none; transition: background var(--dur-1); }
+.ab-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--text); transition: transform var(--dur-1) ease-out; }
 .ab-switch input:checked + .ab-sw { background: var(--err); }
 .ab-switch input:checked + .ab-sw::after { transform: translateX(16px); background: #fff; }
 .ab-switch input:focus-visible + .ab-sw { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -515,8 +509,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .ab-actions .btn:not(.btn-primary) { flex: none; min-height: 48px; padding: 0 18px; }
 .ab-actions .btn-primary { flex: 1; width: auto; }
 .btn.ab-confirm[aria-busy="true"] { position: relative; color: transparent; cursor: progress; opacity: 1; }
-.btn.ab-confirm[aria-busy="true"]::after { content: ""; position: absolute; width: 16px; height: 16px; border: 2px solid var(--accent-text); border-right-color: transparent; border-radius: 50%; animation: abSpin .8s linear infinite; }
-@keyframes abSpin { to { transform: rotate(360deg); } }
+.btn.ab-confirm[aria-busy="true"]::after { content: ""; position: absolute; width: 16px; height: 16px; border: 2px solid var(--accent-text); border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
 
 .ab-play:focus-visible, .ab-use:focus-visible, .ab-mv:focus-visible, .ab-mk-btn:focus-visible, .ab-toggle:focus-visible,
 .ab-chip.is-tap:focus-visible, .ab-link:focus-visible, .ab-ghost:focus-visible, .ab-icon:focus-visible, .ab-seg button:focus-visible {
@@ -545,10 +538,10 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 }
 
 /* ─── EMBLÈME (assets/brand/chays-logo.svg) ──────────────────────────────── */
-/* Classes du logo maître. Seule la couleur dominante (encre) suit l'échiquier actif (--logo-deep) ; laiton et
-   gravure crème restent ceux de la marque. Thème sombre : logo en négatif, silhouette crème et gravure profonde. */
-:root                { --ct-encre: var(--logo-deep); --ct-laiton: #a8843f; --ct-grave: #f1e6d4; --ct-fond: #f1e6d4; }
-[data-theme="dark"] { --ct-encre: #f1e6d4; --ct-laiton: #c99a4b; --ct-grave: var(--logo-deep); }
+/* Classes du logo maître, aux couleurs fixes de la marque (base.css), quel que soit l'échiquier.
+   Thème sombre : logo en négatif, silhouette crème et gravure noyer. */
+:root                { --ct-encre: var(--brand-ink); --ct-laiton: var(--brand-brass-deep); --ct-grave: var(--brand-cream); --ct-fond: var(--brand-cream); }
+[data-theme="dark"] { --ct-encre: var(--brand-cream); --ct-laiton: var(--brand-brass); --ct-grave: var(--brand-grave); }
 .ct-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .plein  { fill: var(--ct-encre); stroke: var(--ct-encre); stroke-linejoin: round; }
 .laiton { fill: none; stroke: var(--ct-laiton); stroke-linecap: round; stroke-linejoin: round; }
@@ -556,7 +549,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .fond   { fill: var(--ct-fond); }
 
 /* ─── HORS LIGNE (js/core/network.js) ────────────────────────────────────── */
-.net-banner { position: sticky; z-index: 190; display: flex; justify-content: center; padding: 6px 16px; font-size: 12.5px; font-weight: 600; line-height: 1.4; text-align: center; color: var(--text); background: color-mix(in srgb, #d9a21b 16%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, #d9a21b 40%, transparent); animation: netIn .2s ease-out; }
+.net-banner { position: sticky; z-index: 190; display: flex; justify-content: center; padding: 6px 16px; font-size: 12.5px; font-weight: 600; line-height: 1.4; text-align: center; color: var(--text); background: color-mix(in srgb, #d9a21b 16%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, #d9a21b 40%, transparent); animation: netIn var(--dur-2) ease-out; }
 .net-banner span { display: inline-flex; align-items: center; gap: 8px; }
 .net-banner span::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: #d9a21b; }
 .net-banner[data-kind="back"] { background: color-mix(in srgb, var(--ok) 14%, var(--surface)); border-bottom-color: color-mix(in srgb, var(--ok) 40%, transparent); }
@@ -571,7 +564,7 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 
 /* ─── SQUELETTES DE CHARGEMENT ───────────────────────────────────────────── */
 /* .sk : bloc gris animé ; les gabarits reprennent les classes du vrai composant (ex. .online-row). */
-.sk { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--bg-inset) 0%, var(--bg-inset) 35%, var(--surface-hover) 50%, var(--bg-inset) 65%, var(--bg-inset) 100%); background-size: 300% 100%; animation: skShimmer 1.4s ease-in-out infinite; }
+.sk { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--bg-inset) 0%, var(--bg-inset) 35%, var(--surface-hover) 50%, var(--bg-inset) 65%, var(--bg-inset) 100%); background-size: 300% 100%; animation: skShimmer 1.6s ease-in-out infinite; }
 @keyframes skShimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 .sk-line  { height: 11px; max-width: 100%; }
 .sk-small { height: 8px; width: 34%; margin-top: 6px; }
@@ -596,10 +589,10 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .cs { position: relative; display: inline-grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 3px;
       border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-sm); }
 .cs-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px;
-            background: var(--accent); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .24s var(--ease-out, ease); }
+            background: var(--accent); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform var(--dur-2) var(--ease-out, ease); }
 .cs-opt { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px;
           padding: 6px 14px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: inherit; font-size: 13px;
-          font-weight: 600; white-space: nowrap; cursor: pointer; transition: color .2s; }
+          font-weight: 600; white-space: nowrap; cursor: pointer; transition: color var(--dur-2); }
 .cs-opt[aria-checked="true"] { color: var(--accent-text); }
 .cs-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cs-opt .glyph { width: 18px; height: 18px; display: inline-block; flex: none; }
@@ -668,11 +661,10 @@ html[data-piece="blindfold"] #board .piece img, html[data-piece="blindfold"] .dr
 .rp-none { padding: 12px 8px; font-size: 13px; color: var(--text-dim); }
 .rp-layer.is-sheet .rp-backdrop { background: rgba(0, 0, 0, .45); }
 .rp-layer.is-sheet .rp-pop { left: 0; right: 0; bottom: 0; width: auto; max-height: 75vh; padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
-                              border-radius: 18px 18px 0 0; animation: rp-up .22s var(--ease-out, ease); }
+                              border-radius: 18px 18px 0 0; animation: sheetUp var(--dur-2) var(--ease-out); }
 .rp-grip { align-self: center; width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 2px 0 6px; }
 .rp-title { font-family: var(--font-display); font-size: 17px; padding: 0 4px 4px; }
 .rp-layer.is-sheet .rp-row { padding: 10px 8px; }
-@keyframes rp-up { from { transform: translateY(100%); } }
 @media (prefers-reduced-motion: reduce) { .rp-layer.is-sheet .rp-pop { animation: none; } }
 
 /* ─── PIÈCES PRISES (captures.js) ───────────────────────────────────────────────
@@ -891,7 +883,7 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
     /* Une carte teintée par le verdict ; la barre d'état y perd son propre cadre */
     .side-panel:not(.open) .game-card {
         --st: var(--accent); display: flex; flex-wrap: wrap; align-items: center; align-content: space-between; gap: 8px 14px; padding: 12px 14px; overflow-y: auto; overscroll-behavior: contain;
-        background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-sm); transition: background-color .2s, border-color .2s;
+        background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-sm); transition: background-color var(--dur-2), border-color var(--dur-2);
     }
     .side-panel:not(.open) .game-card:has(.status-bar[data-type="ok"])  { --st: var(--ok); }
     .side-panel:not(.open) .game-card:has(.status-bar[data-type="err"]) { --st: var(--err); }
@@ -964,10 +956,10 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 .me-sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 410; max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain;
     padding: 6px 16px calc(18px + env(safe-area-inset-bottom, 0px)); visibility: hidden; transform: translateY(105%);
-    transition: transform .22s var(--ease-out, ease-out), visibility 0s .22s;
+    transition: transform var(--dur-2) var(--ease-out, ease-out), visibility 0s var(--dur-2);
     background: var(--bg-elevated); border: 1px solid var(--border); border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, .25);
 }
-.me-sheet.open { visibility: visible; transform: none; transition: transform .22s var(--ease-out, ease-out); }
+.me-sheet.open { visibility: visible; transform: none; transition: transform var(--dur-2) var(--ease-out, ease-out); }
 .me-grab { width: 40px; height: 5px; margin: 4px auto 12px; border-radius: 3px; background: var(--border); }
 .me-id { display: flex; align-items: center; gap: 12px; padding: 2px 4px 14px; min-width: 0; }
 .me-id .avatar, .me-id .me-silhouette { --size: 46px; flex: none; }
@@ -991,8 +983,8 @@ html:is([data-board="wood"], [data-board="violet"], [data-board="clubgreen"], [d
 @media (min-width: 600px) {
     .me-sheet { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(var(--topnav-h, 56px) + 8px); bottom: auto; width: 340px;
         max-height: calc(100dvh - var(--topnav-h, 56px) - 24px); padding-bottom: 16px; border-bottom: 1px solid var(--border); border-radius: 18px; transform: translateY(-8px); opacity: 0;
-        transition: transform .16s var(--ease-out, ease-out), opacity .16s, visibility 0s .16s; }
-    .me-sheet.open { transform: none; opacity: 1; transition: transform .16s var(--ease-out, ease-out), opacity .16s; }
+        transition: transform var(--dur-1) var(--ease-out, ease-out), opacity var(--dur-1), visibility 0s var(--dur-1); }
+    .me-sheet.open { transform: none; opacity: 1; transition: transform var(--dur-1) var(--ease-out, ease-out), opacity var(--dur-1); }
     .me-grab { display: none; }
     .me-backdrop { background: transparent; }
 }

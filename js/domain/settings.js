@@ -21,7 +21,7 @@ const BOARD_THEMES    = ['walnut', 'wood', 'cherry', 'birch', 'olive', 'ebony', 
                          'tournament', 'clubgreen', 'clubblue', 'navy', 'violet', 'hache', 'highcontrast', 'colorblind'];
 const PIECE_SET_IDS   = ['maestro', 'merida', 'staunty', 'chrome', 'california', 'chessnut', 'spatial', 'fantasy', 'minimal-warmth', 'kiwen-suwi', 'blindfold'];   // doit correspondre aux clés de PIECE_SETS (pieces.js)
 const DEFAULT_PIECE_SET = 'maestro';
-const DARK_BGS        = ['board', 'neutral', 'green', 'night', 'oled'];                                // ambiances, jour et nuit appariés (style.css, « AMBIANCES »)
+const DARK_BGS        = ['buis', 'board', 'neutral', 'green', 'night', 'oled'];                                // ambiances, jour et nuit appariés (style.css, « AMBIANCES »)
 const ARROW_STYLE_IDS = ['plume', 'contour', 'ombre', 'pinceau', 'courbe', 'laser'];          // cf. annotations.js
 const ARROW_STYLE_LABELS = { plume: 'Plume', contour: 'Contour', ombre: 'Ombrée', pinceau: 'Pinceau', courbe: 'Courbe', laser: 'Laser' };
 const LEGAL_STYLES = ['dot', 'small', 'hollow', 'frame'];                                     // repère des coups possibles (data-legal-style)
@@ -45,7 +45,7 @@ const _text  = max => v => typeof v === 'string' && v.length <= max;
 // Préférences synchronisées : valeurs admises et valeur par défaut.
 const SYNCED_PREFS = {
     boardTheme: { ok: _oneOf(BOARD_THEMES),    def: 'walnut' },
-    darkBg:     { ok: _oneOf(DARK_BGS),        def: 'board' },                          // ambiance du clair et du sombre (data-dark)
+    darkBg:     { ok: _oneOf(DARK_BGS),        def: 'buis' },                           // ambiance du clair et du sombre (data-dark)
     pieceSet:   { ok: _oneOf(PIECE_SET_IDS),   def: DEFAULT_PIECE_SET },
     arrowStyle: { ok: _oneOf(ARROW_STYLE_IDS), def: ARROW_STYLE_IDS[0] },
     knightArrows: { ok: _bool, def: true },                                             // saut de cavalier en « L »
@@ -145,17 +145,21 @@ function loadSettings() {
     return Object.assign(out, _syncedValues(s));
 }
 
-// Défauts Noyer + Maestro (octobre 2026) réservés aux nouvelles installations : une installation qui a déjà
-// des données et n'a jamais choisi d'échiquier ou de pièces garde les anciens défauts (Tournoi, à la place de Sauge retiré, + Merida),
-// écrits explicitement et datés de 0 pour qu'un choix déjà présent sur le compte l'emporte. Une seule fois.
-const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults';
+// Nouveaux défauts réservés aux nouvelles installations : Noyer + Maestro (octobre 2026), ambiance Buis (novembre 2026).
+// Une installation antérieure qui n'a jamais fait le choix garde les anciens défauts (Tournoi, à la place de Sauge retiré,
+// + Merida ; ambiance Échiquier), écrits explicitement et datés de 0 pour qu'un choix déjà présent sur le compte l'emporte.
+// Une seule fois par palier : la valeur de la clé dit le dernier palier passé.
+const LOOKS_DEFAULTS_KEY = 'chessTrainer_looksDefaults', LOOKS_DEFAULTS_NOW = '2026-11';
 (function keepOldLookDefaults() {
-    if (dataStore.get(LOOKS_DEFAULTS_KEY) !== null) return;
-    dataStore.set(LOOKS_DEFAULTS_KEY, '2026-10');
-    const existing = ['chessTrainer_repertoires', SETTINGS_KEY, PREFS_KEY].some(k => dataStore.get(k) !== null);
+    const seen = dataStore.get(LOOKS_DEFAULTS_KEY);
+    if (seen === LOOKS_DEFAULTS_NOW) return;
+    dataStore.set(LOOKS_DEFAULTS_KEY, LOOKS_DEFAULTS_NOW);
+    const existing = seen !== null || ['chessTrainer_repertoires', SETTINGS_KEY, PREFS_KEY].some(k => dataStore.get(k) !== null);
     if (!existing) return;
     const s = dataStore.getJSON(SETTINGS_KEY, null) || {}, p = _readPrefs();
-    const old = { boardTheme: 'tournament', pieceSet: 'merida' };
+    // Préférences jamais migrées : on reprend d'abord les choix de l'appareil (comme migratePrefs, qui ne passe plus ensuite).
+    if (dataStore.get(PREFS_KEY) === null) Object.keys(SYNCED_PREFS).forEach(name => { if (SYNCED_PREFS[name].ok(s[name])) p[name] = { v: s[name], at: 0 }; });
+    const old = seen === null ? { boardTheme: 'tournament', pieceSet: 'merida', darkBg: 'board' } : { darkBg: 'board' };
     let changed = false;
     Object.keys(old).forEach(name => {
         if (SYNCED_PREFS[name].ok(_unretire(name, p[name] && p[name].v)) || SYNCED_PREFS[name].ok(_unretire(name, s[name]))) return;   // déjà choisi

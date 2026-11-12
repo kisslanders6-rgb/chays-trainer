@@ -392,24 +392,31 @@ function showPromotion() {
 
 let _wrongTimer = null;
 
-// Retire toute trace de l'effet d'erreur (secousse + flash de case).
+// Retire toute trace de l'effet d'erreur (pièce ramenée + flash de case).
 function clearErrorFx() {
     clearTimeout(_wrongTimer);
     _wrongTimer = null;
-    const b = document.getElementById('board');
-    if (b) b.classList.remove('shake');
+    document.querySelectorAll('#board .piece.is-refused').forEach(el => el.classList.remove('is-refused'));
     document.querySelectorAll('#board .hl-wrong').forEach(el => el.classList.remove('hl-wrong'));
     document.querySelectorAll('#board .sq-badge.is-flash').forEach(el => el.remove());
 }
 
-function flashWrong(toIdx) {
+// Coup refusé : la case visée rougit et la pièce, déjà rendue à sa case de départ, en revient (elle part d'un
+// septième de case vers la cible et la dépasse de 3 px au retour). Plus de secousse de tout l'échiquier.
+function flashWrong(toIdx, fromIdx) {
     clearErrorFx();
-    const b  = document.getElementById('board');
     const sq = document.querySelector(`#board .sq[data-idx="${toIdx}"]`);
     if (sq) { sq.classList.add('hl-wrong'); sq.insertAdjacentHTML('beforeend', `<span class="sq-badge is-err is-flash" aria-hidden="true">${ico('x')}</span>`); }
-    void b.offsetWidth;                            // relance l'animation
-    b.classList.add('shake');
-    _wrongTimer = setTimeout(clearErrorFx, 750);   // > durée des animations (.45 s / .7 s)
+    const pc = fromIdx == null ? null : document.querySelector(`#board .sq[data-idx="${fromIdx}"] .piece`);
+    if (pc && fromIdx !== toIdx) {
+        const flip = boardFlipped ? -1 : 1;
+        const dx = ((toIdx & 7) - (fromIdx & 7)) * flip, dy = ((toIdx >> 3) - (fromIdx >> 3)) * flip, len = Math.hypot(dx, dy);
+        pc.style.setProperty('--rx', (dx / len).toFixed(3));
+        pc.style.setProperty('--ry', (dy / len).toFixed(3));
+        void pc.offsetWidth;                       // relance l'animation
+        pc.classList.add('is-refused');
+    }
+    _wrongTimer = setTimeout(clearErrorFx, 500);   // > durée des animations (--dur-3, 420 ms)
 }
 
 // ─── FLIP BOARD ───────────────────────────────────────────────────────────────

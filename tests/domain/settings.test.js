@@ -19,10 +19,11 @@ function boot(store = {}) {
     return ctx;
 }
 
-t('appareil neuf : Noyer + Maestro par défaut, rien n\'est écrit', () => {
+t('appareil neuf : Noyer + Maestro + ambiance Buis par défaut, rien n\'est écrit', () => {
     const c = boot();
     assert.strictEqual(c.run('appSettings.pieceSet'), 'maestro');
     assert.strictEqual(c.run('appSettings.boardTheme'), 'walnut');
+    assert.strictEqual(c.run('appSettings.darkBg'), 'buis');
     assert.strictEqual(c.prefs(), null);
 });
 
@@ -37,18 +38,24 @@ t('options retirées : un choix enregistré devient l\'option la plus proche, su
 
 t('installation existante sans choix d\'apparence : anciens défauts gardés, datés de 0, une seule fois', () => {
     const c = boot({ chessTrainer_repertoires: '["Général"]' });
-    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'tournament', at: 0 }, pieceSet: { v: 'merida', at: 0 } });
+    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'tournament', at: 0 }, pieceSet: { v: 'merida', at: 0 }, darkBg: { v: 'board', at: 0 } });
     assert.strictEqual(c.run('appSettings.boardTheme'), 'tournament');
-    const d = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_prefs: JSON.stringify({ pieceSet: { v: 'chrome', at: 4 } }) });
-    assert.deepStrictEqual(d.prefs(), { pieceSet: { v: 'chrome', at: 4 }, boardTheme: { v: 'tournament', at: 0 } });   // choix existant respecté
+    assert.strictEqual(c.run('appSettings.darkBg'), 'board');
+    const d = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_prefs: JSON.stringify({ pieceSet: { v: 'chrome', at: 4 }, darkBg: { v: 'night', at: 4 } }) });
+    assert.deepStrictEqual(d.prefs(), { pieceSet: { v: 'chrome', at: 4 }, darkBg: { v: 'night', at: 4 }, boardTheme: { v: 'tournament', at: 0 } });   // choix existants respectés
+    // Palier d'octobre déjà passé : seule l'ambiance est figée (Échiquier), l'apparence reste celle d'alors.
     const e = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_looksDefaults: '2026-10' });
-    assert.strictEqual(e.prefs(), null);                                   // déjà passé : nouvelle installation après coup
+    assert.deepStrictEqual(e.prefs(), { darkBg: { v: 'board', at: 0 } });
     assert.strictEqual(e.run('appSettings.boardTheme'), 'walnut');
+    assert.strictEqual(e.run('appSettings.darkBg'), 'board');
+    const f = boot({ chessTrainer_repertoires: '["Général"]', chessTrainer_looksDefaults: '2026-11' });
+    assert.strictEqual(f.prefs(), null);                                   // déjà passé : nouvelle installation après coup
+    assert.strictEqual(f.run('appSettings.darkBg'), 'buis');
 });
 
 t('migration : les choix existants deviennent des préférences datées de 0', () => {
     const c = boot({ chessTrainer_settings: JSON.stringify({ sound: false, pieceSet: 'chrome', boardTheme: 'walnut' }) });
-    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'walnut', at: 0 }, pieceSet: { v: 'chrome', at: 0 } });
+    assert.deepStrictEqual(c.prefs(), { boardTheme: { v: 'walnut', at: 0 }, pieceSet: { v: 'chrome', at: 0 }, darkBg: { v: 'board', at: 0 } });   // installation antérieure : ambiance Échiquier gardée
     assert.strictEqual(c.run('appSettings.pieceSet'), 'chrome');
     assert.strictEqual(c.run('appSettings.sound'), false);
 });

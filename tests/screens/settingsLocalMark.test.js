@@ -177,7 +177,7 @@ const search = (w, q) => {
         assert.strictEqual(cols(by('pieceSet'), widths[390]), 5);
         assert.strictEqual(cols(by('pieceSet'), widths[1280]), 5);
         assert.strictEqual(cols(by('arrowStyle'), widths[390]), 3);
-        assert.strictEqual(cols(by('darkBg'), widths[390]), 5);
+        assert.strictEqual(cols(by('darkBg'), widths[390]), 3);         // six ambiances : 3 + 3
         w.closeSettings();
     });
 
@@ -215,7 +215,7 @@ const search = (w, q) => {
             const P = w.eval('PanelKit');
             grids.forEach(g => assert.strictEqual(g.style.getPropertyValue('--cols'),
                 String(P.balancedCols(g.children.length, 343, Number(g.dataset.min), Number(g.dataset.max))), g.dataset.grid));
-            assert.strictEqual($('.pn .theme-options[data-grid="darkBg"]').style.getPropertyValue('--cols'), '5', 'ambiance : 5 tuiles sur une ligne, pas 4 + 1');
+            assert.strictEqual($('.pn .theme-options[data-grid="darkBg"]').style.getPropertyValue('--cols'), '3', 'ambiance : 6 tuiles en 3 + 3, pas 5 + 1');
         } finally {
             if (desc) Object.defineProperty(w.HTMLElement.prototype, 'clientWidth', desc); else delete w.HTMLElement.prototype.clientWidth;
             w.closeSettings();
