@@ -443,6 +443,12 @@
                             </button>
                         </div>
                         <div class="controls controls-tools" data-modes="training">
+                            <button class="btn btn-tool tr-after" onclick="trainingAnalyse()" title="Analyser la position avec le moteur ; Quitter reprend l'entraînement" disabled>
+                                <svg class="ico"><use href="#i-microscope"/></svg><span class="btn-label">Analyser</span>
+                            </button>
+                            <button class="btn btn-tool tr-after" onclick="trainingEditMove()" title="Remplacer le coup enregistré : jouez le nouveau coup (l'ancien part à la corbeille 30 jours)" disabled>
+                                <svg class="ico"><use href="#i-pencil"/></svg><span class="btn-label">Modifier le coup</span>
+                            </button>
                             <button class="btn btn-tool tb-flip" onclick="flipBoard()" title="Retourner l'échiquier (F)">
                                 <svg class="ico"><use href="#i-arrow-up-down"/></svg><span class="btn-label"><span class="desktop-only">Retourner</span><span class="mobile-only">Tourner</span></span>
                             </button>
@@ -727,6 +733,7 @@
 <script src="js/domain/games/gameQuality.js"></script>
 <script src="js/domain/games/gameEval.js"></script>
 <script src="js/domain/games/gamePositions.js"></script>
+<script src="js/domain/games/seenPositions.js"></script>
 <script src="js/screens/stats/stats.js"></script>
 <script src="js/screens/stats/statsGames.js"></script>
 <script src="js/screens/stats/statsOpenings.js"></script>

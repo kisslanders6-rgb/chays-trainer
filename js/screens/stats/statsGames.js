@@ -96,7 +96,7 @@ const StatsGames = (function () {
 
     function chart(series) {
         st.series = series;
-        if (series.length < 2) return '<p class="st-sub">Pas encore assez de parties classées pour tracer une courbe.</p>';
+        if (series.length < 2) return '<p class="st-sub">Pas assez de parties classées sur cette période pour tracer une courbe.</p>';
         const W = 300, H = 118, L = 4, R = 36, T = 10, B = 18, vals = series.map(p => p.r);
         const lo = Math.floor(Math.min(...vals) / 50) * 50, hi = Math.max(lo + 50, Math.ceil(Math.max(...vals) / 50) * 50);
         const x = i => L + i * (W - L - R) / (series.length - 1), y = v => T + (hi - v) * (H - T - B) / (hi - lo);
@@ -127,13 +127,18 @@ const StatsGames = (function () {
         const level = GameArchive.level();
         if (!level) return '';
         const { site, speed, speeds } = level, mine = st.games.filter(g => g.site === site);
-        const series = GameArchive.eloSeries(mine, speed), last = series[series.length - 1], month = Date.now() - 30 * 864e5;
-        if (!last) return '';
-        const before = series.filter(p => p.at < month).pop() || series[0], delta = last.r - before.r;
-        const inSpeed = GameArchive.tally(mine.filter(g => g.speed === speed));
-        const acc = mine.filter(g => g.speed === speed && Number.isFinite(g.accuracy));
+        // La courbe, l'écart, le score et la précision suivent la période de la barre de filtres.
+        const from = StatsInsights.since(), all = GameArchive.eloSeries(mine, speed);
+        if (!all.length) return '';
+        const series = all.filter(p => p.at >= from), last = all[all.length - 1];
+        const before = all.filter(p => p.at < from).pop() || series[0] || last, delta = last.r - before.r;
+        const dTxt = `${delta >= 0 ? '+' : '−'}${Math.abs(delta)}`, months = StatsInsights.period();
+        const deltaLabel = months ? `${dTxt} sur ${months} mois` : `${dTxt} sur tout l'historique`;
+        const inPeriod = mine.filter(g => g.speed === speed && g.at >= from);
+        const inSpeed = GameArchive.tally(inPeriod);
+        const acc = inPeriod.filter(g => Number.isFinite(g.accuracy));
         return `<div class="sg-head"><h4>Elo</h4><span class="st-sub">${SITE_NAME[site]} · ${(speeds.find(([s]) => s === speed) || ['', speed])[1]}</span></div>
-            <div class="st-reg-kpis"><div><b>${last.r}</b><span>${delta >= 0 ? '+' : '−'}${Math.abs(delta)} en 30 j</span></div><div><b>${pct(inSpeed.score)}</b><span>${_plural(inSpeed.n, 'partie')}</span></div></div>
+            <div class="st-reg-kpis"><div><b>${last.r}</b><span>${deltaLabel}</span></div><div><b>${pct(inSpeed.score)}</b><span>${_plural(inSpeed.n, 'partie')}</span></div></div>
             ${chart(series)}
             ${acc.length >= 5 ? `<p class="st-sub">Précision moyenne ${pct(Math.round(acc.reduce((a, g) => a + g.accuracy, 0) / acc.length))} sur ${_plural(acc.length, 'partie analysée', 'parties analysées')}</p>` : ''}`;
     }
@@ -152,12 +157,12 @@ const StatsGames = (function () {
         const gap = f => GameArchive.tally(rows.filter(r => Number.isFinite(r.g.opp) && f((r.g.opp0 ?? r.g.opp) - (r.g.me0 ?? r.g.me))).map(r => r.g));
         const tile = (l, t) => t.n ? `<div><small>${l}</small><b>${pct(t.score)}</b><span>${_plural(t.n, 'partie')}</span></div>` : '';
         return `<div class="sg-head"><h4>Votre répertoire</h4></div>
-            <div class="sg-tiles">${tile('Répertoire suivi', kept)}${tile('Quitté de votre fait', left)}</div>
+            <div class="sg-tiles">${tile('Répertoire suivi', kept)}${tile('Vous êtes sorti du répertoire', left)}</div>
             <div class="sg-head"><h4>Par famille d'ouverture</h4><span class="sg-leg"><i class="sg-w"></i>Gains <i class="sg-d"></i>Nulles <i class="sg-l"></i>Pertes</span></div>
             ${openings.map(([k, list]) => wdl(k, GameArchive.tally(list))).join('')}
             ${st.costs.length ? `<div class="sg-head"><h4>Ce qui vous coûte le plus</h4></div>${st.costs.map((c, i) => `<button type="button" class="sg-cost" data-action="statsGameLine" data-arg="${i}"><span><b>${c.family ? escapeHtml(c.family) : 'Autres positions'}</b><small>${_movesLabel(c.path.slice(-6), true) || ''}</small><small>${c.by === 'me' ? 'Votre coup sort du répertoire' : 'Réponse manquante'} · ${_plural(c.t.n, 'partie')} · ${pct(c.t.score)}</small></span>${ico('chevron-right')}</button>`).join('')}` : ''}
             <div class="sg-head"><h4>Selon la couleur et l'adversaire</h4></div>
-            <div class="sg-tiles">${tile('Blancs', color('w'))}${tile('Noirs', color('b'))}${tile('Contre plus fort', gap(d => d > 50))}${tile('Contre plus faible', gap(d => d < -50))}</div>`;
+            <div class="sg-tiles">${tile('Blancs', color('w'))}${tile('Noirs', color('b'))}${tile('Adversaire +50 Elo ou plus', gap(d => d > 50))}${tile('Adversaire −50 Elo ou moins', gap(d => d < -50))}</div>`;
     }
 
     function content() {

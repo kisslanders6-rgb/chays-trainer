@@ -240,7 +240,8 @@ function statsDeltaBar(d) {
     const w = Math.max(3, Math.min(Math.abs(d), 20) / 20 * 50);
     return `<span class="st-dbar ${d >= 0 ? 'up' : 'down'}" aria-hidden="true"><i style="${d >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></i></span>`;
 }
-const _signedPt = d => I18n.mark(`${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pt`);
+// Écart de score à l'attendu, en points de pourcentage, écrit « % » partout (arbitrage du 12 novembre 2026).
+const _signedPct = d => I18n.mark(`${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`);
 
 // Une position fragile : miniature, coup masqué, ouverture, maîtrise ; la ligne entière ouvre l'aperçu.
 function _weakRowHTML(r) {
@@ -281,7 +282,7 @@ const _todoCard = (kind, claim, ev, go, label) => `<article class="st-card st-to
 function _todoOpeningCard() {
     const o = StatsOpenings.topLoss();
     if (!o) return '';
-    return _todoCard('Ouverture', `${o.html} <em>${_signedPt(o.delta)}</em>`, statsDeltaBar(o.delta), 'openings|' + o.key, 'Voir la fiche');
+    return _todoCard('Ouverture · Score face à l\'attendu', `${o.html} <em>${_signedPct(o.delta)}</em>`, statsDeltaBar(o.delta), 'openings|' + o.key, 'Voir la fiche');
 }
 
 function _todoGamesCard() {
@@ -292,11 +293,11 @@ function _todoGamesCard() {
     const en = GameInsights.ends(list);
     if (en.losses.n >= MIN && en.losses.time >= 20) {
         const v = Math.round(en.losses.time);
-        return _todoCard('Parties', `Le temps décide <em>${v} %</em> de vos défaites`,
+        return _todoCard('Parties', `<em>${v} %</em> de vos défaites se jouent au temps`,
             `<span class="st-dbar is-share" aria-hidden="true"><i style="width:${v}%"></i></span>`, 'games|temps', 'Voir le temps');
     }
     const s = OpeningReport.summarize(list);
-    if (s.delta !== null && s.delta <= -3) return _todoCard('Parties', `Score sous l'attendu <em>${_signedPt(s.delta)}</em>`, statsDeltaBar(s.delta), 'games|bilan', 'Voir le bilan');
+    if (s.delta !== null && s.delta <= -3) return _todoCard('Parties', `Score <em>${_signedPct(s.delta)}</em> face à l'attendu`, statsDeltaBar(s.delta), 'games|bilan', 'Voir le bilan');
     return '';
 }
 
@@ -323,9 +324,11 @@ function _tabCounts(rows) {
     return { overview: rows.length, openings: StatsOpenings.count(), games: games && games.length ? games.length : '', regularity: `${_activeDays()}/${STATS_DAYS}` };
 }
 
+// Ce que compte chaque compteur d'onglet, dit en infobulle.
+const STATS_TAB_UNITS = { overview: 'Positions du répertoire', openings: 'Ouvertures', games: 'Parties archivées', regularity: 'Jours actifs sur les 30 derniers' };
 function _tabsHTML(tabs, counts) {
     return `<div class="st-tabs" id="stats-tabs" role="tablist" aria-label="Vues">${tabs.map(([p, l]) =>
-        `<button type="button" role="tab" class="st-tab" aria-selected="${statsPane === p}" data-action="statsPane" data-arg="${p}">${l}<span class="st-tab-n" id="st-tab-n-${p}">${counts[p]}</span></button>`).join('')}</div>`;
+        `<button type="button" role="tab" class="st-tab" aria-selected="${statsPane === p}" data-action="statsPane" data-arg="${p}">${l}<span class="st-tab-n" id="st-tab-n-${p}" title="${STATS_TAB_UNITS[p]}">${counts[p]}</span></button>`).join('')}</div>`;
 }
 
 // Appelé quand les parties arrivent ou sont croisées avec le répertoire : filtres, constats et compteurs.
@@ -423,6 +426,8 @@ function initStats() {
             ${levelBarHTML(counts, 'st-mbar', { buttons: true, active: statsFilter })}
             <div class="st-legend" role="group" aria-label="Filtrer la liste par niveau">${legend}</div>
             <div class="st-state">${lg(STATS_STATE, 'st-lg-state')}</div>
+            <details class="st-rules"><summary>Comment chaque niveau est décidé</summary>
+                <dl>${STATS_MASTERY_LEVELS.concat(STATS_STATE).map(l => `<div>${_lvMark(l)}<dt>${STATS_LEVELS[l].one}</dt><dd>${STATS_LEVELS[l].rule}</dd></div>`).join('')}</dl></details>
             <span class="st-foot">Réussite : ${Math.round(100 * (totA - totF) / totA)} % sur ${_plural(totA, 'essai')}</span>
         </div>`;
 

@@ -29,6 +29,9 @@ function refreshViews(keys) {
 
 Bus.on('data:changed', refreshViews);
 
+// Positions vues en partie recalculées (lancement, parties récupérées) : le menu de l'Entraînement recompte.
+Bus.on('seen:ready', () => { if (typeof initTraining === 'function' && !_viewHidden('home-tab-training')) initTraining(); });
+
 Bus.on('data:imported', () => {
     renderRepertoireList();
     if (typeof refreshTree === 'function') refreshTree();

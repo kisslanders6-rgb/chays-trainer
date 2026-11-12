@@ -220,4 +220,23 @@ t('Safari 16 : accents de repli (color-mix) lisibles sur les 13 échiquiers, en 
     assert.strictEqual(bad.join(' ; '), '');
 });
 
+// Niveaux de maîtrise : échelle divergente lisible en deutéranopie (arbitrage du 12 novembre 2026).
+t('niveaux de maîtrise : distincts en deutéranopie, aucun vert, l\'ambre d\'avertissement à part', () => {
+    const base = fs.readFileSync(require('path').join(__dirname, '../../css/base.css'), 'utf8');
+    const block = sel => { const i = base.indexOf(sel); return base.slice(i, base.indexOf('}', i)); };
+    const read = (b, name) => { const m = new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(b); return m && m[1]; };
+    const light = block(':root, [data-theme="light"] {'), dark = block('\n[data-theme="dark"] {');
+    const D = [[.367, .861, -.228], [.280, .673, .047], [-.012, .043, .969]];
+    const deut = h => { const v = hex(h).map(lin); return D.map(r => gam(Math.max(0, Math.min(1, r[0] * v[0] + r[1] * v[1] + r[2] * v[2]))) * 255); };
+    [[light, 'clair'], [dark, 'sombre']].forEach(([b, name]) => {
+        const err = read(b, 'err'), lv = [err, read(b, 'lv-fragile'), read(b, 'lv-progress'), read(b, 'lv-solid'), read(b, 'lv-mastered')];
+        assert(lv.every(Boolean), name + ' : ' + lv.join(' '));
+        assert(read(b, 'warn'), name + ' : --warn');
+        let min = Infinity;
+        lv.forEach((a, i) => lv.slice(i + 1).forEach(c => { min = Math.min(min, Math.hypot(...deut(a).map((x, k) => x - deut(c)[k]))); }));
+        assert(min >= 45, `${name} : deux niveaux se confondent (${Math.round(min)})`);
+        lv.slice(1).forEach(c => { const [r, g, bb] = hex(c); assert(!(g > r && g > bb), `${name} : ${c} est vert`); });
+    });
+});
+
 console.log(`\n${n} tests réussis.`);

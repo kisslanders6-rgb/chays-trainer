@@ -82,6 +82,11 @@ const Shortcuts = (function () {
             trainingState.ctxSkip();
             return true;
         }
+        if (k === 'enter' && gameMode === 'training' && trainingState.pause && !trainingState.editing) {
+            if (e.target && e.target.tagName === 'BUTTON') return false;
+            nextDrill();
+            return true;
+        }
         if (k === 'c') { copyGamePgn(document.querySelector('.moves-export')); return true; }
         if (k === 'x') { clearAnnotations(); return true; }
         const fn = (MODES[gameMode] || {})[k];

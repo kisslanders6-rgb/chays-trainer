@@ -28,6 +28,7 @@ const CLOUD_EVAL_URL     = 'https://lichess.org/api/cloud-eval';
 const analysis = {
     rep: '', color: 'w', tree: { kids: [] }, dirty: false,
     running: false, job: null, wait: null, lines: [], fen: '', cloud: null, cloudFen: '',
+    back: null,           // retour de Quitter quand l'Analyse vient d'ailleurs (fin d'exercice de l'Entraînement)
     paused: false,        // « Arrêter » : calcul suspendu sur la position affichée seulement ; la suivante le relance
     retries: 0,           // nouveaux essais d'un calcul annulé par le moteur (Worker mort, erreur), sur la même position
     bar: null,            // dernière ligne montrée par la barre d'évaluation, gardée le temps du calcul suivant
@@ -72,8 +73,10 @@ const _anLine = () => moveHistory.map(m => moveToStr(m.from, m.to, m.promo));
 
 // ─── OUVERTURE / FERMETURE ────────────────────────────────────────────────────
 
-function openAnalysis(path, displayPly) {
+// back : retour proposé par Quitter (Q) à la place de Jouer, par exemple l'exercice suivant de l'Entraînement.
+function openAnalysis(path, displayPly, back) {
     if (gameMode === 'analysis') return;
+    analysis.back = typeof back === 'function' ? back : null;
     if (!path) { path = _anLine(); displayPly = navCursor === -1 ? path.length - 1 : navCursor === NAV_START ? -1 : navCursor; }
     if (typeof closeToolbarMore === 'function') closeToolbarMore();
     const draft = _anReadDraft();
@@ -101,8 +104,9 @@ function openAnalysis(path, displayPly) {
     analysis.running = appSettings.engineAuto;
     analysis.paused = false;
     _anScreenClass(true);
-    setStatus('Analyse', 'info', resume ? 'Brouillon de cette session repris. Rien n’est enregistré tant que vous n’ajoutez pas au répertoire.'
-                                        : 'Jouez librement les deux camps : rien n’est enregistré tant que vous n’ajoutez pas au répertoire.');
+    setStatus('Analyse', 'info', analysis.back ? 'Jouez librement : rien n’est enregistré sans « Ajouter au répertoire ». Quitter (Q) reprend l’entraînement.'
+        : resume ? 'Brouillon de cette session repris. Rien n’est enregistré tant que vous n’ajoutez pas au répertoire.'
+        : 'Jouez librement les deux camps : rien n’est enregistré tant que vous n’ajoutez pas au répertoire.');
     analysisPositionChanged();
 }
 
@@ -125,7 +129,10 @@ function _anScreenClass(on) {
 }
 
 function quitAnalysis() {
+    const back = analysis.back;
+    analysis.back = null;
     stopAnalysis();
+    if (back) { back(); return; }
     gameMode = 'play';
     startGame(analysis.color);
     loadPositionFromPath(_anLine());

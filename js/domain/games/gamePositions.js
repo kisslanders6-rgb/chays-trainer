@@ -148,5 +148,5 @@ const GamePositions = (function () {
         onDone();
     }
 
-    return { VERSION, structureOf, endgameOf, imbalanceOf, features, report, run, running: () => running };
+    return { VERSION, uciOf, structureOf, endgameOf, imbalanceOf, features, report, run, running: () => running };
 })();

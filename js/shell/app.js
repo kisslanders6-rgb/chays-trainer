@@ -514,6 +514,7 @@ registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => crea
     purgeExpiredTrash();                    // corbeille : purge des éléments de plus de 30 jours
     renderRepertoireList();
     updateTrashBadges();
+    if (typeof SeenPositions !== 'undefined') setTimeout(() => SeenPositions.refresh(), 800);   // filtre « Vu en partie », après le premier rendu
 })();
 
 function createRepertoirePrompt() {

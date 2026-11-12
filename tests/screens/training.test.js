@@ -4,11 +4,12 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
-const store = {}, navigations = [];
+const store = {}, navigations = [], acts = [];
 const db = { w: { kw: { move: 'e2e4', attempts: 4, failures: 3, path: ['e2e4'] } }, b: {} };
 const ctx = {
     console, setTimeout, clearTimeout, setInterval, clearInterval,
-    document: { getElementById: () => null },
+    document: { getElementById: () => null, querySelectorAll: () => [] },
+    playSound: () => {}, setStatusAction: o => acts.push(o ? o.action : null),
     dataStore: { getJSON: (k, d) => (k in store ? store[k] : d), setJSON: (k, v) => { store[k] = v; },
                  get: k => (k in store ? store[k] : null), set: (k, v) => { store[k] = v; }, remove: k => { delete store[k]; } },
     currentRepertoire: 'Général', gameMode: 'play', playerColor: 'w',
@@ -67,6 +68,54 @@ t('« Quitter » en cours de séance : bilan puis retour à l\'onglet d\'origine
     assert.strictEqual(trainingState.session, null);
     assert.strictEqual(trainingState.lastSummary.early, true);
     assert.deepStrictEqual(navigations, ['training']);
+});
+
+// Fin d'exercice (préférence trainNext) : enchaîne seul ou attend « Suivant ».
+const finish = (pref, { erred = false, kind = null } = {}) => {
+    acts.length = 0;
+    ctx.gameMode = 'training';
+    ctx.appSettings.trainNext = pref;
+    trainingState.session = kind ? { kind, items: [], i: 0, cur: -1, results: new Map() } : null;
+    trainingState.timers.forEach(clearTimeout); trainingState.timers = [];
+    trainingState.seq = { len: 1, done: 1, assisted: false };
+    trainingState.drill = { erred, keys: ['k1'], answered: 'k1' };
+    trainingState.current = 'k1';
+    trainingState.pause = null;
+    ctx._finishDrill();
+    const r = { timers: trainingState.timers.length, acts: acts.slice(), pause: trainingState.pause };
+    trainingState.timers.forEach(clearTimeout); trainingState.timers = []; trainingState.session = null;
+    return r;
+};
+
+t('fin d\'exercice « Après une erreur » : une réussite nette enchaîne (Rester ici possible), une erreur attend Suivant', () => {
+    let r = finish('error');
+    assert.strictEqual(r.timers, 1);
+    assert.deepStrictEqual([...r.acts], ['Rester ici']);
+    assert.strictEqual(r.pause.key, 'k1');
+    r = finish('error', { erred: true });
+    assert.strictEqual(r.timers, 0);
+    assert.deepStrictEqual(r.acts, ['Suivant']);
+});
+
+t('fin d\'exercice : « Toujours attendre », « Toujours enchaîner », et le contre-la-montre enchaîne toujours', () => {
+    assert.deepStrictEqual(finish('wait').acts, ['Suivant']);
+    assert.strictEqual(finish('wait').timers, 0);
+    assert.strictEqual(finish('auto', { erred: true }).timers, 1);
+    const timed = finish('wait', { kind: 'timed' });
+    assert.strictEqual(timed.timers, 1);
+    assert.deepStrictEqual(timed.acts, []);
+    assert.strictEqual(timed.pause, null);
+});
+
+t('« Rester ici » annule l\'enchaînement et propose Suivant', () => {
+    acts.length = 0;
+    ctx.appSettings.trainNext = 'error';
+    trainingState.seq = { len: 1, done: 1, assisted: false };
+    trainingState.drill = { erred: false, keys: ['k1'], answered: 'k1' };
+    ctx._finishDrill();
+    ctx.trainingStay();
+    assert.strictEqual(trainingState.timers.length, 0);
+    assert.deepStrictEqual(acts, ['Rester ici', 'Suivant']);
 });
 
 console.log(`\n${n} tests réussis.`);

@@ -240,7 +240,7 @@
     border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden;
     background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--board-dark) 26%, transparent), transparent 62%), var(--surface);
 }
-.hp-streak { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--lv-progress); background: color-mix(in srgb, var(--lv-progress) 15%, transparent); }
+.hp-streak { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, transparent); }
 .hp-title { margin: 4px 0 2px; font-family: var(--font-display); font-weight: 600; font-size: 27px; line-height: 1.04; letter-spacing: -.015em; color: var(--text); text-wrap: balance; }
 .hp-title em { font-style: normal; color: var(--accent); }
 .hp-sub { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text-muted); }
@@ -608,18 +608,18 @@ button.suite-chip:active { transform: scale(.97); }
     /* Puce du répertoire et couleur : en tête du panneau de jeu */
     .game-meta-slot:not(:empty) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 
-    /* Replier ou étendre (préférence sideBar) ; jamais en partie, où le rail est imposé */
-    .side-toggle { display: grid; place-items: center; align-self: center; width: 32px; height: 28px; border: 0; border-radius: 8px; background: none; color: var(--text-dim); cursor: pointer; }
-    .side-toggle .ico { width: 16px; height: 16px; }
+    /* Replier ou étendre (préférence sideBar) : icône panneau, dernier bouton de la pilule, même place dans les deux états ; jamais en partie */
+    .topnav-pill > .side-toggle { display: grid; place-items: center; flex: none; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+    .topnav-pill > .side-toggle .ico { width: 17px; height: 17px; }
     .topnav:has(.in-game) .side-toggle { display: none; }
-    @media (hover: hover) { .side-toggle:hover { background: var(--bg-inset); color: var(--text); } }
+    @media (hover: hover) { .topnav-pill > .side-toggle:hover { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); } }
+    .topnav-pill > .side-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
     /* Séance guidée : rien qui la fasse quitter par mégarde (comme la palette et les touches 1 à 4) */
     html[data-session] #topnav-tabs-setup { display: none; }
     html[data-session] .topnav-brand { pointer-events: none; }
 
     /* Menus déroulants (sidebar.js). Rail : volet à droite de l'icône */
-    #topnav-tabs-setup .topnav-tab .sb-chev { display: none; }
     .sb-menu { display: none; }
     .sb-menu.open {
         display: block; position: fixed; left: calc(var(--side-w) + 6px); top: var(--sb-top, 12px); width: 244px;
@@ -633,21 +633,13 @@ button.suite-chip:active { transform: scale(.97); }
     .sb-it > span { flex: 1; min-width: 0; }
     .sb-it em { color: var(--text-dim); font: 500 11.5px/1 var(--font-note); font-style: normal; }
     .sb-it.on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
-    .sb-kid-chev { width: 14px; height: 14px; flex: none; transition: transform var(--dur-1); }
-    .sb-it[aria-expanded="true"] .sb-kid-chev { transform: rotate(180deg); }
-    .sb-kids { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows var(--dur-1), visibility var(--dur-1); }
-    .sb-kids.open { grid-template-rows: 1fr; visibility: visible; }
-    .sb-kids-in { min-height: 0; overflow: hidden; }
-    .sb-kids .sb-it { padding-left: 24px; font-size: 12.5px; }
     @media (hover: hover) { .sb-it:hover, .sb-title:hover { background: var(--bg-inset); color: var(--text); } .sb-it.on:hover { background: var(--accent-soft); } }
     @media (pointer: coarse) { .sb-it, .sb-title { min-height: 44px; } }
-    @media (prefers-reduced-motion: reduce) { .sb-kids, .sb-menu, .sb-chev, .sb-kid-chev { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .sb-menu { transition: none !important; } }
 }
 @media (min-width: 1100px) {
     html:not([data-side="wide"]) .topnav-wm, .topnav:has(.in-game) .topnav-wm { display: none; }
     html[data-side="wide"]:not(:has(.topnav .in-game)) { --side-w: 240px; }
-
-    html[data-side="wide"] .topnav:not(:has(.in-game)) .side-toggle { position: absolute; top: 24px; right: 10px; }
 
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-inner { padding: 14px 12px; }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-brand { justify-content: flex-start; padding-left: 8px; }
@@ -670,9 +662,7 @@ button.suite-chip:active { transform: scale(.97); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle { height: auto; }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-pill > .theme-toggle + .theme-toggle::before { display: block; }
 
-    /* Menus déroulants : accordéon, une rubrique ouverte */
-    html[data-side="wide"] .topnav:not(:has(.in-game)) #topnav-tabs-setup .topnav-tab .sb-chev { display: block; width: 15px; height: 15px; margin-left: auto; fill: none; color: var(--text-dim); transition: transform var(--dur-1); }
-    html[data-side="wide"] .topnav:not(:has(.in-game)) .topnav-tab[aria-expanded="true"] .sb-chev { transform: rotate(180deg); }
+    /* Sous-menu : celui de l'onglet actif seulement, toujours déplié */
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu, html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-menu.open {
         display: grid; position: static; width: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
         grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows var(--dur-1), visibility var(--dur-1);
@@ -683,6 +673,4 @@ button.suite-chip:active { transform: scale(.97); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it { position: relative; min-height: 32px; padding-left: 41px; }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 1px; background: var(--border); }
     html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-it.on::before { width: 2px; background: var(--accent); }
-    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-kids .sb-it { min-height: 30px; padding-left: 55px; }
-    html[data-side="wide"] .topnav:not(:has(.in-game)) .sb-kids .sb-it::before { left: 35px; }
 }

@@ -69,6 +69,8 @@ const SYNCED_PREFS = {
     dailyGoal:  { ok: v => Number.isInteger(v) && v >= 5 && v <= 50, def: 10 },
     rhythm:     { ok: _oneOf(['soft', 'std', 'intense']), def: 'std' },
     freqWeight: { ok: _bool, def: true },
+    trainSeen:  { ok: _bool, def: true },                                               // exercices limités aux positions vues en partie (hors Révision du jour)
+    trainNext:  { ok: _oneOf(['error', 'wait', 'auto']), def: 'error' },                // fin d'exercice : pause après une erreur, toujours, jamais
     notation:   { ok: _oneOf(['fr', 'en', 'fig']), def: 'fr' },
     backupReminder: { ok: _oneOf(['never', 'weekly', 'monthly']), def: 'weekly' },
     // Mode libre de l'Entraînement (training.js)

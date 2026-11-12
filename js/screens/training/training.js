@@ -50,7 +50,10 @@ const trainingState = {
     keyLv: null,            // niveau de la position posée avant le coup (bilan : avant → après)
     combo: 0,               // série en cours de positions réussies du premier coup (séance guidée)
     ctxSkip: null,          // passe la mise en situation en cours
-    tick: null              // minuteur du contre-la-montre
+    tick: null,             // minuteur du contre-la-montre
+    drill: { erred: false, keys: [], answered: null },   // exercice en cours : erreur ou solution, positions posées, dernière réponse
+    pause: null,            // fin d'exercice en attente : { key } de la position répondue (Suivant, Analyser, Modifier le coup)
+    editing: null           // « Modifier le coup » : position dont on attend le nouveau coup
 };
 
 // ─── OPTIONS DU MODE LIBRE (préférences synchronisées, settings.js) ───────────
@@ -94,24 +97,41 @@ function stopTraining() {
     trainingState.timers = [];
     trainingState.busy   = false;
     trainingState.ctxSkip = null;
+    trainingState.pause  = null;
+    trainingState.editing = null;
+    _syncAfterTools();
 }
+
+// ─── VU EN PARTIE ─────────────────────────────────────────────────────────────
+// Préférence trainSeen : exercices limités aux positions atteintes dans mes parties (SeenPositions). Ici, le tirage
+// du mode libre et du contre-la-montre ; le menu (trainingUI.js) filtre les listes. Jamais la Révision du jour.
+// Suspendu sous SeenPositions.MIN positions vues dans la portée (archive vide, appareil neuf).
+function trainingSeenOnly(colors) {
+    if (!appSettings.trainSeen || typeof SeenPositions === 'undefined' || !SeenPositions.ready()) return false;
+    return SeenPositions.countIn(currentRepertoire, colors || ['w', 'b']) >= SeenPositions.MIN;
+}
+const _seenPick = only => (color, key) => !only || SeenPositions.has(color, key);
 
 // ─── MODE LIBRE ───────────────────────────────────────────────────────────────
 
-// Univers de révision : positions du répertoire respectant la profondeur maximale choisie.
+// Univers de révision : positions du répertoire respectant la profondeur maximale choisie (et vues en partie).
 function _trainingPool() {
-    return Object.keys(openingDB).filter(k => _isEligible(openingDB[k]));
+    const ok = _seenPick(trainingSeenOnly());
+    return Object.keys(openingDB).filter(k => _isEligible(openingDB[k]) && ok(playerColor, k));
 }
+
+const _hasPool = (c, ok) => Object.entries(readDBFor(currentRepertoire, c)).some(([k, e]) => _isEligible(e) && ok(c, k));
 
 // Couleur tirée à pile ou face pour l'exercice suivant (mode mélangé) ; null si aucune position.
 function _pickTrainingColor(colors) {
-    colors = (colors || ['w', 'b']).filter(c => Object.values(readDBFor(currentRepertoire, c)).some(_isEligible));
+    const ok = _seenPick(trainingSeenOnly(colors));
+    colors = (colors || ['w', 'b']).filter(c => _hasPool(c, ok));
     return colors.length ? colors[Math.floor(Math.random() * colors.length)] : null;
 }
 
 // Changement de couleur depuis le badge de la barre du haut (quitte le mode mélangé).
 function switchTrainingColor(color) {
-    if (!Object.values(readDBFor(currentRepertoire, color)).some(_isEligible)) {
+    if (!_hasPool(color, _seenPick(trainingSeenOnly()))) {
         setStatus(`Aucune position ${color === 'w' ? 'Blancs' : 'Noirs'} à réviser dans ce répertoire.`, 'info');
         return;
     }
@@ -454,6 +474,7 @@ function _startDrill(key, seqLen, opts) {
     trainingState.busy        = true;
     trainingState.solutionFor = null;
     trainingState.seq         = { len: seqLen, done: 0, assisted: false };
+    trainingState.drill       = { erred: false, keys: [], answered: null };
     _renderSessionBar();
 
     // Chemin absent ou vide : reconstitution via les autres entrées, puis auto-réparation de l'entrée.
@@ -524,6 +545,7 @@ function _seqLabel() {
 // La main est rendue au joueur sur une nouvelle position.
 function _positionPosed() {
     const e = openingDB[positionKey()];
+    trainingState.drill.keys.push(positionKey());
     trainingState.keyErred = false;
     trainingState.keyLv = e ? _level(e) : null;
 }
@@ -659,9 +681,109 @@ function _playOpponentReply(opp) {
     }, opponentDelay(TRAIN_STEP_MS));
 }
 
+// ─── FIN D'EXERCICE ───────────────────────────────────────────────────────────
+// Préférence trainNext : 'error' (défaut) enchaîne seul après une réussite nette et s'arrête après une erreur,
+// un indice ou la solution ; 'wait' s'arrête toujours ; 'auto' n'arrête jamais. Le contre-la-montre enchaîne toujours.
+// À l'arrêt : « Suivant » (barre d'état, Entrée, P, centre du dock), Analyser et Modifier le coup (outils du mode).
+const TRAIN_NEXT_MS = 1400;
+
+function _drillSlipped() {
+    const d = trainingState.drill;
+    return d.erred || trainingState.seq.assisted || (typeof _hintKey !== 'undefined' && _hintKey !== null && d.keys.includes(_hintKey));
+}
+
 function _finishDrill() {
     if (!trainingState.seq.assisted) { trainingState.ok++; playSound('success'); }
-    _later(nextDrill, trainingState.session && trainingState.session.kind === 'timed' ? 500 : 1400);
+    const S = trainingState.session;
+    if (S && S.kind === 'timed') { _later(nextDrill, 500); return; }
+    trainingState.pause = { key: trainingState.drill.answered || trainingState.current };
+    _syncAfterTools();
+    const pref = appSettings.trainNext;
+    if (pref === 'auto' || (pref === 'error' && !_drillSlipped())) {
+        _later(nextDrill, TRAIN_NEXT_MS);
+        setStatusAction({ action: 'Rester ici', title: 'Ne pas enchaîner : rester sur cette position', run: trainingStay });
+        return;
+    }
+    _offerNext();
+}
+
+function _offerNext() {
+    setStatusAction({ action: 'Suivant', icon: 'skip-forward', title: 'Exercice suivant (Entrée)', run: () => nextDrill() });
+}
+
+// « Rester ici » : l'enchaînement prévu est annulé, la fin d'exercice attend.
+function trainingStay() {
+    if (!trainingState.pause) return;
+    trainingState.timers.forEach(clearTimeout);
+    trainingState.timers = [];
+    _offerNext();
+}
+
+// Outils de fin d'exercice (Analyser, Modifier le coup) : actifs seulement à l'arrêt, hors modification en cours.
+function _syncAfterTools() {
+    const on = !!trainingState.pause && !trainingState.editing && gameMode === 'training';
+    document.querySelectorAll('.tr-after').forEach(b => { b.disabled = !on; });
+}
+
+// Analyser : la ligne jouée s'ouvre dans l'Analyse ; Quitter (Q) revient à l'exercice suivant de la même séance.
+function trainingAnalyse() {
+    if (!trainingState.pause || gameMode !== 'training') return;
+    trainingState.timers.forEach(clearTimeout);
+    trainingState.timers = [];
+    trainingBackToLive();
+    const color = playerColor;
+    openAnalysis(undefined, undefined, () => {
+        gameMode = 'training';
+        playerColor = color;
+        loadDB();
+        showGameScreen(color);
+        _renderSessionBar();
+        nextDrill();
+    });
+}
+
+// Modifier le coup : l'échiquier revient avant ma réponse ; le coup joué ensuite la remplace, après confirmation
+// (l'ancien part à la corbeille 30 jours, comme « Remplacer » de l'arbre). Rien n'est compté.
+function trainingEditMove() {
+    const p = trainingState.pause, entry = p && openingDB[p.key];
+    if (!entry || !entry.path || !entry.path.length || gameMode !== 'training') return;
+    trainingState.timers.forEach(clearTimeout);
+    trainingState.timers = [];
+    resetNavCursor();
+    loadPositionFromPath(entry.path.slice(0, -1));
+    if (positionKey() !== p.key) { _offerNext(); return; }
+    trainingState.editing = p.key;
+    trainingState.busy = false;
+    _syncAfterTools();
+    setStatus('Modifier le coup', 'new', `Jouez le coup qui remplacera ${formatSanText(entry.san, turn)}.`, { action: 'Annuler', title: 'Garder le coup actuel', run: trainingEditCancel });
+}
+
+function trainingEditCancel() {
+    const p = trainingState.pause, entry = p && openingDB[p.key];
+    trainingState.editing = null;
+    trainingState.busy = true;
+    if (entry) loadPositionFromPath(entry.path);
+    _syncAfterTools();
+    setStatus('Coup gardé', 'info', entry ? `${formatSanText(entry.san, entry.ply % 2 === 1 ? 'w' : 'b')} reste votre réponse.` : '');
+    _offerNext();
+}
+
+function _editPlayed(from, to, promo) {
+    const key = trainingState.editing, entry = openingDB[key], mv = moveToStr(from, to, promo);
+    if (!entry) { trainingEditCancel(); return; }
+    if (mv === entry.move) { trainingEditCancel(); return; }
+    const side = turn, san = toAlgebraic(from, to, promo), path = entry.path.slice(0, -1);
+    const label = s => formatSanText(s, side);
+    confirmDeleteEntry(key, `Remplacer ${label(entry.san)} par ${label(san)} ? L'ancien coup est conservé 30 jours dans la corbeille.`, extra => {
+        openingDB[key] = newEntry(mv, san, path.concat(mv));
+        saveDB();
+        trainingState.editing = null;
+        trainingState.busy = true;
+        loadPositionFromPath(path.concat(mv));
+        _syncAfterTools();
+        setStatus('Coup remplacé', 'ok', `${label(san)} est votre nouvelle réponse ; elle passe en « À confirmer ».${extra ? ` ${extra} coup(s) orphelin(s) mis à la corbeille.` : ''}`);
+        _offerNext();
+    });
 }
 
 function _continueSequence() {
@@ -688,6 +810,7 @@ function showTrainingSolution() {
     if (trainingState.solutionFor !== key) {
         trainingState.solutionFor   = key;
         trainingState.seq.assisted  = true;
+        trainingState.drill.erred   = true;
         const first = !trainingState.keyErred;
         if (first) _sessionMistake(key);
         trainingState.keyErred = true;
@@ -747,6 +870,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
             if (engraved) msg = '✓ Maîtrisée';
         }
         _sessionRecord(key, !trainingState.keyErred && !revealed);
+        trainingState.drill.answered = key;
         trainingState.busy = true;
         _commitMove(from, to, promo, null, msg, revealed ? 'info' : 'ok', detail);
         if (engraved) _engraveMastered();
@@ -764,6 +888,7 @@ function answerTrainingMove(entry, from, to, promo, movStr) {
         }
         if (first) { trainingState.combo = 0; _sessionMistake(key); }
         trainingState.keyErred = true;
+        trainingState.drill.erred = true;
         const S = trainingState.session;
         const told = !first ? '' : S && S.kind === 'timed' ? '−10 s. ' : second ? '' : 'Elle passe dans la file À revoir. ';
         _rejectMove(to, '✗ Pas le bon coup', `${told}Réessayez, ou appuyez sur Indice.`, from);
@@ -782,7 +907,8 @@ GameModes.register('training', {
     hintNote: ' — ne compte pas comme une erreur',
     solutionNote: ' — compte une erreur',
     solutionCost: () => (TRAIN_SOLUTION_PENALTY ? ' Voir la solution compte comme une erreur.' : ''),
-    onMove: (from, to, promo) => answerTrainingMove(openingDB[positionKey()], from, to, promo, moveToStr(from, to, promo)),
+    onMove: (from, to, promo) => trainingState.editing === positionKey() ? _editPlayed(from, to, promo)
+        : answerTrainingMove(openingDB[positionKey()], from, to, promo, moveToStr(from, to, promo)),
     onSolution: () => showTrainingSolution(),
     liveStatus: () => trainingLiveStatus()
 });

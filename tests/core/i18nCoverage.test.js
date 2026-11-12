@@ -57,9 +57,24 @@ async function boot(lang) {
         assert.strictEqual($('.st-heat-d').textContent, 'M', 'lundi, d\'après la langue');
     });
 
-    await t('aucun texte français non reconnu sur l\'accueil et les Statistiques', () => {
-        const left = JSON.parse(w.eval('JSON.stringify(I18n.missing())')).filter(s => !TOLERATED.some(re => re.test(s)));
-        assert.deepStrictEqual(left, []);
+    // Parcourt les Statistiques (tous onglets, toutes vues de Parties) et l'Entraînement, puis rend ce qui est resté en français.
+    async function tour(win) {
+        for (const p of ['overview', 'openings', 'regularity', 'games']) { win.eval(`UI_ACTIONS.statsPane('${p}')`); await new Promise(r => setTimeout(r, 60)); }
+        for (const v of ['bilan', 'temps', 'qualite', 'positions', 'repertoire']) { win.eval(`UI_ACTIONS.statsInView('${v}')`); await new Promise(r => setTimeout(r, 120)); }
+        win.eval(`document.querySelector('.st-rules')?.setAttribute('open', ''); switchHomeTab('training'); initTraining();`);
+        await new Promise(r => setTimeout(r, 60));
+        return JSON.parse(win.eval('JSON.stringify(I18n.missing())')).filter(s => !TOLERATED.some(re => re.test(s)));
+    }
+
+    await t('aucun texte français non reconnu sur l\'accueil, les Statistiques (tous onglets et toutes vues de Parties) et l\'Entraînement', async () => {
+        assert.deepStrictEqual(await tour(w), []);
+    });
+
+    await t('une langue téléchargée (allemand) : mêmes écrans, rien en français', async () => {
+        const de = await boot('de');
+        assert.deepStrictEqual(await tour(de.w), []);
+        assert.deepStrictEqual(de.errors, []);
+        de.w.close();
     });
 
     await t('pluriels : russe (une, quelques, beaucoup) et arabe (six formes)', () => {

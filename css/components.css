@@ -104,7 +104,7 @@
 .vbadge .ico { width: 12px; height: 12px; flex: none; }
 .vbadge.is-ok { --c: var(--ok); }
 .vbadge.is-err { --c: var(--err); }
-.vbadge.is-warn { --c: var(--lv-progress); }
+.vbadge.is-warn { --c: var(--warn); }
 .vbadge.is-new { --c: var(--new); }
 .vbadge.is-accent { --c: var(--accent); }
 .vbadge.is-muted { --c: var(--text-muted); }

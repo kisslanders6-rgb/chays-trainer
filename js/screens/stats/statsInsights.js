@@ -24,7 +24,7 @@ const StatsInsights = (function () {
     const signed = v => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))}`;
     const num1 = v => v.toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const fair = t => t.n >= MIN;
-    const delta = d => d === null ? '–' : `<span class="so-delta ${d >= 0 ? 'up' : 'down'}"><i aria-hidden="true">${d >= 0 ? '▲' : '▼'}</i>${I18n.mark(`${d >= 0 ? '+' : '−'}${num1(Math.abs(d))} pt`)}</span>`;
+    const delta = d => d === null ? '–' : `<span class="so-delta ${d >= 0 ? 'up' : 'down'}"><i aria-hidden="true">${d >= 0 ? '▲' : '▼'}</i>${I18n.mark(`${d >= 0 ? '+' : '−'}${num1(Math.abs(d))} %`)}</span>`;
     const card = (cls, title, take, inner) => `<div class="so-card ${cls}"><h5>${title}</h5>${take ? `<p class="st-sub">${take}</p>` : ''}${inner}</div>`;
     const legend = items => `<div class="so-leg">${items.map(([c, l]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div>`;
     const tile = (label, value, sub) => `<div><small>${label}</small><b>${value}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
@@ -67,7 +67,7 @@ const StatsInsights = (function () {
         const W = 300, H = 118, L = 4, R = 36, T = 10, B = 18, vals = pts.map(p => p.perf), lo = Math.floor(Math.min(...vals) / 50) * 50, hi = Math.max(lo + 50, Math.ceil(Math.max(...vals) / 50) * 50);
         const x = i => L + i * (W - L - R) / Math.max(1, months.length - 1), y = v => T + (hi - v) * (H - T - B) / (hi - lo), at = m => months.indexOf(m);
         const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(at(p)).toFixed(1)},${y(p.perf).toFixed(1)}`).join(''), end = pts[pts.length - 1];
-        return `<div class="st-trend"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${I18n.pair(I18n.t('Performance'), `${pts[0].perf} → ${end.perf}`)}">
+        return `<div class="st-trend"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${I18n.pair(I18n.t('Niveau joué'), `${pts[0].perf} → ${end.perf}`)}">
             ${[lo, (lo + hi) / 2, hi].map(v => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${W - R + 4}" y="${y(v) + 3}">${Math.round(v)}</text>`).join('')}
             <path class="ln" d="${line}"/>${pts.map(p => `<circle class="pt${p === end ? ' end' : ''}" cx="${x(at(p))}" cy="${y(p.perf)}" r="${p === end ? 3.5 : 2.5}"><title>${I18n.mark(`${monthName(p.at)} · ${p.perf} · ${p.n}`)}</title></circle>`).join('')}
             <text class="ax" x="${L}" y="${H - 4}">${monthName(months[0].at)}</text><text class="ax" x="${W - R}" y="${H - 4}" text-anchor="end">${monthName(months[months.length - 1].at)}</text></svg></div>`;
@@ -138,7 +138,7 @@ const StatsInsights = (function () {
         return `<div class="so-kpis">
                 <div class="so-card so-kpi"><span>Score</span><b>${pct(s.score)}</b><small>${_plural(s.n, 'partie')}</small></div>
                 <div class="so-card so-kpi"><span>Face à l'attendu</span><b>${delta(s.delta)}</b><small>${s.expected === null ? 'Elo inconnu' : `Attendu : ${pct(s.expected)}`}</small></div>
-                <div class="so-card so-kpi"><span>Performance</span><b>${s.perf === null ? '–' : s.perf}</b><small>Elo équivalent</small></div>
+                <div class="so-card so-kpi"><span>Niveau joué</span><b>${s.perf === null ? '–' : s.perf}</b><small>Elo d'après vos résultats</small></div>
                 <div class="so-card so-kpi"><span>Gains</span><b>${s.w}</b><small>${_plural(s.d, 'nulle')} · ${_plural(s.l, 'perte')}</small></div>
             </div>
             <div class="so-grid">
@@ -146,7 +146,7 @@ const StatsInsights = (function () {
                 ${card('so-c6', 'Contre qui perdez-vous des points ?', gapTake, `${legend([['so-bar-real', 'Score réel'], ['so-exp', 'Score attendu']])}${scoreBars(gaps)}<p class="si-cap">Elo de l'adversaire moins le vôtre</p>`)}
                 ${heatHTML(GameInsights.heat(list))}
                 ${card('so-c6', 'Savez-vous vous arrêter ?', sessionTake, `${bars(rankNames, se.ranks)}${se.after.some(fair) ? `<p class="si-cap">Juste après des défaites</p>${bars(afterNames, se.after)}` : ''}`)}
-                ${en.wins.n + en.losses.n ? card('so-c6', 'Comment finissent vos parties ?', en.losses.n && en.wins.n ? `Le temps décide ${pct(en.losses.time)} de vos défaites et ${pct(en.wins.time)} de vos gains.` : '', `<div class="si-two"><div><h6>Gains</h6>${endBars(en.wins)}</div><div><h6>Défaites</h6>${endBars(en.losses)}</div></div>`) : ''}
+                ${en.wins.n + en.losses.n ? card('so-c6', 'Comment finissent vos parties ?', en.losses.n && en.wins.n ? `${pct(en.losses.time)} de vos défaites et ${pct(en.wins.time)} de vos gains se jouent au temps.` : '', `<div class="si-two"><div><h6>Gains</h6>${endBars(en.wins)}</div><div><h6>Défaites</h6>${endBars(en.losses)}</div></div>`) : ''}
                 ${vol ? card('so-c6', 'Jouer plus vous fait-il monter ?', volTake, volumeCharts(vol)) : ''}
             </div>`;
     }
@@ -273,7 +273,7 @@ const StatsInsights = (function () {
             ${fair(q.off) && fair(q.on) ? card('so-c6', 'Préférez-vous jouer avec ou sans dames ?', `Dames échangées : ${pct(q.off.score)}. Dames sur l'échiquier : ${pct(q.on.score)}.`, `${head}${posRow('Sans dames', q.off)}${posRow('Avec dames', q.on)}`) : ''}
             ${castleRows.length ? card('so-c6', 'Où êtes-vous à l\'aise pour roquer ?', fair(c.same) && fair(c.opposite) ? `Côtés opposés : ${pct(c.opposite.score)}. Mêmes côtés : ${pct(c.same.score)}.` : '', `${head}${castleRows.map(([l, t]) => posRow(l, t)).join('')}`) : ''}
             ${st.length ? card('so-c6', 'Quelles structures vous réussissent ?', st.length > 1 && top.t.delta !== null ? `La plus rentable : ${STRUCTURES[top.key]}. La moins rentable : ${STRUCTURES[low.key]}.` : 'Structure de pions au coup 15', `${head}${st.map(x => posRow(STRUCTURES[x.key], x.t)).join('')}`) : ''}
-            ${eg.length ? card('so-c6', 'Quelles finales vous coûtent des points ?', worstEg.t.delta !== null && worstEg.t.delta < 0 ? `La plus coûteuse : ${ENDGAMES[worstEg.key][0]} (${shortDelta(worstEg.t.delta)} pt).` : 'Vous tenez ce qu\'on attend de vous dans chaque type de finale.', `${head}${eg.map(x => posRow(ENDGAMES[x.key][0], x.t, `<button type="button" class="st-link si-go" data-action="statsGoEndgame" data-arg="${ENDGAMES[x.key][1]}">S'entraîner</button>`)).join('')}`) : ''}
+            ${eg.length ? card('so-c6', 'Quelles finales vous coûtent des points ?', worstEg.t.delta !== null && worstEg.t.delta < 0 ? `La plus coûteuse : ${ENDGAMES[worstEg.key][0]} (${shortDelta(worstEg.t.delta)} %).` : 'Vous tenez ce qu\'on attend de vous dans chaque type de finale.', `${head}${eg.map(x => posRow(ENDGAMES[x.key][0], x.t, `<button type="button" class="st-link si-go" data-action="statsGoEndgame" data-arg="${ENDGAMES[x.key][1]}">S'entraîner</button>`)).join('')}`) : ''}
             ${im.length ? card('so-c12', 'Comment jouez-vous les déséquilibres ?', 'Premier déséquilibre matériel tenu au moins trois coups', `${head}${im.map(y => posRow(y.l, y.x.t)).join('')}`) : ''}
         </div>`;
     }
@@ -304,7 +304,8 @@ const StatsInsights = (function () {
         if (st.view === 'positions') return `<div class="si-wrap">${positionsHTML(list)}</div>`;
         if (st.view === 'qualite') return `<div class="si-wrap">${qualiteHTML(games, list, rows.filter(r => keep(r.g)))}</div>`;
         if (st.view === 'temps') return `<div class="si-wrap">${tempsHTML(list, rows.filter(r => keep(r.g)))}</div>`;
-        return `${recordsHTML(games)}<div class="si-wrap">${bilanHTML(games, list)}</div>`;
+        const from = since();
+        return `${recordsHTML(games.filter(g => g.at >= from))}<div class="si-wrap">${bilanHTML(games, list)}</div>`;
     }
 
     const repaint = () => StatsGames.repaint();
@@ -317,5 +318,6 @@ const StatsInsights = (function () {
     });
 
     // show : vue ouverte par un constat « À faire » ; period : mois retenus (0 = tout), lu par la fiche d'ouverture.
-    return { filtersHTML, viewsHTML, viewHTML, keep, pump, view: () => st.view, show: v => { st.view = v; }, period: () => st.period };
+    // since : début de la période (0 = tout), lu par la courbe d'Elo.
+    return { filtersHTML, viewsHTML, viewHTML, keep, pump, since, view: () => st.view, show: v => { st.view = v; }, period: () => st.period };
 })();

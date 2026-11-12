@@ -106,6 +106,8 @@ const Dock = (function () {
         // Bouton de la barre d'état qui sert maintenant : Sauter (mise en situation), Annuler ou Rétablir (reçu d'un coup).
         const act = document.querySelector('#status-bar .status-act'), k = act ? act.dataset.act || '' : '';
         if (k === 'Sauter') return proxy(act, { icon: 'skip-forward', label: 'Sauter', tone: 'soft', title: act.title || k });
+        if (gameMode === 'training' && k === 'Suivant') return proxy(act, { icon: 'skip-forward', label: 'Suivant', title: act.title || k });
+        if (gameMode === 'training' && (k === 'Rester ici' || k === 'Annuler')) return proxy(act, { icon: k === 'Annuler' ? 'x' : 'chevron-left', label: k, tone: 'soft', title: act.title || k });
         if (gameMode === 'play' && (k === 'Annuler' || k === 'Rétablir')) return proxy(act, { icon: 'rotate-ccw', label: k, tone: 'soft', title: act.title || k });
         const hint = modeBtn('.tb-hint');
         if (hint && !hint.disabled) {

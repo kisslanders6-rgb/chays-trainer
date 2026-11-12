@@ -156,6 +156,8 @@ Couleur
 Le nom ne peut pas être vide.
 Confirmer
 aria-label="{0}"
+(prefers-reduced-motion: reduce)
+cubic-bezier(.4, 0, .2, 1)
 Hors ligne · vos données restent sur cet appareil. Parties en ligne et compte indisponibles.
 De retour en ligne.
 réseau : écouteur
@@ -463,9 +465,10 @@ CC BY 4.0
 Invisibles
 Entraînement à l'aveugle (pièces masquées)
 {0}/{1}/{2}{3}.svg
+{0}/{1}/{2}.svg
 KQRBN
 --fig-{0}{1}
-url("{0}/{1}/{2}{3}.svg")
+url("{0}")
 Roi
 CFTDR
 NBRQK
@@ -845,7 +848,6 @@ Courbe
 Laser
 (prefers-color-scheme: dark)
 (min-width: 1440px)
-(prefers-reduced-motion: reduce)
 Android
 Mac
 Windows
@@ -1118,6 +1120,7 @@ Recadrer la photo</b>
 envoi refusé (
 La photo n’a pas pu être envoyée : vérifiez la connexion (et que le seau « avatars » existe, cf. supabase/schema.sql).
 Analyse
+Jouez librement : rien n’est enregistré sans « Ajouter au répertoire ». Quitter (Q) reprend l’entraînement.
 Brouillon de cette session repris. Rien n’est enregistré tant que vous n’ajoutez pas au répertoire.
 Jouez librement les deux camps : rien n’est enregistré tant que vous n’ajoutez pas au répertoire.
 Abandonner l’analyse ? Le brouillon ({0} coup{1}) sera effacé ; rien n’a été ajouté au répertoire.
@@ -1675,7 +1678,7 @@ Changer de camp
 Révision du jour (hors séance)
 Revoir les erreurs du bilan (hors séance)
 Passer la position
-Passer la mise en situation
+Passer la mise en situation ; exercice suivant à l’arrêt
 Quitter la séance
 Lancer ou arrêter le moteur
 Jouer le meilleur coup
@@ -1711,11 +1714,12 @@ r.bqkbnr
 pppp.ppp
 PPPP.PPP
 RNBQK..R
+Buis
 Neutre
 Papier
 Brume
 Encre
-ambiance fond teinte gris neutre blanc cassé crème Nocturne vert bleu nuit noir OLED blanc
+ambiance fond bois noyer marque teinte gris neutre blanc cassé crème Nocturne vert bleu nuit noir OLED blanc
 aperçu échiquier
 Interface
 Mode
@@ -1724,7 +1728,7 @@ Clair
 Sombre
 Système
 Ambiance
-Fond de l’interface, apparié en clair et en sombre. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.
+Fond de l’interface, apparié en clair et en sombre. Buis : les bois de la marque, buis le jour, noyer la nuit. Échiquier : teinté par l’échiquier choisi. Encre : noir OLED la nuit.
 Les couleurs de l’interface en dérivent.
 thème
 Coordonnées
@@ -1787,6 +1791,14 @@ Doux : les positions réussies reviennent moins souvent. Intensif : plus souvent
 Doux
 Standard
 Intensif
+Positions vues en partie
+parties réelles jouées filtre lichess chess.com
+Points faibles, À confirmer, Ligne complète, Contre-la-montre et Mode libre ne tirent que les positions atteintes dans vos parties archivées. La Révision du jour reste entière. Sans assez de parties (moins de 5 positions), tout le répertoire.
+enchaîner automatiquement passage suivant pause
+Après une erreur : une réussite nette enchaîne seule, une erreur, un indice ou la solution laissent le temps d’analyser. Le contre-la-montre enchaîne toujours.
+Après une erreur
+Toujours attendre
+Toujours enchaîner
 Lignes fréquentes d’abord
 prioriser fréquence
 Les positions où vos adversaires (ou les joueurs Lichess) vous amènent le plus souvent sortent plus souvent. Sans données, rien ne change.
@@ -1852,7 +1864,7 @@ Coup joué
 Capture
 Coup refusé
 Exercice réussi
-Fin d’un exercice d’entraînement ou d’une finale.
+Fin d’un exercice d’entraînement ou d’une finale, position devenue maîtrisée.
 Vibrations
 Vibration au toucher
 téléphone
@@ -1980,7 +1992,6 @@ d'affilée
 jours actifs
 Peu <i></i>
 </i> Beaucoup
-{0}{1} pt
 Coup à retrouver
 Blancs ·
 Noirs ·
@@ -1990,15 +2001,20 @@ Afficher les {0} autres positions
 {0}Statistiques
 Points faibles
 {5}Entraînement › Points faibles {6}
+Ouverture · Score face à l'attendu
 openings|
 Voir la fiche
-Le temps décide <em>{0} %</em> de vos défaites
+<em>{0} %</em> de vos défaites se jouent au temps
 games|temps
 Voir le temps
-Score sous l'attendu <em>{0}</em>
+Score <em>{0}</em> face à l'attendu
 games|bilan
 Voir le bilan
 st-todo n-{0}
+Positions du répertoire
+Ouvertures
+Parties archivées
+Jours actifs sur les 30 derniers
 Vues
 Régularité
 tous répertoires
@@ -2027,11 +2043,11 @@ Révisions à venir
 {0} prochains jours
 Maîtrise · {0}
 maîtrisées
-Réussite : {5} % sur {6}
+Comment chaque niveau est décidé
+Réussite : {6} % sur {7}
 Tout voir
 {4}Entraînement › Points faibles {5}
 Maîtrise
-Ouvertures
 Aperçu · {0}
 {0} · maîtrise {1} / 100 ({2} err. / {3})
 Cette position
@@ -2047,23 +2063,24 @@ Connexion impossible. Réessayez.
 partie ajoutée
 parties ajoutées
 Tout l'historique est déjà chargé.
-Pas encore assez de parties classées pour tracer une courbe.
+Pas assez de parties classées sur cette période pour tracer une courbe.
 Pseudo {3}
 Pseudo {4}
 {6}Charger mes parties
+{0} sur {1} mois
+{0} sur tout l'historique
 partie analysée
 parties analysées
 Précision moyenne {0} sur {1}
-{3}{4} en 30 j
 Comparaison avec votre répertoire…
 Autres positions
 Répertoire suivi
-Quitté de votre fait
+Vous êtes sorti du répertoire
 Votre coup sort du répertoire
 Réponse manquante
 Ce qui vous coûte le plus
-Contre plus fort
-Contre plus faible
+Adversaire +50 Elo ou plus
+Adversaire −50 Elo ou moins
 Votre répertoire
 Par famille d'ouverture
 </i>Gains
@@ -2091,7 +2108,7 @@ Qualité
 Positions
 Vue
 Pas encore assez de mois joués.
-Performance
+Niveau joué
 Score par tranche
 background:color-mix(in oklab, {0} {1}%, var(--bg-inset))
 Meilleur créneau : {0} ({1}). Le moins bon : {2} ({3}).
@@ -2133,13 +2150,13 @@ Elo de l'adversaire moins le vôtre
 Savez-vous vous arrêter ?
 Juste après des défaites
 Comment finissent vos parties ?
-Le temps décide {0} de vos défaites et {1} de vos gains.
+{0} de vos défaites et {1} de vos gains se jouent au temps.
 Gains
 Défaites
 Jouer plus vous fait-il monter ?
 Score
 Face à l'attendu
-Elo équivalent
+Elo d'après vos résultats
 Meilleur Elo
 Plus longue série
 gains d'affilée
@@ -2240,7 +2257,7 @@ Quelles structures vous réussissent ?
 La plus rentable : {0}. La moins rentable : {1}.
 Structure de pions au coup 15
 Quelles finales vous coûtent des points ?
-La plus coûteuse : {0} ({1} pt).
+La plus coûteuse : {0} ({1} %).
 Vous tenez ce qu'on attend de vous dans chaque type de finale.
 S'entraîner
 Comment jouez-vous les déséquilibres ?
@@ -2267,6 +2284,7 @@ Aucune de vos parties récentes ne passe par cette ouverture.
 Trop peu de parties pour juger ({0}).
 Réviser cette ouverture {1}
 {0} à réviser sur {1}
+Score face à l'attendu
 Comparaison avec vos parties…
 Reliez un compte dans l'onglet Parties pour voir vos résultats réels.
 Aucune partie sur cette période.
@@ -2284,7 +2302,7 @@ Score après une mauvaise sortie
 Avance à l'horloge
 Où le répertoire s'arrête
 </i>Réponse manquante
-</i>Sortie de votre fait
+</i>Vous sortez du répertoire
 Réponses adverses
 au lieu de
 Coups joués à la place
@@ -2313,10 +2331,10 @@ maîtrise {0} / 100
 Hors rép.
 Toutes les ouvertures · {0}
 Préparation
+Résultats
 Il faut au moins {0} parties dans une ouverture travaillée pour la placer sur la carte.
 Maîtrise à l'entraînement
 Points face à l'attendu
-{0} · {1} / 100 · {2}{3} pt
 Carte des ouvertures, maîtrise et résultats
 Aucune ouverture ne correspond. Essayez un nom ou un coup.
 À travailler d'abord
@@ -2353,6 +2371,7 @@ Position critique · maîtrise {0} / 100
 Aucune position dans ce répertoire.
 Mise en situation…
 Sauter
+Passer la mise en situation
 · coup {0}{1}
 À vous de jouer{0}
 · {0} réussi{1}
@@ -2360,6 +2379,18 @@ Deuxième passage
 Ligne complète
 Ligne complète · l'adversaire commence…
 Fin de la variante.
+Rester ici
+Ne pas enchaîner : rester sur cette position
+Exercice suivant (Entrée)
+Modifier le coup
+Jouez le coup qui remplacera {0}.
+Garder le coup actuel
+Coup gardé
+{0} reste votre réponse.
+Remplacer {0} par {1} ? L'ancien coup est conservé 30 jours dans la corbeille.
+Coup remplacé
+{0} coup(s) orphelin(s) mis à la corbeille.
+{0} est votre nouvelle réponse ; elle passe en « À confirmer ».{1}
 ✓ Fin de la variante.
 Aucune solution connue pour cette position.
 Jouez-le pour continuer (aucune réussite comptée).
@@ -2372,6 +2403,7 @@ Deuxième passage : rien de plus n’est compté.
 Aucune réussite comptée.
 ✓ Bon coup
 L’erreur est déjà comptée pour ce passage.
+✓ Maîtrisée
 Elle passe dans la file À revoir.
 {0}Réessayez, ou appuyez sur Indice.
 ✗ Ce n'est pas le coup de la solution
@@ -2379,6 +2411,11 @@ Réessayez.
 — ne compte pas comme une erreur
 — compte une erreur
 Voir la solution compte comme une erreur.
+Pas assez de parties : reliez Lichess ou Chess.com dans Statistiques › Parties. Tout le répertoire est utilisé.
+Seules les positions atteintes dans vos parties sont tirées (sauf Révision du jour). Toucher : tout le répertoire.
+Tout le répertoire. Toucher : seulement les positions vues dans vos parties.
+Vu en partie · {0}
+Vu en partie
 Revoir les {0} erreurs
 Revoir l’erreur
 Tout de suite, pendant que c’est frais
@@ -2398,6 +2435,7 @@ Séance utile
 {0} sur {1} du premier coup
 {0}Objectif du jour atteint
 {0} à revoir
+{0}{1} maîtrisée{2}
 {0}{1} niveau{2} monté{3}
 {0}{1} descendu{2}
 Rejouer
@@ -2464,10 +2502,14 @@ La plus en retard
 Point faible
 Ligne complète ·
 Contre-la-montre · positions au hasard
-Tout le répertoire · 3 min
+Vues en partie
+Tout le répertoire
+{0} · 3 min
 Préparation…
 Erreurs à revoir
 Cet appareil a été déconnecté depuis un autre appareil. Vos données restent ici.
+translateY(8px)
+cubic-bezier(.16, 1, .3, 1)
 Répertoire {2}
 Nouveau répertoire
 et {0} dans {1} autre{2} ouverture{3}
@@ -2553,8 +2595,6 @@ Adverse
 Connue
 Nouvelle
 cubic-bezier(.72, 0, .18, 1)
-cubic-bezier(.4, 0, .2, 1)
-cubic-bezier(.16, 1, .3, 1)
 translateY(-12px) scale(.92)
 translate(0px, 0px) scale(1)
 translate({0}px, {1}px) scale({2})
@@ -2621,7 +2661,6 @@ palette de recherche
 Rechercher
 Rechercher une action, une ouverture, un réglage
 Une action, une ouverture, un réglage…
-Résultats
 <kbd>↑</kbd><kbd>↓</kbd> parcourir
 <kbd>Entrée</kbd> ouvrir
 <kbd>Échap</kbd> fermer
@@ -2645,7 +2684,6 @@ Avec les Noirs
 (hover: hover)
 Étendre la barre
 Replier la barre
-stats.games.
 Revoir {0} erreurs
 {0} · {1} min
 nouveauté à traiter
@@ -2672,12 +2710,12 @@ Suiv.
 Corriger
 Retourner
 Tourner
+Analyser
 Initialisation...
 Coups
 Données
 Répertoire :
 Dernières parties
-Analyser
 J'avais les
 Si votre pseudo figure dans la partie, sa couleur est prise automatiquement.
 Analyser la partie
@@ -2713,6 +2751,8 @@ Retourner l'échiquier (F)
 Afficher le répertoire en flèches sur l'échiquier (R)
 Analyser mes parties (Chess.com, Lichess ou PGN) : où sortent-elles du répertoire ?
 Analyser la position avec le moteur : brouillon séparé, ajout au répertoire à la fin
+Analyser la position avec le moteur ; Quitter reprend l'entraînement
+Remplacer le coup enregistré : jouez le nouveau coup (l'ancien part à la corbeille 30 jours)
 Quitter l'entraînement (Q)
 Quitter l'exercice (Q)
 Analyser la position avec le moteur

@@ -48,6 +48,27 @@ function _trRows() {
         .concat(all.filter(x => !x.e.attempts && x.gKey === _trOpening.key).map(x => x.r));
 }
 
+// « Vu en partie » (préférence trainSeen, trainingSeenOnly) : les exercices hors Révision du jour, À revoir et
+// erreurs du bilan ne retiennent que les positions atteintes dans mes parties ; suspendu sans assez de parties.
+const _trSeenOn = () => typeof trainingSeenOnly === 'function' && trainingSeenOnly(_trSides());
+const _trSeen = (rows, on = _trSeenOn()) => on ? rows.filter(r => SeenPositions.has(r.color, r.key)) : rows;
+
+// Puce de la barre de contexte : allumée, elle dit combien de positions restent ; toucher bascule la préférence.
+function _trRenderSeen(on, n) {
+    const scope = document.querySelector('#home-tab-training .st-scope');
+    if (!scope) return;
+    let el = document.getElementById('training-seen');
+    const ready = typeof SeenPositions !== 'undefined' && SeenPositions.ready();
+    const avail = ready && SeenPositions.countIn(currentRepertoire, _trSides()) >= SeenPositions.MIN;
+    if (!el) { el = document.createElement('button'); el.type = 'button'; el.id = 'training-seen'; el.className = 'trr-seen'; el.dataset.action = 'trainingSeen'; scope.appendChild(el); }
+    el.setAttribute('aria-pressed', String(on));
+    el.disabled = !avail;
+    el.title = !avail ? 'Pas assez de parties : reliez Lichess ou Chess.com dans Statistiques › Parties. Tout le répertoire est utilisé.'
+        : on ? 'Seules les positions atteintes dans vos parties sont tirées (sauf Révision du jour). Toucher : tout le répertoire.'
+        : 'Tout le répertoire. Toucher : seulement les positions vues dans vos parties.';
+    el.innerHTML = `${ico('flame')}<span>${on ? `Vu en partie · ${n}` : 'Vu en partie'}</span>`;
+}
+
 // Arrivée depuis les Statistiques : couleur, ouverture éventuelle et exercice à mettre en avant
 // ('due' : Révision du jour, 'weak' : Points faibles). Rien n'est lancé : l'utilisateur choisit.
 function openTrainingFrom({ color, opening, focus }) {
@@ -69,7 +90,7 @@ const _trOrder = (a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1)
 
 // Ouvertures nommées de la portée (Ligne complète) : { color, name, path, n }.
 function _trOpenings() {
-    const rows = _trRows().map(r => ({ side: r.color, k: r.key, e: r.e, path: r.e.path && r.e.path.length ? r.e.path : null }));
+    const rows = _trSeen(_trRows()).map(r => ({ side: r.color, k: r.key, e: r.e, path: r.e.path && r.e.path.length ? r.e.path : null }));
     return groupByOpening(rows).filter(g => g.named).map(g => ({ color: g.side, name: g.name, path: g.path, n: g.n })).sort((a, b) => (a.color === b.color ? 0 : a.color === 'w' ? -1 : 1) || a.path.join(' ').localeCompare(b.path.join(' ')));
 }
 
@@ -247,7 +268,8 @@ function initTraining() {
     if (rep) rep.innerHTML = repertoireDropdownHTML('trainingRep');
     _trRenderFilter();
 
-    const rows = _trRows(), now = Date.now();
+    const rows = _trRows(), now = Date.now(), seenOn = _trSeenOn(), exRows = _trSeen(rows, seenOn);
+    _trRenderSeen(seenOn, exRows.length);
     const s = trainingState.lastSummary;
     const retry = s && s.kind !== 'timed' ? s.rows.filter(r => !r.ok).length : 0;
     if (!rows.length) {
@@ -267,8 +289,8 @@ function initTraining() {
 
     const plan = reviewPlan(currentRepertoire, now);
     const due = rows.filter(r => plan.today(r.color, r.key));
-    const weak = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').length;
-    const unsure = rows.filter(r => r.lv === 'unsure').length;
+    const weak = exRows.filter(r => r.lv === 'weak' || r.lv === 'fragile').length;
+    const unsure = exRows.filter(r => r.lv === 'unsure').length, unsureAll = rows.filter(r => r.lv === 'unsure').length;
     const inFile = rows.filter(r => Number.isInteger(r.e.relearn)), ready = inFile.filter(r => isDue(r.e, now));
     const fileNext = inFile.reduce((m, r) => Math.min(m, dueOf(r.e)), Infinity);
     const primary = _trPrimary({ due: due.length, retry, focus: _trFocus, avail: { weak: weak > 0, unsure: unsure > 0, timed: true, free: true } });
@@ -360,7 +382,7 @@ function initTraining() {
     const mast = `
         <section class="trr-mast" aria-labelledby="trr-mast-h">
             <div class="trr-h"><h3 id="trr-mast-h">Maîtrise</h3><span>${rows.length} position${rows.length > 1 ? 's' : ''}</span></div>
-            <div class="trr-mast-in edge-card">${mastery}${unsure ? `<div class="trr-m"><span></span><span class="lv-chip lv-unsure">${unsure} à confirmer</span></div>` : ''}</div>
+            <div class="trr-mast-in edge-card">${mastery}${unsureAll ? `<div class="trr-m"><span></span><span class="lv-chip lv-unsure">${unsureAll} à confirmer</span></div>` : ''}</div>
         </section>`;
 
     // ── Plateau : la position de départ de chaque exercice ──
@@ -372,11 +394,11 @@ function initTraining() {
         due:    _trPreviewOf(sorted(due, (a, b) => dueOf(a.e) - dueOf(b.e))[0], 'La plus en retard'),
         retry:  missed ? _trPreviewOf(missed, 'Ratée') : null,
         relearn: _trPreviewOf(sorted(ready)[0], 'À revoir'),
-        weak:   _trPreviewOf(sorted(rows.filter(r => r.lv === 'weak' || r.lv === 'fragile'))[0], 'Point faible'),
-        unsure: _trPreviewOf(sorted(rows.filter(r => r.lv === 'unsure'), (a, b) => a.e.attempts - b.e.attempts)[0], 'À confirmer'),
+        weak:   _trPreviewOf(sorted(exRows.filter(r => r.lv === 'weak' || r.lv === 'fragile'))[0], 'Point faible'),
+        unsure: _trPreviewOf(sorted(exRows.filter(r => r.lv === 'unsure'), (a, b) => a.e.attempts - b.e.attempts)[0], 'À confirmer'),
         line:   firstLine ? { r: { side: firstLine.color, path: firstLine.path, k: null }, after: true, title: 'Ligne complète · ' + firstLine.name,
                               line: _movesLabel(firstLine.path, true), side: firstLine.color === 'w' ? 'Blancs' : 'Noirs' } : null,
-        timed:  start('Contre-la-montre · positions au hasard', 'Tout le répertoire · 3 min'),
+        timed:  start('Contre-la-montre · positions au hasard', `${seenOn ? 'Vues en partie' : 'Tout le répertoire'} · 3 min`),
         free:   start('Mode libre', freeOpts)
     };
     const shown = [primary, 'due', 'weak', 'line'].find(k => k && _trPreviews[k]) || 'timed';
@@ -400,8 +422,8 @@ function startTrainingExercise(kind) {
     const pick = {
         relearn: () => rows.filter(r => Number.isInteger(r.e.relearn) && isDue(r.e, now)),
         due:    () => { const plan = reviewPlan(currentRepertoire, now); return rows.filter(r => plan.today(r.color, r.key)); },
-        weak:   () => rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort(_trOrder).slice(0, TRAIN_WEAK_MAX),
-        unsure: () => rows.filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
+        weak:   () => _trSeen(rows).filter(r => r.lv === 'weak' || r.lv === 'fragile').sort(_trOrder).slice(0, TRAIN_WEAK_MAX),
+        unsure: () => _trSeen(rows).filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
     }[kind];
     const label = { relearn: 'À revoir', due: 'Révision du jour', weak: 'Points faibles', unsure: 'À confirmer' }[kind];
     if (pick) startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
@@ -458,6 +480,7 @@ registerActions({
         });
     },
     trainingCloseSummary: () => { trainingState.lastSummary = null; initTraining(); },
+    trainingSeen: () => { setPref('trainSeen', !appSettings.trainSeen); initTraining(); },
     trainingAllOpenings: () => { _trOpening = null; _trFocus = null; initTraining(); },
     trainingAddLine: () => { if (_trColor === 'w' || _trColor === 'b') startGame(_trColor); else switchHomeTab('play'); },
     trainingOpt: arg => { const [name, v] = arg.split(':'); if (v !== 'null') { _trFreeOpen = true; setTrainingOption(name, v); } }

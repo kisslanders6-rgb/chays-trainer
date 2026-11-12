@@ -5,8 +5,8 @@ let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok  ', name); };
 
 const props = {};
-const ctx = { console, window: { addEventListener() {} }, appSettings: { notation: 'fr', pieceSet: 'maestro' },
-              document: { addEventListener() {}, getElementById: () => null,
+const ctx = { console, URL, window: { addEventListener() {} }, appSettings: { notation: 'fr', pieceSet: 'maestro' },
+              document: { baseURI: 'https://chays.app/', addEventListener() {}, getElementById: () => null,
                           documentElement: { setAttribute() {}, style: { setProperty: (k, v) => { props[k] = v; } } } },
               Image: function () {} };
 vm.createContext(ctx);
@@ -28,7 +28,8 @@ t('figurines : dessin du jeu actif à la couleur du camp, texte simple en lettre
     assert.strictEqual(ctx.formatSanText('Nf3', 'b'), 'Cf3');
     assert(!/[\u2654-\u265f]/.test(ctx.formatSanText('exd8=Q+', 'w') + ctx.formatSanText('Kxe2', 'b')));
     ctx.applyPieceSet();
-    assert.strictEqual(props['--fig-bQ'], 'url("assets/pieces/maestro/bQ.svg")');
+    // Adresse absolue : relative, elle se résoudrait depuis css/game.css (css/assets/…, introuvable).
+    assert.strictEqual(props['--fig-bQ'], 'url("https://chays.app/assets/pieces/maestro/bQ.svg")');
 });
 
 t('jeu « Invisibles » : les figurines repassent aux lettres', () => {

@@ -79,18 +79,23 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu')].map(m => m.dataset.menu), ['play', 'stats', 'training', 'endgame']);
         assert.strictEqual(doc.querySelectorAll('.sb-menu[data-menu="endgame"] .sb-it').length, 6, 'une entrée par catégorie');
         assert.strictEqual(entry(doc, 'endgame.pions').querySelector('em').textContent, '17');
-        assert.strictEqual(doc.querySelectorAll('.sb-kids .sb-it').length, 5, 'les cinq vues de Parties');
+        assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu[data-menu="stats"] .sb-it')].map(b => b.dataset.key), ['stats.overview', 'stats.openings', 'stats.games', 'stats.regularity'], 'les onglets de la page, sans sous-niveau');
+        assert(!doc.querySelector('.sb-kids, .sb-chev'), 'ni accordéon ni chevron');
     });
 
-    await t('barre étendue : la rubrique active ouverte, une seule à la fois, cliquer la rubrique active la replie', async () => {
+    await t('barre étendue : seul le sous-menu de l’onglet actif est déplié, et il le reste', async () => {
         const { doc, $, tick } = await side({ wide: true });
         await tick();
         assert.deepStrictEqual(openMenus(doc), ['play']);
         $('#nav-tab-stats').click();
+        await tick();
+        assert($('#nav-tab-stats').classList.contains('active'), 'le clic change d’onglet');
         assert.deepStrictEqual(openMenus(doc), ['stats']);
-        assert($('#nav-tab-stats').classList.contains('active'), 'le clic change aussi d’onglet');
         $('#nav-tab-stats').click();
-        assert.deepStrictEqual(openMenus(doc), []);
+        await tick();
+        assert.deepStrictEqual(openMenus(doc), ['stats'], 'un second clic ne replie rien');
+        entry(doc, 'stats.openings').click();
+        assert.deepStrictEqual(openMenus(doc), ['stats'], 'choisir une entrée ne change rien à la barre');
     });
 
     await t('rail à la souris : le clic change d’onglet ; au toucher, il ouvre le volet sans changer d’onglet', async () => {
@@ -125,23 +130,21 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         assert.deepStrictEqual(openMenus(doc), []);
     });
 
-    await t('Parties : la vue choisie passe par statsInView, le sous-menu se déplie', async () => {
+    await t('Parties : l’entrée ouvre l’onglet de la page, marquée comme choisie', async () => {
         const { doc, w } = await side({ wide: true });
-        const vues = [];
-        w.eval('UI_ACTIONS').statsInView = v => vues.push(v);
+        const panes = [];
+        const prev = w.eval('UI_ACTIONS.statsPane');
+        w.eval('UI_ACTIONS').statsPane = p => { panes.push(p); prev(p); };
         entry(doc, 'stats.games').click();
-        assert(doc.querySelector('.sb-kids').classList.contains('open'));
-        entry(doc, 'stats.games.qualite').click();
-        assert.deepStrictEqual(vues, ['qualite']);
-        assert(doc.querySelector('.sb-kids').classList.contains('open'), 'reste ouvert sur une vue');
-        assert(entry(doc, 'stats.games.qualite').classList.contains('on'));
+        assert.deepStrictEqual(panes, ['games']);
+        assert(entry(doc, 'stats.games').classList.contains('on'));
     });
 
     await t('Reprendre n’apparaît que si une partie peut reprendre', async () => {
-        const { doc, $, w } = await side({ wide: true });
+        const { doc, $, w, tick } = await side({ wide: true });
         assert.strictEqual(entry(doc, 'play.resume').hidden, !doc.querySelector('[data-action="resumeLastPlay"]'));
         $('#resume-slot').innerHTML = '<button data-action="resumeLastPlay"></button>';
-        $('#nav-tab-stats').click(); $('#nav-tab-play').click();
+        $('#nav-tab-stats').click(); await tick(); $('#nav-tab-play').click(); await tick();
         assert.strictEqual(entry(doc, 'play.resume').hidden, false);
         assert(w);
     });
@@ -177,6 +180,25 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         assert.strictEqual(rail.$('#side-toggle').title, 'Étendre la barre');
     });
 
+    await t('quitter une partie par le menu garde le rail ; seul le bouton l’étend, sans toucher à la préférence', async () => {
+        const { dom } = await bootApp({ before: w => {
+            w.matchMedia = q => ({ matches: q === '(min-width: 1100px)' || q === '(min-width: 1440px)' || q === '(hover: hover)', addEventListener() {} });
+            w.scrollTo = () => {};
+        } });
+        const w = dom.window, doc = w.document, root = doc.documentElement;
+        assert.strictEqual(root.getAttribute('data-side'), 'wide');
+        w.eval('startGame("w")');
+        assert(!doc.getElementById('game-screen').classList.contains('hidden'), 'en partie');
+        entry(doc, 'stats.openings').click();
+        assert(doc.getElementById('game-screen').classList.contains('hidden'), 'la partie est quittée');
+        assert.strictEqual(root.getAttribute('data-side'), 'rail', 'pas de saut à 240 px');
+        assert.strictEqual(w.eval('SideBar.held()'), true);
+        doc.getElementById('side-toggle').click();
+        assert.strictEqual(root.getAttribute('data-side'), 'wide', 'le bouton l’étend');
+        assert.strictEqual(w.eval('appSettings.sideBar'), 'auto', 'préférence inchangée');
+        assert.strictEqual(doc.getElementById('side-toggle').querySelector('use').getAttribute('href'), '#i-panel-open', 'icône de panneau');
+    });
+
     await t('sous 1 100 px, B ne fait rien', async () => {
         const { dom } = await bootApp();
         const w = dom.window;
@@ -196,9 +218,9 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         let mq;
         const { dom } = await bootApp({ before: w => { mq = listener(w, true); w.scrollTo = () => {}; } });
         const doc = dom.window.document;
-        assert(doc.querySelector('.sb-menu') && doc.querySelector('#nav-tab-play .sb-chev'));
+        assert(doc.querySelector('.sb-menu') && doc.querySelector('.topnav-pill #side-toggle'), 'menus et bouton dans la pilule');
         mq.cb({ matches: false });
-        assert(!doc.querySelector('.sb-menu') && !doc.querySelector('.sb-chev'));
+        assert(!doc.querySelector('.sb-menu') && !doc.querySelector('#side-toggle'));
         assert(!doc.querySelector('#nav-tab-play').hasAttribute('tabindex'));
         assert.strictEqual(doc.querySelector('#nav-tab-play').nextElementSibling.id, 'nav-tab-stats', 'filets entre onglets intacts');
     });

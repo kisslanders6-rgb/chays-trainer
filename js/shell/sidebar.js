@@ -5,8 +5,9 @@
  * La colonne est faite en CSS ; ce module ajoute ce qu'elle ne peut pas faire seule :
  *   - la puce du répertoire, la couleur et le retour de l'aperçu (`.topnav-meta`) vont en tête du panneau de jeu ;
  *   - les menus déroulants de chaque rubrique (MENUS), qui appellent les fonctions et les boutons déjà présents.
- * Barre étendue : accordéon, une seule rubrique ouverte, celle de l'onglet actif par défaut.
+ * Barre étendue : seul le sous-menu de l'onglet actif est déplié, sans accordéon ni chevron (arbitrage du 12 novembre 2026).
  * Rail : volet à droite de l'icône, au survol (le clic garde son effet : changer d'onglet), au toucher sinon.
+ * Bouton Replier / Étendre (#side-toggle, icône panneau) : dans la pilule d'actions, en pied, à la même place dans les deux états.
  */
 
 'use strict';
@@ -21,7 +22,6 @@ const SideBar = (() => {
     const RESUME = '[data-action="resumeLastPlay"]';
     // Statistiques : chaque entrée ouvre son onglet (statsPane) ; une vue de Parties passe aussi par statsInView.
     const pane = p => () => UI_ACTIONS.statsPane(p);
-    const view = (id, label) => ({ id, label, act: 'statsInView', arg: id, run: pane('games'), to: '#stats-games' });
     const MENUS = {
         play: [
             { id: 'today', label: 'Aujourd’hui', to: '#hp-today' },
@@ -34,10 +34,8 @@ const SideBar = (() => {
         ],
         stats: [
             { id: 'overview', label: 'Maîtrise', run: pane('overview') },
-            { id: 'weak', label: 'Points faibles', run: pane('overview'), to: '.st-weak-wrap' },
             { id: 'openings', label: 'Ouvertures', run: pane('openings') },
-            { id: 'games', label: 'Parties', run: pane('games'),
-              kids: [view('bilan', 'Bilan'), view('temps', 'Temps'), view('qualite', 'Qualité'), view('positions', 'Positions'), view('repertoire', 'Répertoire')] },
+            { id: 'games', label: 'Parties', run: pane('games') },               // ses vues restent dans la page (segments)
             { id: 'regularity', label: 'Régularité', run: pane('regularity') }
         ],
         training: [
@@ -53,7 +51,7 @@ const SideBar = (() => {
         }))
     };
 
-    let mounted = false, open = null, kidsOpen = false, current = null, lastTab = null, lastRail = null;
+    let mounted = false, held = false, open = null, current = null, lastTab = null, lastRail = null;
     let openTimer = 0, closeTimer = 0, observer = null;
 
     const bar = () => document.getElementById('topnav-tabs-setup');
@@ -64,13 +62,9 @@ const SideBar = (() => {
     const canHover = () => matchMedia('(hover: hover)').matches;
     const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function item(tab, it, parent) {
-        const key = [tab, parent, it.id].filter(Boolean).join('.');
-        const count = it.n ? `<em>${it.n}</em>` : '';
-        const chev = it.kids ? ico('chevron-down', 'sb-kid-chev') : '';
-        const row = `<button type="button" class="sb-it" data-key="${key}" data-action="sbChoose" data-arg="${key}"><span>${escapeHtml(it.label)}</span>${count}${chev}</button>`;
-        if (!it.kids) return row;
-        return `${row}<div class="sb-kids"><div class="sb-kids-in">${it.kids.map(k => item(tab, k, it.id)).join('')}</div></div>`;
+    function item(tab, it) {
+        const key = tab + '.' + it.id, count = it.n ? `<em>${it.n}</em>` : '';
+        return `<button type="button" class="sb-it" data-key="${key}" data-action="sbChoose" data-arg="${key}"><span>${escapeHtml(it.label)}</span>${count}</button>`;
     }
 
     function menuHTML(tab) {
@@ -78,23 +72,34 @@ const SideBar = (() => {
     }
 
     function findItem(key) {
-        const [tab, a, b] = key.split('.');
-        const it = MENUS[tab].find(x => x.id === a);
-        return { tab, it: b ? it.kids.find(x => x.id === b) : it };
+        const [tab, id] = key.split('.');
+        return { tab, it: MENUS[tab].find(x => x.id === id) };
     }
 
     function paintToggle(rail) {
         const b = document.getElementById('side-toggle'), label = rail ? 'Étendre la barre' : 'Replier la barre';
-        b.innerHTML = ico(rail ? 'chevron-right' : 'chevron-left');
+        b.innerHTML = ico(rail ? 'panel-open' : 'panel-close');
         b.title = label;
         b.setAttribute('aria-label', label);
     }
 
     // Replie ou étend, et le retient sur cet appareil. Sans effet en dessous de 1 100 px.
+    // Un rail gardé après une sortie de partie (held) s'étend d'abord, sans toucher à la préférence.
     function toggle() {
         if (!mounted) return false;
+        if (held) {
+            held = false;
+            if (sideBarMode() === 'wide') { document.documentElement.setAttribute('data-side', 'wide'); return true; }
+        }
         setPref('sideBar', isRail() ? 'wide' : 'rail');
         return true;
+    }
+
+    // Quitter une partie depuis la barre ne l'élargit pas : seul le geste Replier / Étendre (ou B) change sa largeur.
+    function keepRail(go) {
+        const hold = inGame() && document.documentElement.getAttribute('data-side') === 'wide';
+        go();
+        if (hold && !inGame()) { held = true; document.documentElement.setAttribute('data-side', 'rail'); }
     }
 
     function paint() {
@@ -111,9 +116,7 @@ const SideBar = (() => {
                 if (here) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current');
                 const it = findItem(el.dataset.key).it;
                 if (it.when) el.hidden = !it.when();
-                if (it.kids) el.setAttribute('aria-expanded', String(kidsOpen));
             });
-            menu.querySelectorAll('.sb-kids').forEach(k => k.classList.toggle('open', kidsOpen));
             if (on && rail) {
                 const y = Math.max(12, Math.min(tabEl(tab).getBoundingClientRect().top, innerHeight - menu.offsetHeight - 12));
                 menu.style.setProperty('--sb-top', y + 'px');
@@ -132,12 +135,11 @@ const SideBar = (() => {
     function choose(key) {
         const { tab, it } = findItem(key);
         current = key;
-        if (it.kids) kidsOpen = !kidsOpen; else kidsOpen = key.startsWith('stats.games.');
         if (isRail()) open = null;
         lastTab = tab;
         const weakList = tab === 'stats' && !!statsWeak;              // la liste complète des points faibles remplace la page
         if (weakList) closeStatsWeak();
-        if (inGame() || activeTab() !== tab || weakList) switchHomeTab(tab);
+        if (inGame() || activeTab() !== tab || weakList) keepRail(() => switchHomeTab(tab));
         if (it.act) UI_ACTIONS[it.act](it.arg);
         if (it.run) it.run();
         if (it.press) {
@@ -158,13 +160,10 @@ const SideBar = (() => {
         if (!tab) return;
         const id = tab.id.slice(8);
         clearTimers();
-        if (isRail()) {
-            if (canHover()) { setOpen(null); return; }                // souris : le clic change d'onglet
-            e.stopPropagation();                                      // toucher : il ouvre le volet, qui mène à l'onglet
-            setOpen(open === id ? null : id);
-            return;
-        }
-        setOpen(open === id && activeTab() === id && !inGame() ? null : id);
+        if (!isRail()) return;                                        // étendue : le clic change d'onglet, son sous-menu suit (sync)
+        if (canHover()) { setOpen(null); return; }                    // souris : le clic change d'onglet
+        e.stopPropagation();                                          // toucher : il ouvre le volet, qui mène à l'onglet
+        setOpen(open === id ? null : id);
     }
 
     function onKey(e) {
@@ -199,9 +198,10 @@ const SideBar = (() => {
     // Un onglet changé ailleurs (raccourci, Suite, fin de partie), ou un passage du rail à la barre étendue.
     function sync() {
         if (!mounted) return;
+        if (document.documentElement.getAttribute('data-side') === 'wide') held = false;   // étendue ailleurs (Paramètres)
         const tab = activeTab(), rail = isRail();
         if (tab === lastTab && rail === lastRail) return;
-        if (tab !== lastTab && current && !current.startsWith(tab + '.')) { current = null; kidsOpen = false; }
+        if (tab !== lastTab && current && !current.startsWith(tab + '.')) current = null;
         lastTab = tab; lastRail = rail;
         open = rail ? null : tab;
         paint();
@@ -211,10 +211,9 @@ const SideBar = (() => {
         if (mounted) return;
         mounted = true;
         const nav = bar();
-        document.querySelector('.topnav-brand').insertAdjacentHTML('afterend', '<button type="button" class="side-toggle" id="side-toggle" data-action="sideToggle"></button>');
+        document.querySelector('.topnav-pill').insertAdjacentHTML('beforeend', '<button type="button" class="side-toggle" id="side-toggle" data-action="sideToggle"></button>');
         Object.keys(NAMES).forEach(id => {
             const tab = tabEl(id), menu = document.createElement('div');
-            tab.insertAdjacentHTML('beforeend', ico('chevron-down', 'sb-chev'));
             tab.setAttribute('role', 'button');
             tab.setAttribute('tabindex', '0');
             menu.className = 'sb-menu';
@@ -250,10 +249,10 @@ const SideBar = (() => {
         nav.removeEventListener('mouseleave', onLeave);
         document.removeEventListener('click', onDocClick);
         window.removeEventListener('resize', sync);
-        nav.querySelectorAll('.sb-menu, .sb-chev').forEach(el => el.remove());
+        nav.querySelectorAll('.sb-menu').forEach(el => el.remove());
         document.getElementById('side-toggle').remove();
         Object.keys(NAMES).forEach(id => ['role', 'tabindex', 'aria-expanded'].forEach(a => tabEl(id).removeAttribute(a)));
-        open = current = null; kidsOpen = false;
+        open = current = null;
     }
 
     function place(side) {
@@ -268,7 +267,7 @@ const SideBar = (() => {
 
     registerActions({
         sbChoose: key => choose(key),
-        sbRubric: tab => { current = null; kidsOpen = false; open = null; switchHomeTab(tab); paint(); },
+        sbRubric: tab => { current = null; open = null; keepRail(() => switchHomeTab(tab)); paint(); },
         sideToggle: () => toggle()
     });
 
@@ -276,8 +275,8 @@ const SideBar = (() => {
         const mq = matchMedia(MQ), large = matchMedia('(min-width: 1440px)');
         place(mq.matches);
         if (mq.addEventListener) mq.addEventListener('change', e => place(e.matches));
-        if (large.addEventListener) large.addEventListener('change', () => document.documentElement.setAttribute('data-side', sideBarMode()));
+        if (large.addEventListener) large.addEventListener('change', () => { held = false; document.documentElement.setAttribute('data-side', sideBarMode()); });
     }
 
-    return { place, toggle, MENUS };
+    return { place, toggle, MENUS, held: () => held };
 })();

@@ -135,8 +135,8 @@ const StatsOpenings = (function () {
         const s = g.stats;
         return `<div class="so-kpis">
             <div class="so-card so-kpi"><span>Score</span><b>${s.n ? pct(s.score) : '–'}</b><small>${_plural(s.n, 'partie')}</small>${wdlBar(s)}</div>
-            <div class="so-card so-kpi"><span>Face à l'attendu</span><b>${delta(fairDelta(s), ' pt')}</b><small>${s.expected === null ? 'Elo inconnu' : `Attendu : ${pct(s.expected)}`}</small></div>
-            <div class="so-card so-kpi"><span>Performance</span><b>${s.perf === null ? '–' : s.perf}</b><small>Elo équivalent</small></div>
+            <div class="so-card so-kpi"><span>Score face à l'attendu</span><b>${delta(fairDelta(s), ' %')}</b><small>${s.expected === null ? 'Elo inconnu' : `Attendu : ${pct(s.expected)}`}</small></div>
+            <div class="so-card so-kpi"><span>Niveau joué</span><b>${s.perf === null ? '–' : s.perf}</b><small>Elo d'après vos résultats</small></div>
             <div class="so-card so-kpi"><span>Maîtrise</span><b>${g.mastery === null ? '–' : `${g.mastery} / 100`}</b><small>Entraînement</small></div>
         </div>`;
     }
@@ -166,7 +166,7 @@ const StatsOpenings = (function () {
                 ${r.exitBad.n >= 3 ? fact('Score après une mauvaise sortie', pct(r.exitBad.score)) : ''}
                 ${r.exitClock === null ? '' : fact('Avance à l\'horloge', `${r.exitClock >= 0 ? '+' : '−'}${Math.abs(Math.round(r.exitClock))} %`)}</div>
             ${hist ? `<div class="so-card so-c6"><h5>Où le répertoire s'arrête</h5>
-                <div class="so-leg"><span><i class="so-bar-gap"></i>Réponse manquante</span><span><i class="so-bar-me"></i>Sortie de votre fait</span></div>${hist}</div>` : ''}
+                <div class="so-leg"><span><i class="so-bar-gap"></i>Réponse manquante</span><span><i class="so-bar-me"></i>Vous sortez du répertoire</span></div>${hist}</div>` : ''}
             ${replies.length ? `<div class="so-card so-c6"><h5>Réponses adverses</h5>
                 <div class="so-table">${replies.map(x => `<div class="so-tr"><span class="so-mv">${_moveLabel(x, false, true)}</span><span class="so-share"><i style="width:${Math.max(4, x.share * .6)}%"></i>${pct(x.share)}</span><span class="so-num">${pct(x.t.score)}</span><span class="so-state ${x.state}">${STATE[x.state]}</span></div>`).join('')}</div></div>` : ''}
             ${swaps.length ? `<div class="so-card so-c12"><h5>Coups joués à la place</h5>
@@ -238,7 +238,7 @@ const StatsOpenings = (function () {
         const shown = st.list.slice(0, MIRROR);
         const row = g => {
             const d = fairDelta(g.stats), moves = g.path.length && g.name !== _movesLabel(g.path) ? _movesLabel(g.path, true) : '';
-            const label = `${g.name} · ${g.all.length ? `maîtrise ${g.mastery} / 100` : 'hors répertoire'} · ${d === null ? _plural(g.stats.n, 'partie') : `${d >= 0 ? '+' : '−'}${num1(d)} pt`}`;
+            const label = `${g.name} · ${g.all.length ? `maîtrise ${g.mastery} / 100` : 'hors répertoire'} · ${d === null ? _plural(g.stats.n, 'partie') : `${d >= 0 ? '+' : '−'}${num1(d)} %`}`;
             return `<button type="button" class="so-mr${g.key === st.cur ? ' on' : ''}" data-action="statsOpPick" data-arg="${escapeHtml(g.key)}" aria-pressed="${g.key === st.cur}" aria-label="${escapeHtml(label)}">
                 <span class="so-mr-n">${sideDot(g.side)}<span class="so-txt"><b>${g.html}</b>${moves ? `<small>${moves}</small>` : ''}</span></span>
                 <span class="so-mr-p">${g.all.length ? levelBarHTML(g.counts, 'so-mr-bar') : '<span class="so-mr-out">Hors rép.</span>'}</span>
@@ -284,7 +284,7 @@ const StatsOpenings = (function () {
             <text x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle">Maîtrise à l'entraînement</text><text transform="translate(9 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Points face à l'attendu</text>`;
         pts.slice().sort((a, b) => b.stats.n - a.stats.n).forEach(o => {
             const r = 4 + Math.min(10, Math.sqrt(o.stats.n) * .8), cx = x(o.mastery), cy = y(o.stats.delta);
-            const label = `${o.name} · ${o.mastery} / 100 · ${o.stats.delta >= 0 ? '+' : '−'}${num1(o.stats.delta)} pt`;
+            const label = `${o.name} · ${o.mastery} / 100 · ${o.stats.delta >= 0 ? '+' : '−'}${num1(o.stats.delta)} %`;
             g += `<g class="so-point${o.key === st.cur ? ' sel' : ''}" tabindex="0" role="button" data-action="statsOpPick" data-arg="${escapeHtml(o.key)}" aria-label="${escapeHtml(label)}"><title>${escapeHtml(label)}</title><circle cx="${cx}" cy="${cy}" r="${Math.max(r, 12)}" fill="transparent"/><circle class="m ${o.stats.delta >= 0 ? 'up' : 'down'}" cx="${cx}" cy="${cy}" r="${r}"/></g>`;
         });
         return `<svg class="so-chart so-map" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carte des ouvertures, maîtrise et résultats">${g}</svg>`;

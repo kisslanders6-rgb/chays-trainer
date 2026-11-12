@@ -128,6 +128,23 @@ async function boot(lang) {
         assert(!re.test('/lang/en.json'));
     });
     await t('aucune erreur', () => assert.deepStrictEqual(errors, []));
+
+    await t('copie du dictionnaire périmée (texte ajouté depuis le choix de la langue) : renouvelée au lancement', async () => {
+        const full = JSON.parse(read('lang/en.json')), old = { ...full };
+        delete old['Révisions à venir'];
+        const { dom, errors: errs } = await bootApp({ before(win) {
+            win.localStorage.setItem('chessTrainer_settings', JSON.stringify({ lang: 'en' }));
+            win.localStorage.setItem('chays_langPack', JSON.stringify({ id: 'en', dict: old, at: 1 }));
+            win.fetch = async url => ({ ok: true, status: 200, json: async () => (/lang\/en\.json/.test(url) ? full : {}) });
+        } });
+        const win = dom.window;
+        await win.eval('I18n.refreshed()');
+        assert.strictEqual(win.eval(`I18n.t('Révisions à venir')`), 'Upcoming reviews', 'le nouveau dictionnaire sert aussitôt');
+        const copy = JSON.parse(win.localStorage.getItem('chays_langPack'));
+        assert.strictEqual(copy.dict['Révisions à venir'], 'Upcoming reviews', 'et au prochain lancement');
+        assert(copy.at > 1);
+        assert.deepStrictEqual(errs, []);
+    });
     console.log(`\n${n} tests réussis.`);
     process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

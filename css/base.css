@@ -49,6 +49,7 @@
     --err: #b4412f;
     --info: #2f4a26;
     --new: #2f6f96;
+    --warn: #c98f17;                       /* avertissement (conflit, à traiter, série) : l'ambre, distinct des niveaux */
 
     --board-light: #ecdab8;
     --board-dark: #7a9e5a;
@@ -57,14 +58,16 @@
     --shadow: 0 1px 2px rgba(47, 40, 20, .06), 0 14px 32px -16px rgba(47, 40, 20, .3);
     --shadow-sm: 0 1px 2px rgba(47, 40, 20, .06), 0 6px 16px -10px rgba(47, 40, 20, .2);
 
-    /* Niveaux de maîtrise d'une position (stats.js, STATS_LEVELS), du plus fragile au plus sûr */
+    /* Niveaux de maîtrise d'une position (stats.js, STATS_LEVELS), du plus fragile au plus sûr.
+       Échelle divergente lisible par tous les daltonismes (arbitrage du 12 novembre 2026) : vermillon → ambre → sable → bleu.
+       Le rouge et le vert restent aux pertes et aux gains (--err, --ok) ; aucun niveau n'est vert. */
     --lv-weak: var(--err);
-    --lv-fragile: #d4731c;
-    --lv-fragile-ink: #b25a10;
-    --lv-progress: #d9a21b;
-    --lv-solid: #7fa447;
+    --lv-fragile: #d98a2b;
+    --lv-fragile-ink: #94560f;
+    --lv-progress: #b9a074;
+    --lv-solid: #5c9ec4;
     --lv-unsure: #a3a593;
-    --lv-mastered: var(--ok);
+    --lv-mastered: #24607f;
 }
 
 /* ─── THÈME SOMBRE ────────────────────────────────────────────────────────────
@@ -96,6 +99,7 @@
     --err: #ef6b6b;
     --info: #6eae55;
     --new: #66b0f2;
+    --warn: #e6b443;
 
     --board-light: #ecdab8;
     --board-dark: #7a9e5a;
@@ -104,11 +108,12 @@
     --shadow: 0 14px 36px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .03);
 
-    --lv-fragile: #ee8a3e;
-    --lv-fragile-ink: #f29a55;
-    --lv-progress: #e6b443;
-    --lv-solid: #9fcb64;
+    --lv-fragile: #f0a046;
+    --lv-fragile-ink: #f2ad5e;
+    --lv-progress: #d6c39a;
+    --lv-solid: #7dbbe0;
     --lv-unsure: #74777c;
+    --lv-mastered: #4f9fd4;
     color-scheme: dark;
 }
 html[data-theme="dark"][data-dark="night"] {

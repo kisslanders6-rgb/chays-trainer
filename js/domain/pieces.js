@@ -66,8 +66,11 @@ function applyPieceSet() {
     document.documentElement.setAttribute('data-piece', id);
     _preloadPieceSet(set.src || id);
     // Figurines de la notation (formatSan) : le dessin du jeu actif, une variable CSS par pièce.
+    // Adresse absolue : un url() relatif dans une variable se résout depuis la feuille qui l'emploie (css/game.css),
+    // ce qui donnait css/assets/pieces/… introuvable.
     const root = document.documentElement.style;
-    'wb'.split('').forEach(c => 'KQRBN'.split('').forEach(t => root.setProperty(`--fig-${c}${t}`, `url("${PIECE_DIR}/${set.src || id}/${c}${t}.svg")`)));
+    const abs = f => new URL(`${PIECE_DIR}/${set.src || id}/${f}.svg`, document.baseURI).href;
+    'wb'.split('').forEach(c => 'KQRBN'.split('').forEach(t => root.setProperty(`--fig-${c}${t}`, `url("${abs(c + t)}")`)));
 
     const credit = document.getElementById('piece-credit');
     if (credit) credit.textContent = `${set.label} · ${set.author} · ${set.license}`;

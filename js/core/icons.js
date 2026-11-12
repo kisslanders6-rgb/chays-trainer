@@ -24,6 +24,8 @@ const _ICONS = {
     'x':             '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     'chevron-left':  '<path d="m15 18-6-6 6-6"/>',
     'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+    'panel-close':   '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="m16 15-3-3 3-3"/>',
+    'panel-open':    '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="m14 9 3 3-3 3"/>',
     'chevron-up':    '<path d="m18 15-6-6-6 6"/>',
     'chevron-down':  '<path d="m6 9 6 6 6-6"/>',
     'trash':         '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',

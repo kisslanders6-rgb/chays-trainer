@@ -199,6 +199,13 @@ function setStatus(msg, type = 'info', detail = '', opts = null) {
     if (!bar) return;
     bar.classList.remove('is-open');                     // petit écran : le détail ouvert au toucher se referme
     bar.dataset.type = type;
+    setStatusAction(opts);
+}
+
+// Pose (ou retire, sans opts) le bouton de la barre d'état sans toucher au texte : fin d'exercice, dont le titre peut être en train de se graver.
+function setStatusAction(opts) {
+    const bar = document.getElementById('status-bar');
+    if (!bar) return;
     const old = bar.querySelector('.status-act');
     if (old) old.remove();
     bar.classList.toggle('has-act', !!(opts && opts.action));

@@ -57,7 +57,7 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
         const list = titles();
         ['Votre niveau mois par mois', 'Contre qui perdez-vous des points ?', 'Quand jouez-vous le mieux ?', 'Savez-vous vous arrêter ?', 'Comment finissent vos parties ?', 'Jouer plus vous fait-il monter ?'].forEach(x => assert(list.includes(x), x));
         assert.strictEqual($$('#stats-games .si-heat i').length, 42);
-        assert(/Le temps décide 100 % de vos défaites/.test($('#stats-games').textContent), 'défaites toutes au temps');
+        assert(/100 % de vos défaites et .* de vos gains se jouent au temps/.test($('#stats-games').textContent), 'défaites toutes au temps');
     });
 
     await t('cadence : filtre les chiffres et règle la courbe d\'Elo', () => {
@@ -85,6 +85,17 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
     await t('courbe d\'Elo : l\'année figure sur l\'axe', () => {
         const axis = $$('#stats-games .sg-chart text.ax').slice(-2).map(e => e.textContent);
         axis.forEach(l => assert(/\b20\d\d\b/.test(l), l));
+    });
+
+    await t('courbe d\'Elo : l\'écart et les points suivent la période de la barre de filtres', async () => {
+        const kpi = () => $('#stats-games .st-reg-kpis span').textContent;
+        pick('statsInPeriod', '3'); await tick(100);
+        assert(/ sur 3 mois$/.test(kpi()), kpi());
+        assert.strictEqual(w.eval('StatsInsights.since()') > 0, true);
+        pick('statsInPeriod', '0'); await tick(100);
+        assert(/ sur tout l'historique$/.test(kpi()), kpi());
+        assert.strictEqual(w.eval('StatsInsights.since()'), 0);
+        pick('statsInPeriod', '12'); await tick(100);
     });
 
     await t('couleur de l\'onglet : aucune partie aux Noirs, message clair', () => {

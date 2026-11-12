@@ -227,22 +227,39 @@ const I18n = (function () {
     }
     // Recopie le dictionnaire puis recharge ; une erreur (hors ligne, stockage plein) laisse la langue actuelle.
     async function use(id) {
-        if (id !== 'fr') dataStore.set(PACK_KEY, JSON.stringify({ id, dict: await readPack(id) }));
+        if (id !== 'fr') dataStore.set(PACK_KEY, JSON.stringify({ id, dict: await readPack(id), at: Date.now() }));
         else dataStore.remove(PACK_KEY);
         Bus.emit('i18n:lang', id);
         location.reload();
     }
 
     // ─── DÉMARRAGE ───────────────────────────────────────────────────────────
+    // La copie chays_langPack sert le premier rendu ; elle est ensuite renouvelée depuis le paquet livré avec
+    // l'application (embarqué), ou retéléchargé une fois par jour (langue téléchargée) : sans cela, chaque texte
+    // ajouté après le choix de la langue resterait en français pour toujours. Le nouveau dictionnaire sert aux rendus
+    // suivants et au prochain lancement.
+    const REFRESH_MS = 864e5;
+    function refreshCopy(id, pack) {
+        const stale = !pack || !pack.at || Date.now() - pack.at > REFRESH_MS;
+        const fresh = EMBEDDED.includes(id) || !stale || (typeof navigator !== 'undefined' && navigator.onLine === false)
+            ? Promise.resolve() : download(id);
+        return fresh.then(() => readPack(id)).then(d => {
+            const same = pack && JSON.stringify(pack.dict) === JSON.stringify(d);
+            dataStore.set(PACK_KEY, JSON.stringify({ id, dict: d, at: same && !stale ? pack.at : Date.now() }));
+            if (!same && lang === id) install(id, d);
+        }).catch(() => { /* hors ligne : la copie actuelle reste */ });
+    }
+    let refreshed = Promise.resolve();
     (function boot() {
         const id = prefLang();
         if (id === 'fr') return;
+        let pack = null;
         try {
-            const pack = JSON.parse(dataStore.get(PACK_KEY) || 'null');
-            if (pack && pack.id === id) { install(id, pack.dict); return; }
-        } catch (e) { /* copie abîmée : relue ci-dessous */ }
+            pack = JSON.parse(dataStore.get(PACK_KEY) || 'null');
+            if (pack && pack.id === id) install(id, pack.dict); else pack = null;
+        } catch (e) { pack = null; /* copie abîmée : relue ci-dessous */ }
         // Copie absente (stockage vidé) : français pour cette fois, la langue revient au prochain lancement.
-        readPack(id).then(d => dataStore.set(PACK_KEY, JSON.stringify({ id, dict: d }))).catch(() => {});
+        refreshed = refreshCopy(id, pack);
     })();
     start();
 
@@ -257,6 +274,7 @@ const I18n = (function () {
         locale: () => LANGS[lang].locale,
         letters: () => LANGS[lang].letters,
         missing: () => [...missing],
+        refreshed: () => refreshed,
         install
     };
 })();
