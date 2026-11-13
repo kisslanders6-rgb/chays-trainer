@@ -43,21 +43,16 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
     const reset = () => w.eval('__calls = { train: [], session: [], queue: [] }');
     const primaries = () => $$('#home-tab-stats .btn-primary');
 
-    await t('positions dues : un seul .btn-primary, « Révision du jour »', () => {
+    await t('positions dues : Progrès observe, ni carte du jour ni action pleine (refonte, lot 2)', () => {
         seed(w, [-1, 2, 0, 5]);
-        assert.strictEqual(primaries().length, 1);
-        const b = primaries()[0];
-        assert.strictEqual(b.dataset.action, 'statsGoTraining');
-        assert.strictEqual(b.dataset.arg, 'due');
-        assert(/Révision du jour/.test(b.textContent));
+        assert.strictEqual(primaries().length, 0);
+        assert(!$('#home-tab-stats .st-today') && !$('#home-tab-stats .st-go'), 'la carte du jour est dans « Aujourd’hui »');
         assert.strictEqual($$('#home-tab-stats .st-cta').length, 0, 'plus de .st-cta dans les Statistiques');
     });
 
-    await t('tout à jour : un seul .btn-primary, « Points faibles » ; la prévision compte 7 jours', () => {
+    await t('tout à jour : aucune action pleine ; la prévision compte 7 jours', () => {
         seed(w, [2, 3, 1, 9]);
-        assert.strictEqual(primaries().length, 1);
-        assert.strictEqual(primaries()[0].dataset.arg, 'weak');
-        assert(/Points faibles/.test(primaries()[0].textContent));
+        assert.strictEqual(primaries().length, 0);
         const bars = $$('.st-fc > div');
         assert.strictEqual(bars.length, 7);
         assert(/3 positions/.test($('.st-fc-h b').textContent), 'trois échéances dans les 7 jours, la quatrième au-delà');

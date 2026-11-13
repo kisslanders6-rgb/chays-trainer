@@ -30,7 +30,6 @@
 'use strict';
 
 const STATS_WEAK_CARDS    = 3;
-const STATS_SECONDS_PER_POSITION = 30;
 const STATS_DAYS          = 30;
 const STATS_HEAT_WEEKS    = 12;     // calendrier : une colonne par semaine, de largeur partagée
 const STATS_WEAK_PAGE     = 30;     // « Points faibles › Tout voir » : positions montrées avant « Afficher les autres »
@@ -271,9 +270,8 @@ function _renderWeakList(body, rows, weakN, relearnN) {
 }
 
 // ─── À FAIRE ──────────────────────────────────────────────────────────────────
-// Trois constats au plus, chacun avec son action : le programme du jour (seule action pleine de la page),
-// l'ouverture qui coûte le plus de points, ce que disent les parties. Une carte sans assez de parties n'existe pas.
-let _statsToday = '';              // carte du jour, posée par initStats ; les deux autres suivent les parties
+// Deux constats au plus, chacun avec son lien : l'ouverture qui coûte le plus de points, ce que disent les parties.
+// Une carte sans assez de parties n'existe pas. Plus de carte du jour (lot 2 : elle est dans « Aujourd’hui »).
 
 const _todoCard = (kind, claim, ev, go, label) => `<article class="st-card st-todo-card edge-card">
         <span class="st-eyebrow">${kind}</span><p class="st-claim">${claim}</p>${ev}
@@ -304,7 +302,7 @@ function _todoGamesCard() {
 function _paintTodo() {
     const box = document.getElementById('stats-todo');
     if (!box) return;
-    const cards = [_statsToday, _todoOpeningCard(), _todoGamesCard()].filter(Boolean);
+    const cards = [_todoOpeningCard(), _todoGamesCard()].filter(Boolean);
     box.className = `st-todo n-${cards.length}`;
     box.innerHTML = cards.join('');
 }
@@ -354,7 +352,6 @@ function initStats() {
     // ou aucune position enregistrée (Ajouter une ligne, vers Jouer). Sans onglet : tout ce qui existe s'affiche.
     if (!rows.length) {
         _statsBare = true;
-        _statsToday = '';
         _renderStatsScope();
         const sides = statsColor === 'all' ? ['w', 'b'] : [statsColor];
         const stored = sides.reduce((n, side) => n + Object.keys(readDBFor(currentRepertoire, side)).length, 0);
@@ -380,27 +377,9 @@ function initStats() {
     const counts = _countLevels(rows);
     if (statsFilter !== 'all' && !counts[statsFilter]) statsFilter = 'all';     // le filtre actif s'est vidé
 
-    // ── Aujourd'hui ──
-    // Même programme que l'Entraînement › Révision du jour (reviewPlan) : révisions dues et nouvelles du jour.
+    // Programme des révisions (reviewPlan), pour la prévision. La carte du jour et son action ont rejoint
+    // « Aujourd’hui » (refonte « Chays sans détour », lot 2) : Progrès observe, sans bouton « réviser ».
     const rp = reviewPlan(currentRepertoire, now), inScope = c => statsColor === 'all' || c === statsColor;
-    const due = rows.filter(r => rp.today(r.side, r.k));
-    const dueWeak = due.filter(r => r.lv === 'weak').length;
-    const dueAll = rp.forecast(inScope, 1)[0];
-    const fresh = dueAll - due.length;
-    const next = dueAll ? 0 : rp.next(inScope);
-    const minutes = Math.max(1, Math.round(dueAll * STATS_SECONDS_PER_POSITION / 60));
-    // Seule action pleine de la page : Révision du jour, ou Points faibles quand tout est à jour.
-    _statsToday = `
-        <article class="vel-card vel-dark st-today edge-card">
-            <span class="st-eyebrow">Aujourd'hui · ${_sideName(statsColor)}</span>
-            ${dueAll ? `
-            <div class="st-big"><b>${dueAll}</b><span>${dueAll > 1 ? 'positions à réviser' : 'position à réviser'}</span></div>
-            <div class="st-today-sub">Environ ${minutes} min${dueWeak ? ` · <b>dont ${dueWeak} à retravailler</b>` : ''}${fresh ? ` · ${_plural(fresh, 'nouvelle', 'nouvelles')}` : ''}</div>
-            <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="due">Révision du jour ${ico('chevron-right')}</button>` : `
-            <div class="st-big st-big-text"><b>À jour</b></div>
-            <div class="st-today-sub">${Number.isFinite(next) ? `Prochaine révision ${dueInLabel(next)}.` : 'Aucune révision prévue.'}</div>
-            <button type="button" class="btn btn-primary st-go" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Points faibles ${ico('chevron-right')}</button>`}
-        </article>`;
 
     // Prévision : un total par jour (la case du jour compte aussi les retards), sans détail par niveau.
     const fc = rp.forecast(inScope, STATS_FORECAST_DAYS), fcMax = Math.max(1, ...fc), fcSum = fc.reduce((a, b) => a + b, 0);

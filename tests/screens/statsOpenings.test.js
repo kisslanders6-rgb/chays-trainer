@@ -64,9 +64,9 @@ const seedGames = async (w, games) => {
         assert($('#stats-lines .so-delta.down'));
     });
 
-    await t('« Réviser cette ouverture » reste .btn-soft : la page garde une seule action pleine', () => {
+    await t('« Réviser cette ouverture » reste .btn-soft : la page n\'a aucune action pleine', () => {
         assert($('#stats-lines .so-head .btn-soft'));
-        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 1);
+        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 0);
     });
 
     await t('parties rattachées par position, coup joué à la place, positions de la fiche', () => {
@@ -153,7 +153,7 @@ const seedGames = async (w, games) => {
         go.click();
         assert.strictEqual(w.eval('statsPane'), 'openings');
         assert(/italienne/i.test($('#so-trigger b').textContent));
-        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 1, 'une seule action pleine');
+        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 0, 'Progrès : aucune action pleine (refonte, lot 2)');
     });
 
     await t('filtre de niveau : seules les ouvertures qui en ont restent, ouverture concernée ouverte', () => {

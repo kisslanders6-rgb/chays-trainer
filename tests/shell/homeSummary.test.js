@@ -47,13 +47,14 @@ const seed = (w, dueW, dueB) => w.eval(`(() => {
         assert($('#hp-today .hp-start').classList.contains('edge-card'));
     });
 
-    await t('révisions dues : chiffre, anneau, position la plus en retard, une seule action « Commencer la révision » → startDailyReview', () => {
+    await t('révisions dues : chiffre, anneau, position la plus en retard, une seule action « Commencer » → startDailyReview', () => {
         seed(w, -3, -1);
         assert(!$('#hp-grid').classList.contains('is-empty'));
         assert.strictEqual(primaries().length, 1);
         const cta = primaries()[0];
-        assert.strictEqual(cta.dataset.action, 'homeReview');
-        assert(/Commencer la révision/.test(cta.textContent));
+        assert.strictEqual(cta.dataset.action, 'homeGo');
+        assert.strictEqual(cta.dataset.arg, 'due');
+        assert.strictEqual(cta.textContent.trim(), 'Commencer');
         assert(/^2\s+positions/.test($('#hp-today .hp-title').textContent.trim()));
         assert($('#hp-today .hp-over'), 'surtitre');
         assert($('#hp-today .ring.hp-goal[role="img"]'), 'anneau commun');
@@ -67,15 +68,48 @@ const seed = (w, dueW, dueB) => w.eval(`(() => {
         assert.strictEqual(w.__rev, 1);
     });
 
+    await t('plan du jour : erreurs, révisions, réponses après les parties, une finale ; « Commencer » prend la première qui reste', () => {
+        seed(w, -3, -1);
+        const ids = () => $$('#hp-today .hp-step').map(b => b.dataset.arg + (b.classList.contains('is-done') ? '✓' : ''));
+        assert.deepStrictEqual(ids(), ['due', 'endgame'], 'sans bilan ni nouveauté');
+        const due = $('#hp-today .hp-step[data-arg="due"]');
+        assert.strictEqual(due.querySelector('.hp-step-n').textContent, '2');
+        // Erreurs du dernier bilan : en tête, et « Commencer » les prend d'abord.
+        w.eval(`trainingState.lastSummary = { kind: 'due', rows: [{ ok: false, color: 'w', key: 'k1' }, { ok: true }] }; renderHomeSummary()`);
+        assert.deepStrictEqual(ids(), ['retry', 'due', 'endgame']);
+        assert.strictEqual(primaries()[0].dataset.arg, 'retry');
+        w.__retry = 0; w.eval(`const __r = UI_ACTIONS.trainingRetry; UI_ACTIONS.trainingRetry = () => { window.__retry++; }`);
+        primaries()[0].click();
+        assert.strictEqual(w.__retry, 1, '« Commencer » : les erreurs d\'abord');
+        w.eval(`trainingState.lastSummary = null`);
+        // À jour : révisions cochées, « Commencer » passe à la finale à suivre.
+        seed(w, 2, 4);
+        assert.deepStrictEqual(ids(), ['due✓', 'endgame']);
+        assert(/À jour/.test($('#hp-today .hp-step[data-arg="due"] small').textContent));
+        assert.strictEqual(primaries()[0].dataset.action, 'homeGo');
+        assert.strictEqual(primaries()[0].dataset.arg, 'endgame');
+        w.__eg = null; w.eval(`startEndgame = id => { window.__eg = id; }`);
+        $('#hp-today .hp-step[data-arg="endgame"]').click();
+        assert.strictEqual(w.__eg, w.eval('_egNext(readEndgameProgress()).id'), 'la ligne lance sa propre étape');
+        // Finale réussie aujourd'hui : tout est fait, l'action redevient « Ajouter une ligne ».
+        w.eval(`(() => { const p = {}; p[_egNext({}).id] = { tries: 1, wins: 1, perfect: true, best: 0, last: Date.now() };
+            dataStore.setJSON(ENDGAME_PROGRESS_KEY, p); renderHomeSummary(); })()`);
+        assert.deepStrictEqual(ids(), ['due✓', 'endgame✓']);
+        assert.strictEqual(primaries()[0].dataset.action, 'homeAddLine');
+        w.eval(`dataStore.setJSON(ENDGAME_PROGRESS_KEY, {}); renderHomeSummary()`);
+    });
+
     await t('« Autres exercices » ouvre l\'onglet Entraînement sans lancer de séance', () => {
+        seed(w, -3, -1);
         $('#hp-today .hp-link[data-action="homeExercises"]').click();
         assert(!$('#home-tab-training').classList.contains('hidden'));
         assert.strictEqual(w.eval('gameMode'), 'play');
         w.eval("switchHomeTab('play')");
     });
 
-    await t('à jour : une seule action « Ajouter une ligne » dans la couleur la moins fournie, prévision = programme des révisions (reviewPlan)', () => {
+    await t('tout fait : une seule action « Ajouter une ligne » dans la couleur la moins fournie, prévision = programme des révisions (reviewPlan)', () => {
         seed(w, 1, 3);
+        w.eval(`(() => { const p = {}; p[_egNext({}).id] = { tries: 1, wins: 1, perfect: true, best: 0, last: Date.now() }; dataStore.setJSON(ENDGAME_PROGRESS_KEY, p); })()`);
         // Une deuxième position aux Blancs : les Noirs deviennent la couleur la moins fournie.
         w.eval(`(() => { const db = readDBFor(currentRepertoire, 'w'), e = newEntry('g1f3', 'Nf3', ['e2e4', 'e7e5', 'g1f3']);
             e.due = Date.now() + 5 * 86400000; db[Chess.key(Chess.replay(['e2e4', 'e7e5']))] = e;

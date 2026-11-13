@@ -158,7 +158,7 @@ t('lecture de l\'écran de jeu selon la hauteur, zoom stable', () => {
 t('pages et ordinateur (Ergonomie, lot 5)', () => {
     const scr = fs.readFileSync('css/screens.css', 'utf8'), css = mainCss(), home = fs.readFileSync('css/home.css', 'utf8');
     assert(/#home-tab-stats > \.st-scope, #home-tab-training > \.st-scope \{ flex-wrap: nowrap; \}/.test(scr), 'Statistiques et Entraînement : puce et capsule sur une ligne');
-    assert(/#home-tab-stats \.st-go \{ display: none; \}/.test(scr), 'Statistiques : l\'action passe au centre du dock');
+    assert(!/#home-tab-stats \.st-go/.test(scr), 'Progrès : plus de carte du jour ni d\'action pleine (refonte, lot 2)');
     assert(/\.eg-sec:not\(\.is-open\) :is\(\.eg-sec-desc, \.eg-list\) \{ display: none; \}/.test(scr), 'Finales : catégories repliables');
     assert(/#game-screen\.is-analysis \.side-panel:not\(\.open\) \.ab-line:nth-child\(n\+3\)/.test(css) && /data-mode="analysis"\] \{ --read-h:/.test(css), 'Analyse : deux lignes au-dessus');
     assert(/#game-rep:has\(> \.rp-chip:disabled\), #game-side:has\(> \.cs-locked\) \{ display: none; \}/.test(css), 'puce et capsule verrouillées cachées');

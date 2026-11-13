@@ -4,8 +4,8 @@
  * Dock du téléphone (sous 600 px, Ergonomie « Sous la main », lot 3) : une seule barre de cinq cases, toujours aux
  * mêmes places, dont le centre porte la prochaine action et n'est jamais désactivé.
  *   Hors partie (#topnav-tabs-setup) : Jouer · Statistiques · centre · Entraînement · Finales.
- *     Centre : la capsule Suite (Revoir, Réviser, Traiter, À jour) et, sans elle, l'action pleine de l'accueil
- *     (#hp-today .hp-cta, cachée sur téléphone) ; à défaut, Entraînement. Sur Statistiques et Entraînement, l'action
+ *     Centre : l'action pleine d'« Aujourd’hui » (#hp-today .hp-cta, « Commencer » du plan du jour, cachée sur
+ *     téléphone) ; à défaut, Entraînement. Sur Statistiques et Entraînement, l'action
  *     principale de la page (.st-go, _trPrimary, « Commencer » de la finale à suivre), cachée ou atténuée sur téléphone (lot 5).
  *   En partie (.board-controls) : Retourner · ‹ · centre · › · Plus.
  *     Centre selon le mode : Sauter (mise en situation), Annuler (reçu d'un coup enregistré), Indice, sinon
@@ -41,16 +41,9 @@ const Dock = (function () {
     }
 
     // ─── CENTRE HORS PARTIE ───────────────────────────────────────────────────
-    const HOME_LABELS = { retry: 'Revoir', due: 'Réviser', news: 'Traiter', done: 'À jour' };
-    // Statistiques et Entraînement : le centre porte l'action principale de la page (lot 5), cachée ou atténuée sur téléphone.
+    // Entraînement et Finales : le centre porte l'action principale de la page (lot 5), atténuée sur téléphone. Progrès n'en a plus.
     function pageCenter() {
         const shownTab = id => { const t = document.getElementById(id); return t && !t.classList.contains('hidden') && t.style.display !== 'none'; };
-        if (shownTab('home-tab-stats')) {
-            const b = document.querySelector('#home-tab-stats .st-go');
-            if (b) return b.dataset.arg === 'weak'
-                ? { icon: 'flame', label: 'Faiblesses', tone: 'soft', title: 'Points faibles', run: () => b.click() }
-                : { icon: 'play', label: 'Réviser', title: 'Révision du jour', run: () => b.click() };
-        }
         if (shownTab('home-tab-training')) {
             const b = [...document.querySelectorAll('#home-tab-training .btn-primary, #home-tab-training .trr-next-row.is-primary')].find(x => x.offsetParent !== null || x.getClientRects().length);
             if (b) {
@@ -71,18 +64,9 @@ const Dock = (function () {
     function homeCenter() {
         const page = pageCenter();
         if (page) return page;
-        let st = null;
-        try { st = typeof Suite !== 'undefined' ? Suite.state() : null; } catch (e) { st = null; }
-        if (st && st.kind !== 'live') {
-            return {
-                icon: 'check', label: HOME_LABELS[st.kind], n: st.kind === 'done' ? null : st.n, title: st.label,
-                tone: st.kind === 'done' ? 'soft' : st.kind === 'retry' ? 'err' : '',
-                run: () => { if (UI_ACTIONS[st.action]) UI_ACTIONS[st.action](); }
-            };
-        }
         const cta = document.querySelector('#hp-today .hp-cta');
         if (cta) {
-            const act = cta.dataset.action, label = act === 'homeAddLine' && cta.id !== 'hp-start-cta' ? 'Ajouter' : act === 'homeReview' ? 'Réviser' : 'Commencer';
+            const act = cta.dataset.action, label = act === 'homeAddLine' && cta.id !== 'hp-start-cta' ? 'Ajouter' : 'Commencer';
             return { icon: act === 'homeAddLine' && cta.id !== 'hp-start-cta' ? 'plus' : 'play', label, title: cta.textContent.trim(), run: () => cta.click() };
         }
         return { icon: 'check', label: 'À jour', tone: 'soft', title: 'Entraînement', run: () => switchHomeTab('training') };

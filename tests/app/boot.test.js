@@ -30,7 +30,7 @@ async function boot(storage = {}) {
         assert.deepStrictEqual(errors, []);
         assert(w.document.getElementById('onboarding-overlay').classList.contains('hidden'));
         assert.deepStrictEqual(Object.keys(JSON.parse(w.localStorage.getItem('openingDB_Général_w'))), [legacy + ' KQkq -']);
-        assert(w.document.querySelector('#hp-today [data-action="homeReview"]'), 'position due : « Commencer la révision »');
+        assert(w.document.querySelector('#hp-today .hp-cta[data-action="homeGo"][data-arg="due"]'), 'position due : « Commencer » prend les révisions');
         assert(/1 position\s*à réviser/.test(w.document.querySelector('#hp-today .hp-title').textContent));
         w.close();
     });

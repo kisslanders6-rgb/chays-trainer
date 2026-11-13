@@ -1,8 +1,9 @@
 /**
  * shell/suite.js
  * ──────────────────────────────────────────────────────────────────────────
- * Capsule « Suite » de la barre du haut (#suite-chip) : toujours une suite proposée, au même endroit.
- * Son contenu suit le moment (Suite.state) :
+ * Capsule « Suite » de la barre du haut (#suite-chip). Refonte « Chays sans détour », lot 2 : hors séance, la suite
+ * est le plan du jour d'« Aujourd’hui » (_homeSteps, app.js) ; la capsule ne montre plus que la séance en cours (live).
+ * Les autres états restent décrits par Suite.next(), sans être affichés :
  *   live   séance guidée en cours : « 7 / 14 », anneau de la séance, série sans faute (×N dès 3)
  *   retry  bilan avec des erreurs : « Revoir 2 erreurs »            (action trainingRetry)
  *   due    positions à réviser aujourd'hui : « 5 à réviser · ≈ 3 min » (startDailyReview)
@@ -20,6 +21,7 @@ const Suite = (function () {
 
     const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 
+    // Ce que la capsule affiche : la séance guidée en cours, sinon rien.
     function state() {
         const S = trainingState.session;
         if (S && gameMode === 'training') {
@@ -27,6 +29,11 @@ const Suite = (function () {
             const n = S.items.length, pos = Math.min(n, (S.cur >= 0 ? S.cur : S.i) + 1);
             return { kind: 'live', label: `${pos} / ${n}`, short: `${pos} / ${n}`, value: pos, max: n, combo: trainingState.combo };
         }
+        return null;
+    }
+
+    // La suite hors séance (erreurs, révisions, nouveautés, objectif atteint) : plus affichée, gardée pour qui la lit.
+    function next() {
         const act = readActivity(), today = (act[dayStamp(Date.now())] || { a: 0 }).a, goal = appSettings.dailyGoal;
         const ring = { value: Math.min(today, goal), max: goal };
         const s = trainingState.lastSummary;
@@ -88,5 +95,5 @@ const Suite = (function () {
         suiteTraining: () => switchHomeTab('training')
     });
 
-    return { state, refresh, afterAnswer };
+    return { state, next, refresh, afterAnswer };
 })();

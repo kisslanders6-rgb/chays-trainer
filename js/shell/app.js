@@ -104,26 +104,14 @@ function _homeArtHTML(entries, color) {
 }
 
 // ─── ACCUEIL : AUJOURD'HUI, JOUER ─────────────────────────────────────────────
-// « Aujourd'hui » n'a qu'une action, selon l'état : révisions dues → Révision du jour (séance d'Entraînement,
-// startDailyReview) ; tout est à jour → une nouvelle ligne dans la couleur la moins fournie ; répertoire vide →
-// choisir une couleur. L'objectif du jour (anneau) et la série accompagnent l'action qui les fait avancer.
-
-const HOME_PLAN_MAX = 4;          // ouvertures listées sous « Au programme » ; les autres sont résumées
+// « Aujourd'hui » n'a qu'une action : « Commencer » lance la première étape du plan du jour (_homeSteps) ; tout est
+// fait → une nouvelle ligne dans la couleur la moins fournie ; répertoire vide → choisir une couleur. L'objectif du
+// jour (anneau) et la série accompagnent l'action qui les fait avancer.
 
 // Positions du répertoire actif groupées par ouverture nommée (même regroupement que les Statistiques).
 function _homePlan(list) {
     const rows = list.map(x => ({ side: x.color, k: x.key, e: x.e, path: x.e.path && x.e.path.length ? x.e.path : null }));
     return groupByOpening(rows).sort((a, b) => b.n - a.n);
-}
-
-function _homePlanHTML(title, list, muted) {
-    if (!list.length) return '';
-    const groups = _homePlan(list), shown = groups.slice(0, HOME_PLAN_MAX), max = Math.max(...shown.map(g => g.n));
-    const rest = groups.slice(HOME_PLAN_MAX).reduce((n, g) => n + g.n, 0);
-    return `<div class="hp-plan${muted ? ' is-muted' : ''}"><div class="hp-h"><h3>${title}</h3><span class="hp-n">${list.length}</span></div>
-        ${shown.map(g => `<div class="hp-plan-row"><i class="hp-k is-${g.side}" title="${g.side === 'w' ? 'Blancs' : 'Noirs'}"></i>
-            <span class="hp-plan-name">${g.html}</span><span class="hp-plan-bar"><i style="width:${Math.round(100 * g.n / max)}%"></i></span><b>${g.n}</b></div>`).join('')}
-        ${rest ? `<p class="hp-plan-more">et ${rest} dans ${groups.length - HOME_PLAN_MAX} autre${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''} ouverture${groups.length - HOME_PLAN_MAX > 1 ? 's' : ''}</p>` : ''}</div>`;
 }
 
 // Anneau de l'objectif du jour (positions jouées aujourd'hui, tous répertoires) : anneau commun (Ring, rings.js).
@@ -194,37 +182,93 @@ function renderHomeSummary() {
     }
 
     const link = `<button type="button" class="hp-link" data-action="homeExercises">Autres exercices ${ico('chevron-right')}</button>`;
-    let title, sub, focus = '', cta, plan;
+    let title, sub, focus = '', cta, plan = '';
+    const steps = _homeSteps(due, rp, now), next = steps.find(x => !x.done);
+    _homeStepsNow = steps;
     if (due.length) {
         // La position la plus en retard, telle qu'elle sera posée (avant mon coup).
-        const next = due.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
-        const path = next.e.path && next.e.path.length ? next.e.path : null, op = path ? openingNameOf(path) : null;
-        const d0 = dueOf(next.e), late = d0 ? Math.floor((now - d0) / DAY_MS) : 0, colors = new Set(due.map(r => r.color));
+        const nx = due.slice().sort((a, b) => dueOf(a.e) - dueOf(b.e))[0];
+        const path = nx.e.path && nx.e.path.length ? nx.e.path : null, op = path ? openingNameOf(path) : null;
+        const d0 = dueOf(nx.e), late = d0 ? Math.floor((now - d0) / DAY_MS) : 0, colors = new Set(due.map(r => r.color));
         const minutes = Math.max(1, Math.round(due.length * TRAIN_SECONDS_PER_POSITION / 60));
         title = `<em>${due.length}</em> ${due.length > 1 ? 'positions' : 'position'}<br>à réviser`;
         const fresh = due.filter(r => !r.e.attempts).length;
         sub = `<b>Environ ${minutes} min</b> · ${colors.size > 1 ? 'Blancs et Noirs' : colors.has('w') ? 'Blancs' : 'Noirs'}`
             + (fresh ? ` · dont ${pl(fresh, 'nouvelle', 'nouvelles')}` : '')
             + (today < goal ? ` · encore ${goal - today} pour l'objectif` : '');
-        focus = `<div class="hp-focus">${_miniBoardHTML({ side: next.color, path, k: next.key }, false, { cls: 'hp-focus-board', label: 'Position la plus en retard, avant votre coup' })}
+        focus = `<div class="hp-focus">${_miniBoardHTML({ side: nx.color, path, k: nx.key }, false, { cls: 'hp-focus-board', label: 'Position la plus en retard, avant votre coup' })}
             <span class="hp-focus-txt"><span class="hp-focus-over">La plus en retard${late >= 1 ? ` · ${late} j` : ''}</span>
             <b>${op ? escapeHtml(op.name) : 'Position de départ'}</b><span class="hp-focus-line">${path ? _homeLineBefore(path) : ''}</span>
-            <small>${next.color === 'w' ? 'Blancs' : 'Noirs'}</small></span></div>`;
-        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeReview">${ico('play')}Commencer la révision</button>${link}`;
-        plan = _homePlanHTML('Au programme', due);
+            <small>${nx.color === 'w' ? 'Blancs' : 'Noirs'}</small></span></div>`;
     } else {
-        // À jour : la prochaine révision, une ligne à ajouter dans la couleur la moins fournie, la prévision.
         const nextAt = rp.next();
-        const c = side('w').length <= side('b').length ? 'w' : 'b';
-        title = `Tout est <em>à jour</em>.`;
+        title = `Révisions <em>à jour</em>.`;
         sub = (Number.isFinite(nextAt) ? `Prochaine révision <b>${dueInLabel(nextAt, true)}</b>` : 'Aucune révision prévue') + (today >= goal ? ' · objectif atteint' : '');
-        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>${link}`;
         plan = _homeForecastHTML(rp.forecast(null, 7), now);
     }
-    host.innerHTML = `<div class="hp-day edge-card${due.length ? '' : ' is-done'}">${head}
+    if (next) {
+        // Une seule action : la première étape qui reste ; chaque ligne lance aussi la sienne.
+        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeGo" data-arg="${next.id}">${ico('play')}<span>Commencer</span></button>${link}`;
+    } else {
+        // Tout est fait : une nouvelle ligne dans la couleur la moins fournie.
+        const c = side('w').length <= side('b').length ? 'w' : 'b';
+        cta = `<button type="button" class="btn btn-primary hp-cta" data-action="homeAddLine" data-arg="${c}">${ico('plus')}Ajouter une ligne aux ${c === 'w' ? 'Blancs' : 'Noirs'}</button>${link}`;
+    }
+    host.innerHTML = `<div class="hp-day edge-card${next ? '' : ' is-done'}">${head}
         <div class="hp-head"><div><h2 class="hp-title">${title}</h2><p class="hp-sub">${sub}</p></div>${_homeGoalHTML(today, goal)}</div>
-        ${focus}<div class="hp-ctas">${cta}</div>${plan}</div>`;
+        ${focus}${_homeStepsHTML(steps)}<div class="hp-ctas">${cta}</div>${plan}</div>`;
     HomePanels.render();                         // À traiter : nouveautés des parties, dernières parties
+    if (typeof Dock !== 'undefined') Dock.refresh();   // le centre du dock reprend « Commencer », maintenant dessiné
+}
+
+// ─── PLAN DU JOUR (refonte « Chays sans détour », lot 2) ──────────────────────
+// Les étapes du jour, dans l'ordre où « Commencer » les prend : erreurs de la dernière séance, révisions dues
+// (Révision du jour : « À revoir » et « Traitée depuis » en tête), réponses à donner après vos parties, une finale.
+// Une étape faite reste affichée, cochée (révisions à jour, finale réussie aujourd'hui) ; une étape sans objet disparaît.
+let _homeStepsNow = [];
+
+function _homeSteps(due, rp, now) {
+    const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`, out = [];
+    const s = trainingState.lastSummary, miss = s && s.kind !== 'timed' ? s.rows.filter(r => !r.ok).length : 0;
+    if (miss) out.push({ id: 'retry', icon: 'rotate-ccw', tone: 'err', title: 'Erreurs de la séance', sub: 'À revoir tant qu’elles sont fraîches', n: miss });
+    if (due.length) {
+        const names = _homePlan(due).slice(0, 3).map(g => `<span>${g.html}</span>`).join(', ');
+        const back = due.filter(r => Number.isInteger(r.e.relearn) || r.e.prio).length;
+        out.push({ id: 'due', icon: 'book', title: 'Révisions', sub: names + (back ? ` · <span>dont ${back} à revoir</span>` : ''), n: due.length, html: true });
+    } else {
+        const at = rp.next();
+        out.push({ id: 'due', icon: 'book', title: 'Révisions', sub: Number.isFinite(at) ? `À jour · <span>Prochaine révision ${dueInLabel(at, true)}</span>` : 'À jour', html: true, done: true });
+    }
+    const news = HomePanels.novelties().length;
+    if (news) out.push({ id: 'news', icon: 'swords', tone: 'new', title: 'Après vos parties', sub: news > 1 ? 'Des réponses à trouver' : 'Une réponse à trouver', n: news });
+    if (typeof readEndgameProgress === 'function' && typeof _egNext === 'function') {
+        const prog = readEndgameProgress(), start = new Date(now).setHours(0, 0, 0, 0);
+        const won = ENDGAME_EXERCISES.find(e => prog[e.id] && prog[e.id].wins > 0 && prog[e.id].last >= start);
+        const ex = _egNext(prog);
+        if (won) out.push({ id: 'endgame', icon: 'finish-flag', tone: 'brass', title: 'Une finale', sub: `<span>${escapeHtml(won.title)}</span> · <span>faite aujourd’hui</span>`, html: true, done: true });
+        else if (ex) out.push({ id: 'endgame', icon: 'finish-flag', tone: 'brass', title: 'Une finale', sub: ex.title, n: 1, arg: ex.id });
+    }
+    return out;
+}
+
+function _homeStepsHTML(steps) {
+    return `<ol class="hp-steps" aria-label="Plan du jour">${steps.map(x => `<li><button type="button" class="hp-step${x.done ? ' is-done' : ''}" data-action="homeStep" data-arg="${x.id}"${x.done ? ' aria-disabled="true"' : ''}>
+        <span class="hp-step-ico${x.tone ? ' is-' + x.tone : ''}">${ico(x.done ? 'check' : x.icon)}</span>
+        <span class="hp-step-txt"><b>${x.title}</b><small>${x.html ? x.sub : escapeHtml(x.sub)}</small></span>
+        ${x.done ? '' : `<span class="hp-step-n">${x.n}</span>`}</button></li>`).join('')}</ol>`;
+}
+
+// Lance une étape du plan : ce que faisaient la capsule Suite, l'onglet Entraînement et les Finales.
+function homeRunStep(id) {
+    const x = _homeStepsNow.find(s => s.id === id);
+    if (!x || x.done) return;
+    if (id === 'retry') UI_ACTIONS.trainingRetry(null, null);
+    else if (id === 'due') startDailyReview();
+    else if (id === 'news') {
+        const answer = document.querySelector('#hp-news .hp-answer');
+        if (answer) answer.click();
+        else { const box = document.getElementById('hp-news'); if (box) box.scrollIntoView({ block: 'start' }); }
+    } else if (id === 'endgame') startEndgame(x.arg);
 }
 
 // Répertoire vide : la carte choisie donne sa couleur à l'unique action.
@@ -503,7 +547,8 @@ function goHome(tab) {
 }
 
 registerActions({ selectRepertoire, resumeLastPlay, createRepertoire: () => createRepertoirePrompt(), homeImportPgn: () => showPgnImport(),
-    homeReview: () => startDailyReview(), homeAddLine: c => startGame(c), homeExercises: () => switchHomeTab('training') });
+    homeReview: () => startDailyReview(), homeGo: () => { const x = _homeStepsNow.find(s => !s.done); if (x) homeRunStep(x.id); },
+    homeStep: id => homeRunStep(id), homeAddLine: c => startGame(c), homeExercises: () => switchHomeTab('training') });
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
 

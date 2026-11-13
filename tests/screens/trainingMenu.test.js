@@ -287,23 +287,22 @@ async function boot() {
         assert($('.trr-empty [data-action="homeImportPgn"].btn-soft'), 'Importer un PGN en action tonale');
     });
 
-    await t('capsule Suite : erreurs du bilan, sinon révisions, sinon nouveautés ou objectif ; cachée sans rien à proposer', () => {
-        const chip = () => $('#suite-slot .suite-chip'), slot = $('#suite-slot');
+    await t('capsule Suite hors séance : cachée (le plan du jour d’« Aujourd’hui » la remplace) ; Suite.next() garde la suite', () => {
+        const chip = () => $('#suite-slot .suite-chip'), slot = $('#suite-slot'), next = () => w.eval('(Suite.next() || {}).kind || null');
         w.eval(`goHome('training')`);
         seed({ dueIn: -1 });
         summary(2);
         w.eval('Suite.refresh()');
-        assert(!slot.hidden && chip().classList.contains('is-retry'), 'bilan avec erreurs');
-        assert.strictEqual(chip().dataset.action, 'suiteRetry');
-        assert(/Revoir 2 erreurs/.test(chip().textContent));
+        assert(slot.hidden && !chip(), 'bilan avec erreurs : capsule cachée');
+        assert.strictEqual(next(), 'retry');
         w.eval(`trainingState.lastSummary = null; Suite.refresh()`);
-        assert(chip().classList.contains('is-due') && /3 à réviser/.test(chip().textContent), 'positions dues : ' + chip().textContent);
-        assert.strictEqual(chip().dataset.action, 'suiteDue');
+        assert(slot.hidden && !chip(), 'positions dues : capsule cachée');
+        assert.strictEqual(next(), 'due');
         seed({ dueIn: 3 });
         w.eval(`dataStore.setJSON(ACTIVITY_KEY, {}); Suite.refresh()`);
-        assert(slot.hidden && !chip(), 'rien à proposer : cachée');
+        assert.strictEqual(next(), null, 'rien à proposer');
         w.eval(`dataStore.setJSON(ACTIVITY_KEY, { [dayStamp(Date.now())]: { a: appSettings.dailyGoal, f: 0 } }); Suite.refresh()`);
-        assert(chip().classList.contains('is-done'), 'objectif atteint');
+        assert(slot.hidden && next() === 'done', 'objectif atteint : décrit, pas affiché');
         w.eval(`dataStore.setJSON(ACTIVITY_KEY, {})`);
     });
 
