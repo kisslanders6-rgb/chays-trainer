@@ -105,11 +105,11 @@ t('aperçu : la barre du haut montre la catégorie de la position et la liste qu
     ctx._renderStatsBack('fragile', 'weak');
     assert(cat.innerHTML.includes('lv-chip lv-fragile') && cat.innerHTML.includes('lv-mark lv-fragile') && cat.innerHTML.includes('Fragile</span>'), cat.innerHTML);
     assert(cat.innerHTML.includes('· Points faibles'));
-    assert.strictEqual(btn.attrs['aria-label'], 'Retour aux Statistiques · Points faibles');
+    assert.strictEqual(btn.attrs['aria-label'], 'Retour à Progrès · Points faibles');
     ctx._renderStatsBack('mastered', 'Partie espagnole');
     assert(cat.innerHTML.includes('lv-chip lv-mastered') && cat.innerHTML.includes('· Partie espagnole'));
     ctx._renderStatsBack('weak', undefined);
-    assert(!cat.innerHTML.includes('tp-origin') && btn.attrs['aria-label'] === 'Retour aux Statistiques', 'sans origine : la puce seule');
+    assert(!cat.innerHTML.includes('tp-origin') && btn.attrs['aria-label'] === 'Retour à Progrès', 'sans origine : la puce seule');
     ctx.document.getElementById = getById;
     const html = fs.readFileSync('index.html', 'utf8');
     assert(/class="topnav-meta" data-modes-not="preview"/.test(html) && /class="topnav-meta topnav-preview" data-modes="preview"/.test(html), 'barre du haut : répertoire et couleur remplacés pendant l\'aperçu');

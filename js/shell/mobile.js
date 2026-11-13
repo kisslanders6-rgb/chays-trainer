@@ -211,7 +211,7 @@ function toggleToolbarMore(btn) {
     // Rejoindre un autre onglet de l'accueil (la barre du bas est cachée en partie) : switchHomeTab revient à l'accueil.
     if (gameMode === 'play') {
         if (menu.children.length) { const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep); }
-        [['stats', 'bar-chart', 'Statistiques'], ['training', 'flame', 'Entraînement'], ['endgame', 'finish-flag', 'Finales']].forEach(([tab, icon, label]) => {
+        [['stats', 'bar-chart', 'Progrès'], ['training', 'flame', 'Entraînement'], ['endgame', 'finish-flag', 'Finales']].forEach(([tab, icon, label]) => {
             const item = document.createElement('button');
             item.className = 'menu-item';
             item.setAttribute('role', 'menuitem');

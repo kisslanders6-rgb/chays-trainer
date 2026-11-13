@@ -21,7 +21,7 @@ const ONBOARDING_STEPS = [
     { icon: 'flame', title: 'Réviser dans Entraînement',
       text: 'L’application vous repose chaque position <strong>au bon moment</strong> : une réussite éloigne la prochaine révision, une erreur la ramène vite. Quelques minutes par jour suffisent.' },
     { icon: 'bar-chart', title: 'Suivre ses progrès',
-      text: 'Les <strong>Statistiques</strong> montrent ce qui est maîtrisé et ce qui reste fragile. <strong>Mes parties en ligne</strong> compare vos parties Lichess et Chess.com à votre répertoire.' }
+      text: 'L’onglet <strong>Progrès</strong> montre ce qui est maîtrisé et ce qui reste fragile. <strong>Mes parties en ligne</strong> compare vos parties Lichess et Chess.com à votre répertoire.' }
 ];
 
 let _obStep = 0, _obReturnFocus = null;

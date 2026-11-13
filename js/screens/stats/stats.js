@@ -579,7 +579,7 @@ function _renderStatsBack(lv, origin) {
     const btn = document.getElementById('stats-back'), cat = document.getElementById('stats-cat');
     if (!btn || !cat) return;
     const where = origin === 'weak' ? 'Points faibles' : origin || '';
-    const label = `Retour aux Statistiques${where ? ' · ' + where : ''}`;
+    const label = `Retour à Progrès${where ? ' · ' + where : ''}`;
     btn.title = label;
     btn.setAttribute('aria-label', label);
     cat.innerHTML = `<span class="lv-chip lv-${lv}">${_lvMark(lv)}${STATS_LEVELS[lv].one}</span>${where ? `<span class="tp-origin">· ${escapeHtml(where)}</span>` : ''}`;

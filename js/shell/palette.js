@@ -87,8 +87,8 @@ const Palette = (function () {
         const a = (id, icon, title, small, words, run, extra = {}) => ({ id: 'act:' + id, group: 'Actions', icon, title, small, words, run, ...extra });
         const due = reviewPlan(currentRepertoire).forecast(null, 1)[0] || 0;
         const list = [
-            a('play', 'swords', 'Jouer', 'Onglet', 'accueil répertoire', () => goHome('play'), { leave: true, keys: ['1'] }),
-            a('stats', 'bar-chart', 'Statistiques', 'Onglet', 'maîtrise régularité progrès', () => goHome('stats'), { leave: true, keys: ['2'] }),
+            a('play', 'swords', 'Aujourd’hui', 'Onglet', 'accueil répertoire jouer', () => goHome('play'), { leave: true, keys: ['1'] }),
+            a('stats', 'bar-chart', 'Progrès', 'Onglet', 'statistiques maîtrise régularité', () => goHome('stats'), { leave: true, keys: ['2'] }),
             a('training', 'flame', 'Entraînement', 'Onglet', 'exercices séance', () => goHome('training'), { leave: true, keys: ['3'] }),
             a('endgame', 'finish-flag', 'Finales', 'Onglet', 'exercices', () => goHome('endgame'), { leave: true, keys: ['4'] }),
             a('daily', 'flame', 'Révision du jour', due ? `${due} à réviser aujourd’hui` : 'Rien à réviser aujourd’hui', 'réviser répétition espacée séance',
@@ -96,7 +96,7 @@ const Palette = (function () {
             a('weak', 'flame', 'Points faibles', 'Exercice d’Entraînement', 'erreurs fragiles', () => { if (gameOpen()) goHome(); openTrainingFrom({ focus: 'weak' }); }, { leave: true }),
             a('white', 'swords', 'Jouer les Blancs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('w')), { leave: true, suggest: !due }),
             a('black', 'swords', 'Jouer les Noirs', 'Ajouter ou revoir une ligne', 'nouvelle ligne', fromHome(() => startGame('b')), { leave: true, suggest: !due }),
-            a('analysis', 'cpu', 'Analyse', 'Moteur et brouillon', 'stockfish moteur évaluation', () => UI_ACTIONS.helpAnalysis(), { leave: true, suggest: true }),
+            a('analysis', 'cpu', 'Échiquier libre', 'Analyse, moteur et brouillon', 'analyse stockfish moteur évaluation', () => UI_ACTIONS.helpAnalysis(), { leave: true, suggest: true }),
             a('games', 'microscope', 'Analyser mes parties', 'Lichess, Chess.com, PGN collé', 'importer lichess chesscom chess.com', () => showGameReview(), { leave: true, suggest: true }),
             a('import', 'upload', 'Importer un PGN', 'Ajouter des lignes au répertoire', 'fichier', () => showPgnImport(), { leave: true }),
             a('newrep', 'plus', 'Nouveau répertoire', 'Créer un répertoire', 'créer ajouter', () => createRepertoirePrompt(), { leave: true }),

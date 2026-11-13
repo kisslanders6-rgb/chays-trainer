@@ -14,7 +14,7 @@
 
 const SideBar = (() => {
     const MQ = '(min-width: 1100px)';
-    const NAMES = { play: 'Jouer', stats: 'Statistiques', training: 'Entraînement', endgame: 'Finales' };
+    const NAMES = { play: 'Aujourd’hui', stats: 'Progrès', training: 'Entraînement', endgame: 'Finales' };
 
     // Chaque entrée dit ce qu'elle fait, une fois sur le bon onglet :
     //   to     fait défiler jusqu'à cette section ;  act / arg  action enregistrée (registerActions) ;
@@ -24,13 +24,14 @@ const SideBar = (() => {
     const pane = p => () => UI_ACTIONS.statsPane(p);
     const MENUS = {
         play: [
-            { id: 'today', label: 'Aujourd’hui', to: '#hp-today' },
+            { id: 'today', label: 'Révisions du jour', to: '#hp-today' },
             { id: 'w', label: 'Avec les Blancs', run: () => startGame('w') },
             { id: 'b', label: 'Avec les Noirs', run: () => startGame('b') },
             { id: 'resume', label: 'Reprendre', press: RESUME, when: () => !!document.querySelector(RESUME) },
             { id: 'news', label: 'À traiter', to: '#hp-news' },
             { id: 'games', label: 'Analyser mes parties', act: 'homeGames' },
-            { id: 'pgn', label: 'Importer un PGN', act: 'homeImportPgn' }
+            { id: 'pgn', label: 'Importer un PGN', act: 'homeImportPgn' },
+            { id: 'board', label: 'Échiquier libre', act: 'helpAnalysis' }
         ],
         stats: [
             { id: 'overview', label: 'Maîtrise', run: pane('overview') },

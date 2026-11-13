@@ -221,8 +221,8 @@
                  (css/home.css). Les séparateurs sont dessinés en CSS entre deux onglets ; l'icône ne
                  s'affiche que dans la barre du bas. -->
             <div class="topnav-tabs" id="topnav-tabs-setup">
-                <div class="topnav-tab active" id="nav-tab-play"     title="Jouer" onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Jouer</span></div>
-                <div class="topnav-tab"        id="nav-tab-stats"    title="Statistiques" onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Statistiques</span></div>
+                <div class="topnav-tab active" id="nav-tab-play"     title="Aujourd’hui" onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Aujourd’hui</span></div>
+                <div class="topnav-tab"        id="nav-tab-stats"    title="Progrès" onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Progrès</span></div>
                 <!-- Téléphone : centre du dock, la prochaine action (Dock, js/core/dock.js) -->
                 <button type="button" class="topnav-tab nav-center" id="nav-center" onclick="Dock.runHome()"></button>
                 <div class="topnav-tab"        id="nav-tab-training" title="Entraînement" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
@@ -239,7 +239,7 @@
                 </div>
                 <!-- Aperçu d'une position des Statistiques : retour + catégorie de la position (rempli par openStatsPreview) -->
                 <div class="topnav-meta topnav-preview" data-modes="preview">
-                    <button type="button" class="tp-back" id="stats-back" onclick="statsBack()" aria-label="Retour aux Statistiques"><svg class="ico" aria-hidden="true"><use href="#i-chevron-left"/></svg><span class="tp-back-label">Statistiques</span></button>
+                    <button type="button" class="tp-back" id="stats-back" onclick="statsBack()" aria-label="Retour à Progrès"><svg class="ico" aria-hidden="true"><use href="#i-chevron-left"/></svg><span class="tp-back-label">Progrès</span></button>
                     <span class="tp-cat" id="stats-cat"></span>
                 </div>
             </div>
@@ -298,6 +298,7 @@
                         <div class="hp-tools">
                             <button type="button" class="hp-tool" data-action="homeGames" title="Analyser mes parties"><svg class="ico"><use href="#i-flame"/></svg><span>Analyser mes parties</span></button>
                             <button type="button" class="hp-tool" data-action="homeImportPgn" title="Importer un PGN"><svg class="ico"><use href="#i-upload"/></svg><span>Importer</span></button>
+                            <button type="button" class="hp-tool" data-action="helpAnalysis" title="Échiquier libre : moteur et brouillon, rien n’est écrit"><svg class="ico"><use href="#i-cpu"/></svg><span>Échiquier libre</span></button>
                         </div>
                         <div class="menu-wrap hp-menu">
                             <button class="menu-btn" id="rep-menu-btn" onclick="toggleRepMenu()" title="Actions sur les répertoires" aria-label="Actions sur les répertoires" aria-haspopup="true" aria-expanded="false">

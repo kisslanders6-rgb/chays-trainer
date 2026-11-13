@@ -17,9 +17,9 @@
 
 // Destinations des boutons : action déclarée par registerActions (data-action), argument facultatif.
 const HELP_TARGETS = {
-    play:       { label: 'Jouer',                action: 'helpTab', arg: 'play' },
+    play:       { label: 'Aujourd’hui',          action: 'helpTab', arg: 'play' },
     training:   { label: 'Entraînement',         action: 'helpTab', arg: 'training' },
-    stats:      { label: 'Statistiques',         action: 'helpTab', arg: 'stats' },
+    stats:      { label: 'Progrès',              action: 'helpTab', arg: 'stats' },
     endgame:    { label: 'Finales',              action: 'helpTab', arg: 'endgame' },
     games:      { label: 'Analyser mes parties', action: 'helpGames' },
     analysis:   { label: 'Analyse',              action: 'helpAnalysis' },
@@ -31,7 +31,7 @@ const HELP_TARGETS = {
 
 // count : ce que l'endroit fait évoluer (tone = modificateur de .vbadge).
 const HELP_GUIDES = [
-    { id: 'play', icon: 'swords', title: 'Jouer', sub: 'Construire ses lignes en jouant', to: 'play',
+    { id: 'play', icon: 'swords', title: 'Aujourd’hui', sub: 'Réviser, puis construire ses lignes en jouant', to: 'play',
       count: { label: 'Ne compte rien', tone: 'is-muted' },
       points: [
         'Choisissez un <strong>répertoire</strong> (puce en haut) et une couleur, puis jouez <strong>vos coups et ceux de l’adversaire</strong> : chaque coup adverse ouvre une branche.',
@@ -45,13 +45,13 @@ const HELP_GUIDES = [
         '<strong>Révision du jour</strong> (aussi « Commencer la révision » sur l’accueil), Points faibles, Ligne complète, À confirmer, Contre-la-montre et Mode libre.',
         'Chaque séance finit par un <strong>bilan</strong> ; une position ratée revient une fois en fin de séance.',
         'C’est le seul endroit qui fait évoluer <strong>statistiques et révisions</strong>.'] },
-    { id: 'stats', icon: 'bar-chart', title: 'Statistiques', sub: 'Voir ce qui tient et ce qui flanche', to: 'stats',
+    { id: 'stats', icon: 'bar-chart', title: 'Progrès', sub: 'Voir ce qui tient et ce qui flanche', to: 'stats',
       count: { label: 'Observe', tone: 'is-muted is-dashed' },
       points: [
         'Cinq niveaux de maîtrise par position ; « À confirmer » (moins de 3 essais) est montré à part. Toucher la barre ou la légende filtre la liste.',
         'Positions regroupées par <strong>ouverture nommée</strong> ; la régularité (série, calendrier) couvre tous les répertoires.',
-        'Les boutons ouvrent l’exercice d’<strong>Entraînement</strong> déjà filtré, sans lancer de séance : les Statistiques observent, l’Entraînement agit.',
-        'Aperçu d’une position : « S’entraîner » lance sa révision, « ‹ Statistiques » ramène au même endroit.'] },
+        'Les boutons ouvrent l’exercice d’<strong>Entraînement</strong> déjà filtré, sans lancer de séance : Progrès observe, l’Entraînement agit.',
+        'Aperçu d’une position : « S’entraîner » lance sa révision, « ‹ Progrès » ramène au même endroit.'] },
     { id: 'endgame', icon: 'finish-flag', title: 'Finales', sub: 'Gagner, annuler, mater', to: 'endgame',
       count: { label: 'Finales réussies seulement', tone: 'is-muted' },
       points: [

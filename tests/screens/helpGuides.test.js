@@ -145,12 +145,12 @@ const strip = s => s.replace(/<[^>]+>/g, '');
         w.closeTrash();
     });
 
-    await t('« Ouvrir Statistiques » ferme l’Aide et affiche l’onglet', () => {
+    await t('« Ouvrir Progrès » ferme l’Aide et affiche l’onglet', () => {
         w.showHelp('g-stats');
         content().querySelector('.btn-primary').click();
         assert(overlay().classList.contains('hidden'));
         const tab = doc.querySelector('#home-tab-stats:not(.hidden)');
-        assert(tab, 'onglet Statistiques non affiché');
+        assert(tab, 'onglet Progrès non affiché');
     });
 
     await t('aucune recherche vide : suggestions cliquables', () => {

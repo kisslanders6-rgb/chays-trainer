@@ -84,8 +84,8 @@ async function boot() {
         assert(titles().some(x => /Lucena/.test(x)), titles().join());
         type('caro-kann');
         assert(titles().some(x => /Caro/.test(x)), titles().join());
-        type('statistiques');
-        assert.strictEqual(titles()[0], 'Statistiques');
+        type('progrès');
+        assert.strictEqual(titles()[0], 'Progrès');
         press('Enter', {}, $('.pal-input'));
         assert(!P.isOpen());
         assert.strictEqual(w.document.querySelector('.topnav-tab.active').id, 'nav-tab-stats');
@@ -105,7 +105,7 @@ async function boot() {
     await t('en séance guidée, rien de ce qui quitte la séance n’est proposé', () => {
         w.eval(`trainingState.session = { kind: 'review', items: [{}], i: 0, cur: 0 }`);
         press('k', { ctrlKey: true });
-        type('statistiques');
+        type('progrès');
         assert(![...w.document.querySelectorAll('.pal-row small')].some(x => x.textContent === 'Onglet'), 'pas d’onglet à ouvrir');
         type('noyer');
         assert(titles().includes('Échiquier'), 'les réglages restent');

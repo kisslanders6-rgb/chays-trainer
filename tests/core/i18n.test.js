@@ -21,7 +21,7 @@ async function boot(lang) {
     const fr = await boot();
     await t('français par défaut : aucune traduction, onglets inchangés', () => {
         assert.strictEqual(fr.w.eval('I18n.lang()'), 'fr');
-        assert.strictEqual(fr.$('#nav-tab-play span').textContent, 'Jouer');
+        assert.strictEqual(fr.$('#nav-tab-play span').textContent, 'Aujourd’hui');
         assert.strictEqual(fr.w.eval(`I18n.t('Jouer')`), 'Jouer');
         assert.deepStrictEqual(fr.errors, []);
     });
@@ -30,8 +30,8 @@ async function boot(lang) {
     const add = html => { const d = w.document.createElement('div'); d.innerHTML = html; w.document.body.appendChild(d); return d; };
 
     await t('anglais : page, attributs et langue du document', () => {
-        assert.strictEqual($('#nav-tab-play span').textContent, 'Play');
-        assert.strictEqual($('#nav-tab-stats span').textContent, 'Statistics');
+        assert.strictEqual($('#nav-tab-play span').textContent, 'Today');
+        assert.strictEqual($('#nav-tab-stats span').textContent, 'Progress');
         assert.strictEqual(w.document.documentElement.lang, 'en');
         assert.strictEqual(w.eval(`I18n.t('Paramètres')`), 'Settings');
     });
@@ -76,7 +76,7 @@ async function boot(lang) {
         assert(w.eval(`PanelKit.matches('settings', 'Paramètres')`));
         w.eval('Palette.open()');
         const i = $('.pal-input');
-        i.value = 'statistics';
+        i.value = 'progress';
         i.dispatchEvent(new w.Event('input', { bubbles: true }));
         assert(w.document.querySelectorAll('.pal-row').length > 0);
         w.eval('Palette.close()');
