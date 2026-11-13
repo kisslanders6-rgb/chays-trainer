@@ -58,20 +58,16 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
         assert(/3 positions/.test($('.st-fc-h b').textContent), 'trois échéances dans les 7 jours, la quatrième au-delà');
     });
 
-    await t('« Points faibles » et « Réviser cette ouverture » : .btn-soft, openTrainingFrom, aucune séance', () => {
+    await t('« Points faibles » : .btn-soft, openTrainingFrom, aucune séance', () => {
         seed(w, [-1, 2, 0, 5]);
         reset();
         const weak = $('.st-weak .st-golink');
         assert(weak.classList.contains('btn-soft') && !weak.classList.contains('btn-primary'));
         weak.click();
-        const rev = $('#stats-lines .st-golink');
-        assert(rev && rev.classList.contains('btn-soft'), 'ouverture dépliée avec des positions dues');
-        rev.click();
         const c = calls();
-        assert.strictEqual(c.train.length, 2);
+        assert.strictEqual(c.train.length, 1);
         assert.deepStrictEqual(c.train[0], { color: 'all', focus: 'weak' });
-        assert.strictEqual(c.train[1].focus, 'due');
-        assert(c.train[1].opening && c.train[1].color === 'w');
+        assert(!$('#home-tab-stats #stats-lines'), 'la fiche d’ouverture a quitté Progrès (lot 3)');
         assert.deepStrictEqual(c.session, [], 'aucune séance lancée');
         assert.deepStrictEqual(c.queue, []);
     });
@@ -204,12 +200,11 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
         assert(!$('#stats-weak-all'));
     });
 
-    await t('téléphone : la barre et la légende mènent à l\'onglet Ouvertures, où la liste est visible', () => {
+    await t('la barre et la légende mènent à l\'onglet Ouvertures, où la liste est visible', () => {
         seedWeak();
-        $('#stats-lines').style.display = 'none';                   // ce que fait la requête de conteneur dans l'onglet Aperçu
         $('.st-legend .st-lg[data-arg="weak"]').click();
         assert.strictEqual(w.eval('statsFilter'), 'weak');
-        assert($('#stats-body').classList.contains('pane-openings'));
+        assert(!$('#home-tab-openings').classList.contains('hidden') && $('#home-tab-openings #stats-lines'), 'onglet Ouvertures affiché');
         w.eval(`statsPane = 'overview'; statsFilter = 'all'`);
     });
 

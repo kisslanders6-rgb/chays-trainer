@@ -211,7 +211,7 @@ function toggleToolbarMore(btn) {
     // Rejoindre un autre onglet de l'accueil (la barre du bas est cachée en partie) : switchHomeTab revient à l'accueil.
     if (gameMode === 'play') {
         if (menu.children.length) { const sep = document.createElement('div'); sep.className = 'menu-sep'; sep.setAttribute('role', 'separator'); menu.appendChild(sep); }
-        [['stats', 'bar-chart', 'Progrès'], ['training', 'flame', 'Entraînement'], ['endgame', 'finish-flag', 'Finales']].forEach(([tab, icon, label]) => {
+        [['openings', 'book', 'Ouvertures'], ['endgame', 'finish-flag', 'Finales'], ['stats', 'bar-chart', 'Progrès']].forEach(([tab, icon, label]) => {
             const item = document.createElement('button');
             item.className = 'menu-item';
             item.setAttribute('role', 'menuitem');
@@ -241,9 +241,9 @@ window.addEventListener('resize', closeToolbarMore);
 document.addEventListener('DOMContentLoaded', () => {
     updateInstallRow();
 
-    // Raccourcis d'icône : /?tab=stats  /?tab=training  /?tab=endgame
+    // Raccourcis d'icône : /?tab=openings  /?tab=stats  /?tab=training  /?tab=endgame
     const tab = new URLSearchParams(location.search).get('tab');
-    if (['play', 'stats', 'training', 'endgame'].includes(tab) && typeof switchHomeTab === 'function') switchHomeTab(tab);
+    if (typeof HOME_TABS !== 'undefined' && HOME_TABS.includes(tab)) switchHomeTab(tab);
 
     // Vibration sur coup refusé
     if (navigator.vibrate && typeof playSound === 'function' && !playSound._vib) {

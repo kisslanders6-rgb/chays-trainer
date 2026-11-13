@@ -75,7 +75,7 @@ async function boot(storage = {}) {
         assert(!shown($('#preview-lichess')));
         w.eval(`startTraining('w')`);
         assert(tabsHidden(), 'training');
-        assert.strictEqual(activeTab(), 'training');
+        assert.strictEqual(activeTab(), 'play', 'séance : Aujourd’hui (Entraînement hors de la barre)');
         assert(!shown($('#side-tab-moves')), 'training : onglets cachés');
         w.eval(`startEndgame(ENDGAME_EXERCISES[0].id)`);
         assert(tabsHidden(), 'endgame');

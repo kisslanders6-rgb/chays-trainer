@@ -1,4 +1,4 @@
-// Lancer : node tests/screens/statsOpenings.test.js   — Statistiques › Par ouverture : une seule fiche, sélecteur (recherche, clavier, carte),
+// Lancer : node tests/screens/statsOpenings.test.js   — onglet Ouvertures (avant : Statistiques › Par ouverture) : une seule fiche, sélecteur (recherche, clavier, carte),
 // parties rattachées par position, filtre de niveau. Charge index.html entier dans jsdom.
 const { bootApp } = require('../_app.js');
 const assert = require('assert');
@@ -48,6 +48,7 @@ const seedGames = async (w, games) => {
 
     seedRep(w);
     await seedGames(w, [...Array(6).fill({ pgn: PGN.ita, r: 'l' }), { pgn: PGN.left, r: 'd' }, ...Array(4).fill({ pgn: PGN.sic, r: 'w' })]);
+    w.eval(`switchHomeTab('openings')`);              // la fiche vit dans l'onglet Ouvertures (refonte, lot 3)
 
     await t('une seule fiche et aucune liste entière, quel que soit le nombre d\'ouvertures', () => {
         assert.strictEqual($$('#stats-lines .so-fiche').length, 1);
@@ -64,9 +65,32 @@ const seedGames = async (w, games) => {
         assert($('#stats-lines .so-delta.down'));
     });
 
-    await t('« Réviser cette ouverture » reste .btn-soft : la page n\'a aucune action pleine', () => {
-        assert($('#stats-lines .so-head .btn-soft'));
-        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 0);
+    await t('Réviser : une seule action pleine qui lance la séance de l\'ouverture, trois variantes en puces', () => {
+        assert.strictEqual($$('#home-tab-openings .btn-primary').length, 1);
+        const go = $('#stats-lines .so-review .so-go');
+        assert(go && /Réviser · \d+/.test(go.textContent), 'positions dues : Réviser · N');
+        assert.deepStrictEqual($$('#stats-lines .so-chip[data-action="opReview"]').map(b => b.dataset.arg.split(':')[0]), ['weak', 'line', 'unsure']);
+        assert($('#stats-lines .so-chip[data-action="opFree"]'), 'Échiquier libre');
+        w.eval(`window.__or = []; window.__sor = startOpeningReview; startOpeningReview = o => window.__or.push(o.color + ' ' + o.kind + ' ' + o.opening.name + ' ' + o.path.length)`);
+        go.click();
+        $('#stats-lines .so-chip[data-arg^="line:"]').click();
+        const got = w.eval('window.__or.join("|")');
+        assert(/^w due .*italienne.* \d+\|w line .*italienne/i.test(got), got);
+        w.eval(`startOpeningReview = window.__sor`);
+        assert.strictEqual($$('#home-tab-stats .btn-primary').length, 0, 'Progrès : toujours aucune action pleine');
+    });
+
+    await t('arbre des coups appris : une ligne par réponse, décalée sous celles qui la précèdent, toucher ouvre l\'aperçu', () => {
+        const rows = $$('#stats-lines .so-tree-row');
+        // Les premiers coups (1. e4, 2. Cf3) appartiennent aux ouvertures plus générales : ici, les deux réponses de la variante.
+        assert.strictEqual(rows.length, 2, rows.map(r => r.textContent.trim()).join(' / '));
+        assert.deepStrictEqual(rows.map(r => r.style.getPropertyValue('--d')), ['0', '1']);
+        assert(/3\.\s*[FB]c4/.test(rows[0].textContent) && /4\.\s*c3/.test(rows[1].textContent), rows.map(r => r.textContent.trim()).join(' / '));
+        rows[1].click();
+        assert.strictEqual(w.eval('gameMode'), 'preview');
+        assert.strictEqual(w.document.querySelector('#topnav-tabs-setup .topnav-tab.active').id, 'nav-tab-openings', 'aperçu : onglet Ouvertures marqué');
+        w.eval('statsBack()');
+        assert(!$('#home-tab-openings').classList.contains('hidden'), 'retour à l\'onglet Ouvertures');
     });
 
     await t('parties rattachées par position, coup joué à la place, positions de la fiche', () => {
@@ -92,14 +116,14 @@ const seedGames = async (w, games) => {
     });
 
     await t('choisir au clavier change la fiche sans redessiner la page', () => {
-        const today = $('.st-today');
+        const scopeBar = $('#op-rep').firstElementChild;
         $('#so-trigger').click();
         typed('SÍCIL');
         key($('#so-picker .so-p-search'), 'ArrowDown');
         key($('#so-picker .so-p-search'), 'Enter');
         assert(!$('#so-picker'));
         assert(/sicilienne/i.test($('#so-trigger b').textContent));
-        assert.strictEqual($('.st-today'), today, 'le reste de la page n\'est pas reconstruit');
+        assert.strictEqual($('#op-rep').firstElementChild, scopeBar, 'le reste de la page n\'est pas reconstruit');
     });
 
     await t('flèches : passe à l\'ouverture suivante à travailler, et revient', () => {
@@ -127,7 +151,7 @@ const seedGames = async (w, games) => {
     await t('période : celle de la barre de contexte, recalcule sans changer d\'ouverture', () => {
         const a = $('#so-trigger b').textContent;
         assert(!$('#stats-lines [data-action="statsOpPeriod"]'), 'plus de période propre à la fiche');
-        assert($('#stats-filters [data-dd-action="statsInPeriod"]'), 'période dans la barre de contexte');
+        assert($('#op-filters [data-dd-action="statsInPeriod"]'), 'période dans la barre de contexte');
         w.eval(`UI_ACTIONS.statsInPeriod('3')`);
         assert.strictEqual($('#so-trigger b').textContent, a);
         w.eval(`UI_ACTIONS.statsInPeriod('12')`);
@@ -146,18 +170,18 @@ const seedGames = async (w, games) => {
     });
 
     await t('« À faire » : l\'ouverture qui coûte le plus mène à sa fiche, onglet Ouvertures', () => {
-        w.eval(`statsPane = 'overview'; initStats()`);
+        w.eval(`switchHomeTab('stats'); statsPane = 'overview'; initStats()`);
         const go = $('#stats-todo [data-action="statsTodoGo"][data-arg^="openings|"]');
         assert(go, 'constat d\'ouverture présent');
         assert(/italienne/i.test(go.closest('.st-todo-card').textContent));
         go.click();
-        assert.strictEqual(w.eval('statsPane'), 'openings');
+        assert(!$('#home-tab-openings').classList.contains('hidden'), 'onglet Ouvertures affiché');
         assert(/italienne/i.test($('#so-trigger b').textContent));
         assert.strictEqual($$('#home-tab-stats .btn-primary').length, 0, 'Progrès : aucune action pleine (refonte, lot 2)');
     });
 
     await t('filtre de niveau : seules les ouvertures qui en ont restent, ouverture concernée ouverte', () => {
-        w.eval(`statsFilter = 'all'; initStats()`);
+        w.eval(`statsFilter = 'all'; switchHomeTab('stats'); initStats()`);
         $('.st-legend .st-lg[data-arg="mastered"]').click();
         assert.strictEqual(w.eval('statsFilter'), 'mastered');
         assert(/sicilienne/i.test($('#so-trigger b').textContent), $('#so-trigger b').textContent);
@@ -169,7 +193,7 @@ const seedGames = async (w, games) => {
             const p = 'e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3 g8f6 d2d3 d7d6 e1g1 e8g8 f1e1 a7a6 h2h3 h7h6 b1d2 b7b6 d2f1 c8b7 f1g3 d8d7 a2a4'.split(' '), db = {};
             for (let k = 0; k < p.length; k += 2) { const path = p.slice(0, k + 1), pos = Chess.replay(path.slice(0, -1));
                 db[Chess.key(pos)] = { move: path[k], san: Chess.san(pos, path[k]), attempts: 6, failures: 4 - k / 8, path, ply: path.length, due: Date.now() + 864e5, interval: 3, created: 1 }; }
-            dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db)); statsColor = 'all'; statsFilter = 'all'; initStats();
+            dataStore.set(dbKeyFor(currentRepertoire, 'w'), JSON.stringify(db)); statsColor = 'all'; statsFilter = 'all'; switchHomeTab('openings');
         })()`);
         $('#so-trigger').click();
         typed('pianissimo');
@@ -191,6 +215,7 @@ const seedGames = async (w, games) => {
     await t('partie hors répertoire : fiche sans maîtrise, classée à part', async () => {
         seedRep(w);
         await seedGames(w, Array(3).fill({ id: 'hors', pgn: '1. d4 d5 2. c4', r: 'w' }));
+        w.eval(`switchHomeTab('openings')`);
         $('#so-trigger').click();
         assert(/Hors répertoire/.test($('#so-picker .so-p-body').textContent));
         key($('#so-picker .so-p-search'), 'Escape');

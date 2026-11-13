@@ -60,6 +60,7 @@
     padding: 0 var(--tab-px); border: 0; border-radius: 0; background: none;
 }
 .topnav-tab .ico { display: none; width: 20px; height: 20px; flex: none; }
+#topnav-tabs-setup > .topnav-tab.is-offbar { display: none; }     /* Entraînement hors de la barre (refonte, lot 3) */
 /* Séparateur dessiné par chaque onglet qui en suit un autre : centré, jamais orphelin */
 .topnav-tab + .topnav-tab::before {
     content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 16px; margin-top: -8px; background: var(--border);

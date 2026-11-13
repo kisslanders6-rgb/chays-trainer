@@ -42,12 +42,12 @@ const PGN = `1. e4 ${clk(2, 58)} 1... e5 ${clk(2, 50)} 2. Nf3 ${clk(2, 56)} 2...
         assert(!$('#stats-filters').hidden);
     });
 
-    await t('filtres : cachés sur Maîtrise, présents sur Ouvertures', () => {
+    await t('filtres : cachés sur Maîtrise, présents dans l’onglet Ouvertures', () => {
         w.eval(`UI_ACTIONS.statsPane('overview')`);
         assert($('#stats-filters').hidden && !$('#stats-filters .si-bar'));
-        w.eval(`UI_ACTIONS.statsPane('openings')`);
-        assert(!$('#stats-filters').hidden && $('#stats-filters .si-bar'));
-        w.eval(`UI_ACTIONS.statsPane('games')`);
+        w.eval(`switchHomeTab('openings')`);
+        assert(!$('#op-filters').hidden && $('#op-filters .si-bar'), 'onglet Ouvertures : même barre de filtres');
+        w.eval(`switchHomeTab('stats'); UI_ACTIONS.statsPane('games')`);
     });
 
     await t('Bilan : chiffres, records et cartes attendues', () => {

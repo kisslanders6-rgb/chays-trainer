@@ -41,9 +41,13 @@ const Dock = (function () {
     }
 
     // ─── CENTRE HORS PARTIE ───────────────────────────────────────────────────
-    // Entraînement et Finales : le centre porte l'action principale de la page (lot 5), atténuée sur téléphone. Progrès n'en a plus.
+    // Ouvertures, Entraînement et Finales : le centre porte l'action principale de la page (lot 5), atténuée sur téléphone. Progrès n'en a plus.
     function pageCenter() {
         const shownTab = id => { const t = document.getElementById(id); return t && !t.classList.contains('hidden') && t.style.display !== 'none'; };
+        if (shownTab('home-tab-openings')) {                     // Ouvertures (lot 3) : « Réviser » de la fiche ouverte
+            const b = document.querySelector('#home-tab-openings .so-go');
+            if (b) return { icon: 'play', label: 'Réviser', title: b.textContent.trim().replace(/\s+/g, ' '), run: () => b.click() };
+        }
         if (shownTab('home-tab-training')) {
             const b = [...document.querySelectorAll('#home-tab-training .btn-primary, #home-tab-training .trr-next-row.is-primary')].find(x => x.offsetParent !== null || x.getClientRects().length);
             if (b) {

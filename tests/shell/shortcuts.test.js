@@ -31,9 +31,11 @@ async function boot() {
 
     await t('1 à 4 : onglets, par la position de la touche (AZERTY sans Maj) et le pavé numérique', () => {
         press('é', { code: 'Digit2' });
-        assert.strictEqual(activeTab(), 'nav-tab-stats');
-        press('4', { code: 'Numpad4' });
+        assert.strictEqual(activeTab(), 'nav-tab-openings');
+        press('"', { code: 'Digit3' });
         assert.strictEqual(activeTab(), 'nav-tab-endgame');
+        press('4', { code: 'Numpad4' });
+        assert.strictEqual(activeTab(), 'nav-tab-stats');
         press('&', { code: 'Digit1' });
         assert.strictEqual(activeTab(), 'nav-tab-play');
     });

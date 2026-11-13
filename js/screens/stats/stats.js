@@ -225,7 +225,7 @@ function _renderStatsFilters() {
     const box = document.getElementById('stats-filters');
     if (!box) return;
     const games = StatsGames.games();
-    const show = !statsWeak && !!(games && games.length) && (_statsBare || statsPane === 'openings' || statsPane === 'games');
+    const show = !statsWeak && !!(games && games.length) && (_statsBare || statsPane === 'games');
     box.innerHTML = show ? StatsInsights.filtersHTML(games) : '';
     box.hidden = !show;
 }
@@ -425,10 +425,10 @@ function initStats() {
             <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
         </section>`;
 
-    // ── Par ouverture ── la liste « miroir » et une seule fiche (statsOpenings.js).
-    const openings = StatsOpenings.sectionHTML({ rows, counts, rp });
+    // ── Par ouverture ── la fiche vit dans l'onglet Ouvertures (lot 3) ; ici, seulement de quoi nourrir le constat « À faire ».
+    StatsOpenings.prime({ rows, counts, rp });
 
-    const tabs = [['overview', 'Maîtrise'], ['openings', 'Ouvertures'], ['games', 'Parties'], ['regularity', 'Régularité']].filter(([p]) => p !== 'regularity' || reg);
+    const tabs = [['overview', 'Maîtrise'], ['games', 'Parties'], ['regularity', 'Régularité']].filter(([p]) => p !== 'regularity' || reg);
     if (!tabs.some(([p]) => p === statsPane)) statsPane = 'overview';
     _renderStatsScope();
 
@@ -439,7 +439,6 @@ function initStats() {
         <div class="st-main">
             <section class="st-now" data-pane="overview">${masteryCard}${forecastCard}</section>
             <div class="st-weak-wrap" data-pane="overview">${weakHTML}</div>
-            ${openings}
             ${_gamesSection()}
             ${reg}
         </div>`;
@@ -454,6 +453,16 @@ function setStatsColor(c) {
     statsColor = c;
     statsFilter = 'all';
     initStats();
+}
+
+// Onglet Ouvertures : la puce du répertoire et le retour depuis l'Analyse passent par ici (liens déjà tolérés vers la coquille).
+const statsRepHTML = () => repertoireDropdownHTML('statsRep');
+const statsBackToOpenings = () => goHome('openings');
+
+// Progrès et Ouvertures partagent couleur, filtre de niveau et filtres des parties : les deux suivent.
+function statsRerender() {
+    initStats();
+    if (typeof OpeningsTab !== 'undefined') OpeningsTab.refresh();
 }
 
 function _parseStatsArg(arg) {
@@ -473,18 +482,15 @@ function statsGoTraining(arg) {
 registerActions({
     statsColor: c => setStatsColor(c),
     statsRep: name => { if (name !== currentRepertoire) selectRepertoire(name); },
-    statsFilter: f => { statsFilter = (f !== 'all' && statsFilter === f) ? 'all' : f; initStats(); },
+    statsFilter: f => { statsFilter = (f !== 'all' && statsFilter === f) ? 'all' : f; statsRerender(); },
+    // Légende de la maîtrise : le niveau filtre les coups des fiches d'ouverture, dans l'onglet Ouvertures (lot 3).
     statsLegend: f => {
         statsFilter = statsFilter === f ? 'all' : f;
         StatsOpenings.reset();                                      // la première ouverture concernée s'ouvre
-        const sec = document.getElementById('stats-lines');
-        // Téléphone : la liste vit dans un autre onglet, il faut y aller pour la voir.
-        const elsewhere = sec && statsFilter !== 'all' && getComputedStyle(sec).display === 'none';
-        if (elsewhere) statsPane = sec.dataset.pane;
         initStats();
-        if (elsewhere) { window.scrollTo({ top: 0 }); return; }
-        const list = document.getElementById('stats-lines');
-        if (list && statsFilter !== 'all') list.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        if (statsFilter === 'all') return;
+        switchHomeTab('openings');
+        window.scrollTo({ top: 0 });
     },
     statsWeakAll: () => { statsWeak = { shown: STATS_WEAK_PAGE, y: window.scrollY || 0 }; initStats(); window.scrollTo({ top: 0 }); },
     statsWeakMore: () => { statsWeak.shown += STATS_WEAK_PAGE; initStats(); },
@@ -493,8 +499,8 @@ registerActions({
     // Action d'un constat « À faire » : 'openings|<clé de l'ouverture>' ou 'games|<vue>'.
     statsTodoGo: arg => {
         const i = arg.indexOf('|'), pane = arg.slice(0, i), what = arg.slice(i + 1);
-        if (pane === 'openings') StatsOpenings.show(what);
-        else StatsInsights.show(what);
+        if (pane === 'openings') { StatsOpenings.show(what); switchHomeTab('openings'); window.scrollTo({ top: 0 }); return; }
+        StatsInsights.show(what);
         statsPane = pane;
         initStats();
         window.scrollTo({ top: 0 });
@@ -513,7 +519,8 @@ let statsPreviewTarget = null;
 function openStatsPreview(side, key, origin) {
     const e = readDBFor(currentRepertoire, side)[key];
     if (!e) return;
-    statsPreviewTarget = { color: side, key, origin: origin || '', scrollY: window.scrollY || 0 };
+    const from = typeof OpeningsTab !== 'undefined' && OpeningsTab.visible() ? 'openings' : 'stats';
+    statsPreviewTarget = { color: side, key, origin: origin || '', scrollY: window.scrollY || 0, from };
     _renderStatsBack(_level(e), origin);
     _renderPreviewFacts(e);
     playerColor = side;
@@ -572,7 +579,7 @@ function closeStatsWeak() { statsWeak = null; }
 
 function statsBack() {
     const y = statsPreviewTarget ? statsPreviewTarget.scrollY : 0;
-    goHome('stats');
+    goHome(statsPreviewTarget && statsPreviewTarget.from === 'openings' ? 'openings' : 'stats');
     requestAnimationFrame(() => window.scrollTo({ top: y }));
 }
 

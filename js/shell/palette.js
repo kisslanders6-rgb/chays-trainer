@@ -88,9 +88,10 @@ const Palette = (function () {
         const due = reviewPlan(currentRepertoire).forecast(null, 1)[0] || 0;
         const list = [
             a('play', 'swords', 'Aujourd’hui', 'Onglet', 'accueil répertoire jouer', () => goHome('play'), { leave: true, keys: ['1'] }),
-            a('stats', 'bar-chart', 'Progrès', 'Onglet', 'statistiques maîtrise régularité', () => goHome('stats'), { leave: true, keys: ['2'] }),
-            a('training', 'flame', 'Entraînement', 'Onglet', 'exercices séance', () => goHome('training'), { leave: true, keys: ['3'] }),
-            a('endgame', 'finish-flag', 'Finales', 'Onglet', 'exercices', () => goHome('endgame'), { leave: true, keys: ['4'] }),
+            a('openings', 'book', 'Ouvertures', 'Onglet', 'fiche arbre réviser ouverture', () => goHome('openings'), { leave: true, keys: ['2'] }),
+            a('endgame', 'finish-flag', 'Finales', 'Onglet', 'exercices', () => goHome('endgame'), { leave: true, keys: ['3'] }),
+            a('stats', 'bar-chart', 'Progrès', 'Onglet', 'statistiques maîtrise régularité', () => goHome('stats'), { leave: true, keys: ['4'] }),
+            a('training', 'flame', 'Entraînement', 'Exercices', 'points faibles contre-la-montre mode libre ligne complète séance', () => goHome('training'), { leave: true }),
             a('daily', 'flame', 'Révision du jour', due ? `${due} à réviser aujourd’hui` : 'Rien à réviser aujourd’hui', 'réviser répétition espacée séance',
                 fromHome(() => startDailyReview()), { leave: true, keys: ['L'], suggest: due > 0, off: !due }),
             a('weak', 'flame', 'Points faibles', 'Exercice d’Entraînement', 'erreurs fragiles', () => { if (gameOpen()) goHome(); openTrainingFrom({ focus: 'weak' }); }, { leave: true }),

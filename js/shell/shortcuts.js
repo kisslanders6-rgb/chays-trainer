@@ -114,8 +114,8 @@ const Shortcuts = (function () {
 
     function global(e, k) {
         if (e.repeat) return false;
-        const tab = { Digit1: 'play', Digit2: 'stats', Digit3: 'training', Digit4: 'endgame',
-                      Numpad1: 'play', Numpad2: 'stats', Numpad3: 'training', Numpad4: 'endgame' }[e.code];
+        const tab = { Digit1: 'play', Digit2: 'openings', Digit3: 'endgame', Digit4: 'stats',
+                      Numpad1: 'play', Numpad2: 'openings', Numpad3: 'endgame', Numpad4: 'stats' }[e.code];
         if (tab) {
             if (typeof trainingState !== 'undefined' && trainingState.session) return false;
             switchHomeTab(tab);

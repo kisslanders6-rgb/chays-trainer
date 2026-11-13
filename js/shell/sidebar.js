@@ -14,7 +14,7 @@
 
 const SideBar = (() => {
     const MQ = '(min-width: 1100px)';
-    const NAMES = { play: 'Aujourd’hui', stats: 'Progrès', training: 'Entraînement', endgame: 'Finales' };
+    const NAMES = { play: 'Aujourd’hui', openings: 'Ouvertures', endgame: 'Finales', stats: 'Progrès', training: 'Entraînement' };
 
     // Chaque entrée dit ce qu'elle fait, une fois sur le bon onglet :
     //   to     fait défiler jusqu'à cette section ;  act / arg  action enregistrée (registerActions) ;
@@ -33,9 +33,11 @@ const SideBar = (() => {
             { id: 'pgn', label: 'Importer un PGN', act: 'homeImportPgn' },
             { id: 'board', label: 'Échiquier libre', act: 'helpAnalysis' }
         ],
+        openings: [
+            { id: 'all', label: 'Toutes les ouvertures', act: 'opAll' }
+        ],
         stats: [
             { id: 'overview', label: 'Maîtrise', run: pane('overview') },
-            { id: 'openings', label: 'Ouvertures', run: pane('openings') },
             { id: 'games', label: 'Parties', run: pane('games') },               // ses vues restent dans la page (segments)
             { id: 'regularity', label: 'Régularité', run: pane('regularity') }
         ],

@@ -222,11 +222,13 @@
                  s'affiche que dans la barre du bas. -->
             <div class="topnav-tabs" id="topnav-tabs-setup">
                 <div class="topnav-tab active" id="nav-tab-play"     title="Aujourd’hui" onclick="switchHomeTab('play')"><svg class="ico" aria-hidden="true"><use href="#i-swords"/></svg><span>Aujourd’hui</span></div>
-                <div class="topnav-tab"        id="nav-tab-stats"    title="Progrès" onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Progrès</span></div>
+                <div class="topnav-tab"        id="nav-tab-openings" title="Ouvertures" onclick="switchHomeTab('openings')"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Ouvertures</span></div>
                 <!-- Téléphone : centre du dock, la prochaine action (Dock, js/core/dock.js) -->
                 <button type="button" class="topnav-tab nav-center" id="nav-center" onclick="Dock.runHome()"></button>
-                <div class="topnav-tab"        id="nav-tab-training" title="Entraînement" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
                 <div class="topnav-tab"        id="nav-tab-endgame"  title="Finales" onclick="switchHomeTab('endgame')"><svg class="ico" aria-hidden="true"><use href="#i-finish-flag"/></svg><span>Finales</span></div>
+                <div class="topnav-tab"        id="nav-tab-stats"    title="Progrès" onclick="switchHomeTab('stats')"><svg class="ico" aria-hidden="true"><use href="#i-bar-chart"/></svg><span>Progrès</span></div>
+                <!-- Entraînement : hors de la barre depuis la refonte (lot 3), atteint par « Autres exercices », la palette et les séances -->
+                <div class="topnav-tab is-offbar" id="nav-tab-training" title="Entraînement" onclick="switchHomeTab('training')"><svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><span>Entraînement</span></div>
             </div>
 
             <!-- Meta dans l'écran de jeu -->
@@ -347,6 +349,16 @@
                     <div class="st-filters" id="stats-filters" hidden></div>
                 </div>
                 <div id="stats-body" class="st-body"></div>
+            </div>
+
+            <!-- Onglet Ouvertures (refonte « Chays sans détour », lot 3) : barre de contexte, puis le miroir et la fiche (openingsTab.js, statsOpenings.js) -->
+            <div id="home-tab-openings" class="home-tab hidden">
+                <div class="st-scope">
+                    <div class="st-rep" id="op-rep"></div>
+                    <div class="st-seg" id="op-color"></div>
+                    <div class="st-filters" id="op-filters" hidden></div>
+                </div>
+                <div id="op-body" class="st-body op-body"></div>
             </div>
 
             <!-- Onglet Entraînement ciblé -->
@@ -739,6 +751,7 @@
 <script src="js/screens/stats/statsGames.js"></script>
 <script src="js/screens/stats/statsOpenings.js"></script>
 <script src="js/screens/stats/statsInsights.js"></script>
+<script src="js/screens/openings/openingsTab.js"></script>
 <script src="js/screens/training/training.js"></script>
 <script src="js/screens/training/trainingUI.js"></script>
 <script src="js/shell/suite.js"></script>

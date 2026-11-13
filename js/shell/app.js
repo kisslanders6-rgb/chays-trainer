@@ -52,6 +52,9 @@ function applySyncedPrefs() {
 
 // ─── NAVIGATION : ONGLETS D'ACCUEIL ──────────────────────────────────────────
 
+// Onglets de l'accueil (refonte « Chays sans détour », lot 3 : Ouvertures ; Entraînement hors de la barre).
+const HOME_TABS = ['play', 'openings', 'endgame', 'stats', 'training'];
+
 function switchHomeTab(tab) {
     // En partie (onglets compacts de la barre du haut, menu « Plus » sur téléphone) : retour à l'accueil sur cet onglet.
     const gs = document.getElementById('game-screen');
@@ -59,7 +62,7 @@ function switchHomeTab(tab) {
     closeRepMenu();
     if (tab !== 'stats') closeStatsWeak();
     const shown = document.querySelector('.home-tab:not(.hidden)');
-    ['play', 'stats', 'training', 'endgame'].forEach(t => {
+    HOME_TABS.forEach(t => {
         const tabEl = document.getElementById('home-tab-' + t);
         const navEl = document.getElementById('nav-tab-' + t);
         if (tabEl) tabEl.classList.toggle('hidden', t !== tab);
@@ -67,6 +70,7 @@ function switchHomeTab(tab) {
     });
     _enterHomeTab(document.getElementById('home-tab-' + tab), shown);
     if (tab === 'stats')    initStats();
+    if (tab === 'openings') OpeningsTab.init();
     if (tab === 'training') initTraining();
     if (tab === 'endgame')  initEndgame();
     if (typeof Dock !== 'undefined') Dock.refresh();     // centre du dock : l'action de la page (téléphone)
@@ -514,13 +518,13 @@ function resumeLastPlay() {
 // Onglets de l'accueil pendant une partie : compacts dans la barre du haut (920 px et plus, css/home.css), cachés
 // en dessous (la barre du bas laisserait moins de place à l'échiquier ; le menu « Plus » les reprend). L'onglet
 // marqué est celui d'où vient le mode en cours ; un clic revient à l'accueil sur l'onglet choisi (switchHomeTab).
-const GAME_MODE_TAB = { training: 'training', endgame: 'endgame', preview: 'stats' };
+const GAME_MODE_TAB = { training: 'play', endgame: 'endgame', preview: 'stats' };
 function _gameTabs(inGame) {
     const bar = document.getElementById('topnav-tabs-setup');
     bar.classList.toggle('in-game', inGame);
     if (!inGame) return;
-    const cur = GAME_MODE_TAB[gameMode] || 'play';
-    ['play', 'stats', 'training', 'endgame'].forEach(t => { const el = document.getElementById('nav-tab-' + t); if (el) el.classList.toggle('active', t === cur); });
+    const cur = gameMode === 'preview' && statsPreviewTarget && statsPreviewTarget.from === 'openings' ? 'openings' : GAME_MODE_TAB[gameMode] || 'play';
+    HOME_TABS.forEach(t => { const el = document.getElementById('nav-tab-' + t); if (el) el.classList.toggle('active', t === cur); });
 }
 
 function goHome(tab) {

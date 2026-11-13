@@ -1,7 +1,8 @@
 /**
  * screens/stats/statsOpenings.js
  * ──────────────────────────────────────────────────────────────────────────
- * Statistiques › Ouvertures : la liste « miroir » et une seule fiche, quelle que soit la taille du répertoire.
+ * Onglet Ouvertures (refonte « Chays sans détour », lot 3 ; avant : Statistiques › Ouvertures) : la liste « miroir » et une seule fiche,
+ * quelle que soit la taille du répertoire. La fiche porte « Réviser » (startOpeningReview), l'arbre des coups appris et « Échiquier libre ».
  *   Miroir : les ouvertures les plus coûteuses, une ligne chacune, préparation (barre de niveaux) à gauche et
  *     écart à l'attendu à droite ; toucher une ligne ouvre sa fiche (à côté sur ordinateur, en dessous sur téléphone).
  *   Sélecteur (« Toutes les ouvertures ») : recherche par nom ou par coups, « À travailler d'abord », familles, carte maîtrise × résultats.
@@ -18,7 +19,7 @@
 const StatsOpenings = (function () {
     const ROWS = 5, AFTER_PLIES = 4, PRIORITY = 3, MIN_OUT = 2, MIN_MAP = 3, REPLIES = 6, SWAPS = 3, MIRROR = 8;
     const OTHER = 'Autres positions';
-    const st = { ctx: null, scope: '', cur: null, picked: false, mode: 'list', q: '', active: -1, all: new Set(), list: [], reached: new Map() };
+    const st = { ctx: null, scope: '', cur: null, picked: false, mode: 'list', q: '', active: -1, all: new Set(), tree: new Set(), list: [], reached: new Map() };
 
     const pct = v => `${Math.round(v)} %`;
     const num1 = v => Math.abs(v).toLocaleString(I18n.locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -127,8 +128,50 @@ const StatsOpenings = (function () {
                 ${g.path.length && g.name !== _movesLabel(g.path) ? `<small class="so-moves">${_movesLabel(g.path, true)}</small>` : ''}
                 ${d ? `<span class="so-diag">${d[0]}</span>` : ''}
                 <p>${text}</p>
-                ${g.all.length ? `<div class="so-acts">${g.due ? `<button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="${escapeHtml('due:' + g.key)}">Réviser cette ouverture ${ico('chevron-right')}</button>` : ''}<span>${g.due ? `${g.due} à réviser sur ${g.all.length}` : 'À jour'}</span></div>` : ''}
+                ${reviewHTML(g)}
             </div></div>`;
+    }
+
+    // Réviser l'ouverture (lot 3) : une action pleine qui lance la séance (les positions dues, sinon les plus
+    // fragiles, sinon la ligne entière), et trois variantes en puces ; « Échiquier libre » ouvre l'Analyse ici.
+    function reviewHTML(g) {
+        if (!g.all.length) return g.path.length ? `<div class="so-acts"><button type="button" class="hp-link so-free" data-action="opFree" data-arg="${escapeHtml(g.key)}">${ico('cpu')}Échiquier libre</button></div>` : '';
+        const weak = g.counts.weak + g.counts.fragile, unsure = g.counts[STATS_STATE];
+        const main = g.due ? 'due' : weak ? 'weak' : g.path.length ? 'line' : 'unsure';
+        const chip = (kind, label, n) => kind === main ? '' : `<button type="button" class="so-chip" data-action="opReview" data-arg="${escapeHtml(kind + ':' + g.key)}"${n === 0 ? ' disabled' : ''}>${label}${n ? ` <b>${n}</b>` : ''}</button>`;
+        const label = { due: `Réviser · ${g.due}`, weak: 'Réviser les points faibles', line: 'Réviser la ligne entière', unsure: 'Confirmer les nouvelles' }[main];
+        return `<div class="so-review">
+            <button type="button" class="btn btn-primary so-go" data-action="opReview" data-arg="${escapeHtml(main + ':' + g.key)}">${ico('play')}<span>${label}</span></button>
+            <div class="so-chips">${chip('weak', 'Points faibles', weak)}${g.path.length ? chip('line', 'Ligne entière') : ''}${chip('unsure', 'À confirmer', unsure)}
+                ${g.path.length ? `<button type="button" class="so-chip is-free" data-action="opFree" data-arg="${escapeHtml(g.key)}">${ico('cpu')}Échiquier libre</button>` : ''}</div>
+            <span class="so-due">${g.due ? `${g.due} à réviser sur ${g.all.length}` : 'À jour'}</span>
+        </div>`;
+    }
+
+    // Arbre des coups appris (lot 3) : chaque réponse de l'ouverture, dans l'ordre de la ligne, décalée selon les
+    // réponses qui la précèdent ; la pastille dit son niveau, toucher ouvre l'aperçu. La vue d'ensemble qui manque à une
+    // liste de points faibles : ce que je sais déjà, et où.
+    const TREE_ROWS = 12;
+    function treeHTML(g) {
+        if (!g.all.length) return '';
+        const rows = g.all.filter(r => r.path).slice().sort((a, b) => a.path.join(' ').localeCompare(b.path.join(' ')) || a.path.length - b.path.length);
+        if (!rows.length) return '';
+        const depth = r => rows.filter(x => x !== r && x.path.length < r.path.length && x.path.every((m, i) => r.path[i] === m)).length;
+        const open = st.tree.has(g.key), shown = open ? rows : rows.slice(0, TREE_ROWS);
+        const label = r => {
+            try {
+                const sans = _pathToSans(r.path), i = sans.length - 1, from = Math.max(0, i - 1);
+                return sans.slice(from).map((s, k) => {
+                    const j = from + k, w = j % 2 === 0, n = Math.floor(j / 2) + 1;
+                    return `${w ? `${n}. ` : k ? '' : `${n}… `}${formatSan(s, w ? 'w' : 'b')}`;
+                }).join(' ');
+            } catch (e) { return _moveLabel(r.e, false, true); }
+        };
+        const line = r => `<button type="button" class="so-tree-row lv-${r.lv}" style="--d:${Math.min(6, depth(r))}" data-action="statsPreview" data-arg="${escapeHtml(r.side + ':' + r.k)}" data-origin="${escapeHtml(g.name)}">
+            <span class="so-tree-mv">${label(r)}</span>${_lvMark(r.lv)}<span class="so-tree-lv">${STATS_LEVELS[r.lv].one}</span></button>`;
+        return `<div class="so-card so-tree"><h5>Arbre des coups appris</h5><p class="st-sub">${_plural(rows.length, 'réponse')}</p>
+            <div class="so-tree-list">${shown.map(line).join('')}</div>
+            ${rows.length > TREE_ROWS ? `<button type="button" class="st-more" data-action="opTreeMore" data-arg="${escapeHtml(g.key)}" aria-expanded="${open}">${open ? 'Réduire' : `Afficher les ${rows.length - TREE_ROWS} autres`}</button>` : ''}</div>`;
     }
 
     function kpisHTML(g) {
@@ -228,7 +271,7 @@ const StatsOpenings = (function () {
                 <button type="button" class="so-step" data-action="statsOpStep" data-arg="-1" title="Précédente à travailler" aria-label="Précédente à travailler">${ico('chevron-left')}</button>
                 <button type="button" class="so-step" data-action="statsOpStep" data-arg="1" title="Suivante à travailler" aria-label="Suivante à travailler">${ico('chevron-right')}</button>
             </div>
-            <div class="so-fiche">${headHTML(g)}${kpisHTML(g)}${gamesHTML(g)}${positionsHTML(g)}</div>
+            <div class="so-fiche">${headHTML(g)}${treeHTML(g)}${kpisHTML(g)}${gamesHTML(g)}${positionsHTML(g)}</div>
         </div></div>`;
     }
 
@@ -250,6 +293,13 @@ const StatsOpenings = (function () {
             ${shown.map(row).join('')}
             ${st.list.length > shown.length ? `<button type="button" class="st-more so-mr-all" data-action="statsOpOpen">Toutes les ouvertures · ${st.list.length}</button>` : ''}
         </div>`;
+    }
+
+    // Progrès (constat « À faire ») : le classement sans la fiche.
+    function prime(ctx) {
+        st.ctx = ctx;
+        const scope = currentRepertoire + '|' + statsColor;
+        if (scope !== st.scope) { st.scope = scope; st.cur = null; st.picked = false; st.all = new Set(); }
     }
 
     function sectionHTML(ctx) {
@@ -399,6 +449,12 @@ const StatsOpenings = (function () {
         statsOpPick: pick,
         statsOpMode: m => { st.mode = m; renderPicker(); },
         statsOpStep: d => step(Number(d)),
+        opReview: arg => {
+            const i = arg.indexOf(':'), kind = arg.slice(0, i), g = st.list.find(x => x.key === arg.slice(i + 1));
+            if (g) startOpeningReview({ color: g.side, opening: { key: g.key, name: g.name }, path: g.path, kind });
+        },
+        opFree: k => { const g = st.list.find(x => x.key === k); if (!g) return; playerColor = g.side; openAnalysis(g.path.slice(), g.path.length - 1, statsBackToOpenings); },
+        opTreeMore: k => { if (!st.tree.delete(k)) st.tree.add(k); paint(); },
         statsOpMore: k => {
             const closing = st.all.delete(k);
             if (!closing) st.all.add(k);
@@ -410,6 +466,6 @@ const StatsOpenings = (function () {
     Bus.on('games:analysed', paint);
     Bus.on('games:evaluated', paint);
 
-    return { sectionHTML, reset: () => { st.cur = null; st.picked = false; }, close, topLoss, count: () => st.list.length,
+    return { sectionHTML, prime, reset: () => { st.cur = null; st.picked = false; }, close, topLoss, count: () => st.list.length,
              show: key => { st.cur = key; st.picked = true; } };
 })();

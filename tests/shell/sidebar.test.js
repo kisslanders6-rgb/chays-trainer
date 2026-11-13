@@ -55,7 +55,7 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
     await t('chaque onglet garde son nom en infobulle, le rail ne montrant que les icônes', async () => {
         const { dom } = await bootApp();
         const tabs = [...dom.window.document.querySelectorAll('#topnav-tabs-setup div.topnav-tab')];
-        assert.strictEqual(tabs.length, 4);
+        assert.deepStrictEqual(tabs.filter(x => !x.classList.contains('is-offbar')).map(x => x.id.slice(8)), ['play', 'openings', 'endgame', 'stats'], 'Entraînement hors de la barre');
         tabs.forEach(tab => assert.strictEqual(tab.title, tab.querySelector('span').textContent));
     });
 
@@ -76,10 +76,10 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
     await t('un menu par rubrique, avec les vraies destinations', async () => {
         const { doc, errors } = await side();
         assert.deepStrictEqual(errors, []);
-        assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu')].map(m => m.dataset.menu), ['play', 'stats', 'training', 'endgame']);
+        assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu')].map(m => m.dataset.menu), ['play', 'openings', 'endgame', 'stats', 'training']);
         assert.strictEqual(doc.querySelectorAll('.sb-menu[data-menu="endgame"] .sb-it').length, 6, 'une entrée par catégorie');
         assert.strictEqual(entry(doc, 'endgame.pions').querySelector('em').textContent, '17');
-        assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu[data-menu="stats"] .sb-it')].map(b => b.dataset.key), ['stats.overview', 'stats.openings', 'stats.games', 'stats.regularity'], 'les onglets de la page, sans sous-niveau');
+        assert.deepStrictEqual([...doc.querySelectorAll('.sb-menu[data-menu="stats"] .sb-it')].map(b => b.dataset.key), ['stats.overview', 'stats.games', 'stats.regularity'], 'les onglets de la page, sans sous-niveau');
         assert(!doc.querySelector('.sb-kids, .sb-chev'), 'ni accordéon ni chevron');
     });
 
@@ -94,7 +94,7 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         $('#nav-tab-stats').click();
         await tick();
         assert.deepStrictEqual(openMenus(doc), ['stats'], 'un second clic ne replie rien');
-        entry(doc, 'stats.openings').click();
+        entry(doc, 'stats.games').click();
         assert.deepStrictEqual(openMenus(doc), ['stats'], 'choisir une entrée ne change rien à la barre');
     });
 
@@ -189,7 +189,7 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         assert.strictEqual(root.getAttribute('data-side'), 'wide');
         w.eval('startGame("w")');
         assert(!doc.getElementById('game-screen').classList.contains('hidden'), 'en partie');
-        entry(doc, 'stats.openings').click();
+        entry(doc, 'stats.games').click();
         assert(doc.getElementById('game-screen').classList.contains('hidden'), 'la partie est quittée');
         assert.strictEqual(root.getAttribute('data-side'), 'rail', 'pas de saut à 240 px');
         assert.strictEqual(w.eval('SideBar.held()'), true);
@@ -222,7 +222,7 @@ const t = async (name, fn) => { await fn(); n++; console.log('ok  ', name); };
         mq.cb({ matches: false });
         assert(!doc.querySelector('.sb-menu') && !doc.querySelector('#side-toggle'));
         assert(!doc.querySelector('#nav-tab-play').hasAttribute('tabindex'));
-        assert.strictEqual(doc.querySelector('#nav-tab-play').nextElementSibling.id, 'nav-tab-stats', 'filets entre onglets intacts');
+        assert.strictEqual(doc.querySelector('#nav-tab-play').nextElementSibling.id, 'nav-tab-openings', 'filets entre onglets intacts');
     });
 
     console.log(`\n${n} tests passés`);

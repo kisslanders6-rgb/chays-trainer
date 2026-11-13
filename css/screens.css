@@ -982,6 +982,33 @@
 .so-diag { padding: 3px 10px; border-radius: 99px; background: var(--card-b-ink); color: var(--card-b-bg); font-size: 12px; font-weight: 650; }
 .so-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; padding-top: 4px; font-size: 12.5px; }
 .so-acts .btn-soft { color: var(--card-b-ink); border-color: color-mix(in srgb, var(--card-b-ink) 45%, transparent); background: none; }
+/* Page d'ouverture (refonte « Chays sans détour », lot 3) : « Réviser » et ses variantes dans l'en-tête sombre, puis l'arbre. */
+.so-review { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: auto; padding-top: 8px; }
+.so-go { min-height: 44px; padding: 0 18px; border-radius: 12px; gap: 8px; }
+.so-go .ico { width: 15px; height: 15px; fill: none; }
+.so-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.so-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 12.5px; font-weight: 600;
+           color: var(--card-b-ink); background: none; border: 1px solid color-mix(in srgb, var(--card-b-ink) 35%, transparent); cursor: pointer;
+           transition: background var(--dur-2) var(--ease-out), border-color var(--dur-2); }
+.so-chip b { font-variant-numeric: tabular-nums; opacity: .75; }
+.so-chip .ico { width: 14px; height: 14px; fill: none; }
+.so-chip:disabled { opacity: .45; cursor: default; }
+@media (hover: hover) { .so-chip:not(:disabled):hover { background: color-mix(in srgb, var(--card-b-ink) 10%, transparent); } }
+.so-chip:focus-visible { outline: 2px solid var(--card-b-ink); outline-offset: 2px; }
+.so-due { flex-basis: 100%; font-size: 12px; opacity: .75; }
+.so-acts .so-free { color: var(--card-b-ink); }
+.so-tree-list { display: flex; flex-direction: column; margin-top: 6px; }
+.so-tree-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 40px; padding: 4px 8px 4px calc(8px + var(--d, 0) * 16px);
+               border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+               position: relative; transition: background var(--dur-2) var(--ease-out); }
+.so-tree-row::before { content: ""; position: absolute; left: calc(var(--d, 0) * 16px); top: 6px; bottom: 6px; width: 1px; background: var(--border); }
+.so-tree-row[style*="--d:0"]::before { display: none; }
+@media (hover: hover) { .so-tree-row:hover { background: var(--surface-hover); } }
+.so-tree-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.so-tree-mv { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+.so-tree-lv { font-size: 11.5px; color: var(--text-muted); }
+@media (max-width: 599px) { .so-tree-lv { display: none; } .so-go { flex: 1 1 100%; } }
+@media (prefers-reduced-motion: reduce) { .so-chip, .so-tree-row { transition: none; } }
 
 .so-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .so-kpi { display: flex; flex-direction: column; gap: 2px; }

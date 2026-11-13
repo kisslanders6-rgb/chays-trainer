@@ -310,9 +310,9 @@ const StatsInsights = (function () {
 
     const repaint = () => StatsGames.repaint();
     registerActions({
-        statsInPeriod: p => { st.period = Number(p); saveFilters(); initStats(); },
-        statsInSite: s => { st.site = s; saveFilters(); if (s !== 'all') setPref('eloSite', s); initStats(); },
-        statsInSpeed: s => { st.speed = s; saveFilters(); if (s !== 'all') setPref('eloSpeed', s); initStats(); },
+        statsInPeriod: p => { st.period = Number(p); saveFilters(); statsRerender(); },
+        statsInSite: s => { st.site = s; saveFilters(); if (s !== 'all') setPref('eloSite', s); statsRerender(); },
+        statsInSpeed: s => { st.speed = s; saveFilters(); if (s !== 'all') setPref('eloSpeed', s); statsRerender(); },
         statsInView: v => { st.view = v; repaint(); pump(); },
         statsInEval: () => { st.paused = !st.paused; refreshView(); pump(); }
     });

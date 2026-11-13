@@ -426,7 +426,19 @@ function startTrainingExercise(kind) {
         unsure: () => _trSeen(rows).filter(r => r.lv === 'unsure').sort((a, b) => a.e.attempts - b.e.attempts).slice(0, TRAIN_WEAK_MAX)
     }[kind];
     const label = { relearn: 'À revoir', due: 'Révision du jour', weak: 'Points faibles', unsure: 'À confirmer' }[kind];
-    if (pick) startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
+    if (pick) return startSession({ kind, label, items: items(pick(), kind === 'due' ? prioFirst : _trOrder) });
+    return false;
+}
+
+// Page d'ouverture (onglet Ouvertures, lot 3) : lance tout de suite une séance limitée à l'ouverture.
+// kind : 'due' | 'weak' | 'unsure' | 'line'. Rien à réviser : le menu de l'Entraînement, déjà filtré.
+function startOpeningReview({ color, opening, path, kind }) {
+    _trColor = color;
+    _trOpening = opening;
+    _trFocus = null;
+    trainingState.lastSummary = null;
+    if (kind === 'line') { _startLine({ color, path, name: opening.name }); return; }
+    if (!startTrainingExercise(kind)) openTrainingFrom({ color, opening, focus: kind });
 }
 
 // Accueil Jouer : « Commencer la révision » lance la Révision du jour du répertoire actif, les deux couleurs,
