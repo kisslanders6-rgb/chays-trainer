@@ -29,7 +29,7 @@
 'use strict';
 
 const TRAIN_STEP_MS = 750;
-const TRAIN_CONTEXT_PLIES = 3;   // demi-coups rejoués avant que la main soit rendue
+const TRAIN_CONTEXT_PLIES = 4;   // demi-coups rejoués avant que la main soit rendue (refonte « Chays sans détour », lot 4 : la position arrive par sa ligne)
 
 // Afficher la solution compte comme un échec sur la position (attempts + 1, failures + 1), une seule fois.
 // Mettre à false pour que la solution ne modifie aucune statistique.
@@ -414,6 +414,12 @@ function _ageLabel(e, now) {
     return `non revu depuis ${w} semaine${w > 1 ? 's' : ''}`;
 }
 
+// Nom de l'ouverture d'une entrée, dit pendant la mise en situation et sous « À vous de jouer » (lot 4).
+function _drillOpening(e) {
+    const op = e && e.path && e.path.length && typeof openingNameOf === 'function' ? openingNameOf(e.path) : null;
+    return op ? op.name : '';
+}
+
 function _drillReason(e) {
     const now = Date.now();
     if (trainingState.session && trainingState.session.items[trainingState.session.cur] && trainingState.session.items[trainingState.session.cur].second)
@@ -497,7 +503,7 @@ function _startDrill(key, seqLen, opts) {
         const start = Math.max(0, n - TRAIN_CONTEXT_PLIES);
         const ctx   = fullPath.slice(start, n);
         loadPositionFromPath(fullPath.slice(0, start));
-        setStatus('Mise en situation…', 'info', ctx.length ? '' : trainingState.reason, ctx.length ? {
+        setStatus('Mise en situation…', 'info', ctx.length ? _drillOpening(entry) : trainingState.reason, ctx.length ? {
             action: 'Sauter', title: 'Passer la mise en situation', run: () => { if (trainingState.ctxSkip) trainingState.ctxSkip(); }
         } : null);
         ctx.forEach((u, i) => _later(() => {
@@ -596,13 +602,12 @@ function trainingLiveStatus() {
 // seulement l'ouverture (ou le deuxième passage). En mode libre : la raison du tirage et les réussites.
 function _readyDetail() {
     const S = trainingState.session;
-    if (!S) return trainingState.reason + (trainingState.ok ? ` · ${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''}` : '');
+    if (!S) return [_drillOpening(openingDB[trainingState.current]), trainingState.reason].filter(Boolean).join(' · ')
+        + (trainingState.ok ? ` · ${trainingState.ok} réussi${trainingState.ok > 1 ? 's' : ''}` : '');
     const it = S.items[S.cur];
     if (it && it.second) return 'Deuxième passage';
     if (S.kind === 'line') return '';
-    const e = openingDB[trainingState.current];
-    const op = e && e.path && e.path.length && typeof openingNameOf === 'function' ? openingNameOf(e.path) : null;
-    return op ? op.name : '';
+    return _drillOpening(openingDB[trainingState.current]);
 }
 
 // ─── LIGNE COMPLÈTE (depuis la position initiale) ─────────────────────────────

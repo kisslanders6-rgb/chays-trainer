@@ -139,19 +139,31 @@ async function boot() {
     });
 
     await t('séance : bouton « Sauter » dans la barre d\'état pendant la mise en situation, retiré quand la main revient', async () => {
-        seed({ dueIn: -1, lastOnly: true });                           // 3. Fc4 : trois demi-coups de mise en situation
+        seed({ dueIn: -1, lastOnly: true });                           // 3. Fc4 : quatre demi-coups de mise en situation (lot 4)
         w.eval(`trainingState.lastSummary = null; _trOpening = null; initTraining()`);
         w.eval(`startTrainingExercise('due')`);
         assert.strictEqual(w.eval('gameMode'), 'training');
         const skip = $('#status-bar .status-act');
         assert(skip && skip.textContent === 'Sauter', 'bouton montré pendant la mise en situation');
-        assert.strictEqual($('#status-text').textContent, 'Mise en situation…', 'sans sous-texte redondant');
+        assert.strictEqual($('#status-text .status-title').textContent, 'Mise en situation…');
+        const lead = $('#status-text .status-detail');
+        assert(lead && lead.textContent && lead.textContent === w.eval('openingNameOf(openingDB[trainingState.current].path).name'), 'l’ouverture est nommée pendant la mise en situation');
         assert(/^1 \/ 1$/.test($('#tr-progress .tr-prog-n').textContent), 'compteur « 1 / N »');
         skip.click();                                                   // passer
         assert(!$('#status-bar .status-act'), 'bouton retiré quand la main revient');
         assert(/^À vous de jouer/.test($('#status-text .status-title').textContent));
         assert(/ne compte pas comme une erreur/.test($('.tb-hint').title), 'infobulle de l\'Indice en séance');
         w.eval('quitTraining()');
+    });
+
+    await t('mode libre : sous « À vous de jouer », l\'ouverture puis la raison du tirage (lot 4)', () => {
+        seed({ dueIn: -1, lastOnly: true });
+        w.eval(`initTraining(); startTrainingExercise('due'); window.__k = trainingState.current; quitTraining();
+                trainingState.session = null; trainingState.current = window.__k; trainingState.reason = 'Raison'; trainingState.ok = 0;`);
+        const name = w.eval('openingNameOf(openingDB[trainingState.current].path).name');
+        assert(name, 'une ouverture nommée');
+        assert.strictEqual(w.eval('_readyDetail()'), `${name} · Raison`);
+        w.eval(`trainingState.current = null; trainingState.reason = ''`);
     });
 
     await t('séance : ◀ ▶ revoient les coups joués ; toucher l\'échiquier ou l\'Indice ramène au présent sans rien rejouer', async () => {
