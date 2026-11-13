@@ -260,11 +260,10 @@ function _renderWeakList(body, rows, weakN, relearnN) {
     const shown = all.slice(0, statsWeak.shown), rest = all.length - shown.length;
     body.className = 'st-body';
     body.innerHTML = `<div class="st-main"><section class="st-sec st-card st-weak edge-card" id="stats-weak-all">
-        <button type="button" class="st-link st-back" data-action="statsWeakBack">${ico('chevron-left')}Statistiques</button>
+        <button type="button" class="st-link st-back" data-action="statsWeakBack">${ico('chevron-left')}Progrès</button>
         <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span></div>
         <div class="st-wlist">${shown.map(_weakRowHTML).join('')}</div>
         ${rest ? `<button type="button" class="st-more" data-action="statsWeakMore">Afficher les ${rest} autres positions</button>` : ''}
-        <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
     </section></div>`;
     _renderStatsFilters();
     Bus.emit('ui:refresh');
@@ -411,7 +410,7 @@ function initStats() {
             <span class="st-foot">Réussite : ${Math.round(100 * (totA - totF) / totA)} % sur ${_plural(totA, 'essai')}</span>
         </div>`;
 
-    // ── Points faibles ── la ligne entière ouvre l'aperçu ; l'exercice est dans l'Entraînement.
+    // ── Points faibles ── la ligne entière ouvre l'aperçu (où « S'entraîner » reste) ; Progrès n'a plus de bouton d'exercice (lot 5).
     const weakest = rows.filter(r => r.lv === 'weak' || r.lv === 'fragile').sort((a, b) => _rate(b) - _rate(a) || b.e.attempts - a.e.attempts).slice(0, STATS_WEAK_CARDS);
     _assignOpenings(rows);
     const weakN = counts.weak + counts.fragile, relearnN = rows.filter(r => Number.isInteger(r.e.relearn)).length;
@@ -423,7 +422,6 @@ function initStats() {
         <section class="st-sec st-card st-weak edge-card">
             <div class="st-h"><h3>Points faibles</h3><span class="st-sub">${_plural(weakN, 'position')}${relearnN ? ` · ${relearnN} dans la file À revoir` : ''}</span>${weakN > weakest.length ? `<button type="button" class="st-link" data-action="statsWeakAll">Tout voir</button>` : ''}</div>
             <div class="st-wlist">${weakest.map(_weakRowHTML).join('')}</div>
-            <button type="button" class="btn btn-soft st-golink" data-action="statsGoTraining" data-arg="weak">${ico('flame')}Entraînement › Points faibles ${ico('chevron-right')}</button>
         </section>`;
 
     // ── Par ouverture ── la fiche vit dans l'onglet Ouvertures (lot 3) ; ici, seulement de quoi nourrir le constat « À faire ».

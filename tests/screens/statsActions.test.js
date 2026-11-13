@@ -58,16 +58,15 @@ const seed = (w, dues, tries = [[4, 3], [5, 2], [6, 0], [2, 0]]) => w.eval(`(() 
         assert(/3 positions/.test($('.st-fc-h b').textContent), 'trois échéances dans les 7 jours, la quatrième au-delà');
     });
 
-    await t('« Points faibles » : .btn-soft, openTrainingFrom, aucune séance', () => {
+    await t('Progrès observe : plus aucun bouton d\'exercice (refonte, lot 5) ; une ligne de point faible ouvre l\'aperçu', () => {
         seed(w, [-1, 2, 0, 5]);
         reset();
-        const weak = $('.st-weak .st-golink');
-        assert(weak.classList.contains('btn-soft') && !weak.classList.contains('btn-primary'));
-        weak.click();
-        const c = calls();
-        assert.strictEqual(c.train.length, 1);
-        assert.deepStrictEqual(c.train[0], { color: 'all', focus: 'weak' });
+        assert(!$('#home-tab-stats [data-action="statsGoTraining"]'), 'aucun bouton vers l’Entraînement');
         assert(!$('#home-tab-stats #stats-lines'), 'la fiche d’ouverture a quitté Progrès (lot 3)');
+        const row = $('.st-weak .st-wrow');
+        assert(row, 'une ligne de point faible');
+        const c = calls();
+        assert.deepStrictEqual(c.train, []);
         assert.deepStrictEqual(c.session, [], 'aucune séance lancée');
         assert.deepStrictEqual(c.queue, []);
     });

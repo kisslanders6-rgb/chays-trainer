@@ -32,6 +32,13 @@ Bus.on('data:changed', refreshViews);
 // Positions vues en partie recalculées (lancement, parties récupérées) : le menu de l'Entraînement recompte.
 Bus.on('seen:ready', () => { if (typeof initTraining === 'function' && !_viewHidden('home-tab-training')) initTraining(); });
 
+// Parties relues au lancement (AutoReview, lot 5) : le plan d'Aujourd'hui et les écrans affichés se mettent à jour.
+Bus.on('games:reviewed', () => {
+    if (typeof renderHomeSummary === 'function') renderHomeSummary();
+    if (typeof initStats === 'function' && !_viewHidden('home-tab-stats')) initStats();
+    if (typeof OpeningsTab !== 'undefined') OpeningsTab.refresh();
+});
+
 Bus.on('data:imported', () => {
     renderRepertoireList();
     if (typeof refreshTree === 'function') refreshTree();
