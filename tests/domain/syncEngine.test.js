@@ -23,7 +23,7 @@ function device(be) {
     load(scriptPath('bus.js')); load(scriptPath('storageAdapter.js')); load(scriptPath('syncModel.js'));
     vm.runInContext("const CLOUD_CONFIG = { url: 'https://x.supabase.co', anonKey: 'anon' };", ctx);
     load(scriptPath('cloudClient.js')); load(scriptPath('cloudAdapter.js')); load(scriptPath('auth.js'));
-    vm.runInContext(`let playerColor = 'w'; function migrateLegacyPaths() {} function askConfirm() {}
+    vm.runInContext(`let playerColor = 'w'; function askConfirm() {}
         globalThis.__calls = []; globalThis.__status = [];
         function renderRepertoireList() { __calls.push('repList'); } function initStats() { __calls.push('stats'); }
         function initTraining() { __calls.push('training'); } function refreshTree() { __calls.push('tree'); }

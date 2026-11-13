@@ -358,15 +358,12 @@ function markExported() {
     Bus.emit('backup:changed');
 }
 
-const _legacyChecked = new Set();
-
 function loadDB() {
+    repairPaths(currentRepertoire);                     // chemins manquants retrouvés, une fois par lancement
     const key = getDBKey();
     const raw = dataStore.get(key);
     openingDB = readDBFor(currentRepertoire, playerColor);
     oppSeen   = readOppFor(currentRepertoire, playerColor);
-    // Reconstruit (une fois par session) le chemin des anciennes entrées sans `path`.
-    if (!_legacyChecked.has(key)) { _legacyChecked.add(key); migrateLegacyPaths(); }
     if (raw !== null && raw !== JSON.stringify(openingDB)) saveDB();
 }
 
@@ -510,37 +507,57 @@ function importDBFromFile(event) {
     reader.readAsText(file);
 }
 
-// Migration : retrouve le chemin des anciennes entrées (sans `path`) en parcourant
-// les lignes connues. Borné à 16 demi-coups comme l'ancien panneau ; les entrées
-// non retrouvées se complètent d'elles-mêmes dès qu'on rejoue la ligne dans « Jouer ».
-function migrateLegacyPaths() {
-    if (!_engineReady()) return;
-    const missing = new Set(Object.keys(openingDB).filter(k => !openingDB[k].path));
-    if (!missing.size) return;
-    const seen = new Set();
+// ─── CHEMINS MANQUANTS ────────────────────────────────────────────
+// Une entrée sans `path` (anciennes versions, imports) arrive à l'entraînement sans sa ligne, et les Statistiques ne
+// savent pas la ranger dans une ouverture. rebuildPaths la retrouve par un parcours en largeur du répertoire depuis la
+// position initiale : à mon trait, seule ma réponse enregistrée ; au trait adverse, tous les coups légaux qui mènent à
+// une position du répertoire. Le chemin trouvé est le plus court (transpositions comprises) ; une position injoignable
+// reste sans chemin. Calcul pur sur la base donnée, par l'API Chess (jamais l'état affiché). Renvoie le nombre d'entrées complétées.
+function rebuildPaths(db, color) {
+    if (typeof Chess === 'undefined') return 0;
+    const want = new Set(Object.keys(db).filter(k => !(db[k].path && db[k].path.length)));
+    if (!want.size) return 0;
+    const found = new Map(), queue = [], seen = new Set();
+    let n = 0;
+    const mine = (pos, path) => {
+        const k = Chess.key(pos), e = db[k];
+        if (!e || found.has(k)) return;
+        found.set(k, path);
+        if (want.has(k)) n++;
+        try { queue.push([Chess.play(pos, e.move), path.concat(e.move)]); } catch (err) { /* coup illisible : la branche s'arrête */ }
+    };
+    const start = Chess.start();
+    if (color === 'w') mine(start, []); else queue.push([start, []]);
+    for (let i = 0; i < queue.length && n < want.size; i++) {
+        const [pos, path] = queue[i], k = Chess.key(pos);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        for (const u of Chess.legalMoves(pos)) mine(Chess.play(pos, u), path.concat(u));
+    }
+    let done = 0;
+    want.forEach(k => {
+        const pre = found.get(k);
+        if (!pre) return;
+        db[k].path = pre.concat(db[k].move);
+        db[k].ply = db[k].path.length;
+        done++;
+    });
+    return done;
+}
 
-    function step(path, uci) {
-        const sb = board.slice(), st = turn, sc = { ...castlingRights }, se = enPassant;
-        _applyUciRaw(uci);
-        explore(path.concat(uci));
-        board = sb; turn = st; castlingRights = sc; enPassant = se;
-    }
-    function explore(path) {
-        if (!missing.size || path.length > 16) return;
-        const key = positionKey();
-        if (turn === playerColor) {
-            const e = openingDB[key];
-            if (!e) return;
-            if (missing.has(key)) { e.path = path.concat(e.move); e.ply = e.path.length; missing.delete(key); }
-            if (squareToIdx(e.move.slice(0, 2)) >= 0 && board[squareToIdx(e.move.slice(0, 2))]) step(path, e.move);
-        } else {
-            if (seen.has(key)) return;
-            seen.add(key);
-            for (const uci of Chess.legalHere()) {
-                if (!missing.size) return;
-                step(path, uci);
-            }
-        }
-    }
-    _withEngineSnapshot(() => { parseFEN(INIT_FEN); explore([]); });
+// Les deux couleurs d'un répertoire : les chemins retrouvés sont enregistrés (et synchronisés), pour que l'Entraînement,
+// Aujourd'hui, Ouvertures et Progrès les voient tous. Rien n'est relu tant que la base enregistrée n'a pas changé
+// (signature : taille des deux couleurs) ; une base arrivée ensuite (synchronisation, import) est réparée à la lecture suivante.
+// Renvoie le nombre d'entrées complétées.
+const _pathsSeen = new Map();
+const _pathsSig = rep => ['w', 'b'].map(c => (dataStore.get(dbKeyFor(rep, c)) || '').length).join(':');
+function repairPaths(rep) {
+    if (_pathsSeen.get(rep) === _pathsSig(rep)) return 0;
+    let total = 0;
+    ['w', 'b'].forEach(c => {
+        const db = readDBFor(rep, c), n = rebuildPaths(db, c);
+        if (n) { dataStore.set(dbKeyFor(rep, c), JSON.stringify(db)); total += n; }
+    });
+    _pathsSeen.set(rep, _pathsSig(rep));
+    return total;
 }

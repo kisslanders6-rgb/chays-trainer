@@ -143,6 +143,7 @@ function renderHomeSummary() {
     const host = document.getElementById('hp-today');
     if (!host) return;
     const now = Date.now(), pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+    repairPaths(currentRepertoire);                             // chemins manquants retrouvés (storage.js), une fois
     const rows = repertoireRows();
     const rp = reviewPlan(currentRepertoire, now);              // programme des révisions (storage.js)
     const side = c => rows.filter(r => r.color === c), due = rows.filter(r => rp.today(r.color, r.key));

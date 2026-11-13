@@ -75,6 +75,7 @@ function _moveLabel(e, masked, html) {
 // ─── POSITIONS ET OUVERTURES ──────────────────────────────────────────────────
 
 function _statsRows() {
+    repairPaths(currentRepertoire);                             // sans chemin, une position ne se range dans aucune ouverture
     const rows = [];
     (statsColor === 'all' ? ['w', 'b'] : [statsColor]).forEach(side => {
         const db = readDBFor(currentRepertoire, side);
